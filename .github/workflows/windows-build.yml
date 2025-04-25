@@ -1,0 +1,50 @@
+# 이 파일을 .github/workflows/windows-build.yml 경로에 저장하세요
+name: Windows Build & Installer
+
+# main 브랜치에 코드가 올라가거나 수동 호출할 때 실행됩니다
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  windows-build:
+    # Windows 최신 버전 가상 환경
+    runs-on: windows-latest
+
+    steps:
+      # 1) 저장소의 코드를 가져옵니다
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2) Python 설치 (3.12 버전 사용)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      # 3) 의존성 설치 (requirements.txt와 PyInstaller)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # 4) PyInstaller로 Windows 실행 파일(.exe) 빌드
+      - name: Build application
+        run: python build.py
+
+      # 5) NSIS로 설치 프로그램(.exe) 생성
+      - name: Install NSIS
+        run: |
+          choco install nsis -y
+        shell: powershell
+      - name: Create Windows installer
+        run: python create_windows_installer.py
+
+      # 6) 결과(설치 파일)를 아티팩트로 저장
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-installer
+          path: installer/*.exe 
