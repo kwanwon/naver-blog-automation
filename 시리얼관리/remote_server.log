@@ -1,0 +1,16 @@
+2025-05-07 11:28:21,755 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 11:28:23,030 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 11:28:36,862 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 11:28:37,138 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 18:52:14,884 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 18:52:14,888 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 18:52:15,379 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/health HTTP/1.1" 200 None
+2025-05-07 18:52:15,382 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 18:52:15,386 - DEBUG - GitHub 설정 요청: {"github_config": {"token": "ghp_4a5hUoiXUfXkNPYOx2Kkc4QRjspg1o4LJtK7", "repo": "kwanwon/serial-validator-server"}}
+2025-05-07 18:52:15,388 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 18:52:15,597 - DEBUG - https://aimaster-serial.onrender.com:443 "POST /api/config/github HTTP/1.1" 404 None
+2025-05-07 18:52:15,597 - WARNING - GitHub 설정 실패: 404
+2025-05-07 18:52:15,597 - DEBUG - GitHub 백업 요청
+2025-05-07 18:52:15,598 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 18:52:17,097 - DEBUG - https://aimaster-serial.onrender.com:443 "POST /api/backup HTTP/1.1" 200 None
+2025-05-07 18:52:17,099 - INFO - GitHub 백업 성공

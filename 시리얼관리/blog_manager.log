@@ -1,0 +1,166 @@
+2025-05-02 22:12:29,288 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-02 22:12:29,553 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-02 22:12:29,555 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-02 22:12:34,653 - ERROR - 서버 연결 확인 중 오류: HTTPSConnectionPool(host='serial-validator-server.onrender.com', port=443): Read timed out. (read timeout=5)
+2025-05-07 10:35:05,788 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 10:35:06,043 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 10:35:06,047 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 10:35:06,057 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 11:09:50,351 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 11:09:50,492 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 11:09:50,494 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 11:09:50,501 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 11:09:50,680 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 11:09:52,011 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 17:38:56,336 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:38:56,599 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:38:56,599 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 17:38:56,607 - DEBUG - 로컬 데이터베이스에서 시리얼 목록 로드
+2025-05-07 17:38:56,607 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:38:56,610 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 17:38:56,610 - DEBUG - 원격 서버 설정 로드: URL=https://aimaster-serial.onrender.com
+2025-05-07 17:38:56,610 - DEBUG - 서버 연결 상태 확인 시작
+2025-05-07 17:38:56,612 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:38:57,080 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/health HTTP/1.1" 502 None
+2025-05-07 17:38:57,462 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 17:38:57,466 - WARNING - 서버 연결 확인 실패
+2025-05-07 17:39:31,201 - DEBUG - 로컬 데이터베이스에서 시리얼 목록 로드
+2025-05-07 17:39:31,202 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:39:37,312 - DEBUG - 로컬 데이터베이스에서 시리얼 목록 로드
+2025-05-07 17:39:37,313 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:39:40,082 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:39:40,270 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/health HTTP/1.1" 200 None
+2025-05-07 17:39:40,272 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 17:39:40,284 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:39:40,284 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:39:40,284 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:39:40,287 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:39:40,287 - INFO - 메모리 정보: svmem(total=8589934592, available=2226700288, percent=74.1, used=3466002432, free=62521344, active=2185199616, inactive=2150645760, wired=1280802816)
+2025-05-07 17:39:40,311 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:39:40,311 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:39:40,323 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:39:40,324 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:39:40'}
+2025-05-07 17:39:40,329 - DEBUG - 생성 요청 데이터: {"serial_number": "b554a947-811a-4972-b674-2aa45755d93b", "expiry_date": "2025-06-06", "memo": "", "device_info": {"hostname": "auto-generated"}}
+2025-05-07 17:39:40,330 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:39:40,719 - DEBUG - https://aimaster-serial.onrender.com:443 "POST /api/register HTTP/1.1" 200 None
+2025-05-07 17:39:40,720 - DEBUG - 서버 응답 (create_serial): 200
+2025-05-07 17:39:40,720 - DEBUG - 생성 결과: {"message": "시리얼이 등록되었습니다.", "status": "success"}
+2025-05-07 17:39:40,726 - ERROR - 서버 등록 실패: 시리얼이 등록되었습니다.
+2025-05-07 17:39:46,268 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:39:46,268 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:39:46,268 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:39:46,270 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:39:46,270 - INFO - 메모리 정보: svmem(total=8589934592, available=2224586752, percent=74.1, used=3468804096, free=64159744, active=2176188416, inactive=2154528768, wired=1292615680)
+2025-05-07 17:39:46,288 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:39:46,288 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:39:46,297 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:39:46,298 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:39:46'}
+2025-05-07 17:39:46,301 - DEBUG - 생성 요청 데이터: {"serial_number": "3dfe3712-7f55-4698-8d0c-4fb0ea824d45", "expiry_date": "2025-06-06", "memo": "", "device_info": {"hostname": "auto-generated"}}
+2025-05-07 17:39:46,302 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:39:46,489 - DEBUG - https://aimaster-serial.onrender.com:443 "POST /api/register HTTP/1.1" 200 None
+2025-05-07 17:39:46,489 - DEBUG - 서버 응답 (create_serial): 200
+2025-05-07 17:39:46,489 - DEBUG - 생성 결과: {"message": "시리얼이 등록되었습니다.", "status": "success"}
+2025-05-07 17:39:46,492 - ERROR - 서버 등록 실패: 시리얼이 등록되었습니다.
+2025-05-07 17:39:57,468 - DEBUG - 원격 서버 설정 로드: URL=https://aimaster-serial.onrender.com
+2025-05-07 17:39:57,470 - DEBUG - 서버 연결 상태 확인 시작
+2025-05-07 17:39:57,472 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:39:57,909 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/health HTTP/1.1" 200 None
+2025-05-07 17:39:57,911 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 17:39:57,916 - DEBUG - 시리얼 목록 로드 시도
+2025-05-07 17:39:57,918 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:39:59,530 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/serials HTTP/1.1" 200 None
+2025-05-07 17:39:59,530 - DEBUG - 서버 응답 (get_all_serials): 200
+2025-05-07 17:39:59,530 - DEBUG - 서버 데이터: [{"activation_count": 0, "created_date": "2025-05-07", "device_info": {}, "expiry_date": "2025-06-06", "is_blacklisted": false, "memo": "", "serial_number": "18f20cdf-c4a8-4735-bf07-6d1d8def6d37", "st...
+2025-05-07 17:39:59,530 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 17:39:59,533 - INFO - 시리얼 목록 로드 성공: 0개
+2025-05-07 17:40:03,983 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:40:03,984 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:40:03,984 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:40:03,986 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:40:03,986 - INFO - 메모리 정보: svmem(total=8589934592, available=2244739072, percent=73.9, used=3455057920, free=75038720, active=2180612096, inactive=2167226368, wired=1274445824)
+2025-05-07 17:40:04,003 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:40:04,003 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:40:04,012 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:40:04,012 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:40:04'}
+2025-05-07 17:40:04,017 - DEBUG - 생성 요청 데이터: {"serial_number": "0d5a2b4f-2607-433a-8ce3-189fbf2111ad", "expiry_date": "2025-06-06", "memo": "", "device_info": {"hostname": "auto-generated"}}
+2025-05-07 17:40:04,019 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:40:04,570 - DEBUG - https://aimaster-serial.onrender.com:443 "POST /api/register HTTP/1.1" 200 None
+2025-05-07 17:40:04,571 - DEBUG - 서버 응답 (create_serial): 200
+2025-05-07 17:40:04,571 - DEBUG - 생성 결과: {"message": "시리얼이 등록되었습니다.", "status": "success"}
+2025-05-07 17:40:04,576 - ERROR - 서버 등록 실패: 시리얼이 등록되었습니다.
+2025-05-07 17:41:01,746 - DEBUG - 원격 서버 설정 로드: URL=https://aimaster-serial.onrender.com
+2025-05-07 17:41:01,750 - DEBUG - 서버 연결 상태 확인 시작
+2025-05-07 17:41:01,751 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:41:02,210 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/health HTTP/1.1" 200 None
+2025-05-07 17:41:02,213 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 17:41:02,217 - DEBUG - 시리얼 목록 로드 시도
+2025-05-07 17:41:02,219 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:41:03,850 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/serials HTTP/1.1" 200 None
+2025-05-07 17:41:03,851 - DEBUG - 서버 응답 (get_all_serials): 200
+2025-05-07 17:41:03,852 - DEBUG - 서버 데이터: [{"activation_count": 0, "created_date": "2025-05-07", "device_info": {}, "expiry_date": "2025-06-06", "is_blacklisted": false, "memo": "", "serial_number": "18f20cdf-c4a8-4735-bf07-6d1d8def6d37", "st...
+2025-05-07 17:41:03,852 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 17:41:03,856 - INFO - 시리얼 목록 로드 성공: 0개
+2025-05-07 17:42:39,349 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:42:39,587 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:42:39,589 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 17:42:39,596 - DEBUG - 로컬 데이터베이스에서 시리얼 목록 로드
+2025-05-07 17:42:39,596 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:42:39,600 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 17:42:39,600 - DEBUG - 원격 서버 설정 로드: URL=https://aimaster-serial.onrender.com
+2025-05-07 17:42:39,600 - DEBUG - 서버 연결 상태 확인 시작
+2025-05-07 17:42:39,601 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:42:39,983 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/health HTTP/1.1" 200 None
+2025-05-07 17:42:39,984 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 17:42:39,986 - DEBUG - 시리얼 목록 로드 시도
+2025-05-07 17:42:39,987 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:42:41,534 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/serials HTTP/1.1" 200 None
+2025-05-07 17:42:41,535 - DEBUG - 서버 응답 (get_all_serials): 200
+2025-05-07 17:42:41,535 - DEBUG - 서버 데이터: [{"activation_count": 0, "created_date": "2025-05-07", "device_info": {}, "expiry_date": "2025-06-06", "is_blacklisted": false, "memo": "", "serial_number": "18f20cdf-c4a8-4735-bf07-6d1d8def6d37", "st...
+2025-05-07 17:42:41,535 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 17:42:41,538 - INFO - 시리얼 목록 로드 성공: 0개
+2025-05-07 17:42:49,192 - DEBUG - 원격 설정 모듈을 사용하여 시리얼 목록 가져오기 시도
+2025-05-07 17:42:49,195 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:42:50,850 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/serials HTTP/1.1" 200 None
+2025-05-07 17:42:50,852 - DEBUG - 서버 응답 (get_all_serials): 200
+2025-05-07 17:42:50,852 - DEBUG - 서버 데이터: [{"activation_count": 0, "created_date": "2025-05-07", "device_info": {}, "expiry_date": "2025-06-06", "is_blacklisted": false, "memo": "", "serial_number": "18f20cdf-c4a8-4735-bf07-6d1d8def6d37", "st...
+2025-05-07 17:42:50,852 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 17:42:50,856 - WARNING - 서버에서 시리얼 데이터를 가져왔으나 비어있습니다.
+2025-05-07 17:42:50,856 - DEBUG - 기본 API 사용 시도: https://aimaster-serial.onrender.com/api/serials
+2025-05-07 17:42:50,858 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:42:52,281 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/serials HTTP/1.1" 200 None
+2025-05-07 17:42:52,283 - ERROR - 서버 응답 파싱 오류: 'list' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/블로그자동화관리.py", line 844, in refresh_serial_list
+    logging.debug(f"시리얼 데이터 응답: {len(serials_data.get('serials', []))}개 항목")
+                                             ^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+2025-05-07 17:42:52,288 - DEBUG - 서버 응답 내용: [{"activation_count":0,"created_date":"2025-05-07","device_info":{},"expiry_date":"2025-06-06","is_blacklisted":false,"memo":"","serial_number":"18f20cdf-c4a8-4735-bf07-6d1d8def6d37","status":"\uc0ac\uc6a9\uac00\ub2a5"},{"activation_count":0,"created_date":"2025-05-07","device_info":{},"expiry_date":"2025-06-06","is_blacklisted":false,"memo":"","serial_number":"50af200c-34d7-4b37-891b-6405ea33edb0","status":"\uc0ac\uc6a9\uac00\ub2a5"},{"activation_count":0,"created_date":"2025-05-07","device_inf
+2025-05-07 17:42:52,288 - DEBUG - 로컬 데이터베이스에서 시리얼 목록 로드
+2025-05-07 17:42:52,288 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:42:58,152 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:42:58,154 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:42:58,154 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:42:58,157 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:42:58,157 - INFO - 메모리 정보: svmem(total=8589934592, available=2160738304, percent=74.8, used=3383525376, free=60456960, active=2112405504, inactive=2099150848, wired=1271119872)
+2025-05-07 17:42:58,180 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:42:58,180 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:42:58,190 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:42:58,190 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:42:58'}
+2025-05-07 17:42:58,195 - DEBUG - 생성 요청 데이터: {"serial_number": "e7ba72c7-7c9a-4aea-97b3-2ac4e0dd8d20", "expiry_date": "2025-08-05", "memo": "", "device_info": {"hostname": "auto-generated"}}
+2025-05-07 17:42:58,196 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:42:58,609 - DEBUG - https://aimaster-serial.onrender.com:443 "POST /api/register HTTP/1.1" 200 None
+2025-05-07 17:42:58,610 - DEBUG - 서버 응답 (create_serial): 200
+2025-05-07 17:42:58,610 - DEBUG - 생성 결과: {"message": "시리얼이 등록되었습니다.", "status": "success"}
+2025-05-07 17:42:58,614 - ERROR - 서버 등록 실패: 시리얼이 등록되었습니다.
+2025-05-07 17:43:41,542 - DEBUG - 원격 서버 설정 로드: URL=https://aimaster-serial.onrender.com
+2025-05-07 17:43:41,543 - DEBUG - 서버 연결 상태 확인 시작
+2025-05-07 17:43:41,546 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:43:41,744 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/health HTTP/1.1" 200 None
+2025-05-07 17:43:41,746 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 17:43:41,748 - DEBUG - 시리얼 목록 로드 시도
+2025-05-07 17:43:41,749 - DEBUG - Starting new HTTPS connection (1): aimaster-serial.onrender.com:443
+2025-05-07 17:43:43,167 - DEBUG - https://aimaster-serial.onrender.com:443 "GET /api/serials HTTP/1.1" 200 None
+2025-05-07 17:43:43,169 - DEBUG - 서버 응답 (get_all_serials): 200
+2025-05-07 17:43:43,169 - DEBUG - 서버 데이터: [{"activation_count": 0, "created_date": "2025-05-07", "device_info": {}, "expiry_date": "2025-06-06", "is_blacklisted": false, "memo": "", "serial_number": "18f20cdf-c4a8-4735-bf07-6d1d8def6d37", "st...
+2025-05-07 17:43:43,169 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 17:43:43,175 - INFO - 시리얼 목록 로드 성공: 0개
