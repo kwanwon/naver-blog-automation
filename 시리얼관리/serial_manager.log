@@ -1,0 +1,1147 @@
+2024-12-24 20:02:03,560 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2024-12-24 20:02:03,602 - ERROR - �ø��� ��� ���ΰ�ħ ����: no such column: activation_count
+2024-12-24 20:02:23,348 - ERROR - �ø��� ���� ����: table serials has no column named activation_count
+2024-12-24 22:34:56,834 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2024-12-24 22:34:56,863 - ERROR - �ø��� ��� ���ΰ�ħ ����: no such column: activation_count
+2024-12-24 22:35:16,580 - ERROR - �ø��� ���� ����: table serials has no column named activation_count
+2024-12-24 22:37:40,126 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2024-12-25 16:10:05,065 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2024-12-25 16:10:15,225 - INFO - ��������Ʈ ���� ��û: 8de0f781-7620-4f7d-afeb-33cbc3cfa2ef
+2024-12-25 16:10:45,665 - ERROR - ��������Ʈ ���� ����: ���� ��� ����: HTTPSConnectionPool(host='aimaster-serial.onrender.com', port=443): Read timed out. (read timeout=30)
+2024-12-30 17:18:50,968 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2024-12-31 10:31:55,217 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2024-12-31 10:35:18,594 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2024-12-31 10:54:48,358 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2024-12-31 11:12:32,099 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2024-12-31 11:13:12,514 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2025-01-01 09:49:18,864 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2025-01-01 10:10:07,735 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2025-01-01 10:10:18,540 - INFO - �޸� ���� ���� - �ø���: 191fec33-9dce-43d8-b3a9-a79180cc7173, �޸�: 5465
+2025-01-01 10:10:24,759 - INFO - �޸� ���� ���� - �ø���: 3c7406ae-ccae-4a4f-b4e3-515ef7e3c7b4, �޸�: 3156
+2025-01-01 10:11:30,023 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2025-01-01 18:38:36,550 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2025-02-27 10:53:18,992 - INFO - �����ͺ��̽� �ʱ�ȭ �Ϸ�
+2025-04-07 14:15:50,584 - INFO - 데이터베이스 초기화 완료
+2025-04-07 14:42:57,795 - INFO - 데이터베이스 초기화 완료
+2025-04-07 14:54:08,467 - INFO - 데이터베이스 초기화 완료
+2025-04-07 15:28:51,189 - INFO - 데이터베이스 초기화 완료
+2025-04-07 15:32:29,577 - INFO - 데이터베이스 초기화 완료
+2025-04-07 15:37:17,343 - INFO - 데이터베이스 초기화 완료
+2025-04-07 15:45:30,676 - INFO - 데이터베이스 초기화 완료
+2025-04-07 15:46:09,774 - INFO - 데이터베이스 초기화 완료
+2025-04-07 19:19:16,245 - INFO - 데이터베이스 초기화 완료
+2025-04-30 17:47:00,301 - INFO - 데이터베이스 초기화 완료
+2025-04-30 17:50:18,889 - INFO - 데이터베이스 초기화 완료
+2025-04-30 18:42:26,774 - INFO - 데이터베이스 초기화 완료
+2025-04-30 18:58:34,352 - INFO - 데이터베이스 초기화 완료
+2025-04-30 18:59:27,258 - INFO - 데이터베이스 초기화 완료
+2025-04-30 19:02:04,802 - INFO - 블로그 컨텍스트 메뉴 이벤트: 4, x=386, y=101
+2025-04-30 19:16:13,543 - INFO - 데이터베이스 초기화 완료
+2025-04-30 19:24:19,720 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=34
+2025-04-30 19:24:19,722 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:20,357 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=34
+2025-04-30 19:24:20,358 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:20,722 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=34
+2025-04-30 19:24:20,723 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:20,886 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=34
+2025-04-30 19:24:20,886 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:21,067 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=34
+2025-04-30 19:24:21,068 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:21,234 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=34
+2025-04-30 19:24:21,234 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:21,405 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=34
+2025-04-30 19:24:21,405 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:21,579 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=34
+2025-04-30 19:24:21,579 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:22,020 - INFO - 컨텍스트 메뉴 이벤트: 4, x=194, y=145
+2025-04-30 19:24:22,021 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:22,319 - INFO - 컨텍스트 메뉴 이벤트: 4, x=194, y=145
+2025-04-30 19:24:22,319 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:22,492 - INFO - 컨텍스트 메뉴 이벤트: 4, x=194, y=145
+2025-04-30 19:24:22,493 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:22,649 - INFO - 컨텍스트 메뉴 이벤트: 4, x=194, y=145
+2025-04-30 19:24:22,649 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:23,774 - INFO - 컨텍스트 메뉴 이벤트: 4, x=211, y=203
+2025-04-30 19:24:23,774 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:24:24,225 - INFO - 컨텍스트 메뉴 이벤트: 4, x=283, y=190
+2025-04-30 19:24:24,225 - ERROR - 컨텍스트 메뉴 표시 오류: 'SerialManager' object has no attribute 'context_menu'
+2025-04-30 19:26:25,623 - INFO - 데이터베이스 초기화 완료
+2025-04-30 19:26:35,142 - INFO - 컨텍스트 메뉴 이벤트: 4, x=175, y=37
+2025-04-30 19:26:38,104 - INFO - 컨텍스트 메뉴 이벤트: 4, x=170, y=219
+2025-05-02 21:18:34,364 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-02 21:18:34,535 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-02 21:18:34,537 - INFO - 데이터베이스 초기화 완료
+2025-05-02 21:18:34,549 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-02 21:18:34,549 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-02 21:18:34,550 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-02 21:18:34,551 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-02 21:18:42,826 - INFO - 디바이스 정보 수집 시작
+2025-05-02 21:18:42,827 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-02 21:18:42,827 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-02 21:18:47,830 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-02 21:18:47,831 - INFO - 메모리 정보: svmem(total=8589934592, available=2231402496, percent=74.0, used=3282157568, free=69517312, active=2180284416, inactive=2094202880, wired=1101873152)
+2025-05-02 21:18:47,847 - INFO - 모델 정보: Mac14,15
+2025-05-02 21:18:47,847 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-02 21:18:47,854 - INFO - 프로세서 정보: Apple M2
+2025-05-02 21:18:47,854 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-02 21:18:47'}
+2025-05-02 21:19:03,682 - INFO - 컨텍스트 메뉴 이벤트: 4, x=882, y=127
+2025-05-02 21:19:10,567 - INFO - 컨텍스트 메뉴 이벤트: 4, x=874, y=138
+2025-05-02 21:19:18,916 - INFO - 컨텍스트 메뉴 이벤트: 4, x=645, y=135
+2025-05-02 21:19:30,437 - INFO - 디바이스 정보 수집 시작
+2025-05-02 21:19:30,437 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-02 21:19:30,437 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-02 21:19:35,441 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-02 21:19:35,442 - INFO - 메모리 정보: svmem(total=8589934592, available=2335916032, percent=72.8, used=3390357504, free=64520192, active=2292613120, inactive=2270560256, wired=1097744384)
+2025-05-02 21:19:35,464 - INFO - 모델 정보: Mac14,15
+2025-05-02 21:19:35,465 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-02 21:19:35,476 - INFO - 프로세서 정보: Apple M2
+2025-05-02 21:19:35,476 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-02 21:19:35'}
+2025-05-02 21:20:05,591 - ERROR - 시리얼 생성 오류: HTTPSConnectionPool(host='serial-validator-server.onrender.com', port=443): Read timed out. (read timeout=30)
+2025-05-02 21:28:35,787 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-02 21:28:36,012 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-02 21:28:36,013 - INFO - 데이터베이스 초기화 완료
+2025-05-02 21:28:36,026 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-02 21:28:36,026 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-02 21:28:36,026 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-02 21:28:36,027 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-02 21:29:01,621 - INFO - 디바이스 정보 수집 시작
+2025-05-02 21:29:01,621 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-02 21:29:01,621 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-02 21:29:06,625 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-02 21:29:06,625 - INFO - 메모리 정보: svmem(total=8589934592, available=2535489536, percent=70.5, used=3550478336, free=68599808, active=2476965888, inactive=2347745280, wired=1073512448)
+2025-05-02 21:29:06,648 - INFO - 모델 정보: Mac14,15
+2025-05-02 21:29:06,649 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-02 21:29:06,658 - INFO - 프로세서 정보: Apple M2
+2025-05-02 21:29:06,658 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-02 21:29:06'}
+2025-05-02 21:29:21,318 - INFO - 디바이스 정보 수집 시작
+2025-05-02 21:29:21,318 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-02 21:29:21,319 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-02 21:29:26,322 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-02 21:29:26,322 - INFO - 메모리 정보: svmem(total=8589934592, available=2534653952, percent=70.5, used=3550969856, free=71335936, active=2477195264, inactive=2354839552, wired=1073774592)
+2025-05-02 21:29:26,345 - INFO - 모델 정보: Mac14,15
+2025-05-02 21:29:26,345 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-02 21:29:26,356 - INFO - 프로세서 정보: Apple M2
+2025-05-02 21:29:26,356 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-02 21:29:26'}
+2025-05-02 21:29:35,748 - INFO - 디바이스 정보 수집 시작
+2025-05-02 21:29:35,748 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-02 21:29:35,748 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-02 21:29:40,752 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-02 21:29:40,752 - INFO - 메모리 정보: svmem(total=8589934592, available=2545369088, percent=70.4, used=3541647360, free=87408640, active=2468233216, inactive=2357575680, wired=1073414144)
+2025-05-02 21:29:40,771 - INFO - 모델 정보: Mac14,15
+2025-05-02 21:29:40,771 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-02 21:29:40,780 - INFO - 프로세서 정보: Apple M2
+2025-05-02 21:29:40,780 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-02 21:29:40'}
+2025-05-02 21:29:47,882 - ERROR - 디바이스 정보 표시 오류: name 'expiry_date' is not defined
+2025-05-02 21:30:00,778 - ERROR - 블랙리스트 설정 오류: 서버 응답 오류: 404
+2025-05-02 22:14:47,133 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-02 22:14:47,344 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-02 22:14:47,346 - INFO - 데이터베이스 초기화 완료
+2025-05-02 22:14:47,360 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-02 22:14:47,360 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-02 22:14:47,360 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-02 22:14:47,362 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-02 22:15:19,872 - INFO - 디바이스 정보 수집 시작
+2025-05-02 22:15:19,873 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-02 22:15:19,873 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-02 22:15:24,885 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-02 22:15:24,885 - INFO - 메모리 정보: svmem(total=8589934592, available=2914418688, percent=66.1, used=3916005376, free=60276736, active=2869821440, inactive=2846457856, wired=1046183936)
+2025-05-02 22:15:24,915 - INFO - 모델 정보: Mac14,15
+2025-05-02 22:15:24,915 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-02 22:15:24,923 - INFO - 프로세서 정보: Apple M2
+2025-05-02 22:15:24,923 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-02 22:15:24'}
+2025-05-02 22:15:36,073 - INFO - 디바이스 정보 수집 시작
+2025-05-02 22:15:36,074 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-02 22:15:36,074 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-02 22:15:41,077 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-02 22:15:41,078 - INFO - 메모리 정보: svmem(total=8589934592, available=2945122304, percent=65.7, used=3886170112, free=114180096, active=2841018368, inactive=2826829824, wired=1045151744)
+2025-05-02 22:15:41,099 - INFO - 모델 정보: Mac14,15
+2025-05-02 22:15:41,100 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-02 22:15:41,111 - INFO - 프로세서 정보: Apple M2
+2025-05-02 22:15:41,111 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-02 22:15:41'}
+2025-05-02 22:16:02,676 - ERROR - 블랙리스트 해제 오류: 서버 응답 오류: 405
+2025-05-02 22:16:13,192 - ERROR - 디바이스 정보 표시 오류: name 'expiry_date' is not defined
+2025-05-03 13:22:21,637 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-03 13:22:21,888 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-03 13:22:21,889 - INFO - 데이터베이스 초기화 완료
+2025-05-03 13:22:21,908 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-03 13:22:21,908 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-03 13:22:21,908 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-03 13:22:21,909 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-03 13:22:55,005 - INFO - 디바이스 정보 수집 시작
+2025-05-03 13:22:55,005 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-03 13:22:55,005 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-03 13:23:00,022 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-03 13:23:00,022 - INFO - 메모리 정보: svmem(total=8589934592, available=1955381248, percent=77.2, used=3291136000, free=74448896, active=1895923712, inactive=1871986688, wired=1395212288)
+2025-05-03 13:23:00,036 - INFO - 모델 정보: Mac14,15
+2025-05-03 13:23:00,036 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-03 13:23:00,043 - INFO - 프로세서 정보: Apple M2
+2025-05-03 13:23:00,043 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-03 13:23:00'}
+2025-05-03 13:23:11,139 - INFO - 디바이스 정보 수집 시작
+2025-05-03 13:23:11,139 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-03 13:23:11,140 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-03 13:23:16,143 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-03 13:23:16,143 - INFO - 메모리 정보: svmem(total=8589934592, available=1973796864, percent=77.0, used=3165192192, free=208666624, active=1778581504, inactive=1760346112, wired=1386610688)
+2025-05-03 13:23:16,162 - INFO - 모델 정보: Mac14,15
+2025-05-03 13:23:16,162 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-03 13:23:16,171 - INFO - 프로세서 정보: Apple M2
+2025-05-03 13:23:16,172 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-03 13:23:16'}
+2025-05-06 11:27:03,379 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-06 11:27:03,547 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-06 11:27:03,547 - INFO - 데이터베이스 초기화 완료
+2025-05-06 11:27:03,555 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-06 11:27:03,556 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-06 11:27:03,556 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-06 11:27:03,557 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-06 12:32:16,374 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-06 12:32:16,647 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-06 12:32:16,649 - INFO - 데이터베이스 초기화 완료
+2025-05-06 12:32:16,657 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-06 12:32:16,657 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-06 12:32:16,657 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-06 12:32:16,659 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-06 12:33:07,929 - INFO - 컨텍스트 메뉴 이벤트: 4, x=246, y=59
+2025-05-07 10:25:46,917 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 10:25:47,266 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 10:25:47,266 - INFO - 데이터베이스 초기화 완료
+2025-05-07 10:25:47,282 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 10:25:47,282 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 10:25:47,283 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 10:25:47,284 - ERROR - 시리얼 목록 새로고침 중 오류 발생: 'BlogManager' object has no attribute 'server_connected'
+2025-05-07 10:25:47,284 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 10:26:35,272 - INFO - 디바이스 정보 수집 시작
+2025-05-07 10:26:35,274 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 10:26:35,274 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 10:26:35,277 - INFO - IP 주소: 218.38.137.28
+2025-05-07 10:26:35,277 - INFO - 메모리 정보: svmem(total=8589934592, available=2378383360, percent=72.3, used=3508912128, free=72957952, active=2324627456, inactive=2298216448, wired=1184284672)
+2025-05-07 10:26:35,305 - INFO - 모델 정보: Mac14,15
+2025-05-07 10:26:35,305 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 10:26:35,314 - INFO - 프로세서 정보: Apple M2
+2025-05-07 10:26:35,314 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 10:26:35'}
+2025-05-07 10:27:05,411 - ERROR - 시리얼 생성 오류: HTTPSConnectionPool(host='serial-validator-server.onrender.com', port=443): Read timed out. (read timeout=30)
+2025-05-07 10:27:12,930 - INFO - 디바이스 정보 수집 시작
+2025-05-07 10:27:12,930 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 10:27:12,930 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 10:27:12,932 - INFO - IP 주소: 218.38.137.28
+2025-05-07 10:27:12,932 - INFO - 메모리 정보: svmem(total=8589934592, available=2329411584, percent=72.9, used=3459497984, free=69271552, active=2270167040, inactive=2255978496, wired=1189330944)
+2025-05-07 10:27:12,944 - INFO - 모델 정보: Mac14,15
+2025-05-07 10:27:12,944 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 10:27:12,950 - INFO - 프로세서 정보: Apple M2
+2025-05-07 10:27:12,950 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 10:27:12'}
+2025-05-07 10:27:13,169 - ERROR - 시리얼 목록 새로고침 중 오류 발생: 'BlogManager' object has no attribute 'server_connected'
+2025-05-07 10:29:37,789 - ERROR - 시리얼 목록 새로고침 중 오류 발생: 'BlogManager' object has no attribute 'server_connected'
+2025-05-07 10:37:40,535 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 10:37:40,773 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 10:37:40,775 - INFO - 데이터베이스 초기화 완료
+2025-05-07 10:37:40,789 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 10:37:40,789 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 10:37:40,789 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 10:37:40,790 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 10:37:40,791 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 10:38:19,575 - ERROR - 디바이스 정보 표시 오류: name 'expiry_date' is not defined
+2025-05-07 10:38:37,425 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 10:56:12,327 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 10:56:12,625 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 10:56:12,627 - INFO - 데이터베이스 초기화 완료
+2025-05-07 10:56:12,641 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 10:56:12,642 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 10:56:12,642 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 10:56:12,643 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 10:56:12,643 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 11:05:42,216 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 11:05:42,361 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 11:05:42,363 - INFO - 데이터베이스 초기화 완료
+2025-05-07 11:05:42,370 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 11:05:42,370 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 11:05:42,371 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 11:05:42,371 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 11:05:42,372 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 11:10:02,705 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 11:10:02,858 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 11:10:02,859 - INFO - 데이터베이스 초기화 완료
+2025-05-07 11:10:02,865 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 11:10:02,866 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 11:10:02,866 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 11:10:02,866 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 11:10:02,867 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 11:18:13,881 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 11:18:14,153 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 11:18:14,155 - INFO - 데이터베이스 초기화 완료
+2025-05-07 11:18:14,162 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 11:18:14,162 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 11:18:14,163 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 11:18:14,164 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 11:18:14,164 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 12:18:08,908 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 12:18:09,088 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 12:18:09,090 - INFO - 데이터베이스 초기화 완료
+2025-05-07 12:18:09,098 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 12:18:09,099 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 12:18:09,099 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 12:18:09,100 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 12:18:09,101 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 12:19:04,852 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 12:19:27,122 - INFO - 디바이스 정보 수집 시작
+2025-05-07 12:19:27,122 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 12:19:27,122 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 12:19:32,136 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-07 12:19:32,136 - INFO - 메모리 정보: svmem(total=8589934592, available=2865152000, percent=66.6, used=4063608832, free=76513280, active=2798141440, inactive=2741993472, wired=1265467392)
+2025-05-07 12:19:32,160 - INFO - 모델 정보: Mac14,15
+2025-05-07 12:19:32,161 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 12:19:32,171 - INFO - 프로세서 정보: Apple M2
+2025-05-07 12:19:32,172 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 12:19:32'}
+2025-05-07 12:19:34,893 - ERROR - GitHub 백업 오류: 서버 응답 오류: 500
+2025-05-07 12:47:34,243 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 12:47:34,430 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 12:47:34,431 - INFO - 데이터베이스 초기화 완료
+2025-05-07 12:47:34,446 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 12:47:34,446 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 12:47:34,446 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 12:47:34,447 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 12:47:34,448 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 12:47:42,188 - ERROR - 서버 응답 실패: 500
+2025-05-07 12:48:50,174 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 12:48:50,354 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 12:48:50,371 - INFO - 디바이스 정보 수집 시작
+2025-05-07 12:48:50,371 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 12:48:50,371 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 12:48:50,373 - INFO - IP 주소: 218.38.137.28
+2025-05-07 12:48:50,373 - INFO - 메모리 정보: svmem(total=8589934592, available=1885208576, percent=78.1, used=3383476224, free=62750720, active=1837531136, inactive=1792901120, wired=1545945088)
+2025-05-07 12:48:50,387 - INFO - 모델 정보: Mac14,15
+2025-05-07 12:48:50,387 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 12:48:50,393 - INFO - 프로세서 정보: Apple M2
+2025-05-07 12:48:50,393 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 12:48:50'}
+2025-05-07 12:48:50,584 - ERROR - 서버 등록 실패: 서버 오류
+2025-05-07 13:45:25,904 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 13:45:26,230 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 13:45:26,230 - INFO - 데이터베이스 초기화 완료
+2025-05-07 13:45:26,244 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 13:45:26,244 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 13:45:26,244 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 13:45:26,245 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 13:45:26,246 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 13:45:31,457 - ERROR - 서버 응답 실패: 500
+2025-05-07 13:46:43,521 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 13:46:43,660 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 13:46:43,660 - INFO - 데이터베이스 초기화 완료
+2025-05-07 13:46:43,667 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 13:46:43,667 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 13:46:43,667 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 13:46:43,668 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 13:46:43,668 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 13:46:51,127 - ERROR - 서버 응답 실패: 500
+2025-05-07 13:47:13,216 - ERROR - 서버 응답 실패: 500
+2025-05-07 13:47:26,196 - ERROR - 서버 응답 실패: 500
+2025-05-07 13:47:37,406 - ERROR - 서버 응답 실패: 500
+2025-05-07 13:53:56,295 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 13:53:56,529 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 13:53:56,530 - INFO - 데이터베이스 초기화 완료
+2025-05-07 13:53:56,538 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 13:53:56,538 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 13:53:56,538 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 13:53:56,539 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 13:53:56,539 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 13:55:18,127 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 13:55:18,349 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 13:55:18,359 - INFO - 디바이스 정보 수집 시작
+2025-05-07 13:55:18,359 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 13:55:18,359 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 13:55:18,361 - INFO - IP 주소: 218.38.137.28
+2025-05-07 13:55:18,362 - INFO - 메모리 정보: svmem(total=8589934592, available=2132508672, percent=75.2, used=3630366720, free=65437696, active=2085339136, inactive=2057158656, wired=1545027584)
+2025-05-07 13:55:18,385 - INFO - 모델 정보: Mac14,15
+2025-05-07 13:55:18,386 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 13:55:18,393 - INFO - 프로세서 정보: Apple M2
+2025-05-07 13:55:18,393 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 13:55:18'}
+2025-05-07 13:55:18,570 - INFO - 서버 응답(remote_config): {'success': False, 'message': '서버 오류'}
+2025-05-07 13:55:18,570 - ERROR - 서버 등록 실패: 서버 오류
+2025-05-07 13:58:20,556 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 13:58:20,794 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 13:58:20,794 - INFO - 데이터베이스 초기화 완료
+2025-05-07 13:58:20,808 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 13:58:20,808 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 13:58:20,808 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 13:58:20,809 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 13:58:20,810 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 13:58:26,007 - ERROR - 서버 응답 실패: 500
+2025-05-07 13:59:02,257 - ERROR - 서버 응답 실패: 500
+2025-05-07 14:02:16,687 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 14:02:16,926 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 14:02:16,927 - INFO - 데이터베이스 초기화 완료
+2025-05-07 14:02:16,941 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 14:02:16,941 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 14:02:16,942 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 14:02:16,942 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 14:02:16,943 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 14:02:22,134 - ERROR - 서버 응답 실패: 500
+2025-05-07 14:02:49,696 - ERROR - 서버 응답 실패: 500
+2025-05-07 14:06:57,910 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 14:06:58,142 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 14:06:58,142 - INFO - 데이터베이스 초기화 완료
+2025-05-07 14:06:58,156 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 14:06:58,156 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 14:06:58,156 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 14:06:58,157 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 14:06:58,157 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 14:07:03,332 - ERROR - 서버 응답 실패: 500
+2025-05-07 14:07:23,824 - INFO - 디바이스 정보 수집 시작
+2025-05-07 14:07:23,826 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 14:07:23,826 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 14:07:23,828 - INFO - IP 주소: 218.38.137.28
+2025-05-07 14:07:23,828 - INFO - 메모리 정보: svmem(total=8589934592, available=2041675776, percent=76.2, used=3502473216, free=96960512, active=1956888576, inactive=1937014784, wired=1545584640)
+2025-05-07 14:07:23,846 - INFO - 모델 정보: Mac14,15
+2025-05-07 14:07:23,847 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 14:07:23,856 - INFO - 프로세서 정보: Apple M2
+2025-05-07 14:07:23,856 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 14:07:23'}
+2025-05-07 14:07:31,284 - ERROR - 시리얼 생성 오류: 서버 응답 오류: 500
+{"message":"\uc11c\ubc84 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4.","status":"error"}
+
+2025-05-07 16:01:41,607 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 16:01:41,758 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 16:01:41,759 - INFO - 데이터베이스 초기화 완료
+2025-05-07 16:01:41,773 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 16:01:41,773 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 16:01:41,773 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 16:01:41,774 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 16:01:41,774 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 16:01:51,798 - ERROR - 서버 응답 실패: 500
+2025-05-07 16:02:49,448 - ERROR - 서버 응답 실패: 500
+2025-05-07 16:08:45,129 - ERROR - 서버 응답 실패: 502
+2025-05-07 16:19:22,174 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 16:19:22,507 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 16:19:22,509 - INFO - 데이터베이스 초기화 완료
+2025-05-07 16:19:22,520 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 16:19:22,521 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 16:19:22,521 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 16:19:22,522 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 16:19:22,522 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 16:19:49,253 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 16:19:49,655 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 16:19:49,689 - INFO - 디바이스 정보 수집 시작
+2025-05-07 16:19:49,689 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 16:19:49,689 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 16:19:49,693 - INFO - IP 주소: 218.38.137.28
+2025-05-07 16:19:49,693 - INFO - 메모리 정보: svmem(total=8589934592, available=2331721728, percent=72.9, used=3473981440, free=61177856, active=2284486656, inactive=2213216256, wired=1189494784)
+2025-05-07 16:19:49,708 - INFO - 모델 정보: Mac14,15
+2025-05-07 16:19:49,708 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 16:19:49,715 - INFO - 프로세서 정보: Apple M2
+2025-05-07 16:19:49,715 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 16:19:49'}
+2025-05-07 16:19:49,903 - INFO - 서버 응답: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 16:19:49,903 - ERROR - 서버 등록 실패: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 16:23:54,867 - INFO - 디바이스 정보 수집 시작
+2025-05-07 16:23:54,869 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 16:23:54,869 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 16:23:54,875 - INFO - IP 주소: 218.38.137.28
+2025-05-07 16:23:54,875 - INFO - 메모리 정보: svmem(total=8589934592, available=1724465152, percent=79.9, used=3123871744, free=69107712, active=1670709248, inactive=1612840960, wired=1453162496)
+2025-05-07 16:23:54,897 - INFO - 모델 정보: Mac14,15
+2025-05-07 16:23:54,897 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 16:23:54,905 - INFO - 프로세서 정보: Apple M2
+2025-05-07 16:23:54,906 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 16:23:54'}
+2025-05-07 16:23:55,319 - INFO - 서버 응답: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 16:23:55,320 - ERROR - 서버 등록 실패: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 16:27:31,838 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 16:27:32,116 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 16:27:32,118 - INFO - 데이터베이스 초기화 완료
+2025-05-07 16:27:32,126 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 16:27:32,126 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 16:27:32,127 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 16:27:32,127 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 16:27:32,128 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 16:27:32,348 - ERROR - 서버 응답 실패: 502
+2025-05-07 16:27:42,514 - ERROR - 서버 응답 실패: 502
+2025-05-07 17:17:20,076 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 17:17:20,325 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 17:17:20,327 - INFO - 데이터베이스 초기화 완료
+2025-05-07 17:17:20,335 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:17:20,335 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:17:20,336 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 17:17:20,337 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:17:20,337 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 17:17:33,482 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:17:33,484 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 17:17:33,484 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:17:33,500 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:17:33,501 - INFO - 메모리 정보: svmem(total=8589934592, available=2188509184, percent=74.5, used=3441508352, free=66387968, active=2138718208, inactive=2117517312, wired=1302790144)
+2025-05-07 17:17:33,526 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:17:33,526 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:17:33,537 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:17:33,537 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:17:33'}
+2025-05-07 17:17:49,460 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 17:17:49,652 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 17:17:49,657 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:17:49,657 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:17:49,657 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:17:49,659 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:17:49,659 - INFO - 메모리 정보: svmem(total=8589934592, available=2226716672, percent=74.1, used=3490660352, free=64143360, active=2180546560, inactive=2161885184, wired=1310113792)
+2025-05-07 17:17:49,672 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:17:49,672 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:17:49,677 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:17:49,677 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:17:49'}
+2025-05-07 17:17:50,182 - INFO - 서버 응답: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 17:17:50,183 - ERROR - 서버 등록 실패: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 17:22:55,844 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 17:22:55,849 - WARNING - 서버에서 시리얼 데이터를 가져왔으나 비어있습니다.
+2025-05-07 17:22:57,044 - ERROR - 서버 응답 파싱 오류: 'list' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/블로그자동화관리.py", line 816, in refresh_serial_list
+    logging.debug(f"시리얼 데이터 응답: {len(serials_data.get('serials', []))}개 항목")
+                                             ^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+2025-05-07 17:22:57,052 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:23:07,313 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 17:23:07,317 - WARNING - 서버에서 시리얼 데이터를 가져왔으나 비어있습니다.
+2025-05-07 17:23:08,523 - ERROR - 서버 응답 파싱 오류: 'list' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/블로그자동화관리.py", line 816, in refresh_serial_list
+    logging.debug(f"시리얼 데이터 응답: {len(serials_data.get('serials', []))}개 항목")
+                                             ^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+2025-05-07 17:23:08,525 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:24:35,993 - ERROR - 시리얼 목록 가져오기 오류: 'list' object has no attribute 'get'
+2025-05-07 17:24:35,999 - WARNING - 서버에서 시리얼 데이터를 가져왔으나 비어있습니다.
+2025-05-07 17:24:37,592 - ERROR - 서버 응답 파싱 오류: 'list' object has no attribute 'get'
+Traceback (most recent call last):
+  File "/Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/블로그자동화관리.py", line 816, in refresh_serial_list
+    logging.debug(f"시리얼 데이터 응답: {len(serials_data.get('serials', []))}개 항목")
+                                             ^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+2025-05-07 17:24:37,595 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 17:24:51,041 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:24:51,042 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:24:51,042 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:24:51,060 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:24:51,061 - INFO - 메모리 정보: svmem(total=8589934592, available=2234449920, percent=74.0, used=3428581376, free=93437952, active=2155560960, inactive=2138030080, wired=1273020416)
+2025-05-07 17:24:51,080 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:24:51,080 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:24:51,089 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:24:51,089 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:24:51'}
+2025-05-07 17:24:51,282 - INFO - 서버 응답: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 17:24:51,282 - ERROR - 서버 등록 실패: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 17:33:41,065 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:33:41,067 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 17:33:41,067 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:33:41,070 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:33:41,070 - INFO - 메모리 정보: svmem(total=8589934592, available=2176630784, percent=74.7, used=3419652096, free=62275584, active=2125234176, inactive=2108243968, wired=1294417920)
+2025-05-07 17:33:41,087 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:33:41,088 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:33:41,095 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:33:41,095 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:33:41'}
+2025-05-07 17:33:52,094 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:33:52,094 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:33:52,094 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:33:52,097 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:33:52,098 - INFO - 메모리 정보: svmem(total=8589934592, available=2170290176, percent=74.7, used=3402874880, free=69419008, active=2115141632, inactive=2098429952, wired=1287733248)
+2025-05-07 17:33:52,113 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:33:52,113 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:33:52,121 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:33:52,121 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:33:52'}
+2025-05-07 17:33:52,642 - INFO - 서버 응답: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 17:33:52,642 - ERROR - 서버 등록 실패: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 17:34:27,428 - INFO - 디바이스 정보 수집 시작
+2025-05-07 17:34:27,429 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 17:34:27,429 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 17:34:27,433 - INFO - IP 주소: 218.38.137.28
+2025-05-07 17:34:27,433 - INFO - 메모리 정보: svmem(total=8589934592, available=2171437056, percent=74.7, used=3379658752, free=76201984, active=2101772288, inactive=2086338560, wired=1277886464)
+2025-05-07 17:34:27,450 - INFO - 모델 정보: Mac14,15
+2025-05-07 17:34:27,450 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 17:34:27,458 - INFO - 프로세서 정보: Apple M2
+2025-05-07 17:34:27,458 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 17:34:27'}
+2025-05-07 17:34:27,710 - INFO - 서버 응답: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 17:34:27,710 - ERROR - 서버 등록 실패: 405 - <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<title>405 Method Not Allowed</title>
+<h1>Method Not Allowed</h1>
+<p>The method is not allowed for the requested URL.</p>
+
+2025-05-07 18:40:09,463 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 18:40:09,719 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 18:40:09,721 - INFO - 데이터베이스 초기화 완료
+2025-05-07 18:40:09,737 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 18:40:09,737 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 18:40:09,737 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 18:40:09,738 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 18:40:09,738 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 18:55:11,559 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 18:55:11,806 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 18:55:11,808 - INFO - 데이터베이스 초기화 완료
+2025-05-07 18:55:11,815 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 18:55:11,815 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 18:55:11,816 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 18:55:11,817 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 18:55:11,817 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 18:56:48,221 - INFO - 디바이스 정보 수집 시작
+2025-05-07 18:56:48,224 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 18:56:48,224 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 18:56:48,271 - INFO - IP 주소: 218.38.137.28
+2025-05-07 18:56:48,272 - INFO - 메모리 정보: svmem(total=8589934592, available=2073444352, percent=75.9, used=3298246656, free=65617920, active=2021031936, inactive=1995030528, wired=1277214720)
+2025-05-07 18:56:48,300 - INFO - 모델 정보: Mac14,15
+2025-05-07 18:56:48,300 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 18:56:48,310 - INFO - 프로세서 정보: Apple M2
+2025-05-07 18:56:48,310 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 18:56:48'}
+2025-05-07 18:56:56,388 - INFO - 컨텍스트 메뉴 이벤트: 4, x=525, y=42
+2025-05-07 18:57:05,151 - INFO - 컨텍스트 메뉴 이벤트: 4, x=635, y=36
+2025-05-07 18:57:18,146 - INFO - 컨텍스트 메뉴 이벤트: 4, x=650, y=38
+2025-05-07 18:57:26,113 - INFO - 컨텍스트 메뉴 이벤트: 4, x=650, y=38
+2025-05-07 18:57:35,230 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 18:57:35,423 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 18:57:35,437 - INFO - 디바이스 정보 수집 시작
+2025-05-07 18:57:35,437 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 18:57:35,437 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 18:57:35,440 - INFO - IP 주소: 218.38.137.28
+2025-05-07 18:57:35,440 - INFO - 메모리 정보: svmem(total=8589934592, available=2075230208, percent=75.8, used=3307831296, free=63062016, active=2029158400, inactive=2006761472, wired=1278672896)
+2025-05-07 18:57:35,454 - INFO - 모델 정보: Mac14,15
+2025-05-07 18:57:35,454 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 18:57:35,461 - INFO - 프로세서 정보: Apple M2
+2025-05-07 18:57:35,461 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 18:57:35'}
+2025-05-07 18:57:35,884 - INFO - 시리얼 등록 성공, GitHub 백업 시작
+2025-05-07 18:57:36,092 - WARNING - GitHub 설정 실패: 404
+2025-05-07 18:57:37,413 - INFO - GitHub 백업 성공
+2025-05-07 18:57:37,421 - INFO - GitHub 백업 결과: GitHub 백업이 완료되었습니다.
+2025-05-07 18:57:37,425 - INFO - 서버 등록 성공: {'success': True, 'message': '시리얼이 등록되었습니다.'}
+2025-05-07 18:57:38,922 - INFO - GitHub 백업 성공
+2025-05-07 18:59:00,825 - INFO - 디바이스 정보 수집 시작
+2025-05-07 18:59:00,827 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 18:59:00,828 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 18:59:00,832 - INFO - IP 주소: 218.38.137.28
+2025-05-07 18:59:00,832 - INFO - 메모리 정보: svmem(total=8589934592, available=2160607232, percent=74.8, used=3365437440, free=68845568, active=2087878656, inactive=2089762816, wired=1277558784)
+2025-05-07 18:59:00,845 - INFO - 모델 정보: Mac14,15
+2025-05-07 18:59:00,845 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 18:59:00,852 - INFO - 프로세서 정보: Apple M2
+2025-05-07 18:59:00,852 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 18:59:00'}
+2025-05-07 18:59:01,281 - INFO - 시리얼 등록 성공, GitHub 백업 시작
+2025-05-07 18:59:01,491 - WARNING - GitHub 설정 실패: 404
+2025-05-07 18:59:02,822 - INFO - GitHub 백업 성공
+2025-05-07 18:59:02,828 - INFO - GitHub 백업 결과: GitHub 백업이 완료되었습니다.
+2025-05-07 18:59:02,831 - INFO - 서버 등록 성공: {'success': True, 'message': '시리얼이 등록되었습니다.'}
+2025-05-07 18:59:04,560 - INFO - GitHub 백업 성공
+2025-05-07 18:59:18,183 - ERROR - 만료일 수정 오류: 'NoneType' object is not subscriptable
+2025-05-07 18:59:34,593 - ERROR - 만료일 수정 오류: 'NoneType' object is not subscriptable
+2025-05-07 18:59:40,607 - ERROR - 만료일 수정 오류: Item I022 not found
+2025-05-07 18:59:53,666 - ERROR - 만료일 수정 오류: 'NoneType' object is not subscriptable
+2025-05-07 19:00:06,609 - ERROR - 블랙리스트 설정 오류: 서버 응답 오류: 405
+2025-05-07 19:00:29,820 - INFO - 디바이스 정보 수집 시작
+2025-05-07 19:00:29,822 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 19:00:29,822 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 19:00:29,826 - INFO - IP 주소: 218.38.137.28
+2025-05-07 19:00:29,826 - INFO - 메모리 정보: svmem(total=8589934592, available=2137047040, percent=75.1, used=3367256064, free=60997632, active=2089582592, inactive=2075820032, wired=1277673472)
+2025-05-07 19:00:29,853 - INFO - 모델 정보: Mac14,15
+2025-05-07 19:00:29,853 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 19:00:29,861 - INFO - 프로세서 정보: Apple M2
+2025-05-07 19:00:29,861 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 19:00:29'}
+2025-05-07 19:00:30,129 - INFO - 시리얼 등록 성공, GitHub 백업 시작
+2025-05-07 19:00:30,339 - WARNING - GitHub 설정 실패: 404
+2025-05-07 19:00:31,700 - INFO - GitHub 백업 성공
+2025-05-07 19:00:31,707 - INFO - GitHub 백업 결과: GitHub 백업이 완료되었습니다.
+2025-05-07 19:00:31,710 - INFO - 서버 등록 성공: {'success': True, 'message': '시리얼이 등록되었습니다.'}
+2025-05-07 19:00:33,339 - INFO - GitHub 백업 성공
+2025-05-07 19:10:26,945 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 19:10:27,188 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 19:10:27,190 - INFO - 데이터베이스 초기화 완료
+2025-05-07 19:10:27,197 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 19:10:27,197 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 19:10:27,198 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 19:10:27,199 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 19:10:27,199 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 19:10:38,933 - INFO - 컨텍스트 메뉴 이벤트: 4, x=657, y=109
+2025-05-07 19:12:03,782 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 19:12:08,951 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 19:12:12,093 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 19:12:12,265 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 19:12:16,214 - INFO - 원격 서버 설정 로드: https://aimaster-serial.onrender.com
+2025-05-07 19:12:16,418 - INFO - 원격 서버 설정 저장 완료
+2025-05-07 19:12:16,429 - INFO - 디바이스 정보 수집 시작
+2025-05-07 19:12:16,429 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 19:12:16,429 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 19:12:16,436 - INFO - IP 주소: 218.38.137.28
+2025-05-07 19:12:16,437 - INFO - 메모리 정보: svmem(total=8589934592, available=2126938112, percent=75.2, used=3353739264, free=59424768, active=2075983872, inactive=2061418496, wired=1277755392)
+2025-05-07 19:12:16,458 - INFO - 모델 정보: Mac14,15
+2025-05-07 19:12:16,458 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 19:12:16,467 - INFO - 프로세서 정보: Apple M2
+2025-05-07 19:12:16,467 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 19:12:16'}
+2025-05-07 19:12:16,666 - INFO - 시리얼 등록 성공, GitHub 백업 시작
+2025-05-07 19:12:16,866 - WARNING - GitHub 설정 실패: 404
+2025-05-07 19:12:18,437 - INFO - GitHub 백업 성공
+2025-05-07 19:12:18,445 - INFO - GitHub 백업 결과: GitHub 백업이 완료되었습니다.
+2025-05-07 19:12:18,449 - INFO - 서버 등록 성공: {'success': True, 'message': '시리얼이 등록되었습니다.'}
+2025-05-07 19:12:19,796 - INFO - GitHub 백업 성공
+2025-05-07 22:56:53,053 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 22:56:53,329 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 22:56:53,330 - INFO - 데이터베이스 초기화 완료
+2025-05-07 22:56:53,340 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 22:56:53,340 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 22:56:53,340 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 22:56:53,341 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 22:56:53,341 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 22:56:53,733 - ERROR - 서버 응답 실패: 503
+2025-05-07 22:58:03,832 - ERROR - 서버 응답 실패: 503
+2025-05-07 22:58:13,073 - ERROR - 서버 응답 실패: 503
+2025-05-07 22:58:15,712 - ERROR - 서버 응답 실패: 503
+2025-05-07 22:58:18,612 - ERROR - 서버 응답 실패: 503
+2025-05-07 22:58:44,992 - ERROR - 서버 응답 실패: 503
+2025-05-07 22:58:50,508 - INFO - 디바이스 정보 수집 시작
+2025-05-07 22:58:50,509 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 22:58:50,509 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 22:58:50,551 - INFO - IP 주소: 218.38.137.28
+2025-05-07 22:58:50,551 - INFO - 메모리 정보: svmem(total=8589934592, available=2307424256, percent=73.1, used=3514073088, free=68206592, active=2245509120, inactive=2227961856, wired=1268563968)
+2025-05-07 22:58:50,582 - INFO - 모델 정보: Mac14,15
+2025-05-07 22:58:50,582 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 22:58:50,591 - INFO - 프로세서 정보: Apple M2
+2025-05-07 22:58:50,592 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 22:58:50'}
+2025-05-07 22:58:50,781 - ERROR - 시리얼 생성 오류: 서버 응답 오류: 503
+
+2025-05-07 22:58:59,012 - ERROR - 서버 응답 실패: 503
+2025-05-07 23:02:44,625 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 23:02:44,869 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 23:02:44,872 - INFO - 데이터베이스 초기화 완료
+2025-05-07 23:02:44,879 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 23:02:44,879 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 23:02:44,880 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 23:02:44,880 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 23:02:44,880 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 23:03:05,953 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 23:03:37,614 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 23:03:37,843 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 23:03:37,844 - INFO - 데이터베이스 초기화 완료
+2025-05-07 23:03:37,852 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 23:03:37,852 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 23:03:37,852 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 23:03:37,853 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 23:03:37,853 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-07 23:03:38,179 - ERROR - 서버 응답 실패: 502
+2025-05-07 23:04:00,607 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 23:04:26,173 - INFO - 디바이스 정보 수집 시작
+2025-05-07 23:04:26,174 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 23:04:26,174 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-07 23:04:26,178 - INFO - IP 주소: 218.38.137.28
+2025-05-07 23:04:26,178 - INFO - 메모리 정보: svmem(total=8589934592, available=2209841152, percent=74.3, used=3470180352, free=79134720, active=2144567296, inactive=2130362368, wired=1325613056)
+2025-05-07 23:04:26,202 - INFO - 모델 정보: Mac14,15
+2025-05-07 23:04:26,202 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-07 23:04:26,213 - INFO - 프로세서 정보: Apple M2
+2025-05-07 23:04:26,213 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-07 23:04:26'}
+2025-05-07 23:04:40,923 - INFO - 컨텍스트 메뉴 이벤트: 4, x=648, y=38
+2025-05-07 23:04:58,863 - INFO - 컨텍스트 메뉴 이벤트: 4, x=648, y=58
+2025-05-07 23:05:22,216 - INFO - 컨텍스트 메뉴 이벤트: 4, x=678, y=118
+2025-05-07 23:22:29,160 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-07 23:22:29,412 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-07 23:22:29,414 - INFO - 데이터베이스 초기화 완료
+2025-05-07 23:22:29,423 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-07 23:22:29,423 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 23:22:29,423 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-07 23:22:29,424 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-07 23:22:29,424 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 00:00:32,751 - INFO - 시리얼 ea570173-4c43-428e-9ce8-d2ac941ba4ba 상태 업데이트: 만료됨
+2025-05-08 08:53:54,579 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 08:54:13,797 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 08:54:13,803 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 08:54:13,806 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 14:27:07,162 - INFO - 컨텍스트 메뉴 이벤트: 4, x=940, y=61
+2025-05-08 14:28:36,208 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1367, y=114
+2025-05-08 14:28:44,479 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1415, y=117
+2025-05-08 15:57:08,519 - INFO - 컨텍스트 메뉴 이벤트: 4, x=668, y=117
+2025-05-08 15:57:59,355 - INFO - 컨텍스트 메뉴 이벤트: 4, x=694, y=77
+2025-05-08 16:01:12,420 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 16:01:12,650 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 16:01:12,651 - INFO - 데이터베이스 초기화 완료
+2025-05-08 16:01:12,659 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 16:01:12,659 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:01:12,660 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 16:01:12,660 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:01:12,661 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 16:01:18,071 - ERROR - 서버 응답 실패: 500
+2025-05-08 16:01:35,199 - ERROR - 서버 응답 실패: 502
+2025-05-08 16:02:04,021 - ERROR - 서버 응답 실패: 502
+2025-05-08 16:02:11,687 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 16:02:11,833 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 16:02:11,834 - INFO - 데이터베이스 초기화 완료
+2025-05-08 16:02:11,840 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 16:02:11,840 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:02:11,840 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 16:02:11,841 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:02:11,841 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 16:02:17,011 - ERROR - 서버 응답 실패: 500
+2025-05-08 16:02:39,112 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 16:02:39,267 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 16:02:39,268 - INFO - 데이터베이스 초기화 완료
+2025-05-08 16:02:39,274 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 16:02:39,274 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:02:39,274 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 16:02:39,275 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:02:39,275 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 16:02:39,500 - ERROR - 서버 응답 실패: 502
+2025-05-08 16:02:49,340 - ERROR - 서버 응답 실패: 502
+2025-05-08 16:02:52,349 - ERROR - 서버 응답 실패: 502
+2025-05-08 16:04:33,160 - INFO - 컨텍스트 메뉴 이벤트: 4, x=661, y=77
+2025-05-08 16:04:49,511 - INFO - 컨텍스트 메뉴 이벤트: 4, x=849, y=98
+2025-05-08 16:07:23,550 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 16:07:23,782 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 16:07:23,784 - INFO - 데이터베이스 초기화 완료
+2025-05-08 16:07:23,792 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 16:07:23,792 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:07:23,792 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 16:07:23,793 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:07:23,793 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 16:07:47,058 - INFO - 컨텍스트 메뉴 이벤트: 4, x=675, y=94
+2025-05-08 16:08:59,546 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 16:08:59,719 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 16:08:59,719 - INFO - 데이터베이스 초기화 완료
+2025-05-08 16:08:59,726 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 16:08:59,726 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:08:59,727 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 16:08:59,727 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:08:59,728 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 16:09:05,010 - ERROR - 서버 응답 실패: 500
+2025-05-08 16:09:32,690 - ERROR - 서버 응답 실패: 500
+2025-05-08 16:10:20,490 - INFO - 컨텍스트 메뉴 이벤트: 4, x=657, y=98
+2025-05-08 16:11:24,896 - INFO - 컨텍스트 메뉴 이벤트: 4, x=913, y=82
+2025-05-08 16:15:34,705 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 16:15:34,873 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 16:15:34,873 - INFO - 데이터베이스 초기화 완료
+2025-05-08 16:15:34,880 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 16:15:34,880 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:15:34,880 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 16:15:34,881 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 16:15:34,881 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 17:34:03,284 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 17:34:03,510 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 17:34:03,512 - INFO - 데이터베이스 초기화 완료
+2025-05-08 17:34:03,519 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 17:34:03,519 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 17:34:03,520 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 17:34:03,520 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 17:34:03,521 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 18:30:04,273 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 18:30:04,527 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 18:30:04,529 - INFO - 데이터베이스 초기화 완료
+2025-05-08 18:30:04,536 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 18:30:04,536 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 18:30:04,537 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 18:30:04,537 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 18:30:04,537 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 18:30:26,963 - INFO - 컨텍스트 메뉴 이벤트: 4, x=689, y=40
+2025-05-08 18:31:23,531 - INFO - 컨텍스트 메뉴 이벤트: 4, x=485, y=92
+2025-05-08 18:32:52,771 - INFO - 컨텍스트 메뉴 이벤트: 4, x=225, y=39
+2025-05-08 18:33:07,749 - INFO - 컨텍스트 메뉴 이벤트: 4, x=243, y=119
+2025-05-08 18:33:24,638 - INFO - 컨텍스트 메뉴 이벤트: 4, x=244, y=158
+2025-05-08 18:34:30,276 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=57
+2025-05-08 18:35:07,362 - INFO - 컨텍스트 메뉴 이벤트: 4, x=205, y=93
+2025-05-08 18:35:11,058 - INFO - 컨텍스트 메뉴 이벤트: 4, x=212, y=95
+2025-05-08 18:35:23,456 - INFO - 컨텍스트 메뉴 이벤트: 4, x=216, y=74
+2025-05-08 18:40:03,500 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 18:40:03,715 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 18:40:03,715 - INFO - 데이터베이스 초기화 완료
+2025-05-08 18:40:03,722 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 18:40:03,722 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 18:40:03,723 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 18:40:03,723 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 18:40:03,724 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-08 18:49:52,588 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-08 18:49:52,744 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-08 18:49:52,744 - INFO - 데이터베이스 초기화 완료
+2025-05-08 18:49:52,751 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-08 18:49:52,751 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 18:49:52,751 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-08 18:49:52,752 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-08 18:49:52,752 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 10:49:58,365 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 10:49:58,683 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 10:49:58,685 - INFO - 데이터베이스 초기화 완료
+2025-05-09 10:49:58,696 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 10:49:58,696 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 10:49:58,697 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 10:49:58,698 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 10:49:58,698 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 10:51:54,533 - INFO - 컨텍스트 메뉴 이벤트: 4, x=683, y=37
+2025-05-09 10:52:05,217 - INFO - 컨텍스트 메뉴 이벤트: 4, x=877, y=60
+2025-05-09 10:55:22,461 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 10:55:22,676 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 10:55:22,676 - INFO - 데이터베이스 초기화 완료
+2025-05-09 10:55:22,683 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 10:55:22,683 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 10:55:22,683 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 10:55:22,684 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 10:55:22,684 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:17:29,755 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 14:17:29,935 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 14:17:29,937 - INFO - 데이터베이스 초기화 완료
+2025-05-09 14:17:29,945 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 14:17:29,945 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:17:29,945 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 14:17:29,946 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:17:29,946 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:22:47,126 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 14:22:47,309 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 14:22:47,311 - INFO - 데이터베이스 초기화 완료
+2025-05-09 14:22:47,318 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 14:22:47,318 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:22:47,319 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 14:22:47,320 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:22:47,320 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:34:03,800 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 14:34:03,983 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 14:34:03,985 - INFO - 데이터베이스 초기화 완료
+2025-05-09 14:34:03,992 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 14:34:03,992 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:34:03,993 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 14:34:03,994 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:34:03,994 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:38:43,466 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 14:38:43,683 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 14:38:43,684 - INFO - 데이터베이스 초기화 완료
+2025-05-09 14:38:43,691 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 14:38:43,691 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:38:43,692 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 14:38:43,693 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:38:43,693 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:39:46,480 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 14:39:46,677 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 14:39:46,679 - INFO - 데이터베이스 초기화 완료
+2025-05-09 14:39:46,686 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 14:39:46,686 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:39:46,687 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 14:39:46,687 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:39:46,688 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:42:17,025 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 14:42:17,194 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 14:42:17,194 - INFO - 데이터베이스 초기화 완료
+2025-05-09 14:42:17,202 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 14:42:17,202 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:42:17,202 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 14:42:17,203 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:42:17,203 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:42:38,257 - INFO - 컨텍스트 메뉴 이벤트: 4, x=639, y=75
+2025-05-09 14:45:03,135 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 14:45:03,316 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 14:45:03,317 - INFO - 데이터베이스 초기화 완료
+2025-05-09 14:45:03,324 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 14:45:03,324 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:45:03,324 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 14:45:03,325 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:45:03,325 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:45:17,430 - INFO - 컨텍스트 메뉴 이벤트: 4, x=485, y=80
+2025-05-09 14:46:49,545 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 14:46:49,711 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 14:46:49,711 - INFO - 데이터베이스 초기화 완료
+2025-05-09 14:46:49,718 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 14:46:49,718 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:46:49,719 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 14:46:49,720 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:46:49,720 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:48:06,022 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 14:48:06,193 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 14:48:06,194 - INFO - 데이터베이스 초기화 완료
+2025-05-09 14:48:06,201 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 14:48:06,201 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:48:06,201 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 14:48:06,202 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 14:48:06,202 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 14:48:16,583 - INFO - 컨텍스트 메뉴 이벤트: 4, x=336, y=161
+2025-05-09 14:49:04,843 - INFO - 컨텍스트 메뉴 이벤트: 4, x=481, y=155
+2025-05-09 14:49:19,538 - INFO - 컨텍스트 메뉴 이벤트: 4, x=648, y=157
+2025-05-09 14:49:53,316 - INFO - 컨텍스트 메뉴 이벤트: 4, x=244, y=157
+2025-05-09 14:49:58,222 - INFO - 컨텍스트 메뉴 이벤트: 4, x=218, y=158
+2025-05-09 14:51:20,068 - INFO - 컨텍스트 메뉴 이벤트: 4, x=646, y=158
+2025-05-09 14:52:11,688 - INFO - 컨텍스트 메뉴 이벤트: 4, x=610, y=157
+2025-05-09 14:52:35,363 - ERROR - 만료일 수정 오류: 서버 응답 오류: 502
+2025-05-09 14:53:12,593 - INFO - 시리얼 63d02aef-8096-449d-a6b3-0d439031a55e 상태 업데이트: 사용중
+2025-05-09 14:53:35,480 - INFO - 컨텍스트 메뉴 이벤트: 4, x=88, y=156
+2025-05-09 15:30:36,997 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 15:30:37,341 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 15:30:37,343 - INFO - 데이터베이스 초기화 완료
+2025-05-09 15:30:37,351 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 15:30:37,351 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 15:30:37,351 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 15:30:37,352 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 15:30:37,352 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 15:31:44,674 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1213, y=156
+2025-05-09 15:33:37,222 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 15:33:37,395 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 15:33:37,397 - INFO - 데이터베이스 초기화 완료
+2025-05-09 15:33:37,404 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 15:33:37,404 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 15:33:37,404 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 15:33:37,405 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 15:33:37,405 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 15:33:37,614 - ERROR - 서버 응답 실패: 502
+2025-05-09 15:33:56,993 - ERROR - 서버 응답 실패: 502
+2025-05-09 15:34:09,514 - ERROR - 서버 응답 실패: 502
+2025-05-09 15:34:33,680 - INFO - 컨텍스트 메뉴 이벤트: 4, x=216, y=119
+2025-05-09 15:35:14,364 - INFO - 컨텍스트 메뉴 이벤트: 4, x=156, y=97
+2025-05-09 15:35:29,132 - INFO - 컨텍스트 메뉴 이벤트: 4, x=172, y=99
+2025-05-09 15:36:30,468 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 15:36:30,653 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 15:36:30,653 - INFO - 데이터베이스 초기화 완료
+2025-05-09 15:36:30,660 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 15:36:30,660 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 15:36:30,661 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 15:36:30,661 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 15:36:30,662 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 15:36:36,253 - ERROR - 서버 응답 실패: 502
+2025-05-09 15:37:23,046 - INFO - 컨텍스트 메뉴 이벤트: 4, x=237, y=122
+2025-05-09 15:37:25,835 - INFO - 컨텍스트 메뉴 이벤트: 4, x=216, y=118
+2025-05-09 15:37:57,365 - INFO - 컨텍스트 메뉴 이벤트: 4, x=194, y=158
+2025-05-09 16:29:27,532 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 16:29:27,742 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 16:29:27,745 - INFO - 데이터베이스 초기화 완료
+2025-05-09 16:29:27,754 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 16:29:27,754 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 16:29:27,755 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 16:29:27,756 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 16:29:27,756 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 17:22:25,612 - INFO - 컨텍스트 메뉴 이벤트: 4, x=687, y=199
+2025-05-09 17:22:42,376 - INFO - 컨텍스트 메뉴 이벤트: 4, x=614, y=163
+2025-05-09 17:22:49,021 - ERROR - 서버 응답 실패: 502
+2025-05-09 17:23:20,686 - INFO - 컨텍스트 메뉴 이벤트: 4, x=764, y=158
+2025-05-09 17:25:13,708 - INFO - 컨텍스트 메뉴 이벤트: 4, x=664, y=117
+2025-05-09 17:25:30,184 - INFO - 컨텍스트 메뉴 이벤트: 4, x=223, y=115
+2025-05-09 17:25:34,114 - INFO - 컨텍스트 메뉴 이벤트: 4, x=607, y=118
+2025-05-09 17:25:56,341 - INFO - 컨텍스트 메뉴 이벤트: 4, x=234, y=121
+2025-05-09 19:22:13,415 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 19:22:13,700 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 19:22:13,702 - INFO - 데이터베이스 초기화 완료
+2025-05-09 19:22:13,711 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 19:22:13,711 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 19:22:13,712 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 19:22:13,713 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 19:22:13,713 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 19:43:22,860 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 19:43:23,072 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 19:43:23,074 - INFO - 데이터베이스 초기화 완료
+2025-05-09 19:43:23,082 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 19:43:23,082 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 19:43:23,082 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 19:43:23,083 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 19:43:23,083 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-09 19:43:51,963 - INFO - 컨텍스트 메뉴 이벤트: 4, x=208, y=77
+2025-05-09 19:45:57,754 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-09 19:45:57,913 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-09 19:45:57,913 - INFO - 데이터베이스 초기화 완료
+2025-05-09 19:45:57,920 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-09 19:45:57,920 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 19:45:57,920 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-09 19:45:57,921 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-09 19:45:57,921 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-10 12:40:10,806 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-10 12:40:10,998 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-10 12:40:10,999 - INFO - 데이터베이스 초기화 완료
+2025-05-10 12:40:11,010 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-10 12:40:11,010 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-10 12:40:11,010 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-10 12:40:11,011 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-10 12:40:11,011 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-10 12:53:47,148 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-10 12:53:47,314 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-10 12:53:47,314 - INFO - 데이터베이스 초기화 완료
+2025-05-10 12:53:47,322 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-10 12:53:47,322 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-10 12:53:47,322 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-10 12:53:47,323 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-10 12:53:47,323 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-10 12:55:22,174 - INFO - 컨텍스트 메뉴 이벤트: 4, x=683, y=58
+2025-05-10 12:55:50,847 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-10 12:55:51,075 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-10 12:55:51,075 - INFO - 데이터베이스 초기화 완료
+2025-05-10 12:55:51,082 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-10 12:55:51,082 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-10 12:55:51,082 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-10 12:55:51,083 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-10 12:55:51,083 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-10 12:56:13,069 - INFO - 컨텍스트 메뉴 이벤트: 4, x=634, y=98
+2025-05-10 13:15:48,191 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-10 13:15:48,525 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-10 13:15:48,526 - INFO - 데이터베이스 초기화 완료
+2025-05-10 13:15:48,534 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-10 13:15:48,534 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-10 13:15:48,534 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-10 13:15:48,535 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-10 13:15:48,535 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-10 13:16:44,046 - INFO - 컨텍스트 메뉴 이벤트: 4, x=664, y=55
+2025-05-11 09:09:17,381 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-11 09:09:17,583 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-11 09:09:17,585 - INFO - 데이터베이스 초기화 완료
+2025-05-11 09:09:17,595 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-11 09:09:17,595 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-11 09:09:17,596 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-11 09:09:17,597 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-11 09:09:17,597 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-11 09:14:03,691 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-11 09:14:03,892 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-11 09:14:03,892 - INFO - 데이터베이스 초기화 완료
+2025-05-11 09:14:03,899 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-11 09:14:03,899 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-11 09:14:03,900 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-11 09:14:03,900 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-11 09:14:03,901 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-11 10:35:05,337 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-11 10:35:05,833 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-11 10:35:05,835 - INFO - 데이터베이스 초기화 완료
+2025-05-11 10:35:05,845 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-11 10:35:05,845 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-11 10:35:05,846 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-11 10:35:05,846 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-11 10:35:05,846 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-11 15:29:34,114 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-11 15:29:34,351 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-11 15:29:34,353 - INFO - 데이터베이스 초기화 완료
+2025-05-11 15:29:34,365 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blog_manager.log
+2025-05-11 15:29:34,365 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-11 15:29:34,365 - INFO - 블로그 자동화 데이터베이스 초기화 완료
+2025-05-11 15:29:34,366 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/blogs.db
+2025-05-11 15:29:34,366 - INFO - 블로그자동화관리 모듈 로드 성공
+2025-05-11 15:30:17,793 - INFO - 컨텍스트 메뉴 이벤트: 4, x=595, y=117
+2025-05-11 15:30:40,096 - INFO - 컨텍스트 메뉴 이벤트: 4, x=670, y=98
+2025-05-11 15:30:56,122 - INFO - 컨텍스트 메뉴 이벤트: 4, x=681, y=57
+2025-05-12 12:36:36,385 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-12 12:46:45,095 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-12 12:46:45,386 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-12 12:46:45,388 - INFO - 데이터베이스 초기화 완료
+2025-05-12 12:49:33,475 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-12 12:49:33,692 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-12 12:49:33,692 - INFO - 데이터베이스 초기화 완료
+2025-05-12 12:58:10,415 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-12 12:58:10,710 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-12 12:58:10,712 - INFO - 데이터베이스 초기화 완료
+2025-05-12 13:12:44,248 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_manager.log
+2025-05-12 13:12:44,411 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-05-12 13:12:44,411 - INFO - 데이터베이스 초기화 완료
+2025-05-12 13:14:21,867 - INFO - 컨텍스트 메뉴 이벤트: 4, x=661, y=116

@@ -1,0 +1,13 @@
+2025-04-30 17:34:00,706 - INFO - 시스템 정보: Darwin 24.3.0
+2025-04-30 17:34:00,706 - INFO - 파이썬 버전: 3.12.5 (v3.12.5:ff3bc82f7c9, Aug  7 2024, 05:32:06) [Clang 13.0.0 (clang-1300.0.29.30)]
+2025-04-30 17:34:00,706 - INFO - 현재 디렉토리: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리
+2025-04-30 17:34:00,706 - INFO - 디렉토리 내 파일: ['serial_validator.py', 'create_icon.py', 'icon.icns', '.DS_Store', 'mac_serial_app.spec', 'dist', 'mac_app_wrapper.py', 'open_app.command', 'release', 'run_serial_manager.sh', 'run_app.command', 'mac_wrapper.log', 'run_mac_app.py', 'serial_manager.log', 'run_directly.command', 'serials.db', 'icon.iconset', 'venv', 'build', '시리얼관리.spec', 'backups', 'backup_archives']
+2025-04-30 17:34:00,706 - INFO - serial_validator 모듈 임포트 시도...
+2025-04-30 17:34:01,386 - ERROR - 오류 발생: No module named 'pandas'
+Traceback (most recent call last):
+  File "/Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/run_mac_app.py", line 37, in <module>
+    from serial_validator import SerialManager
+  File "/Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_validator.py", line 21, in <module>
+    import pandas as pd # type: ignore
+    ^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'pandas'
