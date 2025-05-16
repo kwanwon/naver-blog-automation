@@ -1,0 +1,9 @@
+{
+  "네이버블로그자동화": {
+    "name": "네이버 블로그 자동화",
+    "path": "/Users/gm2hapkido/Desktop/블로그자동화/blog_writer_app.py",
+    "version": "1.0.0",
+    "icon": "blog_icon.png",
+    "description": "네이버 블로그 글 자동 생성 및 포스팅 도구"
+  }
+}

@@ -25,6 +25,16 @@ class NaverBlogPostFinisher:
     def __init__(self, driver, settings):
         self.driver = driver
         self.settings = settings
+        # 디버깅 정보 추가
+        print("\n===== NaverBlogPostFinisher 초기화 =====")
+        print(f"설정 객체 종류: {type(settings)}")
+        print(f"설정 객체 키: {list(settings.keys() if isinstance(settings, dict) else [])}")
+        if isinstance(settings, dict) and 'footer_message' in settings:
+            print(f"푸터 메시지(초기화): '{settings.get('footer_message', '없음')}'")
+            print(f"푸터 메시지 길이: {len(settings.get('footer_message', ''))}")
+        else:
+            print("설정 객체에 'footer_message' 키가 없거나 설정 객체가 딕셔너리가 아닙니다.")
+        print("=====================================\n")
         
     def add_footer(self):
         """
@@ -34,7 +44,17 @@ class NaverBlogPostFinisher:
         3. 도장 위치 추가
         """
         try:
-            print("\n=== 푸터 추가 시작 ===")
+            print("\n===== 푸터 추가 시작 (상세 로그) =====")
+            print(f"설정 객체 종류: {type(self.settings)}")
+            print(f"설정 객체 키: {list(self.settings.keys() if isinstance(self.settings, dict) else [])}")
+            if isinstance(self.settings, dict):
+                for key in ['dojang_name', 'footer_message', 'address']:
+                    if key in self.settings:
+                        print(f"{key}: '{self.settings.get(key, '없음')}'")
+                    else:
+                        print(f"{key}: 설정에 없음")
+            print("=====================================\n")
+            
             success = True
             
             # 줄바꿈 3번
@@ -53,8 +73,38 @@ class NaverBlogPostFinisher:
             dojang_name = self.settings.get('dojang_name', '라이온태권도')
             print(f"푸터에 사용할 도장 이름: {dojang_name}")
             
+            # 도장 상호 확인 - 설정에 없을 경우 기본값 사용
+            dojang_business_name = self.settings.get('dojang_business_name', '')
+            if not dojang_business_name:  # 도장 상호가 없으면 도장 이름을 대신 사용
+                dojang_business_name = dojang_name
+            print(f"푸터에 사용할 도장 상호: {dojang_business_name}")
+            
+            # 푸터 메시지 확인 - 설정에 직접 접근
+            footer_message = ""
+            if isinstance(self.settings, dict) and 'footer_message' in self.settings:
+                footer_message = self.settings['footer_message']
+                if footer_message is None:
+                    footer_message = ""
+            
+            print(f"푸터에 사용할 메시지 (원본): '{footer_message}'")
+            print(f"footer_message 타입: {type(footer_message)}")
+            print(f"footer_message 길이: {len(footer_message)}")
+            print(f"footer_message.strip() 길이: {len(footer_message.strip())}")
+            print(f"is empty after strip: {not footer_message.strip()}")
+            
+            # 디버깅: settings 객체에서 footer_message 직접 확인
+            print(f"settings에서 직접 확인: '{self.settings.get('footer_message', '<없음>')}'")
+            
             # 기본 텍스트 추가
-            footer_text = f"이상\n바른인성을 가진 인재를 기르는\n{dojang_name}\n이었습니다"
+            if footer_message and footer_message.strip():
+                footer_text = f"이상\n{footer_message}\n{dojang_business_name}\n이었습니다"
+                print(f"사용할 푸터 텍스트 (메시지 있음): '{footer_text}'")
+            else:
+                footer_text = f"이상\n이었습니다"
+                print(f"사용할 푸터 텍스트 (메시지 없음): '{footer_text}'")
+                
+            print("푸터 텍스트 삽입 시작...")
+            
             for line in footer_text.split('\n'):
                 actions.send_keys(line).perform()
                 time.sleep(0.2)
@@ -1310,6 +1360,10 @@ class NaverBlogPostFinisher:
                 """
                 search_input_found = self.driver.execute_script(script)
                 print(f"스크립트 실행 결과: {search_input_found}")
+                
+            if not search_input_found:
+                print("검색 입력창을 찾을 수 없습니다.")
+                return False
             
             # 3. 검색 결과 대기
             time.sleep(3)
@@ -1373,38 +1427,152 @@ class NaverBlogPostFinisher:
                     confirm_button = WebDriverWait(self.driver, 5).until(
                         EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
                     )
+                    print(f"확인 버튼 발견: {selector}, 클릭 시도...")
+                    
+                    # 버튼에 대한 정보 출력
+                    button_info = self.driver.execute_script("""
+                    var btn = arguments[0];
+                    return {
+                        text: btn.innerText,
+                        class: btn.className,
+                        isVisible: btn.offsetWidth > 0 && btn.offsetHeight > 0,
+                        attributes: Array.from(btn.attributes).map(attr => attr.name + '=' + attr.value).join(', ')
+                    };
+                    """, confirm_button)
+                    print(f"버튼 정보: {button_info}")
+                    
+                    # 직접 클릭 시도
                     confirm_button.click()
-                    confirmation_clicked = True
-                    print("위치 등록 확인 버튼 클릭 성공")
+                    print(f"확인 버튼 클릭 성공: {selector}")
+                    confirm_button_found = True
+                    time.sleep(2)  # 클릭 후 더 오래 대기
                     break
                 except Exception as e:
-                    print(f"확인 버튼 선택자 {selector} 실패: {str(e)}")
+                    print(f"선택자 {selector} 시도 중 오류: {str(e)}")
             
-            if not confirmation_clicked:
-                print("확인 버튼을 찾을 수 없습니다. 스크립트로 시도합니다.")
-                # 스크립트로 확인 버튼 클릭 시도
+            # JavaScript로 시도 - 더 자세한 스크립트로 개선
+            if not confirm_button_found:
+                print("JavaScript로 확인 버튼 찾기 시도...")
                 script = """
-                function clickConfirmButton() {
+                function findAndClickConfirmButton() {
+                    console.log('확인 버튼 찾기 시작...');
+                    
+                    // 스크린샷에서 확인된 정확한 버튼 찾기
+                    const confirmBtnExact = document.querySelector('button.se-popup-button.se-popup-button-confirm, button[data-log="pog.ok"]');
+                    if (confirmBtnExact) {
+                        console.log('정확한 확인 버튼 발견!');
+                        confirmBtnExact.click();
+                        return true;
+                    }
+                    
+                    // 버튼 텍스트나 클래스로 찾기
                     const buttons = document.querySelectorAll('button');
+                    
+                    // 모든 버튼 정보 로깅
+                    console.log('페이지 내 버튼 정보:');
+                    buttons.forEach((btn, idx) => {
+                        console.log(`버튼 ${idx}:`, btn.className, btn.innerText, btn.title, 
+                                     btn.getAttribute('data-log'), btn.getAttribute('data-classname'));
+                    });
+                    
+                    // '확인' 텍스트가 있는 버튼 찾기
                     for (const btn of buttons) {
-                        const text = btn.textContent.toLowerCase();
-                        if (text.includes('등록') || text.includes('확인') || text.includes('적용') ||
-                            btn.className.includes('save') || btn.className.includes('confirm') || btn.className.includes('apply')) {
+                        if (btn.innerText && btn.innerText.trim() === '확인') {
+                            console.log('확인 텍스트 버튼 발견!');
                             btn.click();
                             return true;
                         }
                     }
+                    
+                    // 클래스명에 confirm이 포함된 버튼 찾기
+                    for (const btn of buttons) {
+                        if (btn.className && (btn.className.includes('confirm') || btn.className.includes('apply'))) {
+                            console.log('확인/적용 클래스 버튼 발견!');
+                            btn.click();
+                            return true;
+                        }
+                    }
+                    
+                    // 버튼 스타일 체크 시 녹색 또는 강조 버튼 찾기
+                    for (const btn of buttons) {
+                        const style = window.getComputedStyle(btn);
+                        if (style.backgroundColor.includes('green') || style.backgroundColor.includes('rgb(3, 199, 90)') || 
+                            style.color === 'rgb(3, 199, 90)') {
+                            console.log('녹색/강조 버튼 발견!');
+                            btn.click();
+                            return true;
+                        }
+                    }
+                    
+                    // '확인' 아이콘이 있는 버튼 찾기 (체크 마크 포함)
+                    const confirmIcons = document.querySelectorAll('button svg, button .check-icon, button .confirm-icon');
+                    if (confirmIcons.length > 0) {
+                        const parentButton = confirmIcons[0].closest('button');
+                        if (parentButton) {
+                            console.log('확인 아이콘 버튼 발견!');
+                            parentButton.click();
+                            return true;
+                        }
+                    }
+                    
+                    // 팝업 내부의 모든 버튼 시도 (마지막 수단)
+                    const popupButtons = document.querySelectorAll('.se-popup button, .se-layer button');
+                    if (popupButtons.length > 0) {
+                        console.log('팝업 내 마지막 버튼 시도');
+                        // 팝업의 마지막 버튼이 주로 확인 버튼임
+                        popupButtons[popupButtons.length - 1].click();
+                        return true;
+                    }
+                    
+                    console.log('확인 버튼을 찾을 수 없습니다.');
                     return false;
                 }
-                return clickConfirmButton();
+                return findAndClickConfirmButton();
                 """
-                confirmation_clicked = self.driver.execute_script(script)
-                print(f"스크립트 실행 결과: {confirmation_clicked}")
+                confirm_button_found = self.driver.execute_script(script)
+                print(f"JavaScript로 확인 버튼 찾기 결과: {confirm_button_found}")
             
-            # 위치 추가 완료 확인
-            time.sleep(3)
-            print("위치 정보 추가 완료")
-            return confirmation_clicked
+            # 마지막 시도: DOM 구조를 기반으로 가장 특정한 확인 버튼 위치 지정
+            if not confirm_button_found:
+                try:
+                    print("DOM 구조 분석을 통한 확인 버튼 찾기 시도...")
+                    # 스크린샷에서 확인된 구조로 시도
+                    script = """
+                    const popupContainer = document.querySelector('.se-popup-container');
+                    if (popupContainer) {
+                        const buttonContainer = popupContainer.querySelector('.se-popup-button-container');
+                        if (buttonContainer) {
+                            const confirmButton = buttonContainer.querySelector('button');
+                            if (confirmButton) {
+                                confirmButton.click();
+                                return true;
+                            }
+                        }
+                        
+                        // 직접 자식 버튼 시도
+                        const directButtons = popupContainer.querySelectorAll('button');
+                        if (directButtons.length > 0) {
+                            // 마지막 버튼이 확인 버튼일 가능성이 높음
+                            directButtons[directButtons.length - 1].click();
+                            return true;
+                        }
+                    }
+                    return false;
+                    """
+                    confirm_button_found = self.driver.execute_script(script)
+                    print(f"DOM 구조 분석을 통한 확인 버튼 찾기 결과: {confirm_button_found}")
+                except Exception as e:
+                    print(f"DOM 구조 분석 중 오류: {str(e)}")
+                
+                # Wait after confirming
+                time.sleep(2)  # 확인 버튼 클릭 후 충분한 대기 시간
+                
+                # 줄바꿈 추가
+                actions = ActionChains(self.driver)
+                actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+                time.sleep(0.5)
+                
+                print("==== 장소 정보 추가 완료 ====\n" if confirm_button_found else "==== 장소 정보 추가 시도 완료 ====\n")
             
         except Exception as e:
             print(f"위치 정보 추가 중 오류 발생: {str(e)}")

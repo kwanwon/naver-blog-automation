@@ -11,3 +11,29 @@ Traceback (most recent call last):
     import pandas as pd # type: ignore
     ^^^^^^^^^^^^^^^^^^^
 ModuleNotFoundError: No module named 'pandas'
+2025-05-12 16:12:26,343 - INFO - 시스템 정보: Darwin 24.4.0
+2025-05-12 16:12:26,344 - INFO - 파이썬 버전: 3.13.2 (main, Feb  4 2025, 14:51:09) [Clang 16.0.0 (clang-1600.0.26.6)]
+2025-05-12 16:12:26,344 - INFO - 현재 디렉토리: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리
+2025-05-12 16:12:26,344 - INFO - 디렉토리 내 파일: ['server_connection.py', 'serial_validator.py', 'blog_manager.log', 'create_icon.py', 'icon.icns', '.DS_Store', 'mac_serial_app.spec', 'serial_validator.py.backup', 'blogs.db', 'server', 'release', 'run_serial_manager.sh', '__pycache__', 'mac_wrapper.log', 'run_mac_app.py', 'run_blog_automation_manager.command', '시리얼관리_배포.spec', 'serial_manager.log', 'app_wrapper.log', 'serials.db', 'icon.iconset', 'remote_server.log', 'remote_config.py', 'venv', 'remote_config.json', '시리얼관리.spec', 'backups', 'run_app_with_remote_server.command', 'backup_archives']
+2025-05-12 16:12:26,344 - INFO - serial_validator 모듈 임포트 시도...
+2025-05-12 16:12:27,059 - ERROR - 오류 발생: No module named 'psutil'
+Traceback (most recent call last):
+  File "/Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/run_mac_app.py", line 55, in <module>
+    from serial_validator import SerialManager
+  File "/Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_validator.py", line 18, in <module>
+    import psutil # type: ignore
+    ^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'psutil'
+2025-05-12 16:13:50,047 - INFO - 시스템 정보: Darwin 24.4.0
+2025-05-12 16:13:50,047 - INFO - 파이썬 버전: 3.13.2 (main, Feb  4 2025, 14:51:09) [Clang 16.0.0 (clang-1600.0.26.6)]
+2025-05-12 16:13:50,047 - INFO - 현재 디렉토리: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리
+2025-05-12 16:13:50,047 - INFO - 디렉토리 내 파일: ['server_connection.py', 'serial_validator.py', 'blog_manager.log', 'create_icon.py', 'icon.icns', '.DS_Store', 'mac_serial_app.spec', 'serial_validator.py.backup', 'blogs.db', 'server', 'release', 'run_serial_manager.sh', '__pycache__', 'mac_wrapper.log', 'run_mac_app.py', 'run_blog_automation_manager.command', '시리얼관리_배포.spec', 'serial_manager.log', 'app_wrapper.log', 'serials.db', 'icon.iconset', 'remote_server.log', 'remote_config.py', 'venv', 'remote_config.json', '시리얼관리.spec', 'backups', 'run_app_with_remote_server.command', 'backup_archives']
+2025-05-12 16:13:50,047 - INFO - serial_validator 모듈 임포트 시도...
+2025-05-12 16:13:50,450 - ERROR - 오류 발생: No module named 'pandas'
+Traceback (most recent call last):
+  File "/Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/run_mac_app.py", line 55, in <module>
+    from serial_validator import SerialManager
+  File "/Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_validator.py", line 21, in <module>
+    import pandas as pd # type: ignore
+    ^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'pandas'

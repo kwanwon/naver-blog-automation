@@ -1145,3 +1145,62 @@ AttributeError: 'list' object has no attribute 'get'
 2025-05-12 13:12:44,411 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
 2025-05-12 13:12:44,411 - INFO - 데이터베이스 초기화 완료
 2025-05-12 13:14:21,867 - INFO - 컨텍스트 메뉴 이벤트: 4, x=661, y=116
+2025-05-12 16:18:16,363 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-12 16:18:16,692 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-12 16:18:16,694 - INFO - 데이터베이스 초기화 완료
+2025-05-12 16:18:59,187 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-12 16:18:59,344 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-12 16:18:59,346 - INFO - 데이터베이스 초기화 완료
+2025-05-12 16:23:07,773 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-12 16:23:07,924 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-12 16:23:07,924 - INFO - 데이터베이스 초기화 완료
+2025-05-12 16:25:48,679 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-12 16:25:48,839 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-12 16:25:48,841 - INFO - 데이터베이스 초기화 완료
+2025-05-12 16:27:24,989 - INFO - 디바이스 정보 수집 시작
+2025-05-12 16:27:24,990 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-12 16:27:24,990 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-12 16:27:25,044 - INFO - IP 주소: 218.38.137.28
+2025-05-12 16:27:25,044 - INFO - 메모리 정보: svmem(total=8589934592, available=2196176896, percent=74.4, used=3392995328, free=71892992, active=2137260032, inactive=2110193664, wired=1255735296)
+2025-05-12 16:27:25,063 - INFO - 모델 정보: Mac14,15
+2025-05-12 16:27:25,063 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-12 16:27:25,070 - INFO - 프로세서 정보: Apple M2
+2025-05-12 16:27:25,070 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-12 16:27:25'}
+2025-05-12 16:28:18,107 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-12 16:28:18,313 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-12 16:28:18,313 - INFO - 데이터베이스 초기화 완료
+2025-05-12 21:58:28,704 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-12 21:58:28,941 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-12 21:58:28,944 - INFO - 데이터베이스 초기화 완료
+2025-05-12 22:42:17,637 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-12 22:42:17,872 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-12 22:42:17,872 - INFO - 데이터베이스 초기화 완료
+2025-05-12 22:42:21,263 - INFO - 컨텍스트 메뉴 이벤트: 4, x=654, y=123
+2025-05-12 22:42:49,078 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1145, y=123
+2025-05-12 22:43:27,124 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1093, y=105
+2025-05-12 22:43:44,652 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1214, y=179
+2025-05-12 22:43:57,514 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1221, y=163
+2025-05-15 12:16:14,814 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-15 12:16:14,998 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-15 12:16:14,998 - INFO - 데이터베이스 초기화 완료
+2025-05-15 12:17:08,877 - INFO - 컨텍스트 메뉴 이벤트: 4, x=376, y=56
+2025-05-15 12:17:12,903 - INFO - 컨텍스트 메뉴 이벤트: 4, x=304, y=53
+2025-05-15 12:17:28,016 - INFO - 컨텍스트 메뉴 이벤트: 4, x=458, y=92
+2025-05-15 12:18:07,911 - INFO - 디바이스 정보 수집 시작
+2025-05-15 12:18:07,911 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-15 12:18:07,912 - INFO - 호스트명: lionui-MacBookAir.local
+2025-05-15 12:18:12,921 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-05-15 12:18:12,922 - INFO - 메모리 정보: svmem(total=8589934592, available=2796158976, percent=67.4, used=4084432896, free=72630272, active=2724069376, inactive=2663038976, wired=1360363520)
+2025-05-15 12:18:12,948 - INFO - 모델 정보: Mac14,15
+2025-05-15 12:18:12,949 - INFO - OS 정보: Darwin Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112
+2025-05-15 12:18:12,959 - INFO - 프로세서 정보: Apple M2
+2025-05-15 12:18:12,960 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-05-15 12:18:12'}
+2025-05-16 15:41:24,856 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-16 15:41:25,040 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-16 15:41:25,041 - INFO - 데이터베이스 초기화 완료
+2025-05-16 15:43:50,662 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-16 15:43:50,867 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-16 15:43:50,867 - INFO - 데이터베이스 초기화 완료
+2025-05-16 15:47:14,525 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
+2025-05-16 15:47:14,992 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
+2025-05-16 15:47:14,995 - INFO - 데이터베이스 초기화 완료

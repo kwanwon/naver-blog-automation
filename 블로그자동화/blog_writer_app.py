@@ -1,20 +1,27 @@
 import flet as ft
-from modules.gpt_handler import GPTHandler
 import subprocess
 import os
 import sys  # sys 모듈 추가
 from datetime import datetime, timedelta
 import json
-from utils.folder_cleanup import FolderCleanup  # 추가
 import random
 import hashlib
 import tempfile  # 임시 파일 관리를 위한 모듈 추가
 import threading
 import time  # 추가
 
-# 상위 디렉토리의 modules 추가
+# 상위 디렉토리의 modules 추가 - 다른 import 전에 실행
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
+
+# 현재 디렉토리도 경로에 추가 (utils 모듈을 위해)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# 이제 modules 패키지를 import할 수 있음
+from modules.gpt_handler import GPTHandler
+from utils.folder_cleanup import FolderCleanup  # 추가
 
 class BlogWriterApp:
     def __init__(self):
@@ -938,6 +945,22 @@ class BlogWriterApp:
         page.on_window_event = on_window_close
 
         # GPT 설정 탭 컴포넌트
+        base_prompt = ft.TextField(
+            label="기본 프롬프트",
+            hint_text="GPT에게 전달할 기본 프롬프트를 입력하세요...",
+            multiline=True,
+            min_lines=3,
+            max_lines=6,
+            expand=True
+        )
+
+        base_prompt_help_text = ft.Text(
+            "도장 이름, 전문성, 글쓰기 스타일 등의 기본 지침을 입력하세요. 이 내용이 모든 글 작성의 기본이 됩니다.",
+            size=12,
+            color=ft.Colors.GREY_600,
+            italic=True
+        )
+
         gpt_persona = ft.TextField(
             label="GPT 페르소나",
             hint_text="GPT가 어떤 역할이나 정체성을 가지고 글을 작성할지 정의하세요...",
@@ -1110,14 +1133,37 @@ class BlogWriterApp:
 
         def save_gpt_settings(e):
             try:
+                # GPT 설정 저장
                 settings = {
                     "persona": gpt_persona.value,
                     "instructions": gpt_instructions.value,
                     "style": gpt_style.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
+                
+                # 루트 폴더와 블로그자동화 폴더 모두에 저장
                 with open(os.path.join(self.base_dir, 'config/gpt_settings.txt'), 'w', encoding='utf-8') as f:
                     json.dump(settings, f, ensure_ascii=False, indent=2)
+                
+                # 루트 폴더의 config 디렉토리가 있으면 거기에도 저장
+                root_config_path = os.path.join(os.path.dirname(self.base_dir), 'config')
+                if os.path.exists(root_config_path):
+                    with open(os.path.join(root_config_path, 'gpt_settings.txt'), 'w', encoding='utf-8') as f:
+                        json.dump(settings, f, ensure_ascii=False, indent=2)
+                
+                # 커스텀 프롬프트 저장
+                custom_prompts = {
+                    "base_prompt": base_prompt.value
+                }
+                
+                # 블로그자동화 폴더에 저장
+                with open(os.path.join(self.base_dir, 'config/custom_prompts.txt'), 'w', encoding='utf-8') as f:
+                    json.dump(custom_prompts, f, ensure_ascii=False, indent=2)
+                
+                # 루트 폴더의 config 디렉토리가 있으면 거기에도 저장
+                if os.path.exists(root_config_path):
+                    with open(os.path.join(root_config_path, 'custom_prompts.txt'), 'w', encoding='utf-8') as f:
+                        json.dump(custom_prompts, f, ensure_ascii=False, indent=2)
                 
                 # API 키 저장 로직 개선
                 if use_api_checkbox.value and api_key_field.value:
@@ -1157,6 +1203,7 @@ class BlogWriterApp:
 
         def load_gpt_settings():
             try:
+                # GPT 설정 로드
                 if os.path.exists(os.path.join(self.base_dir, 'config/gpt_settings.txt')):
                     with open(os.path.join(self.base_dir, 'config/gpt_settings.txt'), 'r', encoding='utf-8') as f:
                         settings = json.load(f)
@@ -1179,6 +1226,20 @@ class BlogWriterApp:
                             gpt_instructions.value = instructions
                             
                         gpt_style.value = settings.get('style', '')
+                
+                # 커스텀 프롬프트 로드
+                if os.path.exists(os.path.join(self.base_dir, 'config/custom_prompts.txt')):
+                    with open(os.path.join(self.base_dir, 'config/custom_prompts.txt'), 'r', encoding='utf-8') as f:
+                        custom_prompts = json.load(f)
+                        base_prompt.value = custom_prompts.get('base_prompt', '')
+                
+                # 루트 폴더의 커스텀 프롬프트 파일이 있고 블로그자동화 폴더의 파일이 없으면 루트 파일 사용
+                if not os.path.exists(os.path.join(self.base_dir, 'config/custom_prompts.txt')):
+                    root_custom_prompts_path = os.path.join(os.path.dirname(self.base_dir), 'config/custom_prompts.txt')
+                    if os.path.exists(root_custom_prompts_path):
+                        with open(root_custom_prompts_path, 'r', encoding='utf-8') as f:
+                            custom_prompts = json.load(f)
+                            base_prompt.value = custom_prompts.get('base_prompt', '')
                 
                 # API 사용 여부 설정 로드
                 if os.path.exists(os.path.join(self.base_dir, 'config/app_settings.json')):
@@ -1228,6 +1289,11 @@ class BlogWriterApp:
                 print(f"GPT 설정 로드 중 오류 발생: {str(e)}")
 
         # 사용자 설정 탭 컴포넌트
+        dojang_business_name = ft.TextField(
+            label="도장 상호",
+            hint_text="도장 상호를 입력하세요... (예: 한국체대 라이온 체육관)"
+        )
+
         dojang_name = ft.TextField(
             label="도장 이름",
             hint_text="도장 이름을 입력하세요..."
@@ -1241,6 +1307,21 @@ class BlogWriterApp:
         phone = ft.TextField(
             label="연락처",
             hint_text="연락처를 입력하세요..."
+        )
+        
+        footer_message = ft.TextField(
+            label="푸터 메시지",
+            hint_text="블로그 글 마지막에 표시될 메시지를 입력하세요... (예: 바른인성을 가진 인재를 기르는)",
+            multiline=True,
+            min_lines=2,
+            max_lines=4
+        )
+        
+        footer_message_help = ft.Text(
+            "블로그 글 마지막에 '이상 [푸터 메시지] [도장 상호] 이었습니다' 형태로 표시됩니다. 여러 줄 입력 가능합니다.",
+            size=12,
+            color=ft.Colors.GREY_600,
+            italic=True
         )
 
         blog_url = ft.TextField(
@@ -1300,6 +1381,7 @@ class BlogWriterApp:
                     base_dir = self.base_dir
                     
                 settings = {
+                    "dojang_business_name": dojang_business_name.value,
                     "dojang_name": dojang_name.value,
                     "address": address.value,
                     "phone": phone.value,
@@ -1309,6 +1391,7 @@ class BlogWriterApp:
                     "kakao_url": kakao_url.value,
                     "blog_tags": blog_tags.value,
                     "blog_topics": blog_topics.value,
+                    "footer_message": footer_message.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 with open(os.path.join(base_dir, 'config/user_settings.txt'), 'w', encoding='utf-8') as f:
@@ -1331,6 +1414,7 @@ class BlogWriterApp:
                 if os.path.exists(os.path.join(self.base_dir, 'config/user_settings.txt')):
                     with open(os.path.join(self.base_dir, 'config/user_settings.txt'), 'r', encoding='utf-8') as f:
                         settings = json.load(f)
+                        dojang_business_name.value = settings.get('dojang_business_name', '')
                         dojang_name.value = settings.get('dojang_name', '')
                         address.value = settings.get('address', '')
                         phone.value = settings.get('phone', '')
@@ -1340,9 +1424,12 @@ class BlogWriterApp:
                         kakao_url.value = settings.get('kakao_url', '')
                         blog_tags.value = settings.get('blog_tags', '')
                         blog_topics.value = settings.get('blog_topics', '')
-                        page.update()
+                        footer_message.value = settings.get('footer_message', '')
+                        
+                        # 디버깅: 로드된 footer_message 확인
+                        print(f"사용자 설정에서 로드된 푸터 메시지: '{footer_message.value}'")
             except Exception as e:
-                print(f"사용자 설정 로드 중 오류 발생: {str(e)}")
+                print(f"설정 로드 중 오류 발생: {str(e)}")
 
         # 자동 저장 함수
         def auto_save(e=None):
@@ -1731,6 +1818,8 @@ class BlogWriterApp:
         gpt_settings_tab = ft.Container(
             content=ft.Column(
                 controls=[
+                    base_prompt,  # 새로 추가
+                    base_prompt_help_text,  # 새로 추가
                     gpt_persona,
                     persona_help_text,
                     gpt_instructions,
@@ -1757,16 +1846,30 @@ class BlogWriterApp:
         user_settings_tab = ft.Container(
             content=ft.Column(
                 controls=[
+                    ft.Text("사용자 정보 설정", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Text("블로그 및 개인 정보를 설정합니다.", size=14),
+                    ft.Divider(),
+                    dojang_business_name,
                     dojang_name,
                     address,
                     phone,
+                    ft.Divider(),
+                    footer_message,
+                    footer_message_help,
+                    ft.Divider(),
                     blog_url,
-                    naver_id,
-                    naver_pw,
+                    ft.Row([
+                        naver_id,
+                        naver_pw
+                    ]),
                     kakao_url,
+                    ft.Divider(),
+                    ft.Text("블로그 태그 (쉼표로 구분)", size=14),
                     blog_tags,
+                    ft.Text("블로그 주제 목록 (줄바꿈으로 구분)", size=14),
                     blog_topics,
-                    save_user_button,
+                    ft.ElevatedButton("설정 저장", on_click=save_user_settings, icon=ft.Icons.SAVE),
+                    ft.Divider(),
                     developer_info
                 ],
                 spacing=20,

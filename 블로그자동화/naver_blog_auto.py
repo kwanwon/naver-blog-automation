@@ -103,6 +103,7 @@ class NaverBlogAutomation:
     def load_settings(self):
         """설정 파일에서 사용자 정보 로드"""
         settings = {
+            "dojang_business_name": "",
             "dojang_name": "",
             "address": "",
             "phone": "",
@@ -110,7 +111,8 @@ class NaverBlogAutomation:
             "naver_id": os.getenv('NAVER_ID', ''),
             "naver_pw": os.getenv('NAVER_PW', ''),
             "kakao_url": os.getenv('KAKAO_URL', 'https://open.kakao.com/o/sP6s6YZf'),
-            "tags": []
+            "tags": [],
+            "footer_message": ""
         }
         
         try:
@@ -140,8 +142,12 @@ class NaverBlogAutomation:
                         settings['tags'] = [tag.strip() for tag in tags_str.split(',')]
                     
                     print(f"설정 파일 로드 성공: {config_path}")
+                    print(f"도장 상호: {settings['dojang_business_name']}")
                     print(f"도장 이름: {settings['dojang_name']}")
                     print(f"주소: {settings['address']}")
+                    print(f"푸터 메시지: '{settings['footer_message']}'")
+                    print(f"푸터 메시지 길이: {len(settings['footer_message'])}")
+                    print(f"푸터 메시지 공백 제거 후 길이: {len(settings['footer_message'].strip())}")
             else:
                 print(f"설정 파일을 찾을 수 없습니다: {config_path}")
         except Exception as e:
@@ -762,6 +768,18 @@ class NaverBlogAutomation:
     def write_post(self, title, content, tags=None):
         """블로그 포스트 작성"""
         try:
+            # 설정 확인 (디버깅용)
+            print("\n===== 설정 확인 (write_post 시작) =====")
+            print(f"도장 상호: {self.settings.get('dojang_business_name', '없음')}")
+            print(f"도장 이름: {self.settings.get('dojang_name', '없음')}")
+            print(f"주소: {self.settings.get('address', '없음')}")
+            print(f"푸터 메시지: '{self.settings.get('footer_message', '없음')}'")
+            if 'footer_message' in self.settings:
+                print(f"푸터 메시지 존재함: '{self.settings['footer_message']}'")
+            else:
+                print("푸터 메시지가 settings 객체에 존재하지 않음")
+            print("===== 설정 확인 완료 =====\n")
+            
             # 이미지 삽입 위치 간단하게 계산
             image_positions = self.calculate_image_positions(content)
             print(f"계산된 이미지 위치 정보를 사용합니다: {image_positions}")
@@ -959,14 +977,39 @@ class NaverBlogAutomation:
             
             # 푸터 추가 직접 호출
             print("add_footer 메서드 호출 시작...")
-            post_finisher = NaverBlogPostFinisher(self.driver, self.settings)
+            
+            # 현재 settings 객체 상태 출력
+            print("\n===== NaverBlogAuto 현재 settings 상태 =====")
+            for key in ['dojang_business_name', 'dojang_name', 'footer_message', 'address']:
+                print(f"{key}: '{self.settings.get(key, '<없음>')}'")
+            print("settings 객체 모든 키:", list(self.settings.keys()))
+            
+            # 설정을 명시적으로 복사하여 새 객체 생성
+            post_settings = self.settings.copy() if isinstance(self.settings, dict) else {}
+            
+            # 설정 파일 확인 (footer_message가 누락되었을 수 있음)
+            try:
+                with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config/user_settings.txt'), 'r', encoding='utf-8') as f:
+                    file_settings = json.load(f)
+                    if 'footer_message' in file_settings:
+                        post_settings['footer_message'] = file_settings['footer_message']
+                        print(f"설정 파일에서 footer_message 확인: '{post_settings['footer_message']}'")
+                    if 'dojang_business_name' in file_settings:
+                        post_settings['dojang_business_name'] = file_settings['dojang_business_name']
+                        print(f"설정 파일에서 dojang_business_name 확인: '{post_settings['dojang_business_name']}'")
+            except Exception as e:
+                print(f"설정 파일 확인 중 오류 발생: {str(e)}")
+            
+            # NaverBlogPostFinisher 생성 시 명시적 설정 전달
+            post_finisher = NaverBlogPostFinisher(self.driver, post_settings)
             
             # 현재 상태 확인 - 디버깅을 위한 정보 출력
             print("Driver 상태: " + ("유효함" if self.driver else "유효하지 않음"))
-            print("Settings 상태:")
-            print(f"- 도장 이름: {self.settings.get('dojang_name', '없음')}")
-            print(f"- 주소: {self.settings.get('address', '없음')}")
-            print(f"- 카카오 URL: {self.settings.get('kakao_url', '없음')}")
+            print("Settings 객체가 전달됐는지 확인: " + ("전달됨" if post_finisher.settings else "전달 안됨"))
+            if post_finisher.settings:
+                print("전달된 Settings 내용:")
+                for key in ['dojang_name', 'footer_message', 'address']:
+                    print(f"- {key}: '{post_finisher.settings.get(key, '<없음>')}'")
             
             # 줄바꿈 추가
             print("줄바꿈 추가...")
@@ -998,8 +1041,20 @@ class NaverBlogAutomation:
             
             print("============ 푸터 및 링크 추가 완료 ============\n")
             
-            # 마지막 문구에서 상호명 사용
-            final_message = f"이상 바른 인성을 가진 인재를 기르는 {self.settings['dojang_name']} 이었습니다"
+            # 마지막 문구에서 상호명과 푸터 메시지 사용
+            footer_message = self.settings.get('footer_message', '')
+            
+            # 도장 상호 또는 도장 이름 가져오기
+            dojang_business_name = self.settings.get('dojang_business_name', '')
+            if not dojang_business_name:  # 도장 상호가 없으면 도장 이름을 대신 사용
+                dojang_business_name = self.settings.get('dojang_name', '')
+                
+            if footer_message and footer_message.strip():
+                # 푸터 메시지가 여러 줄인 경우 처리
+                footer_message_formatted = ' '.join([line.strip() for line in footer_message.strip().split('\n') if line.strip()])
+                final_message = f"이상 {footer_message_formatted} {dojang_business_name} 이었습니다"
+            else:
+                final_message = f"이상 이었습니다"
             print(final_message)
             
             return True
