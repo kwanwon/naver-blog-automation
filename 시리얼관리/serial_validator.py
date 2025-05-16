@@ -322,7 +322,7 @@ class SerialManager:
         ttk.Label(search_frame, text="검색어:").pack(side=tk.LEFT, padx=5)
         search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=5)
-        self.search_var.trace('w', lambda *args: self.refresh_serial_list())
+        self.search_var.trace_add('write', lambda *args: self.refresh_serial_list())
         
         ttk.Label(search_frame, text="상태:").pack(side=tk.LEFT, padx=5)
         status_combo = ttk.Combobox(
