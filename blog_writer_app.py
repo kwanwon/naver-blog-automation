@@ -1011,14 +1011,14 @@ class BlogWriterApp:
         daily_usage_text = ft.Text(
             "오늘 사용: 0회 / 30회 (기본)",
             size=14,
-            color=ft.Colors.WHITE,
+            color=ft.Colors.GREEN_600,
             weight=ft.FontWeight.BOLD
         )
 
         total_usage_text = ft.Text(
             "총 사용: 0회",
             size=12,
-            color=ft.Colors.WHITE
+            color=ft.Colors.GREY_600
         )
 
         def save_user_settings(e, base_dir=None):
@@ -1120,16 +1120,19 @@ class BlogWriterApp:
                     daily_count = stats.get('daily', {}).get(today, 0)
                     total_count = stats.get('total', 0)
                     
-                    # 사용량에 따른 상태 메시지 변경 (색상은 흰색 유지)
+                    # 사용량에 따른 색상 변경
                     if daily_count >= 30:
+                        color = ft.Colors.RED_600
                         status = f"오늘 사용: {daily_count}회 / 30회 (추가비용 발생!)"
                     elif daily_count >= 25:
+                        color = ft.Colors.ORANGE_600
                         status = f"오늘 사용: {daily_count}회 / 30회 (주의)"
                     else:
+                        color = ft.Colors.GREEN_600
                         status = f"오늘 사용: {daily_count}회 / 30회 (기본)"
                     
                     daily_usage_text.value = status
-                    daily_usage_text.color = ft.Colors.WHITE
+                    daily_usage_text.color = color
                     total_usage_text.value = f"총 사용: {total_count}회"
                     page.update()
                     
@@ -1693,6 +1696,19 @@ class BlogWriterApp:
                     ], spacing=10),
                     margin=ft.margin.only(top=10, bottom=10)
                 ),
+                # 사용 현황 (전송 버튼 위에 배치)
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("📊 사용 현황", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700),
+                        daily_usage_text,
+                        total_usage_text,
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                    padding=10,
+                    margin=ft.margin.only(top=10, bottom=10),
+                    bgcolor=ft.Colors.PURPLE_50,
+                    border_radius=8,
+                    border=ft.border.all(1, ft.Colors.PURPLE_200)
+                ),
                 upload_button,
                 status_text
             ],
@@ -1884,28 +1900,10 @@ class BlogWriterApp:
         # 로그인 버튼 생성
         login_button = self.create_simple_login_button(page)
 
-        # 사용 현황 컨테이너 (네이버 로그인과 같은 스타일)
-        usage_status_container = ft.Container(
-            content=ft.Row([
-                ft.Icon(ft.Icons.ANALYTICS, color=ft.Colors.WHITE, size=20),
-                ft.Column([
-                    daily_usage_text,
-                    total_usage_text,
-                ], spacing=2, horizontal_alignment=ft.CrossAxisAlignment.START)
-            ], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
-            padding=ft.padding.symmetric(horizontal=20, vertical=12),
-            margin=ft.margin.only(bottom=10),
-            bgcolor=ft.Colors.PURPLE_600,
-            border_radius=25,
-            width=300,
-            height=50
-        )
-
         # 메인 컨텐츠 탭
         main_content_tab = ft.Column(
             controls=[
                 login_button,  # 로그인 버튼을 원래 위치로 복원
-                usage_status_container,  # 사용 현황을 네이버 로그인과 같은 스타일로 추가
                 ft.Row(
                     controls=[
                         ft.Container(
