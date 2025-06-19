@@ -1639,20 +1639,7 @@ class BlogWriterApp:
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                 ),
-                chat_messages
-            ],
-            spacing=10,
-            expand=True
-        )
-
-        # 오른쪽 패널
-        right_panel = ft.Column(
-            controls=[
-                title_input,
-                content_input,
-                auto_image_checkbox,
-                auto_image_help_text,
-                # 타이머 제어 버튼들만 한 줄에 배치
+                # 타이머 제어 버튼들
                 ft.Container(
                     content=ft.Row([
                         # 타이머 시작 버튼
@@ -1696,7 +1683,7 @@ class BlogWriterApp:
                     ], spacing=10),
                     margin=ft.margin.only(top=10, bottom=10)
                 ),
-                # 사용 현황 (전송 버튼 위에 배치)
+                # 사용 현황
                 ft.Container(
                     content=ft.Column([
                         ft.Text("📊 사용 현황", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700),
@@ -1709,6 +1696,19 @@ class BlogWriterApp:
                     border_radius=8,
                     border=ft.border.all(1, ft.Colors.PURPLE_200)
                 ),
+                chat_messages
+            ],
+            spacing=10,
+            expand=True
+        )
+
+        # 오른쪽 패널
+        right_panel = ft.Column(
+            controls=[
+                title_input,
+                content_input,
+                auto_image_checkbox,
+                auto_image_help_text,
                 upload_button,
                 status_text
             ],
