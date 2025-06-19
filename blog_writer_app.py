@@ -1825,38 +1825,20 @@ class BlogWriterApp:
                         bgcolor=ft.Colors.ORANGE_50
                     ),
                     
-                    # 타이머 상태 및 제어
+                    # 설정 저장
                     ft.Container(
                         content=ft.Column([
-                            ft.Text("🎮 타이머 제어", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700),
-                            timer_status_text,
-                            timer_next_post_text,
-                            ft.Row([
-                                ft.ElevatedButton(
-                                    "설정 저장",
-                                    on_click=save_timer_settings,
-                                    bgcolor=ft.Colors.BLUE,
-                                    color=ft.Colors.WHITE,
-                                    icon=ft.Icons.SAVE
-                                ),
-                                ft.ElevatedButton(
-                                    "타이머 시작",
-                                    on_click=None,  # 나중에 구현
-                                    bgcolor=ft.Colors.GREEN,
-                                    color=ft.Colors.WHITE,
-                                    icon=ft.Icons.PLAY_ARROW,
-                                    disabled=True  # 아직 미구현
-                                ),
-                                ft.ElevatedButton(
-                                    "타이머 중지",
-                                    on_click=None,  # 나중에 구현
-                                    bgcolor=ft.Colors.RED,
-                                    color=ft.Colors.WHITE,
-                                    icon=ft.Icons.STOP,
-                                    disabled=True  # 아직 미구현
-                                )
-                            ], spacing=10)
-                        ]),
+                            ft.Text("💾 설정 저장", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700),
+                            ft.Text("변경된 시간 설정을 저장합니다", size=14, color=ft.Colors.GREY_600),
+                            ft.ElevatedButton(
+                                "설정 저장",
+                                on_click=save_timer_settings,
+                                bgcolor=ft.Colors.BLUE,
+                                color=ft.Colors.WHITE,
+                                icon=ft.Icons.SAVE,
+                                width=200
+                            )
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
                         padding=20,
                         border=ft.border.all(1, ft.Colors.BLUE_300),
                         border_radius=10,
