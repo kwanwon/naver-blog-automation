@@ -1007,6 +1007,20 @@ class BlogWriterApp:
             color=ft.Colors.BLUE_600
         )
 
+        # 사용 횟수 추적 텍스트
+        daily_usage_text = ft.Text(
+            "오늘 사용: 0회 / 30회 (기본)",
+            size=14,
+            color=ft.Colors.GREEN_600,
+            weight=ft.FontWeight.BOLD
+        )
+
+        total_usage_text = ft.Text(
+            "총 사용: 0회",
+            size=12,
+            color=ft.Colors.GREY_600
+        )
+
         def save_user_settings(e, base_dir=None):
             try:
                 if base_dir is None:
@@ -1093,6 +1107,79 @@ class BlogWriterApp:
                         page.update()
             except Exception as e:
                 print(f"시간 설정 로드 중 오류 발생: {str(e)}")
+
+        def load_usage_stats():
+            """사용 통계 로드"""
+            try:
+                usage_file = os.path.join(self.base_dir, 'config/usage_stats.json')
+                if os.path.exists(usage_file):
+                    with open(usage_file, 'r', encoding='utf-8') as f:
+                        stats = json.load(f)
+                        
+                    today = datetime.now().strftime("%Y-%m-%d")
+                    daily_count = stats.get('daily', {}).get(today, 0)
+                    total_count = stats.get('total', 0)
+                    
+                    # 사용량에 따른 색상 변경
+                    if daily_count >= 30:
+                        color = ft.Colors.RED_600
+                        status = f"오늘 사용: {daily_count}회 / 30회 (추가비용 발생!)"
+                    elif daily_count >= 25:
+                        color = ft.Colors.ORANGE_600
+                        status = f"오늘 사용: {daily_count}회 / 30회 (주의)"
+                    else:
+                        color = ft.Colors.GREEN_600
+                        status = f"오늘 사용: {daily_count}회 / 30회 (기본)"
+                    
+                    daily_usage_text.value = status
+                    daily_usage_text.color = color
+                    total_usage_text.value = f"총 사용: {total_count}회"
+                    page.update()
+                    
+            except Exception as e:
+                print(f"사용 통계 로드 중 오류 발생: {str(e)}")
+
+        def save_usage_stats():
+            """사용 통계 저장"""
+            try:
+                usage_file = os.path.join(self.base_dir, 'config/usage_stats.json')
+                
+                # 기존 통계 로드
+                if os.path.exists(usage_file):
+                    with open(usage_file, 'r', encoding='utf-8') as f:
+                        stats = json.load(f)
+                else:
+                    stats = {'daily': {}, 'total': 0}
+                
+                # 오늘 날짜
+                today = datetime.now().strftime("%Y-%m-%d")
+                
+                # 일일 카운트 증가
+                if today not in stats['daily']:
+                    stats['daily'][today] = 0
+                stats['daily'][today] += 1
+                
+                # 총 카운트 증가
+                stats['total'] += 1
+                
+                # 30일 이전 데이터 정리 (용량 절약)
+                from datetime import timedelta
+                cutoff_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+                stats['daily'] = {k: v for k, v in stats['daily'].items() if k >= cutoff_date}
+                
+                # 저장
+                with open(usage_file, 'w', encoding='utf-8') as f:
+                    json.dump(stats, f, ensure_ascii=False, indent=2)
+                
+                # UI 업데이트
+                load_usage_stats()
+                
+            except Exception as e:
+                print(f"사용 통계 저장 중 오류 발생: {str(e)}")
+
+        def increment_usage_count():
+            """사용 횟수 증가 (포스팅할 때마다 호출)"""
+            save_usage_stats()
 
         # 자동 저장 함수
         def auto_save(e=None):
@@ -1479,6 +1566,9 @@ class BlogWriterApp:
                     )
                     
                     if success:
+                        # 사용 횟수 증가
+                        increment_usage_count()
+                        
                         dlg.open = False
                         page.update()
                         page.snack_bar = ft.SnackBar(
@@ -1562,6 +1652,19 @@ class BlogWriterApp:
                 content_input,
                 auto_image_checkbox,
                 auto_image_help_text,
+                # 사용 현황 섹션 추가
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("📊 사용 현황", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700),
+                        daily_usage_text,
+                        total_usage_text,
+                    ]),
+                    padding=10,
+                    margin=ft.margin.only(top=10, bottom=10),
+                    bgcolor=ft.Colors.PURPLE_50,
+                    border_radius=8,
+                    border=ft.border.all(1, ft.Colors.PURPLE_200)
+                ),
                 upload_button,
                 status_text
             ],
@@ -1668,8 +1771,8 @@ class BlogWriterApp:
                                 timer_max_posts,
                                 ft.Text("개 포스팅", size=16, color=ft.Colors.GREY_700)
                             ], alignment=ft.MainAxisAlignment.START),
-                            ft.Text("💰 GPT 토큰 비용 절약 및 자연스러운 포스팅 패턴 유지", 
-                                   size=12, color=ft.Colors.GREY_500, italic=True)
+                            ft.Text("💰 하루 기본 포스팅 30개이며, 추가 포스팅시 추가비용 발생합니다", 
+                                   size=12, color=ft.Colors.RED_600, weight=ft.FontWeight.BOLD)
                         ]),
                         padding=20,
                         border=ft.border.all(1, ft.Colors.ORANGE_200),
@@ -1817,6 +1920,7 @@ class BlogWriterApp:
         load_user_settings()
         load_app_settings()
         load_timer_settings()
+        load_usage_stats()  # 사용 통계 로드 추가
         load_draft()
 
         # auto_topic_checkbox 변경 이벤트 처리
