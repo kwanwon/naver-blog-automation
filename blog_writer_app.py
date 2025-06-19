@@ -958,6 +958,55 @@ class BlogWriterApp:
             margin=ft.margin.only(top=20)
         )
 
+        # 시간 설정 탭 컴포넌트
+        timer_start_time = ft.TextField(
+            label="시작 시간 (HH:MM)",
+            hint_text="예: 09:00",
+            width=150,
+            value="09:00"
+        )
+
+        timer_end_time = ft.TextField(
+            label="종료 시간 (HH:MM)",
+            hint_text="예: 23:00",
+            width=150,
+            value="23:00"
+        )
+
+        timer_min_interval = ft.TextField(
+            label="최소 간격 (분)",
+            hint_text="예: 15",
+            width=150,
+            value="15"
+        )
+
+        timer_max_interval = ft.TextField(
+            label="최대 간격 (분)",
+            hint_text="예: 20",
+            width=150,
+            value="20"
+        )
+
+        timer_max_posts = ft.TextField(
+            label="일일 최대 포스팅",
+            hint_text="예: 20",
+            width=150,
+            value="20"
+        )
+
+        timer_status_text = ft.Text(
+            "타이머 중지됨",
+            size=16,
+            color=ft.Colors.GREY_600,
+            weight=ft.FontWeight.BOLD
+        )
+
+        timer_next_post_text = ft.Text(
+            "",
+            size=14,
+            color=ft.Colors.BLUE_600
+        )
+
         def save_user_settings(e, base_dir=None):
             try:
                 if base_dir is None:
@@ -1009,6 +1058,41 @@ class BlogWriterApp:
                         page.update()
             except Exception as e:
                 print(f"사용자 설정 로드 중 오류 발생: {str(e)}")
+
+        def save_timer_settings(e):
+            try:
+                settings = {
+                    "start_time": timer_start_time.value,
+                    "end_time": timer_end_time.value,
+                    "min_interval": timer_min_interval.value,
+                    "max_interval": timer_max_interval.value,
+                    "max_posts": timer_max_posts.value,
+                    "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                with open(os.path.join(self.base_dir, 'config/timer_settings.json'), 'w', encoding='utf-8') as f:
+                    json.dump(settings, f, ensure_ascii=False, indent=2)
+                
+                page.snack_bar = ft.SnackBar(content=ft.Text("시간 설정이 저장되었습니다."))
+                page.snack_bar.open = True
+                page.update()
+            except Exception as e:
+                page.snack_bar = ft.SnackBar(content=ft.Text(f"저장 중 오류 발생: {str(e)}"))
+                page.snack_bar.open = True
+                page.update()
+
+        def load_timer_settings():
+            try:
+                if os.path.exists(os.path.join(self.base_dir, 'config/timer_settings.json')):
+                    with open(os.path.join(self.base_dir, 'config/timer_settings.json'), 'r', encoding='utf-8') as f:
+                        settings = json.load(f)
+                        timer_start_time.value = settings.get('start_time', '09:00')
+                        timer_end_time.value = settings.get('end_time', '23:00')
+                        timer_min_interval.value = settings.get('min_interval', '15')
+                        timer_max_interval.value = settings.get('max_interval', '20')
+                        timer_max_posts.value = settings.get('max_posts', '20')
+                        page.update()
+            except Exception as e:
+                print(f"시간 설정 로드 중 오류 발생: {str(e)}")
 
         # 자동 저장 함수
         def auto_save(e=None):
@@ -1522,8 +1606,8 @@ class BlogWriterApp:
                         content=ft.Column([
                             ft.Text("⏰ 자동 시간 설정", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900),
                             ft.Text("설정된 시간에 자동으로 블로그 포스팅을 진행합니다.", size=14, color=ft.Colors.GREY_700),
-                            ft.Text("⚠️ 아직 개발 중인 기능입니다. 곧 업데이트 예정입니다.", 
-                                   size=12, color=ft.Colors.ORANGE_600, weight=ft.FontWeight.BOLD)
+                            ft.Text("🎯 네이버 자동화 감지를 피하기 위한 랜덤 간격 설정", 
+                                   size=12, color=ft.Colors.GREEN_600, weight=ft.FontWeight.BOLD)
                         ]),
                         padding=20,
                         border=ft.border.all(2, ft.Colors.BLUE_300),
@@ -1532,20 +1616,105 @@ class BlogWriterApp:
                         bgcolor=ft.Colors.BLUE_50
                     ),
                     
-                    # 시간 설정 플레이스홀더
+                    # 운영 시간 설정
                     ft.Container(
                         content=ft.Column([
-                            ft.Text("🚧 개발 중", size=18, weight=ft.FontWeight.BOLD),
-                            ft.Text("시간 설정 기능이 곧 추가될 예정입니다.", size=14, color=ft.Colors.GREY_600),
-                            ft.Text("• 랜덤 간격 설정 (15분~20분)", size=12, color=ft.Colors.GREY_500),
-                            ft.Text("• 시작/종료 시간 설정 (오전 9시~오후 11시)", size=12, color=ft.Colors.GREY_500),
-                            ft.Text("• 일일 포스팅 제한 (최대 20개)", size=12, color=ft.Colors.GREY_500),
-                            ft.Text("• 네이버 자동화 감지 방지", size=12, color=ft.Colors.GREY_500),
+                            ft.Text("🕐 운영 시간 설정", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700),
+                            ft.Text("매일 자동으로 시작/종료되는 시간을 설정하세요", size=14, color=ft.Colors.GREY_600),
+                            ft.Row([
+                                timer_start_time,
+                                ft.Text("부터", size=16, color=ft.Colors.GREY_700),
+                                timer_end_time,
+                                ft.Text("까지", size=16, color=ft.Colors.GREY_700)
+                            ], alignment=ft.MainAxisAlignment.START),
+                            ft.Text("💡 권장: 오전 9시부터 오후 11시까지 (14시간 운영)", 
+                                   size=12, color=ft.Colors.GREY_500, italic=True)
                         ]),
                         padding=20,
-                        border=ft.border.all(1, ft.Colors.GREY_300),
+                        border=ft.border.all(1, ft.Colors.PURPLE_200),
                         border_radius=10,
-                        margin=10
+                        margin=10,
+                        bgcolor=ft.Colors.PURPLE_50
+                    ),
+                    
+                    # 포스팅 간격 설정
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Text("🎲 포스팅 간격 설정", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_700),
+                            ft.Text("랜덤 간격으로 포스팅하여 자동화 감지를 방지합니다", size=14, color=ft.Colors.GREY_600),
+                            ft.Row([
+                                timer_min_interval,
+                                ft.Text("분 ~", size=16, color=ft.Colors.GREY_700),
+                                timer_max_interval,
+                                ft.Text("분 랜덤 간격", size=16, color=ft.Colors.GREY_700)
+                            ], alignment=ft.MainAxisAlignment.START),
+                            ft.Text("⚠️ 포스팅 시간(약 5분) 포함하여 계산됩니다", 
+                                   size=12, color=ft.Colors.ORANGE_600, italic=True)
+                        ]),
+                        padding=20,
+                        border=ft.border.all(1, ft.Colors.GREEN_200),
+                        border_radius=10,
+                        margin=10,
+                        bgcolor=ft.Colors.GREEN_50
+                    ),
+                    
+                    # 일일 제한 설정
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Text("📊 일일 포스팅 제한", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE_700),
+                            ft.Text("하루 최대 포스팅 수를 설정하여 과도한 사용을 방지합니다", size=14, color=ft.Colors.GREY_600),
+                            ft.Row([
+                                ft.Text("하루 최대", size=16, color=ft.Colors.GREY_700),
+                                timer_max_posts,
+                                ft.Text("개 포스팅", size=16, color=ft.Colors.GREY_700)
+                            ], alignment=ft.MainAxisAlignment.START),
+                            ft.Text("💰 GPT 토큰 비용 절약 및 자연스러운 포스팅 패턴 유지", 
+                                   size=12, color=ft.Colors.GREY_500, italic=True)
+                        ]),
+                        padding=20,
+                        border=ft.border.all(1, ft.Colors.ORANGE_200),
+                        border_radius=10,
+                        margin=10,
+                        bgcolor=ft.Colors.ORANGE_50
+                    ),
+                    
+                    # 타이머 상태 및 제어
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Text("🎮 타이머 제어", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700),
+                            timer_status_text,
+                            timer_next_post_text,
+                            ft.Row([
+                                ft.ElevatedButton(
+                                    "설정 저장",
+                                    on_click=save_timer_settings,
+                                    bgcolor=ft.Colors.BLUE,
+                                    color=ft.Colors.WHITE,
+                                    icon=ft.Icons.SAVE
+                                ),
+                                ft.ElevatedButton(
+                                    "타이머 시작",
+                                    on_click=None,  # 나중에 구현
+                                    bgcolor=ft.Colors.GREEN,
+                                    color=ft.Colors.WHITE,
+                                    icon=ft.Icons.PLAY_ARROW,
+                                    disabled=True  # 아직 미구현
+                                ),
+                                ft.ElevatedButton(
+                                    "타이머 중지",
+                                    on_click=None,  # 나중에 구현
+                                    bgcolor=ft.Colors.RED,
+                                    color=ft.Colors.WHITE,
+                                    icon=ft.Icons.STOP,
+                                    disabled=True  # 아직 미구현
+                                )
+                            ], spacing=10)
+                        ]),
+                        padding=20,
+                        border=ft.border.all(1, ft.Colors.BLUE_300),
+                        border_radius=10,
+                        margin=10,
+                        bgcolor=ft.Colors.BLUE_50
                     )
                 ],
                 spacing=20,
@@ -1647,6 +1816,7 @@ class BlogWriterApp:
         load_gpt_settings()
         load_user_settings()
         load_app_settings()
+        load_timer_settings()
         load_draft()
 
         # auto_topic_checkbox 변경 이벤트 처리
