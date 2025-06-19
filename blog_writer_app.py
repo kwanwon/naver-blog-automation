@@ -1645,6 +1645,9 @@ class BlogWriterApp:
             expand=True
         )
 
+        # 로그인 버튼 먼저 생성
+        login_button = self.create_simple_login_button(page)
+
         # 오른쪽 패널
         right_panel = ft.Column(
             controls=[
@@ -1907,8 +1910,7 @@ class BlogWriterApp:
             expand=True
         )
 
-        # 로그인 버튼 생성
-        login_button = self.create_simple_login_button(page)
+
 
         # 메인 컨텐츠 탭
         main_content_tab = ft.Column(
