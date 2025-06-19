@@ -1513,6 +1513,48 @@ class BlogWriterApp:
             expand=True
         )
 
+        # 시간 설정 탭
+        timer_settings_tab = ft.Container(
+            content=ft.Column(
+                controls=[
+                    # 시간 설정 설명
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Text("⏰ 자동 시간 설정", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900),
+                            ft.Text("설정된 시간에 자동으로 블로그 포스팅을 진행합니다.", size=14, color=ft.Colors.GREY_700),
+                            ft.Text("⚠️ 아직 개발 중인 기능입니다. 곧 업데이트 예정입니다.", 
+                                   size=12, color=ft.Colors.ORANGE_600, weight=ft.FontWeight.BOLD)
+                        ]),
+                        padding=20,
+                        border=ft.border.all(2, ft.Colors.BLUE_300),
+                        border_radius=10,
+                        margin=10,
+                        bgcolor=ft.Colors.BLUE_50
+                    ),
+                    
+                    # 시간 설정 플레이스홀더
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Text("🚧 개발 중", size=18, weight=ft.FontWeight.BOLD),
+                            ft.Text("시간 설정 기능이 곧 추가될 예정입니다.", size=14, color=ft.Colors.GREY_600),
+                            ft.Text("• 랜덤 간격 설정 (15분~20분)", size=12, color=ft.Colors.GREY_500),
+                            ft.Text("• 시작/종료 시간 설정 (오전 9시~오후 11시)", size=12, color=ft.Colors.GREY_500),
+                            ft.Text("• 일일 포스팅 제한 (최대 20개)", size=12, color=ft.Colors.GREY_500),
+                            ft.Text("• 네이버 자동화 감지 방지", size=12, color=ft.Colors.GREY_500),
+                        ]),
+                        padding=20,
+                        border=ft.border.all(1, ft.Colors.GREY_300),
+                        border_radius=10,
+                        margin=10
+                    )
+                ],
+                spacing=20,
+                scroll=ft.ScrollMode.AUTO
+            ),
+            padding=20,
+            expand=True
+        )
+
         # 사용자 설정 탭
         user_settings_tab = ft.Container(
             content=ft.Column(
@@ -1578,6 +1620,11 @@ class BlogWriterApp:
                     text="블로그 작성",
                     icon=ft.Icons.EDIT_NOTE,
                     content=main_content_tab
+                ),
+                ft.Tab(
+                    text="시간 설정",
+                    icon=ft.Icons.TIMER,
+                    content=timer_settings_tab
                 ),
                 ft.Tab(
                     text="GPT 설정",
