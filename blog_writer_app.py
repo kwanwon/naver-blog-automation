@@ -1652,18 +1652,74 @@ class BlogWriterApp:
                 content_input,
                 auto_image_checkbox,
                 auto_image_help_text,
-                # 사용 현황 섹션 추가
+                # 네이버 로그인, 타이머 제어, 사용 현황을 한 줄에 배치
                 ft.Container(
-                    content=ft.Column([
-                        ft.Text("📊 사용 현황", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700),
-                        daily_usage_text,
-                        total_usage_text,
-                    ]),
-                    padding=10,
-                    margin=ft.margin.only(top=10, bottom=10),
-                    bgcolor=ft.Colors.PURPLE_50,
-                    border_radius=8,
-                    border=ft.border.all(1, ft.Colors.PURPLE_200)
+                    content=ft.Row([
+                        # 네이버 로그인 버튼
+                        ft.Container(
+                            content=ft.Column([
+                                ft.Text("🔐 로그인", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700),
+                                login_button
+                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                            padding=10,
+                            bgcolor=ft.Colors.BLUE_50,
+                            border_radius=8,
+                            border=ft.border.all(1, ft.Colors.BLUE_200),
+                            expand=1
+                        ),
+                        # 타이머 시작 버튼
+                        ft.Container(
+                            content=ft.Column([
+                                ft.Text("▶️ 시작", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_700),
+                                ft.ElevatedButton(
+                                    text="타이머 시작",
+                                    icon=ft.Icons.PLAY_ARROW,
+                                    bgcolor=ft.Colors.GREEN_400,
+                                    color=ft.Colors.WHITE,
+                                    disabled=True,  # 아직 기능 미구현
+                                    width=100
+                                )
+                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                            padding=10,
+                            bgcolor=ft.Colors.GREEN_50,
+                            border_radius=8,
+                            border=ft.border.all(1, ft.Colors.GREEN_200),
+                            expand=1
+                        ),
+                        # 타이머 중지 버튼
+                        ft.Container(
+                            content=ft.Column([
+                                ft.Text("⏹️ 중지", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_700),
+                                ft.ElevatedButton(
+                                    text="타이머 중지",
+                                    icon=ft.Icons.STOP,
+                                    bgcolor=ft.Colors.RED_400,
+                                    color=ft.Colors.WHITE,
+                                    disabled=True,  # 아직 기능 미구현
+                                    width=100
+                                )
+                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                            padding=10,
+                            bgcolor=ft.Colors.RED_50,
+                            border_radius=8,
+                            border=ft.border.all(1, ft.Colors.RED_200),
+                            expand=1
+                        ),
+                        # 사용 현황
+                        ft.Container(
+                            content=ft.Column([
+                                ft.Text("📊 사용 현황", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700),
+                                daily_usage_text,
+                                total_usage_text,
+                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                            padding=10,
+                            bgcolor=ft.Colors.PURPLE_50,
+                            border_radius=8,
+                            border=ft.border.all(1, ft.Colors.PURPLE_200),
+                            expand=1
+                        )
+                    ], spacing=10),
+                    margin=ft.margin.only(top=10, bottom=10)
                 ),
                 upload_button,
                 status_text
@@ -1857,7 +1913,6 @@ class BlogWriterApp:
         # 메인 컨텐츠 탭
         main_content_tab = ft.Column(
             controls=[
-                login_button,  # 로그인 버튼 추가
                 ft.Row(
                     controls=[
                         ft.Container(
