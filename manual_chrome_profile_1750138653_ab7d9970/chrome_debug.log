@@ -1,0 +1,24 @@
+[51095:3057309:0617/143734.155972:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[51095:3057309:0617/143734.932508:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[51095:3057309:0617/143735.323080:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)
+[51095:3057309:0617/143744.813796:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[51095:3057309:0617/143745.041889:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[51095:3057309:0617/143745.207347:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[51095:3057309:0617/143745.309794:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[51095:3057309:0617/143745.449109:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[51095:3057309:0617/143745.519468:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[51095:3057309:0617/143745.630925:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[51095:3057309:0617/143747.660720:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[51095:3057309:0617/143747.660920:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[51095:3057309:0617/143810.263948:INFO:CONSOLE:2] "클립보드 팝업 확인 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143810.264326:INFO:CONSOLE:2] "🎯 허용 버튼 발견! 확인", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143810.264347:INFO:CONSOLE:2] "✅ 허용 버튼 클릭 완료", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143812.345602:INFO:CONSOLE:2] "정확한 선택자로 확인 버튼 발견: button.se-popup-button.se-popup-button-confirm", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143818.800269:INFO:CONSOLE:2] "Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143825.051322:INFO:CONSOLE:2] "추가 버튼 발견, 5번 클릭 시도 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143825.051998:INFO:CONSOLE:2] "1번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143826.052952:INFO:CONSOLE:2] "2번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143827.052808:INFO:CONSOLE:2] "3번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143828.053327:INFO:CONSOLE:2] "4번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143829.052857:INFO:CONSOLE:2] "5번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[51095:3057309:0617/143830.073654:INFO:CONSOLE:2] "정확한 선택자로 확인 버튼 발견", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)

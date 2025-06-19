@@ -1,0 +1,38 @@
+[15914:2589909:0616/135247.145956:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[15918:2589959:0616/135247.665334:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:484] SharedImageManager::ProduceOverlay: Trying to Produce a Overlay representation from a non-existent mailbox.
+[15918:2589959:0616/135247.665405:ERROR:components/viz/service/display_embedder/skia_output_device_buffer_queue.cc:264] Invalid mailbox.
+[15918:2589959:0616/135247.665417:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:484] SharedImageManager::ProduceOverlay: Trying to Produce a Overlay representation from a non-existent mailbox.
+[15918:2589959:0616/135247.665423:ERROR:components/viz/service/display_embedder/skia_output_device_buffer_queue.cc:264] Invalid mailbox.
+[15914:2589909:0616/135247.934792:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[15914:2589909:0616/135247.934828:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[15914:2589909:0616/135249.806640:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[15914:2589909:0616/135249.806793:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[15914:2589909:0616/135257.699052:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[15914:2589909:0616/135257.788278:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[15914:2589909:0616/135257.932113:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[15914:2589909:0616/135258.164213:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[15914:2589909:0616/135258.268420:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[15914:2589909:0616/135258.285928:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[15914:2589909:0616/135258.427731:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[15914:2589909:0616/135308.404149:INFO:CONSOLE:2] "클립보드 팝업 처리 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135308.404257:INFO:CONSOLE:2] "총 버튼 수: 79", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135308.404932:INFO:CONSOLE:2] "클립보드 팝업 처리 결과: false", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135317.018094:INFO:CONSOLE:2] "직접 HTML 링크 삽입 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135317.018274:INFO:CONSOLE:2] "에디터 발견: ", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135317.021009:INFO:CONSOLE:2] "✅ HTML 링크 삽입 성공", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135318.031835:INFO:CONSOLE:2] "클립보드 팝업 확인 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135318.032728:INFO:CONSOLE:2] "클립보드 팝업을 찾지 못했습니다.", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135318.546541:INFO:CONSOLE:2] "클립보드 팝업 확인 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135318.548234:INFO:CONSOLE:2] "클립보드 팝업을 찾지 못했습니다.", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135319.057070:INFO:CONSOLE:2] "클립보드 팝업 확인 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135319.057474:INFO:CONSOLE:2] "클립보드 팝업을 찾지 못했습니다.", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135350.433715:INFO:CONSOLE:2] "JavaScript로 링크 입력창 찾기 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15914:2589909:0616/135350.433795:INFO:CONSOLE:2] "❌ 링크 입력창을 찾을 수 없음", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[15918:2589959:0616/135542.644488:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:484] SharedImageManager::ProduceOverlay: Trying to Produce a Overlay representation from a non-existent mailbox.
+[15918:2589959:0616/135542.644667:ERROR:components/viz/service/display_embedder/skia_output_device_buffer_queue.cc:264] Invalid mailbox.
+[15918:2589959:0616/135542.644682:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:484] SharedImageManager::ProduceOverlay: Trying to Produce a Overlay representation from a non-existent mailbox.
+[15918:2589959:0616/135542.644691:ERROR:components/viz/service/display_embedder/skia_output_device_buffer_queue.cc:264] Invalid mailbox.
+[15918:2589959:0616/135542.644698:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:484] SharedImageManager::ProduceOverlay: Trying to Produce a Overlay representation from a non-existent mailbox.
+[15918:2589959:0616/135542.644704:ERROR:components/viz/service/display_embedder/skia_output_device_buffer_queue.cc:264] Invalid mailbox.
+[15918:2589959:0616/135542.644709:ERROR:gpu/command_buffer/service/shared_image/shared_image_manager.cc:484] SharedImageManager::ProduceOverlay: Trying to Produce a Overlay representation from a non-existent mailbox.
+[15918:2589959:0616/135542.644714:ERROR:components/viz/service/display_embedder/skia_output_device_buffer_queue.cc:264] Invalid mailbox.

@@ -1,0 +1,12 @@
+[48642:3011440:0617/134014.796423:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[48642:3011440:0617/134015.473264:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[48642:3011440:0617/134015.801894:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)
+[48642:3011440:0617/134025.420187:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[48642:3011440:0617/134025.598522:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[48642:3011440:0617/134025.778325:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[48642:3011440:0617/134025.930201:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[48642:3011440:0617/134026.074288:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[48642:3011440:0617/134026.088548:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[48642:3011440:0617/134026.258816:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[48642:3011440:0617/134030.567818:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[48642:3011440:0617/134030.567851:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)

@@ -1,0 +1,10 @@
+[58331:3187466:0617/182117.160847:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[58331:3187466:0617/182117.963177:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[58331:3187466:0617/182118.392353:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)
+[58331:3187466:0617/182127.815807:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[58331:3187466:0617/182128.065618:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[58331:3187466:0617/182128.229639:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[58331:3187466:0617/182128.352750:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[58331:3187466:0617/182128.502844:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[58331:3187466:0617/182128.542726:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[58331:3187466:0617/182128.692625:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577

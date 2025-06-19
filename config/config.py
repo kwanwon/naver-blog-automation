@@ -35,7 +35,7 @@ class Config:
     NAVER_PW = os.getenv('NAVER_PW', '')
     
     # GPT API 키 (환경 변수에서 가져옴)
-    GPT_API_KEY = os.getenv('GPT_API_KEY', '')  # 환경 변수에서 API 키 가져오기
+    GPT_API_KEY = os.getenv('OPENAI_API_KEY', '')  # 환경 변수에서 API 키 가져오기
     
     # 기본 이미지 폴더
     DEFAULT_IMAGES_FOLDER = "default_images"

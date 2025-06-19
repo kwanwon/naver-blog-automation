@@ -1,0 +1,22 @@
+[61347:3256790:0617/200208.904836:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[61347:3256790:0617/200209.776798:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[61347:3256790:0617/200209.776890:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[61347:3256790:0617/200212.005817:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[61347:3256790:0617/200212.005882:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[61347:3256790:0617/200219.466325:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[61347:3256790:0617/200219.696123:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[61347:3256790:0617/200219.710938:WARNING:content/browser/download/download_manager_impl.cc:702] A download with the same GUID already exists, the new request is ignored.
+[61347:3256790:0617/200219.798261:WARNING:content/browser/download/download_manager_impl.cc:702] A download with the same GUID already exists, the new request is ignored.
+[61347:3256790:0617/200219.926309:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[61347:3256790:0617/200219.927503:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[61347:3256790:0617/200220.048841:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[61347:3256790:0617/200220.366252:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[61347:3256790:0617/200220.372094:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[61347:3256790:0617/200241.459508:INFO:CONSOLE:2] "Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[61347:3256790:0617/200247.839603:INFO:CONSOLE:2] "추가 버튼 발견, 5번 클릭 시도 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[61347:3256790:0617/200247.840066:INFO:CONSOLE:2] "1번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[61347:3256790:0617/200248.841533:INFO:CONSOLE:2] "2번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[61347:3256790:0617/200249.842406:INFO:CONSOLE:2] "3번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[61347:3256790:0617/200250.841713:INFO:CONSOLE:2] "4번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[61347:3256790:0617/200251.842405:INFO:CONSOLE:2] "5번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[61347:3256790:0617/200252.861426:INFO:CONSOLE:2] "정확한 선택자로 확인 버튼 발견", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)

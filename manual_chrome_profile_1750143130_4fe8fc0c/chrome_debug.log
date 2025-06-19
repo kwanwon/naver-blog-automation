@@ -1,0 +1,12 @@
+[53215:3097612:0617/155215.158630:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[53215:3097612:0617/155216.088160:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[53215:3097612:0617/155216.630685:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)
+[53215:3097612:0617/155225.724063:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[53215:3097612:0617/155225.824943:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[53215:3097612:0617/155225.963527:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[53215:3097612:0617/155226.125570:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[53215:3097612:0617/155226.240932:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[53215:3097612:0617/155226.241516:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[53215:3097612:0617/155226.414286:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[53215:3097612:0617/155236.189515:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login?mode=form&url=https%3A%2F%2Fblog.naver.com%2Fgm2hapkido%3FRedirect=Write%26categoryNo= (0)
+[53215:3097612:0617/155236.272575:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)

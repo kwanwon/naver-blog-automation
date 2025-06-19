@@ -1,4 +1,4 @@
-import flet as ft
+import flet as ft # type: ignore
 from modules.gpt_handler import GPTHandler
 import subprocess
 import os
@@ -8,6 +8,8 @@ import json
 from utils.folder_cleanup import FolderCleanup  # 추가
 import random
 import hashlib
+import threading
+import time
 
 class BlogWriterApp:
     def __init__(self):
@@ -99,10 +101,197 @@ class BlogWriterApp:
         self.current_title = ""
         self.current_content = ""
         self.last_save_content = None
+        self.browser_driver = None  # 브라우저 드라이버 인스턴스
+        self.temp_driver = None  # 임시 브라우저 드라이버 인스턴스
         
         # 순차적 주제 선택을 위한 인덱스 추적 변수
         self.current_topic_index = -1
         self.load_topic_index()  # 저장된 인덱스 로드
+
+    def simple_login(self, page, e):
+        """간단한 로그인 프로세스 - 브라우저 열고 내 블로그까지 이동"""
+        # 스낵바로 상태 표시
+        page.snack_bar = ft.SnackBar(content=ft.Text("🔧 Chrome 클립보드 권한을 설정하고 있습니다..."))
+        page.snack_bar.open = True
+        page.update()
+        
+        def open_browser():
+            try:
+                # 1. 먼저 Chrome 클립보드 권한 설정
+                print("🔧 Chrome 클립보드 권한 자동 설정 시작...")
+                try:
+                    from setup_chrome_permissions import setup_chrome_clipboard_permissions
+                    setup_success = setup_chrome_clipboard_permissions()
+                    if setup_success:
+                        print("✅ Chrome 클립보드 권한 설정 완료")
+                        page.snack_bar = ft.SnackBar(content=ft.Text("✅ Chrome 권한 설정 완료! 브라우저를 열고 있습니다..."))
+                    else:
+                        print("⚠️ Chrome 클립보드 권한 설정 실패, 계속 진행...")
+                        page.snack_bar = ft.SnackBar(content=ft.Text("⚠️ 권한 설정 실패했지만 브라우저를 열고 있습니다..."))
+                    page.snack_bar.open = True
+                    page.update()
+                except Exception as perm_error:
+                    print(f"권한 설정 중 오류 (무시하고 계속): {perm_error}")
+                    page.snack_bar = ft.SnackBar(content=ft.Text("🌐 브라우저를 열고 있습니다..."))
+                    page.snack_bar.open = True
+                    page.update()
+                
+                # 2. 브라우저 시작
+                from manual_session_helper import ManualSessionHelper
+                helper = ManualSessionHelper()
+                
+                # 브라우저 설정 및 시작
+                helper.setup_driver()
+                
+                # 네이버 로그인 페이지로 이동
+                helper.driver.get('https://nid.naver.com/nidlogin.login')
+                time.sleep(2)
+                
+                # 브라우저 인스턴스를 임시 저장
+                self.temp_driver = helper.driver
+                
+                # 로그인 완료 버튼 표시
+                self.show_login_complete_button(page)
+                
+            except Exception as e:
+                print(f"브라우저 열기 중 오류: {str(e)}")
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text(f"❌ 브라우저 열기 중 오류가 발생했습니다: {str(e)}"),
+                    bgcolor=ft.Colors.RED
+                )
+                page.snack_bar.open = True
+                page.update()
+        
+        # 별도 스레드에서 브라우저 열기
+        thread = threading.Thread(target=open_browser)
+        thread.daemon = True
+        thread.start()
+
+    def show_login_complete_button(self, page):
+        """로그인 완료 버튼 표시"""
+        page.snack_bar = ft.SnackBar(content=ft.Text("🔐 브라우저에서 네이버 로그인을 완료한 후 아래 버튼을 클릭해주세요!"))
+        page.snack_bar.open = True
+        page.update()
+        
+        # 로그인 완료 확인 버튼
+        complete_button = ft.ElevatedButton(
+            text="로그인 완료",
+            icon=ft.Icons.CHECK_CIRCLE,
+            on_click=lambda e: self.complete_login(page),
+            bgcolor=ft.Colors.GREEN,
+            color=ft.Colors.WHITE,
+            width=200,
+            height=50
+        )
+        
+        # 기존 로그인 버튼을 완료 버튼으로 교체
+        self.update_login_button(page, complete_button)
+
+    def complete_login(self, page):
+        """로그인 완료 처리"""
+        def complete_thread():
+            try:
+                # 내 블로그로 이동
+                page.snack_bar = ft.SnackBar(content=ft.Text("📝 내 블로그로 이동 중..."))
+                page.snack_bar.open = True
+                page.update()
+                
+                self.temp_driver.get('https://blog.naver.com')
+                time.sleep(3)
+                
+                # 로그인 상태 확인
+                page_source = self.temp_driver.page_source
+                if "로그아웃" in page_source or "님" in page_source:
+                    # 세션 정보 저장
+                    cookies = self.temp_driver.get_cookies()
+                    cookies_file = os.path.join(self.base_dir, 'naver_cookies.json')
+                    with open(cookies_file, 'w', encoding='utf-8') as f:
+                        json.dump(cookies, f, ensure_ascii=False, indent=2)
+                    
+                    # 브라우저 인스턴스를 클래스 변수로 저장 (재사용을 위해)
+                    self.browser_driver = self.temp_driver
+                    self.temp_driver = None
+                    
+                    page.snack_bar = ft.SnackBar(
+                        content=ft.Text("✅ 로그인 완료! 내 블로그에 접속했습니다. 이제 업로드가 가능합니다."),
+                        bgcolor=ft.Colors.GREEN
+                    )
+                    page.snack_bar.open = True
+                    page.update()
+                    
+                    # 원래 로그인 버튼으로 복원
+                    original_button = self.create_simple_login_button(page)
+                    self.update_login_button(page, original_button.content)
+                    
+                else:
+                    page.snack_bar = ft.SnackBar(
+                        content=ft.Text("❌ 로그인에 실패했습니다. 다시 시도해주세요."),
+                        bgcolor=ft.Colors.RED
+                    )
+                    page.snack_bar.open = True
+                    page.update()
+                    if hasattr(self, 'temp_driver') and self.temp_driver:
+                        self.temp_driver.quit()
+                        self.temp_driver = None
+                    
+                    # 원래 로그인 버튼으로 복원
+                    original_button = self.create_simple_login_button(page)
+                    self.update_login_button(page, original_button.content)
+                    
+            except Exception as e:
+                print(f"로그인 완료 처리 중 오류: {str(e)}")
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text(f"❌ 로그인 완료 처리 중 오류가 발생했습니다: {str(e)}"),
+                    bgcolor=ft.Colors.RED
+                )
+                page.snack_bar.open = True
+                page.update()
+                
+                # 원래 로그인 버튼으로 복원
+                original_button = self.create_simple_login_button(page)
+                self.update_login_button(page, original_button.content)
+        
+        # 별도 스레드에서 실행
+        thread = threading.Thread(target=complete_thread)
+        thread.daemon = True
+        thread.start()
+
+    def update_login_button(self, page, new_button):
+        """로그인 버튼 업데이트"""
+        try:
+            # 페이지의 첫 번째 탭(블로그 작성)의 첫 번째 컨트롤(로그인 버튼)을 업데이트
+            main_tab = page.controls[0].tabs[0].content  # 첫 번째 탭의 content
+            main_tab.controls[0] = ft.Container(
+                content=new_button,
+                alignment=ft.alignment.center,
+                padding=ft.padding.all(10)
+            )
+            page.update()
+        except Exception as e:
+            print(f"버튼 업데이트 중 오류: {str(e)}")
+
+    def check_login_status(self):
+        """네이버 로그인 상태 확인"""
+        cookies_path = os.path.join(self.base_dir, 'naver_cookies.json')
+        return os.path.exists(cookies_path)
+
+    def create_simple_login_button(self, page):
+        """간단한 로그인 버튼 생성"""
+        login_btn = ft.ElevatedButton(
+            text="네이버 로그인",
+            icon=ft.Icons.LOGIN,
+            on_click=lambda e: self.simple_login(page, e),
+            bgcolor=ft.Colors.BLUE,
+            color=ft.Colors.WHITE,
+            width=200,
+            height=50
+        )
+        
+        return ft.Container(
+            content=login_btn,
+            alignment=ft.alignment.center,
+            padding=ft.padding.all(10)
+        )
 
     def calculate_image_positions(self, content, mode):
         """본문 분석하여 이미지 삽입 위치 계산"""
@@ -385,6 +574,22 @@ class BlogWriterApp:
         def on_window_close(e):
             print("앱 종료 요청 감지됨")
             try:
+                # 브라우저 드라이버 종료
+                if hasattr(self, 'browser_driver') and self.browser_driver:
+                    try:
+                        self.browser_driver.quit()
+                        print("브라우저 드라이버 종료 완료")
+                    except:
+                        pass
+                
+                # 임시 브라우저 드라이버 종료
+                if hasattr(self, 'temp_driver') and self.temp_driver:
+                    try:
+                        self.temp_driver.quit()
+                        print("임시 브라우저 드라이버 종료 완료")
+                    except:
+                        pass
+                
                 # 실행 중인 모든 크롬 드라이버 프로세스 종료
                 if sys.platform == "win32":
                     os.system("taskkill /f /im chromedriver.exe")
@@ -394,7 +599,7 @@ class BlogWriterApp:
                     os.system("pkill -f chrome")
                     
                 # 현재 프로세스의 모든 자식 프로세스 종료
-                import psutil
+                import psutil # type: ignore
                 current_process = psutil.Process()
                 children = current_process.children(recursive=True)
                 for child in children:
@@ -528,6 +733,19 @@ class BlogWriterApp:
             color=ft.Colors.GREY_600,
             italic=True
         )
+        
+        # 🎯 최종 발행 설정 추가
+        auto_final_publish_checkbox = ft.Checkbox(
+            label="최종 발행 자동 완료",
+            value=True
+        )
+        
+        auto_final_publish_help_text = ft.Text(
+            "체크: 태그 추가 후 자동으로 발행 버튼까지 클릭하여 완전 자동 업로드. 체크 해제: 태그 추가 후 대기 상태로 수동 검토 가능.",
+            size=12,
+            color=ft.Colors.GREY_600,
+            italic=True
+        )
 
         # 이미지 삽입 모드 기본값 설정 (UI 요소 제거)
         image_insert_mode_value = "random"
@@ -547,6 +765,7 @@ class BlogWriterApp:
                     "auto_upload": auto_upload_checkbox.value,
                     "auto_image": auto_image_checkbox.value,
                     "auto_topic": auto_topic_checkbox.value,
+                    "auto_final_publish": auto_final_publish_checkbox.value,  # 🎯 최종 발행 설정 추가
                     "image_insert_mode": image_insert_mode_value,  # 이미지 삽입 방식 저장
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
@@ -574,11 +793,12 @@ class BlogWriterApp:
                         auto_upload_checkbox.value = app_settings.get('auto_upload', False)
                         auto_image_checkbox.value = app_settings.get('auto_image', True)
                         auto_topic_checkbox.value = app_settings.get('auto_topic', False)
+                        auto_final_publish_checkbox.value = app_settings.get('auto_final_publish', True)  # 🎯 최종 발행 설정 로드
                         image_insert_mode_value = app_settings.get('image_insert_mode', 'random')  # 이미지 삽입 방식 로드
                         page.update()
                         
-                    # 자동 주제 모드 상태 표시 업데이트    
-                    on_auto_topic_change(None)
+                    # 자동 주제 모드 상태 표시 업데이트는 함수 정의 후에 호출
+                    # on_auto_topic_change(None)  # 임시 주석 처리
             except Exception as e:
                 print(f"앱 설정 로드 중 오류 발생: {str(e)}")
 
@@ -649,6 +869,7 @@ class BlogWriterApp:
                         auto_upload_checkbox.value = app_settings.get('auto_upload', False)
                         auto_image_checkbox.value = app_settings.get('auto_image', True)
                         auto_topic_checkbox.value = app_settings.get('auto_topic', False)
+                        auto_final_publish_checkbox.value = app_settings.get('auto_final_publish', True)  # 🎯 최종 발행 설정 로드
                 
                 # API 키 로드
                 if os.path.exists(os.path.join(self.base_dir, '.env')):
@@ -715,6 +936,14 @@ class BlogWriterApp:
             max_lines=6
         )
 
+        slogan = ft.TextField(
+            label="마지막 슬로건",
+            hint_text="블로그 글 마지막에 표시될 슬로건을 입력하세요. 예: 바른 인성을 가진 인재를 기르는 한국체대 라이온 태권도 합기도",
+            multiline=True,
+            min_lines=2,
+            max_lines=4
+        )
+
         # 개발자 정보
         developer_info = ft.Container(
             content=ft.Column([
@@ -744,6 +973,7 @@ class BlogWriterApp:
                     "kakao_url": kakao_url.value,
                     "blog_tags": blog_tags.value,
                     "blog_topics": blog_topics.value,
+                    "slogan": slogan.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 with open(os.path.join(base_dir, 'config/user_settings.txt'), 'w', encoding='utf-8') as f:
@@ -775,6 +1005,7 @@ class BlogWriterApp:
                         kakao_url.value = settings.get('kakao_url', '')
                         blog_tags.value = settings.get('blog_tags', '')
                         blog_topics.value = settings.get('blog_topics', '')
+                        slogan.value = settings.get('slogan', '바른 인성을 가진 인재를 기르는 한국체대 라이온 태권도 합기도')
                         page.update()
             except Exception as e:
                 print(f"사용자 설정 로드 중 오류 발생: {str(e)}")
@@ -950,11 +1181,92 @@ class BlogWriterApp:
 
         # 블로그 업로드 처리
         def upload_to_blog(e):
+            print("🚀 업로드 버튼 클릭됨")
+            
             if not title_input.value or not content_input.value:
                 page.snack_bar = ft.SnackBar(content=ft.Text("제목과 내용을 모두 입력해주세요."))
                 page.snack_bar.open = True
                 page.update()
                 return
+
+            # 로그인 상태 확인 (브라우저 인스턴스 확인) - 디버깅 정보 추가
+            print(f"🔍 브라우저 상태 확인:")
+            print(f"  - hasattr(self, 'browser_driver'): {hasattr(self, 'browser_driver')}")
+            if hasattr(self, 'browser_driver'):
+                print(f"  - self.browser_driver is not None: {self.browser_driver is not None}")
+                if self.browser_driver:
+                    try:
+                        current_url = self.browser_driver.current_url
+                        print(f"  - 현재 브라우저 URL: {current_url}")
+                    except Exception as browser_e:
+                        print(f"  - 브라우저 상태 확인 중 오류: {browser_e}")
+                        self.browser_driver = None
+            
+            if not hasattr(self, 'browser_driver') or not self.browser_driver:
+                # 저장된 쿠키가 있는지 확인
+                cookies_file = os.path.join(self.base_dir, 'naver_cookies.json')
+                if os.path.exists(cookies_file):
+                    print("💾 저장된 쿠키 발견, 새 브라우저 세션 생성 시도...")
+                    try:
+                        # 새 브라우저 생성 및 쿠키 로드
+                        from manual_session_helper import ManualSessionHelper
+                        helper = ManualSessionHelper()
+                        helper.setup_driver()
+                        
+                        # 네이버 메인 페이지로 이동
+                        helper.driver.get('https://www.naver.com')
+                        time.sleep(2)
+                        
+                        # 쿠키 로드
+                        with open(cookies_file, 'r', encoding='utf-8') as f:
+                            cookies = json.load(f)
+                        
+                        for cookie in cookies:
+                            try:
+                                helper.driver.add_cookie(cookie)
+                            except Exception as cookie_e:
+                                print(f"쿠키 추가 실패: {cookie.get('name', 'unknown')} - {cookie_e}")
+                        
+                        # 페이지 새로고침하여 로그인 상태 적용
+                        helper.driver.refresh()
+                        time.sleep(3)
+                        
+                        # 내 블로그로 이동
+                        helper.driver.get('https://blog.naver.com')
+                        time.sleep(3)
+                        
+                        # 로그인 상태 확인
+                        page_source = helper.driver.page_source
+                        if "로그아웃" in page_source or "님" in page_source:
+                            self.browser_driver = helper.driver
+                            print("✅ 저장된 쿠키로 브라우저 세션 복원 성공!")
+                            page.snack_bar = ft.SnackBar(
+                                content=ft.Text("✅ 저장된 로그인 정보로 브라우저 세션을 복원했습니다!"),
+                                bgcolor=ft.Colors.GREEN
+                            )
+                            page.snack_bar.open = True
+                            page.update()
+                        else:
+                            helper.driver.quit()
+                            raise Exception("쿠키로 로그인 복원 실패")
+                            
+                    except Exception as restore_e:
+                        print(f"❌ 브라우저 세션 복원 실패: {restore_e}")
+                        page.snack_bar = ft.SnackBar(
+                            content=ft.Text("❌ 브라우저 세션이 없습니다.\n\n1. '네이버 로그인' 버튼 클릭\n2. 브라우저에서 로그인 완료\n3. '로그인 완료' 버튼 클릭\n\n위 단계를 완료한 후 다시 시도해주세요."),
+                            bgcolor=ft.Colors.ORANGE
+                        )
+                        page.snack_bar.open = True
+                        page.update()
+                        return
+                else:
+                    page.snack_bar = ft.SnackBar(
+                        content=ft.Text("❌ 브라우저 세션이 없습니다.\n\n1. '네이버 로그인' 버튼 클릭\n2. 브라우저에서 로그인 완료\n3. '로그인 완료' 버튼 클릭\n\n위 단계를 완료한 후 다시 시도해주세요."),
+                        bgcolor=ft.Colors.ORANGE
+                    )
+                    page.snack_bar.open = True
+                    page.update()
+                    return
 
             try:
                 # 업로드 진행 상태 표시
@@ -1023,69 +1335,80 @@ class BlogWriterApp:
                     f.write(f"제목: {title_input.value}\n\n{formatted_content}")
 
                 try:
-                    # naver_blog_auto.py 실행
+                    # 기존 naver_blog_auto.py 시스템 활용
+                    dlg.content.controls[0].value = "네이버 블로그 자동화 시스템 초기화 중..."
+                    page.update()
+                    
+                    # naver_blog_auto.py import
                     from naver_blog_auto import NaverBlogAutomation
                     
-                    # 현재 이미지 폴더 인덱스 기반으로 커스텀 이미지 폴더 가져오기
-                    custom_images_folder = None
-                    try:
-                        # get_next_image_folder() 함수 호출 - 이미 사용된 폴더를 제외하고 다음 폴더 선택
-                        folder_path = self.get_next_image_folder()
-                        
-                        if os.path.exists(folder_path):
-                            custom_images_folder = folder_path
-                            print(f"커스텀 이미지 폴더 사용: {folder_path}")
-                    except Exception as e:
-                        print(f"커스텀 이미지 폴더 설정 오류: {str(e)}")
-                    
-                    # 블로그 자동화 인스턴스 생성 (이미지 자동 삽입 모드와 삽입 방식 전달)
+                    # 자동화 인스턴스 생성 (기존 브라우저 세션 활용)
                     blog_auto = NaverBlogAutomation(
-                        auto_mode=auto_image_checkbox.value,
-                        image_insert_mode=image_insert_mode_value,
-                        use_stickers=False,  # 스티커 사용 비활성화
-                        custom_images_folder=custom_images_folder  # 커스텀 이미지 폴더 전달
+                        auto_mode=auto_image_checkbox.value,  # UI 체크박스 값 사용
+                        image_insert_mode="random",
+                        use_stickers=False
                     )
                     
-                    try:
-                        # 드라이버 설정
-                        blog_auto.setup_driver()
-                        dlg.content.controls[0].value = "크롬 드라이버 설정 완료..."
-                        page.update()
+                    # 기본 디렉토리를 현재 작업 디렉토리로 설정하여 설정 파일 경로 보정
+                    blog_auto.base_dir = self.base_dir
+                    
+                    # 설정을 다시 로드하여 슬로건 등 최신 설정 반영
+                    blog_auto.settings = blog_auto.load_settings()
+                    
+                    # 기존 브라우저 세션을 naver_blog_auto에 전달
+                    blog_auto.driver = self.browser_driver
+                    
+                    # 이미지 삽입 핸들러 수동 초기화 (기존 브라우저 세션 사용 시)
+                    if auto_image_checkbox.value and blog_auto.driver:
+                        print("🖼️ 이미지 삽입 핸들러 수동 초기화 중...")
+                        from naver_blog_auto_image import NaverBlogImageInserter
                         
-                        # 네이버 로그인
-                        if blog_auto.login_naver():
-                            dlg.content.controls[0].value = "네이버 로그인 완료..."
-                            page.update()
-                            
-                            # 블로그 글쓰기 페이지로 이동
-                            if blog_auto.go_to_blog():
-                                dlg.content.controls[0].value = "블로그 글쓰기 페이지 이동 완료..."
-                                page.update()
-                                
-                                # 저장된 태그 가져오기
-                                tags = []
-                                if os.path.exists(os.path.join(self.base_dir, 'config/user_settings.txt')):
-                                    with open(os.path.join(self.base_dir, 'config/user_settings.txt'), 'r', encoding='utf-8') as f:
-                                        settings = json.load(f)
-                                        tags = [tag.strip() for tag in settings.get('blog_tags', '').split(',') if tag.strip()]
-                                
-                                # 포맷팅된 내용으로 포스트 작성 및 발행
-                                if blog_auto.write_post(title_input.value, formatted_content, tags=tags):
-                                    dlg.open = False
-                                    page.update()
-                                    page.snack_bar = ft.SnackBar(content=ft.Text("블로그에 성공적으로 업로드되었습니다!"))
-                                    page.snack_bar.open = True
-                                    page.update()
-                                    return
-                                else:
-                                    raise Exception("포스트 작성 실패")
-
-                    except Exception as e:
-                        print(f"블로그 자동화 중 오류 발생: {str(e)}")
-                        raise e
+                        fallback_folder = blog_auto.custom_images_folder if blog_auto.custom_images_folder else blog_auto.default_images_folder
+                        print(f"사용할 이미지 폴더: {fallback_folder}")
+                        
+                        blog_auto.image_inserter = NaverBlogImageInserter(
+                            driver=blog_auto.driver,
+                            images_folder=blog_auto.images_folder,
+                            insert_mode=blog_auto.image_insert_mode,
+                            fallback_folder=fallback_folder
+                        )
+                        print("✅ 이미지 삽입 핸들러 수동 초기화 완료")
+                    else:
+                        print("ℹ️ 이미지 자동 삽입이 비활성화되어 있습니다.")
+                        blog_auto.image_inserter = None
+                    
+                    dlg.content.controls[0].value = "블로그 포스팅 작성 중..."
+                    page.update()
+                    
+                    # 태그 로드
+                    tags = []
+                    if os.path.exists(os.path.join(self.base_dir, 'config/user_settings.txt')):
+                        with open(os.path.join(self.base_dir, 'config/user_settings.txt'), 'r', encoding='utf-8') as f:
+                            settings = json.load(f)
+                            tags = [tag.strip() for tag in settings.get('blog_tags', '').split(',') if tag.strip()]
+                    
+                    # 블로그 포스팅 작성 (기존 시스템 활용)
+                    success = blog_auto.write_post(
+                        title=title_input.value,
+                        content=formatted_content,
+                        tags=tags
+                    )
+                    
+                    if success:
+                        dlg.open = False
+                        page.update()
+                        page.snack_bar = ft.SnackBar(
+                            content=ft.Text("✅ 블로그에 성공적으로 업로드되었습니다! 브라우저는 다음 업로드를 위해 유지됩니다."),
+                            bgcolor=ft.Colors.GREEN
+                        )
+                        page.snack_bar.open = True
+                        page.update()
+                        return
+                    else:
+                        raise Exception("블로그 포스팅 작성에 실패했습니다")
                         
                 except Exception as e:
-                    print(f"NaverBlogAutomation 초기화 중 오류 발생: {str(e)}")
+                    print(f"naver_blog_auto 업로드 중 오류 발생: {str(e)}")
                     raise e
                     
             except Exception as e:
@@ -1179,6 +1502,8 @@ class BlogWriterApp:
                     auto_upload_help_text,
                     auto_topic_checkbox,
                     auto_topic_help_text,
+                    auto_final_publish_checkbox,  # 🎯 최종 발행 체크박스 추가
+                    auto_final_publish_help_text,  # 🎯 최종 발행 도움말 추가
                     save_gpt_button
                 ],
                 spacing=20,
@@ -1201,6 +1526,7 @@ class BlogWriterApp:
                     kakao_url,
                     blog_tags,
                     blog_topics,
+                    slogan,
                     save_user_button,
                     developer_info
                 ],
@@ -1211,25 +1537,35 @@ class BlogWriterApp:
             expand=True
         )
 
+        # 로그인 버튼 생성
+        login_button = self.create_simple_login_button(page)
+
         # 메인 컨텐츠 탭
-        main_content_tab = ft.Row(
+        main_content_tab = ft.Column(
             controls=[
-                ft.Container(
-                    content=left_panel,
-                    padding=10,
-                    border=ft.border.all(1, ft.Colors.GREY_400),
-                    border_radius=10,
-                    expand=True
-                ),
-                ft.Container(
-                    content=right_panel,
-                    padding=10,
-                    border=ft.border.all(1, ft.Colors.GREY_400),
-                    border_radius=10,
+                login_button,  # 로그인 버튼 추가
+                ft.Row(
+                    controls=[
+                        ft.Container(
+                            content=left_panel,
+                            padding=10,
+                            border=ft.border.all(1, ft.Colors.GREY_400),
+                            border_radius=10,
+                            expand=True
+                        ),
+                        ft.Container(
+                            content=right_panel,
+                            padding=10,
+                            border=ft.border.all(1, ft.Colors.GREY_400),
+                            border_radius=10,
+                            expand=True
+                        )
+                    ],
+                    spacing=20,
                     expand=True
                 )
             ],
-            spacing=20,
+            spacing=10,
             expand=True
         )
 
@@ -1290,6 +1626,9 @@ class BlogWriterApp:
             page.update()
             
         auto_topic_checkbox.on_change = on_auto_topic_change
+        
+        # 초기 상태 설정
+        on_auto_topic_change(None)
 
 if __name__ == "__main__":
     app = BlogWriterApp()

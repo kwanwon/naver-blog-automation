@@ -1,0 +1,29 @@
+[11819:2564612:0616/132903.730053:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[11819:2564612:0616/132904.590777:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[11819:2564612:0616/132905.076191:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)
+[11819:2564612:0616/132914.313429:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[11819:2564612:0616/132914.428073:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[11819:2564612:0616/132914.570075:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[11819:2564612:0616/132914.735956:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[11819:2564612:0616/132914.839862:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[11819:2564612:0616/132914.858128:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[11819:2564612:0616/132915.009220:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[11819:2564612:0616/132919.824995:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[11819:2564612:0616/132919.906452:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)
+[11819:2564612:0616/132927.617065:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[11819:2564612:0616/132927.617224:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[11819:2564612:0616/132951.491120:INFO:CONSOLE:2] "클립보드 팝업 처리 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/132951.491374:INFO:CONSOLE:2] "총 버튼 수: 79", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/132951.491917:INFO:CONSOLE:2] "클립보드 팝업 처리 결과: false", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133001.180154:INFO:CONSOLE:2] "팝업 확인 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133001.180436:INFO:CONSOLE:2] "검사할 버튼 수: 79", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133001.180619:INFO:CONSOLE:2] "팝업을 찾지 못했습니다.", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133001.694867:INFO:CONSOLE:2] "팝업 확인 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133001.695127:INFO:CONSOLE:2] "검사할 버튼 수: 79", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133001.696624:INFO:CONSOLE:2] "팝업을 찾지 못했습니다.", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133002.205249:INFO:CONSOLE:2] "팝업 확인 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133002.205340:INFO:CONSOLE:2] "검사할 버튼 수: 79", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133002.205629:INFO:CONSOLE:2] "팝업을 찾지 못했습니다.", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133015.042564:INFO:CONSOLE:2] "링크 입력창 찾기 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133015.042693:INFO:CONSOLE:2] "링크 입력창을 찾을 수 없습니다.", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[11819:2564612:0616/133122.153314:INFO:CONSOLE:447] "'g_pid / lcs_get_lpid' is not exist.", source: https://ssl.pstatic.net/t.static.blog/section/versioning/NgAppBundle2-1246892042_https.js (447)

@@ -1,0 +1,21 @@
+[34033:2733525:0616/163034.581917:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[34033:2733525:0616/163035.182086:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[34033:2733525:0616/163035.568417:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)
+[34033:2733525:0616/163045.094962:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[34033:2733525:0616/163045.211841:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[34033:2733525:0616/163045.363379:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[34033:2733525:0616/163045.480679:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[34033:2733525:0616/163045.594486:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[34033:2733525:0616/163045.652435:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[34033:2733525:0616/163045.751074:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[34033:2733525:0616/163047.800921:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[34033:2733525:0616/163047.800963:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[34033:2733525:0616/163047.947345:INFO:CONSOLE:165] "[object Object]", source: https://www.naver.com/ (165)
+[34069:2734090:0616/163048.177899:ERROR:sandbox/mac/system_services.cc:31] SetApplicationIsDaemon: Error Domain=NSOSStatusErrorDomain Code=-50 "paramErr: error in user parameter list" (-50)
+[34033:2733525:0616/163110.229275:INFO:CONSOLE:2] "클립보드 팝업 처리 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[34033:2733525:0616/163110.229361:INFO:CONSOLE:2] "총 버튼 수: 64", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[34033:2733525:0616/163110.229848:INFO:CONSOLE:2] "클립보드 팝업 처리 결과: false", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[34033:2733525:0616/163116.598302:INFO:CONSOLE:5] "새로고침 후 클립보드 팝업 재확인...", source:  (5)
+[34033:2733525:0616/163116.598336:INFO:CONSOLE:22] "새로고침 후 클립보드 팝업 처리 결과: false", source:  (22)
+[34033:2733525:0616/163117.606511:INFO:CONSOLE:5] "새로고침 후 클립보드 팝업 재확인...", source:  (5)
+[34033:2733525:0616/163117.606548:INFO:CONSOLE:22] "새로고침 후 클립보드 팝업 처리 결과: false", source:  (22)

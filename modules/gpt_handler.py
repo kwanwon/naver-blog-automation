@@ -37,7 +37,16 @@ class GPTHandler:
         self.model = Config.GPT_MODEL
         
         try:
-            api_key = Config.GPT_API_KEY
+            # 먼저 GPT 설정 파일에서 API 키 확인
+            api_key = None
+            if self.settings and 'api_key' in self.settings and self.settings['api_key']:
+                api_key = self.settings['api_key']
+                logger.info("GPT 설정 파일에서 API 키를 로드했습니다.")
+            else:
+                # 환경변수에서 API 키 확인
+                api_key = Config.GPT_API_KEY
+                logger.info("환경변수에서 API 키를 로드했습니다.")
+            
             if api_key == 'your-api-key-here' or not api_key:
                 # 오류 대신 자동으로 더미 모드로 설정
                 logger.warning("API 키가 설정되지 않았습니다. 더미 모드로 전환합니다.")
@@ -165,26 +174,24 @@ class GPTHandler:
 지침:
 {settings['instructions']}
 
+글쓰기 스타일:
+{settings['style']}
+
 작성 규칙:
 1. 제목
 - SEO 최적화된 매력적인 제목
 - 핵심 키워드 포함
 - 독자의 호기심을 자극하는 표현
 
-2. 글쓰기 스타일
-{settings['style']}
-- 각 문단은 2-3문장으로 구성
-
-3. 콘텐츠 구성
+2. 콘텐츠 구성
 - 자연스러운 도입과 전개
 - 핵심 정보 위주의 설명
 - 실용적인 조언이나 팁 제공
 - 깔끔한 마무리
 
-4. 필수 요소
-- 이모지는 주요 구간에만 적절히 사용
-- 중요 내용은 ◆ 기호로 강조
-- 검색 키워드 자연스럽게 포함"""
+3. 기본 요구사항
+- 검색 키워드 자연스럽게 포함
+- 위에 명시된 페르소나, 지침, 글쓰기 스타일을 엄격히 준수"""
 
         # 사용자 프롬프트 구성 (커스텀 프롬프트 적용)
         base_prompt = f"""주제: {topic}
@@ -192,7 +199,7 @@ class GPTHandler:
 위 주제로 다음 형식에 맞춰 블로그 포스트를 작성해주세요.
 
 1. 먼저 [제목] 아래에 SEO 최적화된 제목을 작성해주세요.
-2. 그 다음 [본문] 아래에 1500자 내외의 본문을 작성해주세요.
+2. 그 다음 [본문] 아래에 본문을 작성해주세요.
 
 예시 형식:
 [제목]
@@ -202,17 +209,14 @@ class GPTHandler:
 (여기에 본문 작성)
 
 작성 시 다음 사항을 반드시 지켜주세요:
+- 위에서 명시한 페르소나, 지침, 글쓰기 스타일을 엄격히 준수
 - 자연스러운 글의 흐름을 유지하면서 정보 전달
-- 실제 사례나 통계 자료 포함
+- 실제 사례나 통계 자료 포함 (가능한 경우)
 - 실용적인 정보와 조언 제공
 - 전문적인 내용을 쉽게 설명
-- 불필요한 호응이나 질문 없이 깔끔한 마무리
+- 깔끔한 마무리
 
-추가 요구사항:
-- 이모지는 새로운 주제 전환시에만 사용
-- 중요한 내용은 ◆ 기호로 강조
-- 각 문단은 2-3문장으로 작성
-- 전체 글은 1500자 내외로 작성"""
+중요: 모든 작성 규칙은 위에서 설정한 지침과 스타일을 최우선으로 따라주세요."""
 
         # 커스텀 프롬프트가 있으면 추가
         user_prompt = base_prompt
@@ -315,9 +319,19 @@ class GPTHandler:
             
             body = parts[1].strip()
             
-            # 본문의 가독성 향상을 위한 후처리
-            body = body.replace('•', '◆')  # 글머리 기호 통일
-            body = body.replace('- ', '◆ ')  # 하이픈을 글머리 기호로 변경
+            # 사용자 설정에 따른 후처리 (기호 사용 금지 설정 확인)
+            settings = self._load_settings()
+            if '기호' in settings.get('instructions', '') and '사용하지 말' in settings.get('instructions', ''):
+                # 기호 사용 금지 설정인 경우 기호 제거
+                body = body.replace('◆', '')
+                body = body.replace('•', '')
+                body = body.replace('- ', '')
+                body = body.replace('▶', '')
+                body = body.replace('★', '')
+            else:
+                # 기호 사용이 허용된 경우에만 통일
+                body = body.replace('•', '◆')
+                body = body.replace('- ', '◆ ')
             
             return title, body
             
@@ -441,28 +455,45 @@ class GPTHandler:
 
     def _enhance_formatting(self, content):
         """콘텐츠의 가독성을 향상시킵니다."""
-        # 이모지 매핑
-        emoji_map = {
-            '도입': '👋',
-            '소개': '📝',
-            '장점': '✨',
-            '특징': '🔍',
-            '방법': '📌',
-            '팁': '💡',
-            '주의': '⚠️',
-            '결론': '✅',
-            '요약': '📋',
-            '제안': '💪'
-        }
+        # 사용자 설정 확인
+        settings = self._load_settings()
         
-        # 이모지 추가
-        formatted_content = content
-        for key, emoji in emoji_map.items():
-            formatted_content = formatted_content.replace(f"◆ {key}", f"{emoji} {key}")
-        
-        # 강조 표시 개선
-        formatted_content = formatted_content.replace('•', '◆')
-        formatted_content = formatted_content.replace('- ', '◆ ')
+        # 기호나 이모티콘 사용 금지 설정 확인
+        if ('기호' in settings.get('instructions', '') and '사용하지 말' in settings.get('instructions', '')) or \
+           ('이모티콘' in settings.get('instructions', '') and '사용하지 말' in settings.get('instructions', '')):
+            # 기호와 이모티콘 제거
+            formatted_content = content
+            formatted_content = formatted_content.replace('◆', '')
+            formatted_content = formatted_content.replace('•', '')
+            formatted_content = formatted_content.replace('- ', '')
+            formatted_content = formatted_content.replace('▶', '')
+            formatted_content = formatted_content.replace('★', '')
+            # 이모티콘 제거 (일반적인 이모티콘들)
+            import re
+            formatted_content = re.sub(r'[👋📝✨🔍📌💡⚠️✅📋💪🎯💯🌟⭐️🚀💝]', '', formatted_content)
+        else:
+            # 기호와 이모티콘 사용이 허용된 경우
+            emoji_map = {
+                '도입': '👋',
+                '소개': '📝',
+                '장점': '✨',
+                '특징': '🔍',
+                '방법': '📌',
+                '팁': '💡',
+                '주의': '⚠️',
+                '결론': '✅',
+                '요약': '📋',
+                '제안': '💪'
+            }
+            
+            # 이모지 추가
+            formatted_content = content
+            for key, emoji in emoji_map.items():
+                formatted_content = formatted_content.replace(f"◆ {key}", f"{emoji} {key}")
+            
+            # 강조 표시 개선
+            formatted_content = formatted_content.replace('•', '◆')
+            formatted_content = formatted_content.replace('- ', '◆ ')
         
         # 문단 구분 개선
         paragraphs = formatted_content.split('\n\n')

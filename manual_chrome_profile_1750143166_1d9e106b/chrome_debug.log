@@ -1,0 +1,30 @@
+[53346:3099441:0617/155247.211733:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[53346:3099441:0617/155247.885310:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[53346:3099441:0617/155248.206766:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)
+[53346:3099441:0617/155257.856012:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[53346:3099441:0617/155257.888874:WARNING:content/browser/download/download_manager_impl.cc:702] A download with the same GUID already exists, the new request is ignored.
+[53374:3099877:0617/155257.891947:ERROR:third_party/zlib/google/zip_reader.cc:154] Cannot open ZIP from file handle 12
+[53374:3099877:0617/155257.892154:ERROR:third_party/zlib/google/zip.cc:202] Cannot open ZIP from file handle 12
+[53346:3099441:0617/155257.908950:WARNING:content/browser/download/download_manager_impl.cc:702] A download with the same GUID already exists, the new request is ignored.
+[53346:3099441:0617/155258.087970:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[53346:3099441:0617/155258.195177:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[53346:3099441:0617/155258.195204:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[53346:3099441:0617/155258.269469:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[53376:3099910:0617/155258.360292:ERROR:third_party/zlib/google/zip_reader.cc:154] Cannot open ZIP from file handle 12
+[53376:3099910:0617/155258.360608:ERROR:third_party/zlib/google/zip.cc:202] Cannot open ZIP from file handle 12
+[53346:3099441:0617/155258.366279:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[53346:3099441:0617/155258.523635:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[53346:3099441:0617/155258.575628:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[53346:3099441:0617/155258.711503:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[53346:3099441:0617/155321.658020:INFO:CONSOLE:2] "클립보드 팝업 확인 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155321.659639:INFO:CONSOLE:2] "🎯 허용 버튼 발견! 확인", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155321.659766:INFO:CONSOLE:2] "✅ 허용 버튼 클릭 완료", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155323.789218:INFO:CONSOLE:2] "정확한 선택자로 확인 버튼 발견: button.se-popup-button.se-popup-button-confirm", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155330.154381:INFO:CONSOLE:2] "Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155336.499389:INFO:CONSOLE:2] "추가 버튼 발견, 5번 클릭 시도 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155336.499958:INFO:CONSOLE:2] "1번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155337.501960:INFO:CONSOLE:2] "2번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155338.501215:INFO:CONSOLE:2] "3번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155339.500410:INFO:CONSOLE:2] "4번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155340.500994:INFO:CONSOLE:2] "5번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[53346:3099441:0617/155341.528600:INFO:CONSOLE:2] "정확한 선택자로 확인 버튼 발견", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)

@@ -1,0 +1,36 @@
+[48698:3012193:0617/134036.673793:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[48698:3012193:0617/134037.427497:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[48698:3012193:0617/134037.427534:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[48698:3012193:0617/134039.666696:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://shopsquare.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[48698:3012193:0617/134039.666719:INFO:CONSOLE:2] "Failed to execute 'postMessage' on 'DOMWindow': The target origin provided ('https://recoshopping.naver.com') does not match the recipient window's origin ('https://www.naver.com').", source: https://pm.pstatic.net/resources/js/main.1729700b.js?o=www (2)
+[48698:3012193:0617/134047.344374:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[48698:3012193:0617/134047.374840:WARNING:content/browser/download/download_manager_impl.cc:702] A download with the same GUID already exists, the new request is ignored.
+[48698:3012193:0617/134047.414832:WARNING:content/browser/download/download_manager_impl.cc:702] A download with the same GUID already exists, the new request is ignored.
+[48698:3012193:0617/134047.660323:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[48698:3012193:0617/134047.838228:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[48698:3012193:0617/134047.969049:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[48698:3012193:0617/134048.145047:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[48698:3012193:0617/134048.188122:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[48698:3012193:0617/134048.347728:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[48698:3012193:0617/134108.663164:INFO:CONSOLE:2] "Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134115.070051:INFO:CONSOLE:2] "추가 버튼 발견, 5번 클릭 시도 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134115.070521:INFO:CONSOLE:2] "1번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134116.072327:INFO:CONSOLE:2] "2번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134117.071933:INFO:CONSOLE:2] "3번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134118.072520:INFO:CONSOLE:2] "4번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134119.072559:INFO:CONSOLE:2] "5번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134120.093541:INFO:CONSOLE:2] "정확한 선택자로 확인 버튼 발견", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134221.516742:INFO:CONSOLE:2] "클립보드 팝업 확인 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134221.517477:INFO:CONSOLE:2] "🎯 허용 버튼 발견! 확인", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134221.535699:INFO:CONSOLE:2] "✅ 허용 버튼 클릭 완료", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134253.479985:INFO:CONSOLE:2] "JavaScript로 링크 입력창 찾기 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134253.480037:INFO:CONSOLE:2] "❌ 링크 입력창을 찾을 수 없음", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134256.283169:INFO:CONSOLE:2] "Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134303.095046:INFO:CONSOLE:2] "추가 버튼 발견, 5번 클릭 시도 시작...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134303.095199:INFO:CONSOLE:2] "1번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134304.095822:INFO:CONSOLE:2] "2번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134305.096634:INFO:CONSOLE:2] "3번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134306.096109:INFO:CONSOLE:2] "4번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134307.096176:INFO:CONSOLE:2] "5번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/134308.105535:INFO:CONSOLE:2] "정확한 선택자로 확인 버튼 발견", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[48698:3012193:0617/135643.050191:WARNING:ui/compositor/compositor_animation_observer.cc:66] CompositorAnimationObserver is active for too long (820.957s) location=StatusViewAnimation@chrome/browser/ui/views/status_bubble_views.cc:589

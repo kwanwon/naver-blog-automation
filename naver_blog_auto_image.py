@@ -12,6 +12,7 @@ import traceback
 import json
 import datetime
 from pathlib import Path
+from folder_manager import ImageFolderManager
 
 # 리소스 경로 처리 함수
 def resource_path(relative_path):
@@ -79,80 +80,40 @@ class NaverBlogImageInserter:
         self.insert_mode = insert_mode
         self.current_line = 0
         
+        # 폴더 관리자 초기화 (현재 파일 위치 기준)
+        current_file_dir = os.path.dirname(os.path.abspath(__file__))
+        self.folder_manager = ImageFolderManager(base_dir=current_file_dir)
+        
         print(f"이미지 인서터 초기화: 주 폴더={self.images_folder}, 대체 폴더={self.fallback_folder}")
 
     def get_image_files(self):
-        """이미지 폴더에서 사용 가능한 이미지 파일 목록을 가져옵니다."""
-        # 1. 날짜 폴더 먼저 확인 (우선순위)
-        primary_images = []
-        if self.images_folder and os.path.exists(self.images_folder):
-            print(f"날짜 폴더 확인: {self.images_folder}")
-            try:
-                for file in os.listdir(self.images_folder):
-                    if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                        full_path = os.path.join(self.images_folder, file)
-                        if full_path not in self.used_images:
-                            primary_images.append(full_path)
-            except Exception as e:
-                print(f"날짜 폴더 읽기 오류: {str(e)}")
+        """이미지 폴더에서 사용 가능한 이미지 파일 목록을 가져옵니다. (폴더별 순환 시스템)"""
         
-        # 2. 날짜 폴더에 이미지가 있으면 그것을 사용
-        if primary_images:
-            print(f"날짜 폴더에서 {len(primary_images)}개의 이미지를 찾았습니다.")
-            return sorted(primary_images)
+        # 폴더 순환 시스템 사용
+        print("📁 폴더 순환 시스템을 사용합니다.")
+        
+        # 폴더 상태 출력
+        self.folder_manager.show_folder_status()
+        
+        # 현재 차례인 폴더 가져오기
+        current_folder = self.folder_manager.get_current_folder()
+        if not current_folder:
+            print("❌ 사용 가능한 이미지 폴더가 없습니다.")
+            return []
+        
+        # 현재 폴더에서 이미지 가져오기
+        current_images = self.folder_manager.get_images_from_folder(current_folder)
+        
+        if current_images:
+            print(f"✅ {current_folder}에서 {len(current_images)}개의 이미지를 찾았습니다.")
             
-        # 3. 날짜 폴더에 이미지가 없는 경우 대체 폴더 사용
-        print(f"날짜 폴더에 이미지가 없어 대체 폴더들을 확인합니다.")
-        
-        # 3.1 대체 폴더 목록 구성
-        fallback_folders = []
-        
-        # 기본 fallback_folder 확인
-        if os.path.exists(self.fallback_folder):
-            fallback_folders.append(self.fallback_folder)
-        
-        # 빌드된 앱에서 resource_path 사용하여 대체 폴더 확인
-        bundled_path = resource_path(self.fallback_folder)
-        if os.path.exists(bundled_path) and bundled_path not in fallback_folders:
-            fallback_folders.append(bundled_path)
-        
-        # 3.2 숫자가 붙은 대체 폴더 확인 (default_images_1, default_images_2, ...)
-        for i in range(1, 12):  # 1부터 11까지
-            folder_name = f"{self.fallback_folder}_{i}"
+            # 다음 업로드를 위해 폴더 인덱스 증가
+            self.folder_manager.get_next_folder()
             
-            # 일반 경로 확인
-            if os.path.exists(folder_name):
-                fallback_folders.append(folder_name)
-            
-            # 빌드된 앱에서 경로 확인
-            bundled_path = resource_path(folder_name)
-            if os.path.exists(bundled_path) and bundled_path not in fallback_folders:
-                fallback_folders.append(bundled_path)
-        
-        print(f"확인할 대체 폴더들: {fallback_folders}")
-        
-        # 3.3 대체 폴더들에서 이미지 수집
-        fallback_images = []
-        for folder in fallback_folders:
-            if not os.path.exists(folder):
-                continue
-                
-            try:
-                for file in os.listdir(folder):
-                    if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                        full_path = os.path.join(folder, file)
-                        if full_path not in self.used_images:
-                            fallback_images.append(full_path)
-            except Exception as e:
-                print(f"폴더 {folder} 읽기 오류: {str(e)}")
-        
-        if fallback_images:
-            print(f"대체 폴더들에서 총 {len(fallback_images)}개의 이미지를 찾았습니다.")
-            return sorted(fallback_images)
-                
-        # 4. 어떤 폴더에도 이미지가 없는 경우
-        print(f"이미지를 찾을 수 없습니다. 날짜 폴더: {self.images_folder}, 대체 폴더들: {fallback_folders}")
-        return []
+            return current_images
+        else:
+            print(f"❌ {current_folder}에 이미지가 없습니다.")
+            return []
 
     def find_file_button(self):
         """파일 선택 버튼을 찾는 메서드"""
@@ -249,10 +210,82 @@ class NaverBlogImageInserter:
             traceback.print_exc()
             return False
 
+    def handle_image_popups(self):
+        """이미지 삽입 과정에서 발생하는 팝업 처리"""
+        try:
+            print("🔍 이미지 관련 팝업 확인 및 처리 중...")
+            
+            # 1. 브라우저 알림 창 처리
+            try:
+                alert = self.driver.switch_to.alert
+                alert_text = alert.text
+                print(f"이미지 관련 알림 창 발견: {alert_text}")
+                if "클립보드" in alert_text or "파일" in alert_text or "이미지" in alert_text or "허용" in alert_text:
+                    alert.accept()  # 허용 클릭
+                    print("✅ 이미지 관련 알림 창 허용 처리 완료")
+                else:
+                    alert.dismiss()  # 취소 클릭
+                    print("✅ 이미지 관련 알림 창 취소 처리 완료")
+                time.sleep(1)
+            except:
+                pass  # 알림 창이 없으면 무시
+            
+            # 2. 페이지 내 팝업 처리
+            popup_handled = self.driver.execute_script("""
+            function handleImagePopups() {
+                let handled = false;
+                
+                // 파일 업로드 관련 팝업 버튼들 찾기
+                const popupButtons = document.querySelectorAll('button');
+                for (const btn of popupButtons) {
+                    const text = btn.innerText.trim();
+                    const isVisible = btn.offsetWidth > 0 && btn.offsetHeight > 0;
+                    
+                    if (isVisible && (text === '허용' || text === '확인' || text === 'Allow' || text === 'OK' || 
+                                     text === '허용하기' || text === '파일 선택' || text === '업로드')) {
+                        console.log('이미지 팝업 버튼 클릭:', text);
+                        btn.click();
+                        handled = true;
+                        break;
+                    }
+                }
+                
+                // 파일 접근 권한 관련 처리
+                if (navigator.permissions) {
+                    navigator.permissions.query({name: 'clipboard-read'}).then(result => {
+                        console.log('클립보드 읽기 권한 상태:', result.state);
+                    }).catch(e => console.log('클립보드 권한 확인 오류:', e));
+                }
+                
+                return handled;
+            }
+            
+            return handleImagePopups();
+            """)
+            
+            if popup_handled:
+                print("✅ 이미지 관련 페이지 팝업 처리 완료")
+                time.sleep(1)
+            
+            # 3. ESC 키로 불필요한 팝업 정리
+            try:
+                actions = ActionChains(self.driver)
+                actions.send_keys(Keys.ESCAPE).perform()
+                time.sleep(0.5)
+                print("✅ ESC 키로 이미지 관련 팝업 정리 완료")
+            except Exception as e:
+                print(f"ESC 키 처리 중 오류: {str(e)}")
+                
+        except Exception as e:
+            print(f"이미지 팝업 처리 중 오류: {str(e)}")
+
     def insert_single_image(self, image_path):
         """단일 이미지 삽입"""
         try:
             print(f"이미지 삽입 시도: {os.path.basename(image_path)}")
+            
+            # 먼저 팝업 처리
+            self.handle_image_popups()
             
             # 파일 선택 버튼을 클릭하지 않고 직접 파일 입력 요소에 접근
             try:

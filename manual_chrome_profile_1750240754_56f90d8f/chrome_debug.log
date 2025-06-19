@@ -1,0 +1,22 @@
+[86335:3784233:0618/185915.233785:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[86335:3784233:0618/185916.194702:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[86335:3784233:0618/185916.612773:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/39cb238/11b3bf3f99abd6f7c749.js (2)
+[86335:3784233:0618/185925.991006:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:5155
+[86335:3784233:0618/185926.116276:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:265059
+[86335:3784233:0618/185926.336924:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:45153
+[86335:3784233:0618/185926.527888:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2200227
+[86335:3784233:0618/185926.646794:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:2747168
+[86335:3784233:0618/185926.664701:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:4680
+[86335:3784233:0618/185926.815424:WARNING:components/download/internal/background_service/controller_impl.cc:1187] Background download complete, client: 6, completion type: 0, file size:118577
+[86335:3784233:0618/185944.642526:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[86335:3784233:0618/185949.252001:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[86335:3784233:0618/185953.066545:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[86335:3784233:0618/185956.960619:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[86335:3784233:0618/190001.389148:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[86335:3784233:0618/190003.347190:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[86335:3784233:0618/190005.752986:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[86335:3784233:0618/190006.286006:INFO:CONSOLE:1] "File chooser dialog can only be shown with a user activation.", source: https://editor-static.pstatic.net/e/basic.desktop/1.66.0/se-editor.js?t=1747381158880 (1)
+[86335:3784233:0618/190007.992205:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[86335:3784233:0618/190008.514522:INFO:CONSOLE:1] "File chooser dialog can only be shown with a user activation.", source: https://editor-static.pstatic.net/e/basic.desktop/1.66.0/se-editor.js?t=1747381158880 (1)
+[86335:3784233:0618/190009.947549:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.06.04/js/vendor.30699085e5db55e38130.js (2)
+[86335:3784233:0618/190010.468108:INFO:CONSOLE:1] "File chooser dialog can only be shown with a user activation.", source: https://editor-static.pstatic.net/e/basic.desktop/1.66.0/se-editor.js?t=1747381158880 (1)
