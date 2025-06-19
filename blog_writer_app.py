@@ -1640,49 +1640,32 @@ class BlogWriterApp:
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                 ),
                 # 타이머 제어 버튼들
-                ft.Container(
-                    content=ft.Row([
-                        # 타이머 시작 버튼
-                        ft.Container(
-                            content=ft.Column([
-                                ft.Text("▶️ 시작", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_700),
-                                ft.ElevatedButton(
-                                    text="타이머 시작",
-                                    icon=ft.Icons.PLAY_ARROW,
-                                    bgcolor=ft.Colors.GREEN_400,
-                                    color=ft.Colors.WHITE,
-                                    disabled=True,  # 아직 기능 미구현
-                                    width=100
-                                )
-                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                            padding=10,
-                            bgcolor=ft.Colors.GREEN_50,
-                            border_radius=8,
-                            border=ft.border.all(1, ft.Colors.GREEN_200),
-                            expand=1
-                        ),
-                        # 타이머 중지 버튼
-                        ft.Container(
-                            content=ft.Column([
-                                ft.Text("⏹️ 중지", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_700),
-                                ft.ElevatedButton(
-                                    text="타이머 중지",
-                                    icon=ft.Icons.STOP,
-                                    bgcolor=ft.Colors.RED_400,
-                                    color=ft.Colors.WHITE,
-                                    disabled=True,  # 아직 기능 미구현
-                                    width=100
-                                )
-                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                            padding=10,
-                            bgcolor=ft.Colors.RED_50,
-                            border_radius=8,
-                            border=ft.border.all(1, ft.Colors.RED_200),
-                            expand=1
+                ft.Row([
+                    # 타이머 시작 버튼
+                    ft.ElevatedButton(
+                        text="▶️ 타이머 시작",
+                        icon=ft.Icons.PLAY_ARROW,
+                        bgcolor=ft.Colors.GREEN_400,
+                        color=ft.Colors.WHITE,
+                        disabled=True,  # 아직 기능 미구현
+                        width=120,
+                        style=ft.ButtonStyle(
+                            shape=ft.RoundedRectangleBorder(radius=25)
                         )
-                    ], spacing=10),
-                    margin=ft.margin.only(top=10, bottom=10)
-                ),
+                    ),
+                    # 타이머 중지 버튼
+                    ft.ElevatedButton(
+                        text="⏹️ 타이머 중지",
+                        icon=ft.Icons.STOP,
+                        bgcolor=ft.Colors.RED_400,
+                        color=ft.Colors.WHITE,
+                        disabled=True,  # 아직 기능 미구현
+                        width=120,
+                        style=ft.ButtonStyle(
+                            shape=ft.RoundedRectangleBorder(radius=25)
+                        )
+                    )
+                ], spacing=10, alignment=ft.MainAxisAlignment.CENTER),
                 # 사용 현황
                 ft.Container(
                     content=ft.Column([
