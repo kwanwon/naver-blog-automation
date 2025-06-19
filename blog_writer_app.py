@@ -1645,9 +1645,6 @@ class BlogWriterApp:
             expand=True
         )
 
-        # 로그인 버튼 먼저 생성
-        login_button = self.create_simple_login_button(page)
-
         # 오른쪽 패널
         right_panel = ft.Column(
             controls=[
@@ -1655,21 +1652,9 @@ class BlogWriterApp:
                 content_input,
                 auto_image_checkbox,
                 auto_image_help_text,
-                # 네이버 로그인, 타이머 제어, 사용 현황을 한 줄에 배치
+                # 타이머 제어, 사용 현황을 한 줄에 배치
                 ft.Container(
                     content=ft.Row([
-                        # 네이버 로그인 버튼
-                        ft.Container(
-                            content=ft.Column([
-                                ft.Text("🔐 로그인", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700),
-                                login_button
-                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                            padding=10,
-                            bgcolor=ft.Colors.BLUE_50,
-                            border_radius=8,
-                            border=ft.border.all(1, ft.Colors.BLUE_200),
-                            expand=1
-                        ),
                         # 타이머 시작 버튼
                         ft.Container(
                             content=ft.Column([
@@ -1912,9 +1897,13 @@ class BlogWriterApp:
 
 
 
+        # 로그인 버튼 생성
+        login_button = self.create_simple_login_button(page)
+
         # 메인 컨텐츠 탭
         main_content_tab = ft.Column(
             controls=[
+                login_button,  # 로그인 버튼을 원래 위치로 복원
                 ft.Row(
                     controls=[
                         ft.Container(
