@@ -3,7 +3,8 @@ from modules.gpt_handler import GPTHandler
 import subprocess
 import os
 import sys  # sys 모듈 추가
-from datetime import datetime
+import platform  # 플랫폼 감지 추가
+from datetime import datetime, timedelta
 import json
 from utils.folder_cleanup import FolderCleanup  # 추가
 import random
@@ -13,72 +14,23 @@ import time
 
 class BlogWriterApp:
     def __init__(self):
+        # 플랫폼 정보 감지
+        self.platform_system = platform.system().lower()  # 'windows', 'darwin', 'linux'
+        self.is_windows = self.platform_system == 'windows'
+        self.is_macos = self.platform_system == 'darwin'
+        self.is_linux = self.platform_system == 'linux'
+        
+        print(f"🌍 플랫폼 감지: {platform.system()} ({platform.machine()})")
+        print(f"💻 운영체제: {platform.platform()}")
+        
         # 기본 디렉토리 설정
-        if getattr(sys, 'frozen', False):
-            # 실행 파일로 실행된 경우 (PyInstaller 등으로 빌드된 경우)
-            self.base_dir = os.path.dirname(sys.executable)
-            print(f"Frozen 모드: {self.base_dir}")
-            
-            # 맥OS .app 번들일 경우 처리
-            if "Contents/MacOS" in self.base_dir:
-                print(f"맥OS 앱 번들 감지")
-                # dist 디렉토리 찾기 시도
-                possible_dirs = [
-                    # 기본 위치
-                    os.path.dirname(os.path.dirname(os.path.dirname(self.base_dir))),
-                    # 현재 작업 디렉토리
-                    os.getcwd(),
-                    # 실행 파일 디렉토리
-                    self.base_dir
-                ]
-                
-                for dir_path in possible_dirs:
-                    print(f"확인 중: {dir_path}")
-                    if os.path.exists(dir_path):
-                        print(f"- 디렉토리 존재함")
-                        # config 디렉토리 확인
-                        config_path = os.path.join(dir_path, 'config')
-                        if os.path.exists(config_path):
-                            print(f"- config 디렉토리 찾음: {config_path}")
-                            self.base_dir = dir_path
-                            break
-                            
-                        # 상위 디렉토리의 config 확인
-                        parent_config = os.path.join(os.path.dirname(dir_path), 'config')
-                        if os.path.exists(parent_config):
-                            print(f"- 상위 디렉토리에서 config 찾음: {parent_config}")
-                            self.base_dir = os.path.dirname(dir_path)
-                            break
-            
-            # base_dir에 리소스 디렉토리가 없는 경우 추가 탐색
-            config_dir = os.path.join(self.base_dir, 'config')
-            if not os.path.exists(config_dir):
-                print(f"기본 디렉토리에 config 폴더가 없습니다.")
-                # 실행 파일 경로에서 상위 디렉토리들 탐색
-                test_dir = self.base_dir
-                for _ in range(3):  # 최대 3단계 상위까지 확인
-                    test_dir = os.path.dirname(test_dir)
-                    test_config = os.path.join(test_dir, 'config')
-                    if os.path.exists(test_config):
-                        print(f"상위 디렉토리에서 config 찾음: {test_config}")
-                        self.base_dir = test_dir
-                        break
-        else:
-            # 스크립트로 실행된 경우
-            self.base_dir = os.path.dirname(os.path.abspath(__file__))
-            print(f"스크립트 모드: {self.base_dir}")
+        self.base_dir = self._get_base_directory()
         
-        print(f"최종 기본 디렉토리: {self.base_dir}")
-        print(f"현재 작업 디렉토리: {os.getcwd()}")
-        try:
-            print(f"디렉토리 내용: {os.listdir(self.base_dir)}")
-        except Exception as e:
-            print(f"디렉토리 내용 확인 실패: {str(e)}")
+        print(f"📁 최종 기본 디렉토리: {self.base_dir}")
+        print(f"🔄 현재 작업 디렉토리: {os.getcwd()}")
         
-        # 디렉토리 생성
-        os.makedirs(os.path.join(self.base_dir, 'config'), exist_ok=True)
-        os.makedirs(os.path.join(self.base_dir, 'drafts'), exist_ok=True)
-        os.makedirs(os.path.join(self.base_dir, 'settings'), exist_ok=True)
+        # 디렉토리 존재 확인 및 생성
+        self._ensure_directories()
         
         # 이미지 폴더 생성
         self.create_image_folders()
@@ -107,6 +59,215 @@ class BlogWriterApp:
         # 순차적 주제 선택을 위한 인덱스 추적 변수
         self.current_topic_index = -1
         self.load_topic_index()  # 저장된 인덱스 로드
+        
+        # 타이머 관련 변수들
+        self.timer_running = False
+        self.timer_thread = None
+        self.next_post_time = None
+        self.daily_post_count = 0
+        self.timer_start_btn = None
+        self.timer_stop_btn = None
+        
+        # UI 참조들 (타이머에서 사용)
+        self.page_ref = None
+        self.send_message_func = None
+        
+        # 시계 관련 변수들
+        self.clock_text = None
+        self.clock_thread = None
+        self.clock_running = False
+
+    def _get_base_directory(self):
+        """플랫폼별 기본 디렉토리 결정"""
+        if getattr(sys, 'frozen', False):
+            # 실행 파일로 실행된 경우 (PyInstaller 등으로 빌드된 경우)
+            base_dir = os.path.dirname(sys.executable)
+            print(f"🔧 Frozen 모드: {base_dir}")
+            
+            # macOS .app 번들일 경우 처리
+            if self.is_macos and "Contents/MacOS" in base_dir:
+                print(f"🍎 macOS 앱 번들 감지")
+                # .app 번들에서 리소스 디렉토리 찾기
+                possible_dirs = [
+                    # Resources 디렉토리 (표준 macOS 앱 구조)
+                    os.path.join(os.path.dirname(base_dir), "Resources"),
+                    # 번들 외부 디렉토리
+                    os.path.dirname(os.path.dirname(os.path.dirname(base_dir))),
+                    # 현재 작업 디렉토리
+                    os.getcwd(),
+                    # 실행 파일 디렉토리
+                    base_dir
+                ]
+                
+                for dir_path in possible_dirs:
+                    print(f"📂 확인 중: {dir_path}")
+                    if os.path.exists(dir_path):
+                        print(f"  ✅ 디렉토리 존재함")
+                        # config 디렉토리 확인
+                        config_path = os.path.join(dir_path, 'config')
+                        if os.path.exists(config_path):
+                            print(f"  📁 config 디렉토리 찾음: {config_path}")
+                            return dir_path
+                            
+                        # 상위 디렉토리의 config 확인
+                        parent_config = os.path.join(os.path.dirname(dir_path), 'config')
+                        if os.path.exists(parent_config):
+                            print(f"  📁 상위 디렉토리에서 config 찾음: {parent_config}")
+                            return os.path.dirname(dir_path)
+            
+            # Windows 실행 파일의 경우
+            elif self.is_windows:
+                print(f"🪟 Windows 실행 파일 모드")
+                # Windows에서는 일반적으로 실행 파일과 같은 디렉토리에 리소스 배치
+                
+            # 기본 디렉토리에 config가 없는 경우 상위 디렉토리 탐색
+            config_dir = os.path.join(base_dir, 'config')
+            if not os.path.exists(config_dir):
+                print(f"⚠️ 기본 디렉토리에 config 폴더가 없습니다.")
+                # 실행 파일 경로에서 상위 디렉토리들 탐색
+                test_dir = base_dir
+                for i in range(3):  # 최대 3단계 상위까지 확인
+                    test_dir = os.path.dirname(test_dir)
+                    test_config = os.path.join(test_dir, 'config')
+                    print(f"  🔍 상위 {i+1}단계 확인: {test_config}")
+                    if os.path.exists(test_config):
+                        print(f"  ✅ 상위 디렉토리에서 config 찾음: {test_config}")
+                        return test_dir
+            
+            return base_dir
+        else:
+            # 스크립트로 실행된 경우
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            print(f"📝 스크립트 모드: {base_dir}")
+            return base_dir
+
+    def _ensure_directories(self):
+        """필요한 디렉토리들을 생성합니다"""
+        directories = ['config', 'drafts', 'settings', 'logs']
+        
+        for directory in directories:
+            dir_path = os.path.join(self.base_dir, directory)
+            try:
+                os.makedirs(dir_path, exist_ok=True)
+                print(f"📁 디렉토리 확인/생성: {dir_path}")
+            except Exception as e:
+                print(f"❌ 디렉토리 생성 실패 ({directory}): {str(e)}")
+        
+        # 디렉토리 내용 확인 (디버깅용)
+        try:
+            contents = os.listdir(self.base_dir)
+            print(f"📋 기본 디렉토리 내용: {contents}")
+        except Exception as e:
+            print(f"❌ 디렉토리 내용 확인 실패: {str(e)}")
+
+    def _terminate_processes_safely(self):
+        """플랫폼별로 안전하게 프로세스를 종료합니다"""
+        try:
+            print(f"🔄 프로세스 정리 시작 (플랫폼: {self.platform_system})")
+            
+            # 브라우저 드라이버 종료
+            if hasattr(self, 'browser_driver') and self.browser_driver:
+                try:
+                    self.browser_driver.quit()
+                    print("✅ 브라우저 드라이버 종료 완료")
+                except Exception as e:
+                    print(f"⚠️ 브라우저 드라이버 종료 중 오류: {e}")
+            
+            # 임시 브라우저 드라이버 종료
+            if hasattr(self, 'temp_driver') and self.temp_driver:
+                try:
+                    self.temp_driver.quit()
+                    print("✅ 임시 브라우저 드라이버 종료 완료")
+                except Exception as e:
+                    print(f"⚠️ 임시 브라우저 드라이버 종료 중 오류: {e}")
+            
+            # 플랫폼별 프로세스 종료
+            if self.is_windows:
+                # Windows 프로세스 종료
+                try:
+                    subprocess.run(["taskkill", "/f", "/im", "chromedriver.exe"], 
+                                 capture_output=True, timeout=10)
+                    subprocess.run(["taskkill", "/f", "/im", "chrome.exe"], 
+                                 capture_output=True, timeout=10)
+                    print("✅ Windows 프로세스 종료 완료")
+                except Exception as e:
+                    print(f"⚠️ Windows 프로세스 종료 중 오류: {e}")
+                    
+            elif self.is_macos or self.is_linux:
+                # macOS/Linux 프로세스 종료
+                try:
+                    subprocess.run(["pkill", "-f", "chromedriver"], 
+                                 capture_output=True, timeout=10)
+                    subprocess.run(["pkill", "-f", "chrome"], 
+                                 capture_output=True, timeout=10)
+                    print("✅ macOS/Linux 프로세스 종료 완료")
+                except Exception as e:
+                    print(f"⚠️ macOS/Linux 프로세스 종료 중 오류: {e}")
+            
+            # psutil을 사용한 자식 프로세스 종료 (크로스 플랫폼)
+            try:
+                import psutil # type: ignore
+                current_process = psutil.Process()
+                children = current_process.children(recursive=True)
+                for child in children:
+                    try:
+                        child.terminate()
+                        print(f"🔄 자식 프로세스 종료: {child.pid}")
+                    except Exception as e:
+                        print(f"⚠️ 자식 프로세스 종료 실패: {e}")
+                        
+                # 강제 종료가 필요한 경우
+                gone, still_alive = psutil.wait_procs(children, timeout=3)
+                for p in still_alive:
+                    try:
+                        p.kill()
+                        print(f"💀 강제 종료: {p.pid}")
+                    except:
+                        pass
+                        
+            except ImportError:
+                print("⚠️ psutil이 설치되지 않아 자식 프로세스 정리를 건너뜁니다.")
+            except Exception as e:
+                print(f"⚠️ 자식 프로세스 정리 중 오류: {e}")
+                
+        except Exception as e:
+            print(f"❌ 프로세스 정리 중 전체 오류: {str(e)}")
+
+    def _safe_exit(self, exit_code=0):
+        """안전한 앱 종료"""
+        try:
+            print(f"🚪 안전한 앱 종료 시작 (코드: {exit_code})")
+            
+            # 시계 중지
+            self.stop_clock()
+            
+            # 타이머 중지
+            if self.timer_running:
+                self.timer_running = False
+            
+            # 프로세스 정리
+            self._terminate_processes_safely()
+            
+            # 플랫폼별 강제 종료
+            pid = os.getpid()
+            if self.is_windows:
+                try:
+                    subprocess.run([f"taskkill", "/F", "/PID", str(pid)], 
+                                 capture_output=True, timeout=5)
+                except:
+                    pass
+            else:
+                try:
+                    os.system(f"kill -9 {pid}")
+                except:
+                    pass
+                    
+            # Python 종료
+            sys.exit(exit_code)
+            
+        except Exception as e:
+            print(f"❌ 안전 종료 중 오류: {str(e)}")
+            sys.exit(1)
 
     def simple_login(self, page, e):
         """간단한 로그인 프로세스 - 브라우저 열고 내 블로그까지 이동"""
@@ -259,16 +420,33 @@ class BlogWriterApp:
     def update_login_button(self, page, new_button):
         """로그인 버튼 업데이트"""
         try:
-            # 페이지의 첫 번째 탭(블로그 작성)의 첫 번째 컨트롤(로그인 버튼)을 업데이트
-            main_tab = page.controls[0].tabs[0].content  # 첫 번째 탭의 content
-            main_tab.controls[0] = ft.Container(
-                content=new_button,
-                alignment=ft.alignment.center,
-                padding=ft.padding.all(10)
-            )
+            # 페이지 구조: [0] = header, [1] = tabs
+            # 첫 번째 탭(블로그 작성)의 첫 번째 컨트롤(로그인 버튼)을 업데이트
+            main_tab = page.controls[1].tabs[0].content  # 두 번째 컨트롤(탭)의 첫 번째 탭
+            if isinstance(new_button, ft.Row):
+                # 새 버튼이 Row인 경우 (타이머 버튼들과 함께)
+                main_tab.controls[0] = ft.Container(
+                    content=new_button,
+                    alignment=ft.alignment.center,
+                    padding=ft.padding.all(10)
+                )
+            else:
+                # 새 버튼이 단일 버튼인 경우
+                main_tab.controls[0] = ft.Container(
+                    content=new_button,
+                    alignment=ft.alignment.center,
+                    padding=ft.padding.all(10)
+                )
             page.update()
         except Exception as e:
             print(f"버튼 업데이트 중 오류: {str(e)}")
+            # 오류 발생 시 상세 정보 출력
+            try:
+                print(f"페이지 컨트롤 수: {len(page.controls)}")
+                if len(page.controls) > 1:
+                    print(f"탭 수: {len(page.controls[1].tabs)}")
+            except:
+                pass
 
     def check_login_status(self):
         """네이버 로그인 상태 확인"""
@@ -287,8 +465,41 @@ class BlogWriterApp:
             height=50
         )
         
+        # 타이머 제어 버튼들
+        self.timer_start_btn = ft.ElevatedButton(
+            text="시작",
+            icon=ft.Icons.PLAY_ARROW,
+            bgcolor=ft.Colors.GREEN_400,
+            color=ft.Colors.WHITE,
+            disabled=False,  # 기능 활성화
+            width=90,
+            height=50,
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=25)
+            ),
+            on_click=lambda e: self.start_timer(page)
+        )
+        
+        self.timer_stop_btn = ft.ElevatedButton(
+            text="중지",
+            icon=ft.Icons.STOP,
+            bgcolor=ft.Colors.RED_400,
+            color=ft.Colors.WHITE,
+            disabled=True,  # 초기에는 비활성화
+            width=90,
+            height=50,
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=25)
+            ),
+            on_click=lambda e: self.stop_timer(page)
+        )
+        
         return ft.Container(
-            content=login_btn,
+            content=ft.Row([
+                login_btn,
+                self.timer_start_btn,
+                self.timer_stop_btn
+            ], spacing=10, alignment=ft.MainAxisAlignment.CENTER),
             alignment=ft.alignment.center,
             padding=ft.padding.all(10)
         )
@@ -410,6 +621,315 @@ class BlogWriterApp:
                 json.dump({'current_index': self.current_topic_index}, f)
         except Exception as e:
             print(f"주제 인덱스 저장 중 오류 발생: {str(e)}")
+    
+    def start_timer(self, page):
+        """타이머 시작"""
+        if self.timer_running:
+            return
+            
+        try:
+            # 타이머 설정 로드
+            timer_settings = self.load_timer_settings_data()
+            if not timer_settings:
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text("❌ 시간 설정을 먼저 저장해주세요!"),
+                    bgcolor=ft.Colors.RED
+                )
+                page.snack_bar.open = True
+                page.update()
+                return
+            
+            # 현재 시간이 운영 시간인지 확인
+            if not self.is_operating_time(timer_settings):
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text("⏰ 현재는 운영 시간이 아닙니다."),
+                    bgcolor=ft.Colors.ORANGE
+                )
+                page.snack_bar.open = True
+                page.update()
+                return
+            
+            # 일일 포스팅 제한 확인
+            if self.daily_post_count >= int(timer_settings.get('max_posts', 20)):
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text("📊 일일 포스팅 제한에 도달했습니다."),
+                    bgcolor=ft.Colors.ORANGE
+                )
+                page.snack_bar.open = True
+                page.update()
+                return
+            
+            # 타이머 시작
+            self.timer_running = True
+            self.timer_start_btn.disabled = True
+            self.timer_stop_btn.disabled = False
+            
+            # 첫 포스팅은 즉시 실행 (다음 포스팅 시간을 현재 시간으로 설정)
+            self.next_post_time = datetime.now()
+            
+            # 타이머 스레드 시작
+            self.timer_thread = threading.Thread(target=self.timer_worker, args=(page, timer_settings))
+            self.timer_thread.daemon = True
+            self.timer_thread.start()
+            
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("⏰ 타이머가 시작되었습니다! 첫 포스팅을 즉시 실행합니다."),
+                bgcolor=ft.Colors.GREEN
+            )
+            page.snack_bar.open = True
+            page.update()
+            
+            # 사용 현황 업데이트
+            self.update_usage_display()
+            
+        except Exception as e:
+            print(f"타이머 시작 중 오류: {str(e)}")
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text(f"❌ 타이머 시작 중 오류: {str(e)}"),
+                bgcolor=ft.Colors.RED
+            )
+            page.snack_bar.open = True
+            page.update()
+    
+    def stop_timer(self, page):
+        """타이머 중지"""
+        try:
+            self.timer_running = False
+            self.timer_start_btn.disabled = False
+            self.timer_stop_btn.disabled = True
+            self.next_post_time = None
+            
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("⏹️ 타이머가 중지되었습니다."),
+                bgcolor=ft.Colors.BLUE
+            )
+            page.snack_bar.open = True
+            page.update()
+            
+            # 사용 현황 업데이트
+            self.update_usage_display()
+            
+        except Exception as e:
+            print(f"타이머 중지 중 오류: {str(e)}")
+    
+    def load_timer_settings_data(self):
+        """타이머 설정 데이터 로드"""
+        try:
+            timer_file = os.path.join(self.base_dir, 'config/timer_settings.json')
+            if os.path.exists(timer_file):
+                with open(timer_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return None
+        except Exception as e:
+            print(f"타이머 설정 로드 중 오류: {str(e)}")
+            return None
+    
+    def is_operating_time(self, timer_settings):
+        """현재 시간이 운영 시간인지 확인"""
+        try:
+            now = datetime.now()
+            start_time_str = timer_settings.get('start_time', '09:00')
+            end_time_str = timer_settings.get('end_time', '23:00')
+            
+            start_hour, start_min = map(int, start_time_str.split(':'))
+            end_hour, end_min = map(int, end_time_str.split(':'))
+            
+            start_time = now.replace(hour=start_hour, minute=start_min, second=0, microsecond=0)
+            end_time = now.replace(hour=end_hour, minute=end_min, second=0, microsecond=0)
+            
+            return start_time <= now <= end_time
+        except Exception as e:
+            print(f"운영 시간 확인 중 오류: {str(e)}")
+            return False
+    
+    def calculate_next_post_time(self, timer_settings):
+        """다음 포스팅 시간 계산"""
+        try:
+            min_interval = int(timer_settings.get('min_interval', 15))
+            max_interval = int(timer_settings.get('max_interval', 20))
+            
+            # 랜덤 간격 계산 (분 단위)
+            random_interval = random.randint(min_interval, max_interval)
+            
+            # 다음 포스팅 시간 설정
+            self.next_post_time = datetime.now() + timedelta(minutes=random_interval)
+            
+        except Exception as e:
+            print(f"다음 포스팅 시간 계산 중 오류: {str(e)}")
+            # 기본값으로 15분 후 설정
+            self.next_post_time = datetime.now() + timedelta(minutes=15)
+    
+    def timer_worker(self, page, timer_settings):
+        """타이머 워커 스레드"""
+        last_date = datetime.now().date()
+        last_settings_check = datetime.now()
+        
+        while self.timer_running:
+            try:
+                now = datetime.now()
+                current_date = now.date()
+                
+                # 🔄 30초마다 설정 파일 다시 읽기 (실시간 반영)
+                if (now - last_settings_check).total_seconds() >= 30:
+                    try:
+                        updated_settings = self.load_timer_settings_data()
+                        if updated_settings:
+                            # 설정이 실제로 변경되었는지 확인
+                            settings_changed = False
+                            for key in ['min_interval', 'max_interval', 'start_time', 'end_time', 'max_posts']:
+                                if str(timer_settings.get(key, '')) != str(updated_settings.get(key, '')):
+                                    settings_changed = True
+                                    break
+                            
+                            if settings_changed:
+                                timer_settings = updated_settings
+                                print("🔄 타이머 설정이 변경되어 업데이트했습니다.")
+                                
+                                # 다음 포스팅 시간 재계산
+                                self.calculate_next_post_time(timer_settings)
+                                print(f"🎯 새로운 다음 포스팅 시간: {self.next_post_time.strftime('%H:%M:%S')}")
+                        
+                        last_settings_check = now
+                    except Exception as e:
+                        print(f"설정 업데이트 중 오류: {str(e)}")
+                
+                # 날짜가 바뀌면 일일 포스팅 카운트 리셋
+                if current_date != last_date:
+                    self.daily_post_count = 0
+                    last_date = current_date
+                    print(f"새로운 날짜: {current_date}, 일일 포스팅 카운트 리셋")
+                
+                # 운영 시간 확인
+                if not self.is_operating_time(timer_settings):
+                    print("운영 시간이 아니므로 타이머 대기 중...")
+                    time.sleep(60)  # 1분마다 확인
+                    continue
+                
+                # 일일 포스팅 제한 확인
+                if self.daily_post_count >= int(timer_settings.get('max_posts', 20)):
+                    print("일일 포스팅 제한 도달, 타이머 대기 중...")
+                    time.sleep(60)  # 1분마다 확인
+                    continue
+                
+                # 포스팅 시간 확인
+                if self.next_post_time and now >= self.next_post_time:
+                    print(f"포스팅 시간 도달: {now.strftime('%H:%M:%S')}")
+                    
+                    # 자동 포스팅 실행
+                    success = self.auto_post(page)
+                    
+                    if success:
+                        self.daily_post_count += 1
+                        print(f"자동 포스팅 완료. 오늘 포스팅 수: {self.daily_post_count}")
+                        
+                        # 다음 포스팅 시간 계산
+                        self.calculate_next_post_time(timer_settings)
+                        print(f"다음 포스팅 시간: {self.next_post_time.strftime('%H:%M:%S')}")
+                    else:
+                        print("자동 포스팅 실패, 5분 후 재시도")
+                        self.next_post_time = datetime.now() + timedelta(minutes=5)
+                
+                # 1초마다 확인
+                time.sleep(1)
+                
+            except Exception as e:
+                print(f"타이머 워커 중 오류: {str(e)}")
+                time.sleep(60)  # 오류 발생 시 1분 대기
+    
+    def auto_post(self, page):
+        """자동 포스팅 실행 - 전송 버튼만 클릭"""
+        try:
+            print("자동 포스팅 시작...")
+            print("📋 전송 버튼만 클릭합니다.")
+            
+            # UI에서 전송 버튼 클릭 시뮬레이션
+            try:
+                # send_button의 on_click 이벤트를 직접 호출
+                if self.send_message_func:
+                    print("🔘 전송 버튼 클릭 중...")
+                    
+                    # send_message 함수 호출 (전송 버튼과 동일한 동작)
+                    self.send_message_func(None)
+                    
+                    print("✅ 전송 버튼 클릭 완료!")
+                    
+                    # 스낵바로 알림
+                    if self.page_ref:
+                        self.page_ref.snack_bar = ft.SnackBar(
+                            content=ft.Text("🤖 전송 버튼이 자동으로 클릭되었습니다!"),
+                            bgcolor=ft.Colors.GREEN
+                        )
+                        self.page_ref.snack_bar.open = True
+                        self.page_ref.update()
+                    
+                    return True
+                else:
+                    print("❌ 전송 버튼 함수가 설정되지 않았습니다.")
+                    return False
+                    
+            except Exception as e:
+                print(f"전송 버튼 클릭 중 오류: {str(e)}")
+                return False
+            
+        except Exception as e:
+            print(f"자동 포스팅 중 오류: {str(e)}")
+            return False
+    
+    def update_usage_display(self):
+        """사용 현황 디스플레이 업데이트"""
+        try:
+            if self.page_ref:
+                # 타이머 상태 정보를 스낵바로 표시
+                if self.timer_running:
+                    if self.next_post_time:
+                        remaining = self.next_post_time - datetime.now()
+                        if remaining.total_seconds() > 0:
+                            minutes = int(remaining.total_seconds() // 60)
+                            seconds = int(remaining.total_seconds() % 60)
+                            status_msg = f"⏰ 타이머 실행 중 | 다음 포스팅까지: {minutes}분 {seconds}초 | 오늘: {self.daily_post_count}회"
+                        else:
+                            status_msg = f"⏰ 타이머 실행 중 | 포스팅 준비 중... | 오늘: {self.daily_post_count}회"
+                    else:
+                        status_msg = f"⏰ 타이머 실행 중 | 시간 계산 중... | 오늘: {self.daily_post_count}회"
+                else:
+                    status_msg = f"⏹️ 타이머 중지됨 | 오늘: {self.daily_post_count}회"
+                
+                # 상태 메시지는 콘솔에만 출력 (UI 업데이트는 필요시에만)
+                print(status_msg)
+                
+        except Exception as e:
+            print(f"사용 현황 업데이트 중 오류: {str(e)}")
+    
+    def start_clock(self):
+        """실시간 시계 시작"""
+        if not self.clock_running:
+            self.clock_running = True
+            self.clock_thread = threading.Thread(target=self.clock_worker)
+            self.clock_thread.daemon = True
+            self.clock_thread.start()
+    
+    def stop_clock(self):
+        """실시간 시계 중지"""
+        self.clock_running = False
+    
+    def clock_worker(self):
+        """시계 업데이트 워커"""
+        while self.clock_running:
+            try:
+                if self.clock_text and self.page_ref:
+                    current_time = datetime.now()
+                    time_str = current_time.strftime("📅 %Y-%m-%d %p %I:%M:%S")
+                    # 한국어 오전/오후 변환
+                    time_str = time_str.replace("AM", "오전").replace("PM", "오후")
+                    
+                    self.clock_text.value = time_str
+                    self.page_ref.update()
+                
+                time.sleep(1)  # 1초마다 업데이트
+                
+            except Exception as e:
+                print(f"시계 업데이트 중 오류: {str(e)}")
+                time.sleep(1)
             
     def create_image_folders(self):
         """10개의 이미지 폴더를 생성합니다."""
@@ -570,57 +1090,31 @@ class BlogWriterApp:
         page.window_height = 800
         page.window_resizable = True
         
+        # 실시간 시계 컴포넌트 생성
+        self.clock_text = ft.Text(
+            value="📅 로딩 중...",
+            size=16,
+            weight=ft.FontWeight.BOLD,
+            color=ft.Colors.BLUE_600,
+            text_align=ft.TextAlign.CENTER
+        )
+        
+        # 시계 시작
+        self.start_clock()
+        
         # 닫기 버튼 이벤트 핸들러 추가
         def on_window_close(e):
-            print("앱 종료 요청 감지됨")
+            print("🚪 앱 종료 요청 감지됨")
             try:
-                # 브라우저 드라이버 종료
-                if hasattr(self, 'browser_driver') and self.browser_driver:
-                    try:
-                        self.browser_driver.quit()
-                        print("브라우저 드라이버 종료 완료")
-                    except:
-                        pass
-                
-                # 임시 브라우저 드라이버 종료
-                if hasattr(self, 'temp_driver') and self.temp_driver:
-                    try:
-                        self.temp_driver.quit()
-                        print("임시 브라우저 드라이버 종료 완료")
-                    except:
-                        pass
-                
-                # 실행 중인 모든 크롬 드라이버 프로세스 종료
-                if sys.platform == "win32":
-                    os.system("taskkill /f /im chromedriver.exe")
-                    os.system("taskkill /f /im chrome.exe")
-                else:
-                    os.system("pkill -f chromedriver")
-                    os.system("pkill -f chrome")
-                    
-                # 현재 프로세스의 모든 자식 프로세스 종료
-                import psutil # type: ignore
-                current_process = psutil.Process()
-                children = current_process.children(recursive=True)
-                for child in children:
-                    try:
-                        child.terminate()
-                    except:
-                        pass
-                
-                # 앱 종료
+                # 페이지 파괴
                 page.window_destroy()
                 
-                # 프로세스 강제 종료
-                pid = os.getpid()
-                if sys.platform == "win32":
-                    os.system(f"taskkill /F /PID {pid}")
-                else:
-                    os.system(f"kill -9 {pid}")
+                # 안전한 종료 실행
+                self._safe_exit(0)
                 
             except Exception as e:
-                print(f"종료 중 오류 발생: {str(e)}")
-                sys.exit(1)
+                print(f"❌ 종료 중 오류 발생: {str(e)}")
+                self._safe_exit(1)
             
         # 윈도우 이벤트 핸들러 설정
         page.on_window_event = on_window_close
@@ -756,7 +1250,16 @@ class BlogWriterApp:
             api_key_help_text.visible = use_api_checkbox.value
             page.update()
             
+        # 체크박스 변경 시 자동 저장 함수
+        def on_checkbox_change(e):
+            save_app_settings()  # 체크박스 변경 시 자동으로 설정 저장
+            page.update()
+            
         use_api_checkbox.on_change = on_api_checkbox_change
+        auto_upload_checkbox.on_change = on_checkbox_change
+        auto_image_checkbox.on_change = on_checkbox_change
+        auto_topic_checkbox.on_change = on_checkbox_change
+        auto_final_publish_checkbox.on_change = on_checkbox_change
 
         def save_app_settings(e=None):
             try:
@@ -1086,7 +1589,15 @@ class BlogWriterApp:
                 with open(os.path.join(self.base_dir, 'config/timer_settings.json'), 'w', encoding='utf-8') as f:
                     json.dump(settings, f, ensure_ascii=False, indent=2)
                 
-                page.snack_bar = ft.SnackBar(content=ft.Text("시간 설정이 저장되었습니다."))
+                # 🎯 실행 중인 타이머에 새 설정 즉시 적용
+                if self.timer_running:
+                    print("📝 타이머 설정이 변경되었습니다. 새 설정을 즉시 적용합니다.")
+                    
+                    # 다음 포스팅 시간을 새로운 설정으로 재계산
+                    self.calculate_next_post_time(settings)
+                    print(f"🔄 새로운 다음 포스팅 시간: {self.next_post_time.strftime('%H:%M:%S')}")
+                
+                page.snack_bar = ft.SnackBar(content=ft.Text("⚡ 시간 설정이 저장되고 즉시 적용되었습니다!"))
                 page.snack_bar.open = True
                 page.update()
             except Exception as e:
@@ -1639,33 +2150,6 @@ class BlogWriterApp:
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                 ),
-                # 타이머 제어 버튼들
-                ft.Row([
-                    # 타이머 시작 버튼
-                    ft.ElevatedButton(
-                        text="▶️ 타이머 시작",
-                        icon=ft.Icons.PLAY_ARROW,
-                        bgcolor=ft.Colors.GREEN_400,
-                        color=ft.Colors.WHITE,
-                        disabled=True,  # 아직 기능 미구현
-                        width=120,
-                        style=ft.ButtonStyle(
-                            shape=ft.RoundedRectangleBorder(radius=25)
-                        )
-                    ),
-                    # 타이머 중지 버튼
-                    ft.ElevatedButton(
-                        text="⏹️ 타이머 중지",
-                        icon=ft.Icons.STOP,
-                        bgcolor=ft.Colors.RED_400,
-                        color=ft.Colors.WHITE,
-                        disabled=True,  # 아직 기능 미구현
-                        width=120,
-                        style=ft.ButtonStyle(
-                            shape=ft.RoundedRectangleBorder(radius=25)
-                        )
-                    )
-                ], spacing=10, alignment=ft.MainAxisAlignment.CENTER),
                 # 사용 현황
                 ft.Container(
                     content=ft.Column([
@@ -1692,6 +2176,8 @@ class BlogWriterApp:
                 content_input,
                 auto_image_checkbox,
                 auto_image_help_text,
+                auto_final_publish_checkbox,
+                auto_final_publish_help_text,
                 upload_button,
                 status_text
             ],
@@ -1716,8 +2202,6 @@ class BlogWriterApp:
                     auto_upload_help_text,
                     auto_topic_checkbox,
                     auto_topic_help_text,
-                    auto_final_publish_checkbox,  # 🎯 최종 발행 체크박스 추가
-                    auto_final_publish_help_text,  # 🎯 최종 발행 도움말 추가
                     save_gpt_button
                 ],
                 spacing=20,
@@ -1923,8 +2407,20 @@ class BlogWriterApp:
             expand=True
         )
 
-        # 페이지에 탭 추가
-        page.add(tabs)
+        # 상단 헤더 (시계)
+        header = ft.Container(
+            content=ft.Row([
+                self.clock_text
+            ], alignment=ft.MainAxisAlignment.CENTER),
+            padding=ft.padding.symmetric(vertical=10, horizontal=20),
+            bgcolor=ft.Colors.BLUE_GREY_50,
+            border=ft.border.all(1, ft.Colors.BLUE_GREY_200),
+            border_radius=10,
+            margin=ft.margin.only(bottom=10)
+        )
+        
+        # 페이지에 헤더와 탭 추가
+        page.add(header, tabs)
         
         # 설정 로드
         load_gpt_settings()
@@ -1961,6 +2457,10 @@ class BlogWriterApp:
         
         # 초기 상태 설정
         on_auto_topic_change(None)
+        
+        # 타이머에서 사용할 참조들 저장
+        self.page_ref = page
+        self.send_message_func = send_message
 
 if __name__ == "__main__":
     app = BlogWriterApp()
