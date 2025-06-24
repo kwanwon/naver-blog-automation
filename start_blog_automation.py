@@ -156,9 +156,15 @@ def setup_chromedriver(platform_info):
     
     return True
 
-def run_application(python_path):
+def run_application(python_path, platform_info):
     """애플리케이션 실행"""
     print("🚀 블로그 자동화 도구 시작 중...")
+    
+    # macOS에서 절전 모드 방지 안내
+    if platform_info['is_macos']:
+        print("🔋 macOS 절전 모드 방지 기능이 자동으로 활성화됩니다.")
+        print("   (프로그램 실행 중 맥북이 잠들지 않습니다)")
+    
     print()
     print("=" * 60)
     
@@ -205,7 +211,7 @@ def main():
         print()
         
         # 애플리케이션 실행
-        exit_code = run_application(python_path)
+        exit_code = run_application(python_path, platform_info)
         
         print()
         print("=" * 60)

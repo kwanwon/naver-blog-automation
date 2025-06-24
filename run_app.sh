@@ -90,6 +90,13 @@ echo
 
 # 애플리케이션 실행
 echo "🚀 블로그 자동화 도구 시작 중..."
+
+# macOS에서 절전 모드 방지 안내
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "🔋 macOS 절전 모드 방지 기능이 자동으로 활성화됩니다."
+    echo "   (프로그램 실행 중 맥북이 잠들지 않습니다)"
+fi
+
 echo
 
 # Python 스크립트 실행

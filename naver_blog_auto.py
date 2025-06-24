@@ -168,6 +168,44 @@ class NaverBlogAutomation:
         
         return settings
 
+    def _fix_chromedriver_permissions(self, driver_path):
+        """macOS에서 ChromeDriver 권한 수정"""
+        try:
+            import subprocess
+            import platform
+            
+            # macOS에서만 실행
+            if platform.system() != "Darwin":
+                return True
+                
+            print(f"🔧 ChromeDriver 권한 수정 중: {driver_path}")
+            
+            # 실행 권한 부여
+            subprocess.run(["chmod", "+x", driver_path], check=True)
+            print("✅ 실행 권한 부여 완료")
+            
+            # quarantine 속성 제거 (macOS 보안 기능)
+            try:
+                subprocess.run(["xattr", "-d", "com.apple.quarantine", driver_path], 
+                             capture_output=True, check=False)
+                print("✅ quarantine 속성 제거 완료")
+            except:
+                pass
+            
+            # provenance 속성 제거 (macOS 보안 기능)
+            try:
+                subprocess.run(["xattr", "-d", "com.apple.provenance", driver_path], 
+                             capture_output=True, check=False)
+                print("✅ provenance 속성 제거 완료")
+            except:
+                pass
+                
+            return True
+            
+        except Exception as e:
+            print(f"⚠️ ChromeDriver 권한 수정 실패: {e}")
+            return False
+
     def setup_driver(self):
         """Chrome 드라이버 설정"""
         try:
@@ -356,6 +394,9 @@ class NaverBlogAutomation:
                 # 자동으로 Chrome 버전에 맞는 ChromeDriver 다운로드 및 설치
                 driver_path = ChromeDriverManager().install()
                 print(f"ChromeDriver 자동 설치 완료: {driver_path}")
+                
+                # macOS에서 ChromeDriver 권한 수정
+                self._fix_chromedriver_permissions(driver_path)
                 
                 service = ChromeService(executable_path=driver_path)
                 self.driver = webdriver.Chrome(service=service, options=chrome_options)

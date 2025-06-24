@@ -156,6 +156,7 @@ python build_cross_platform.py --platform linux
 - macOS 권한 관리
 - Apple Silicon 네이티브 지원
 - 키체인 통합
+- **🔋 자동 절전 모드 방지** - 프로그램 실행 중 맥북 잠들기 방지
 
 #### Linux 최적화
 - 다양한 배포판 지원
@@ -279,7 +280,23 @@ xcode-select --install
 
 # Homebrew 설치 (필요시)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 🔋 절전 모드 수동 제어 (필요시)
+# 절전 모드 완전 비활성화
+sudo pmset -a sleep 0
+
+# 디스플레이만 30분 후 끄기
+sudo pmset -a displaysleep 30
+
+# 설정 확인
+pmset -g
 ```
+
+**💡 절전 모드 방지 기능**
+- 프로그램이 **자동으로 절전 모드를 방지**합니다
+- `caffeinate` 명령어를 사용하여 맥북이 잠들지 않게 합니다
+- 프로그램 종료 시 **자동으로 절전 모드 방지가 해제**됩니다
+- 수동으로 절전 설정을 변경할 필요가 없습니다
 
 #### Linux 문제들
 ```bash

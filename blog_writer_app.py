@@ -71,11 +71,49 @@ class BlogWriterApp:
         # UI 참조들 (타이머에서 사용)
         self.page_ref = None
         self.send_message_func = None
+        self.last_upload_success = False  # 마지막 업로드 성공 여부 추적
         
         # 시계 관련 변수들
         self.clock_text = None
         self.clock_thread = None
         self.clock_running = False
+        
+        # 절전 모드 방지 관련 변수들 (macOS 전용)
+        self.caffeinate_process = None
+        if self.is_macos:
+            self._start_caffeinate()
+    
+    def _start_caffeinate(self):
+        """macOS에서 절전 모드 방지 시작"""
+        try:
+            import subprocess
+            # caffeinate 명령어로 절전 모드 방지
+            # -d: 디스플레이 절전 방지, -i: 시스템 유휴 절전 방지, -s: 시스템 절전 방지
+            self.caffeinate_process = subprocess.Popen(
+                ['caffeinate', '-d', '-i', '-s'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            print("🔋 macOS 절전 모드 방지 활성화됨 (caffeinate 실행)")
+        except Exception as e:
+            print(f"⚠️ macOS 절전 모드 방지 설정 실패: {str(e)}")
+            self.caffeinate_process = None
+    
+    def _stop_caffeinate(self):
+        """macOS에서 절전 모드 방지 중지"""
+        if self.caffeinate_process:
+            try:
+                self.caffeinate_process.terminate()
+                self.caffeinate_process.wait(timeout=5)
+                print("🔋 macOS 절전 모드 방지 해제됨 (caffeinate 종료)")
+            except Exception as e:
+                print(f"⚠️ caffeinate 종료 중 오류: {str(e)}")
+                try:
+                    self.caffeinate_process.kill()
+                except:
+                    pass
+            finally:
+                self.caffeinate_process = None
 
     def _get_base_directory(self):
         """플랫폼별 기본 디렉토리 결정"""
@@ -164,6 +202,10 @@ class BlogWriterApp:
         """플랫폼별로 안전하게 프로세스를 종료합니다"""
         try:
             print(f"🔄 프로세스 정리 시작 (플랫폼: {self.platform_system})")
+            
+            # macOS 절전 모드 방지 프로세스 종료
+            if self.is_macos:
+                self._stop_caffeinate()
             
             # 브라우저 드라이버 종료
             if hasattr(self, 'browser_driver') and self.browser_driver:
@@ -624,42 +666,58 @@ class BlogWriterApp:
     
     def start_timer(self, page):
         """타이머 시작"""
+        print("🔘 타이머 시작 버튼이 클릭되었습니다.")
+        
         if self.timer_running:
+            print("⚠️ 타이머가 이미 실행 중입니다.")
+            self.show_dialog(page, "⚠️ 알림", "타이머가 이미 실행 중입니다.", ft.Colors.ORANGE)
             return
             
         try:
             # 타이머 설정 로드
             timer_settings = self.load_timer_settings_data()
             if not timer_settings:
-                page.snack_bar = ft.SnackBar(
-                    content=ft.Text("❌ 시간 설정을 먼저 저장해주세요!"),
-                    bgcolor=ft.Colors.RED
+                print("❌ 타이머 설정이 없습니다.")
+                self.show_dialog(
+                    page, 
+                    "❌ 설정 오류", 
+                    "시간 설정을 먼저 저장해주세요!\n\n'시간 설정' 탭에서 운영 시간과 포스팅 간격을 설정하고 '설정 저장' 버튼을 클릭하세요.",
+                    ft.Colors.RED
                 )
-                page.snack_bar.open = True
-                page.update()
                 return
+            
+            print(f"📋 타이머 설정 로드됨: {timer_settings}")
             
             # 현재 시간이 운영 시간인지 확인
             if not self.is_operating_time(timer_settings):
-                page.snack_bar = ft.SnackBar(
-                    content=ft.Text("⏰ 현재는 운영 시간이 아닙니다."),
-                    bgcolor=ft.Colors.ORANGE
+                now = datetime.now()
+                start_time = timer_settings.get('start_time', '09:00')
+                end_time = timer_settings.get('end_time', '23:00')
+                current_time = now.strftime('%H:%M')
+                
+                print(f"⏰ 운영 시간이 아닙니다. 현재: {current_time}, 운영시간: {start_time}~{end_time}")
+                self.show_dialog(
+                    page,
+                    "⏰ 운영 시간 아님",
+                    f"현재는 운영 시간이 아닙니다.\n\n현재 시간: {current_time}\n운영 시간: {start_time} ~ {end_time}\n\n운영 시간 내에 다시 시도하거나 '시간 설정' 탭에서 운영 시간을 조정하세요.",
+                    ft.Colors.ORANGE
                 )
-                page.snack_bar.open = True
-                page.update()
                 return
             
             # 일일 포스팅 제한 확인
-            if self.daily_post_count >= int(timer_settings.get('max_posts', 20)):
-                page.snack_bar = ft.SnackBar(
-                    content=ft.Text("📊 일일 포스팅 제한에 도달했습니다."),
-                    bgcolor=ft.Colors.ORANGE
+            max_posts = int(timer_settings.get('max_posts', 20))
+            if self.daily_post_count >= max_posts:
+                print(f"📊 일일 포스팅 제한 도달: {self.daily_post_count}/{max_posts}")
+                self.show_dialog(
+                    page,
+                    "📊 일일 제한 도달",
+                    f"오늘의 포스팅 제한에 도달했습니다.\n\n오늘 포스팅: {self.daily_post_count}회\n일일 제한: {max_posts}회\n\n내일 다시 시도하거나 '시간 설정' 탭에서 일일 제한을 늘려주세요.",
+                    ft.Colors.ORANGE
                 )
-                page.snack_bar.open = True
-                page.update()
                 return
             
             # 타이머 시작
+            print("✅ 모든 조건이 만족되어 타이머를 시작합니다.")
             self.timer_running = True
             self.timer_start_btn.disabled = True
             self.timer_stop_btn.disabled = False
@@ -667,50 +725,144 @@ class BlogWriterApp:
             # 첫 포스팅은 즉시 실행 (다음 포스팅 시간을 현재 시간으로 설정)
             self.next_post_time = datetime.now()
             
+            # UI에 즉시 포스팅 표시
+            if hasattr(self, 'next_post_time_text_ref') and self.next_post_time_text_ref:
+                self.next_post_time_text_ref.value = "다음 포스팅 시간: 즉시 실행"
+                page.update()
+            
             # 타이머 스레드 시작
             self.timer_thread = threading.Thread(target=self.timer_worker, args=(page, timer_settings))
             self.timer_thread.daemon = True
             self.timer_thread.start()
             
-            page.snack_bar = ft.SnackBar(
-                content=ft.Text("⏰ 타이머가 시작되었습니다! 첫 포스팅을 즉시 실행합니다."),
-                bgcolor=ft.Colors.GREEN
+            # 성공 다이얼로그 표시
+            self.show_dialog(
+                page,
+                "🚀 타이머 시작",
+                "타이머가 성공적으로 시작되었습니다!\n\n첫 번째 포스팅을 즉시 실행하고, 이후 설정된 간격으로 자동 포스팅됩니다.",
+                ft.Colors.GREEN
             )
-            page.snack_bar.open = True
-            page.update()
+            
+            print("🚀 타이머 시작 완료")
             
             # 사용 현황 업데이트
             self.update_usage_display()
             
         except Exception as e:
-            print(f"타이머 시작 중 오류: {str(e)}")
-            page.snack_bar = ft.SnackBar(
-                content=ft.Text(f"❌ 타이머 시작 중 오류: {str(e)}"),
-                bgcolor=ft.Colors.RED
+            error_msg = str(e)
+            print(f"❌ 타이머 시작 중 오류: {error_msg}")
+            self.show_dialog(
+                page,
+                "❌ 오류 발생",
+                f"타이머 시작 중 오류가 발생했습니다:\n\n{error_msg}\n\n설정을 확인하고 다시 시도해주세요.",
+                ft.Colors.RED
             )
-            page.snack_bar.open = True
+    
+    def show_dialog(self, page, title, message, color):
+        """사용자에게 다이얼로그로 메시지 표시"""
+        try:
+            print(f"🔔 다이얼로그 표시 시도: {title}")
+            
+            def close_dialog(e):
+                try:
+                    dialog.open = False
+                    page.update()
+                    print("✅ 다이얼로그 닫기 완료")
+                except Exception as close_e:
+                    print(f"❌ 다이얼로그 닫기 중 오류: {close_e}")
+            
+            dialog = ft.AlertDialog(
+                modal=True,
+                title=ft.Text(title, weight=ft.FontWeight.BOLD, color=color, size=16),
+                content=ft.Text(message, size=14, selectable=True),
+                actions=[
+                    ft.TextButton(
+                        "확인", 
+                        on_click=close_dialog,
+                        style=ft.ButtonStyle(
+                            color=ft.Colors.WHITE,
+                            bgcolor=color
+                        )
+                    )
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+            
+            # 기존 다이얼로그가 있으면 닫기
+            if hasattr(page, 'dialog') and page.dialog:
+                try:
+                    page.dialog.open = False
+                except:
+                    pass
+            
+            page.dialog = dialog
+            dialog.open = True
             page.update()
+            
+            print(f"✅ 다이얼로그 표시 완료: {title}")
+            
+        except Exception as e:
+            print(f"❌ 다이얼로그 표시 중 오류: {str(e)}")
+            # 다이얼로그 실패 시 스낵바로 대체
+            try:
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text(f"{title}: {message}"),
+                    bgcolor=color,
+                    duration=5000
+                )
+                page.snack_bar.open = True
+                page.update()
+                print("✅ 스낵바로 대체 표시 완료")
+            except Exception as snack_e:
+                print(f"❌ 스낵바 표시도 실패: {snack_e}")
     
     def stop_timer(self, page):
         """타이머 중지"""
+        print("🔘 타이머 중지 버튼이 클릭되었습니다.")
+        
         try:
+            if not self.timer_running:
+                print("⚠️ 타이머가 실행 중이지 않습니다.")
+                self.show_dialog(
+                    page,
+                    "⚠️ 알림",
+                    "타이머가 현재 실행 중이지 않습니다.",
+                    ft.Colors.ORANGE
+                )
+                return
+            
             self.timer_running = False
             self.timer_start_btn.disabled = False
             self.timer_stop_btn.disabled = True
             self.next_post_time = None
             
-            page.snack_bar = ft.SnackBar(
-                content=ft.Text("⏹️ 타이머가 중지되었습니다."),
-                bgcolor=ft.Colors.BLUE
+            # UI에 타이머 중지 상태 표시
+            if hasattr(self, 'next_post_time_text_ref') and self.next_post_time_text_ref:
+                self.next_post_time_text_ref.value = "다음 포스팅 시간: --:--:--"
+                page.update()
+            
+            # 성공 다이얼로그 표시
+            self.show_dialog(
+                page,
+                "⏹️ 타이머 중지",
+                "타이머가 성공적으로 중지되었습니다.\n\n자동 포스팅이 중단되었습니다.",
+                ft.Colors.BLUE
             )
-            page.snack_bar.open = True
-            page.update()
+            
+            print("⏹️ 타이머 중지 완료")
             
             # 사용 현황 업데이트
             self.update_usage_display()
             
         except Exception as e:
-            print(f"타이머 중지 중 오류: {str(e)}")
+            error_msg = str(e)
+            print(f"❌ 타이머 중지 중 오류: {error_msg}")
+            self.show_dialog(
+                page,
+                "❌ 오류 발생",
+                f"타이머 중지 중 오류가 발생했습니다:\n\n{error_msg}",
+                ft.Colors.RED
+            )
     
     def load_timer_settings_data(self):
         """타이머 설정 데이터 로드"""
@@ -754,10 +906,20 @@ class BlogWriterApp:
             # 다음 포스팅 시간 설정
             self.next_post_time = datetime.now() + timedelta(minutes=random_interval)
             
+            # UI 업데이트
+            if hasattr(self, 'next_post_time_text_ref') and self.next_post_time_text_ref and self.page_ref:
+                self.next_post_time_text_ref.value = f"다음 포스팅 시간: {self.next_post_time.strftime('%H:%M:%S')}"
+                self.page_ref.update()
+            
         except Exception as e:
             print(f"다음 포스팅 시간 계산 중 오류: {str(e)}")
             # 기본값으로 15분 후 설정
             self.next_post_time = datetime.now() + timedelta(minutes=15)
+            
+            # UI 업데이트 (기본값)
+            if hasattr(self, 'next_post_time_text_ref') and self.next_post_time_text_ref and self.page_ref:
+                self.next_post_time_text_ref.value = f"다음 포스팅 시간: {self.next_post_time.strftime('%H:%M:%S')}"
+                self.page_ref.update()
     
     def timer_worker(self, page, timer_settings):
         """타이머 워커 스레드"""
@@ -787,7 +949,30 @@ class BlogWriterApp:
                                 
                                 # 다음 포스팅 시간 재계산
                                 self.calculate_next_post_time(timer_settings)
-                                print(f"🎯 새로운 다음 포스팅 시간: {self.next_post_time.strftime('%H:%M:%S')}")
+                                next_time_str = self.next_post_time.strftime('%H:%M:%S') if self.next_post_time else '계산 중...'
+                                print(f"🎯 새로운 다음 포스팅 시간: {next_time_str}")
+                                
+                                # UI에 다이얼로그 알림 표시 (별도 스레드에서 실행)
+                                if self.page_ref:
+                                    try:
+                                        # UI 스레드에서 안전하게 실행
+                                        import threading
+                                        def show_update_dialog():
+                                            try:
+                                                self.show_dialog(
+                                                    self.page_ref,
+                                                    "🔄 설정 업데이트",
+                                                    f"타이머 설정이 변경되어 업데이트되었습니다!\n\n📊 오늘의 포스팅 수: {self.daily_post_count}회\n⏰ 새로운 다음 포스팅 시간: {next_time_str}\n\n새로운 설정으로 타이머가 계속 실행됩니다.",
+                                                    ft.Colors.BLUE
+                                                )
+                                            except Exception as dialog_e:
+                                                print(f"❌ 설정 업데이트 다이얼로그 표시 실패: {dialog_e}")
+                                        
+                                        # 메인 스레드에서 실행
+                                        threading.Timer(0.1, show_update_dialog).start()
+                                        
+                                    except Exception as e:
+                                        print(f"❌ 설정 업데이트 알림 처리 중 오류: {e}")
                         
                         last_settings_check = now
                     except Exception as e:
@@ -801,13 +986,68 @@ class BlogWriterApp:
                 
                 # 운영 시간 확인
                 if not self.is_operating_time(timer_settings):
-                    print("운영 시간이 아니므로 타이머 대기 중...")
+                    current_time = now.strftime('%H:%M')
+                    start_time = timer_settings.get('start_time', '09:00')
+                    end_time = timer_settings.get('end_time', '23:00')
+                    
+                    print(f"운영 시간이 아니므로 타이머 대기 중... (현재: {current_time}, 운영시간: {start_time}~{end_time})")
+                    
+                    # 5분마다 한번씩만 다이얼로그 표시 (너무 자주 표시되지 않도록)
+                    if not hasattr(self, '_last_operating_time_alert') or (now - self._last_operating_time_alert).total_seconds() >= 300:
+                        self._last_operating_time_alert = now
+                        if self.page_ref:
+                            try:
+                                # UI 스레드에서 안전하게 실행
+                                import threading
+                                def show_operating_time_dialog():
+                                    try:
+                                        self.show_dialog(
+                                            self.page_ref,
+                                            "⏰ 운영 시간 대기 중",
+                                            f"현재는 운영 시간이 아닙니다.\n\n현재 시간: {current_time}\n운영 시간: {start_time} ~ {end_time}\n\n운영 시간까지 대기합니다.",
+                                            ft.Colors.BLUE
+                                        )
+                                    except Exception as dialog_e:
+                                        print(f"❌ 운영 시간 다이얼로그 표시 실패: {dialog_e}")
+                                
+                                # 메인 스레드에서 실행
+                                threading.Timer(0.1, show_operating_time_dialog).start()
+                                
+                            except Exception as e:
+                                print(f"❌ 운영 시간 알림 처리 중 오류: {e}")
+                    
                     time.sleep(60)  # 1분마다 확인
                     continue
                 
                 # 일일 포스팅 제한 확인
-                if self.daily_post_count >= int(timer_settings.get('max_posts', 20)):
-                    print("일일 포스팅 제한 도달, 타이머 대기 중...")
+                max_posts = int(timer_settings.get('max_posts', 20))
+                if self.daily_post_count >= max_posts:
+                    print(f"일일 포스팅 제한 도달, 타이머 대기 중... ({self.daily_post_count}/{max_posts})")
+                    
+                    # 10분마다 한번씩만 다이얼로그 표시 (너무 자주 표시되지 않도록)
+                    if not hasattr(self, '_last_limit_alert') or (now - self._last_limit_alert).total_seconds() >= 600:
+                        self._last_limit_alert = now
+                        if self.page_ref:
+                            try:
+                                # UI 스레드에서 안전하게 실행
+                                import threading
+                                def show_limit_dialog():
+                                    try:
+                                        self.show_dialog(
+                                            self.page_ref,
+                                            "📊 일일 제한 도달",
+                                            f"오늘의 포스팅 제한에 도달했습니다.\n\n오늘 포스팅: {self.daily_post_count}회\n일일 제한: {max_posts}회\n\n내일까지 대기하거나 설정을 변경하세요.",
+                                            ft.Colors.ORANGE
+                                        )
+                                    except Exception as dialog_e:
+                                        print(f"❌ 일일 제한 다이얼로그 표시 실패: {dialog_e}")
+                                
+                                # 메인 스레드에서 실행
+                                threading.Timer(0.1, show_limit_dialog).start()
+                                
+                            except Exception as e:
+                                print(f"❌ 일일 제한 알림 처리 중 오류: {e}")
+                    
                     time.sleep(60)  # 1분마다 확인
                     continue
                 
@@ -820,13 +1060,66 @@ class BlogWriterApp:
                     
                     if success:
                         self.daily_post_count += 1
-                        print(f"자동 포스팅 완료. 오늘 포스팅 수: {self.daily_post_count}")
+                        success_message = f"✅ 자동 포스팅 완료: 오늘의 포스팅 수: {self.daily_post_count}"
+                        print(success_message)
+                        
+                        # UI 다이얼로그로 성공 알림 (별도 스레드에서 실행)
+                        if self.page_ref:
+                            try:
+                                # 다음 포스팅 시간 계산 후 다이얼로그 표시
+                                self.calculate_next_post_time(timer_settings)
+                                next_time_str = self.next_post_time.strftime('%H:%M:%S') if self.next_post_time else '계산 중...'
+                                
+                                # UI 스레드에서 안전하게 실행
+                                import threading
+                                def show_success_dialog():
+                                    try:
+                                        self.show_dialog(
+                                            self.page_ref,
+                                            "🎉 자동 포스팅 성공!",
+                                            f"포스팅이 성공적으로 완료되었습니다.\n\n📊 오늘의 포스팅 수: {self.daily_post_count}회\n⏰ 다음 포스팅 시간: {next_time_str}",
+                                            ft.Colors.GREEN
+                                        )
+                                    except Exception as dialog_e:
+                                        print(f"❌ 성공 다이얼로그 표시 실패: {dialog_e}")
+                                
+                                # 메인 스레드에서 실행
+                                threading.Timer(0.1, show_success_dialog).start()
+                                
+                            except Exception as e:
+                                print(f"❌ 성공 알림 처리 중 오류: {e}")
                         
                         # 다음 포스팅 시간 계산
                         self.calculate_next_post_time(timer_settings)
                         print(f"다음 포스팅 시간: {self.next_post_time.strftime('%H:%M:%S')}")
                     else:
-                        print("자동 포스팅 실패, 5분 후 재시도")
+                        failure_message = "❌ 자동 포스팅 실패 (업로드 실패), 포스팅 수 카운트 안함, 5분 후 재시도"
+                        print(failure_message)
+                        
+                        # UI 다이얼로그로 실패 알림 (별도 스레드에서 실행)
+                        if self.page_ref:
+                            try:
+                                retry_time = (datetime.now() + timedelta(minutes=5)).strftime('%H:%M:%S')
+                                
+                                # UI 스레드에서 안전하게 실행
+                                import threading
+                                def show_failure_dialog():
+                                    try:
+                                        self.show_dialog(
+                                            self.page_ref,
+                                            "⚠️ 자동 포스팅 실패",
+                                            f"포스팅 업로드에 실패했습니다.\n\n📊 오늘의 포스팅 수: {self.daily_post_count}회 (변경 없음)\n🔄 재시도 시간: {retry_time}\n\n브라우저 로그인 상태를 확인해주세요.",
+                                            ft.Colors.ORANGE
+                                        )
+                                    except Exception as dialog_e:
+                                        print(f"❌ 실패 다이얼로그 표시 실패: {dialog_e}")
+                                
+                                # 메인 스레드에서 실행
+                                threading.Timer(0.1, show_failure_dialog).start()
+                                
+                            except Exception as e:
+                                print(f"❌ 실패 알림 처리 중 오류: {e}")
+                        
                         self.next_post_time = datetime.now() + timedelta(minutes=5)
                 
                 # 1초마다 확인
@@ -841,6 +1134,9 @@ class BlogWriterApp:
         try:
             print("자동 포스팅 시작...")
             print("📋 전송 버튼만 클릭합니다.")
+            
+            # 업로드 성공 상태 초기화
+            self.last_upload_success = False
             
             # UI에서 전송 버튼 클릭 시뮬레이션
             try:
@@ -862,7 +1158,11 @@ class BlogWriterApp:
                         self.page_ref.snack_bar.open = True
                         self.page_ref.update()
                     
-                    return True
+                    # 잠시 대기 후 실제 업로드 성공 여부 확인
+                    time.sleep(2)  # 업로드 처리 시간 대기
+                    
+                    # 실제 업로드 성공 여부 반환
+                    return self.last_upload_success
                 else:
                     print("❌ 전송 버튼 함수가 설정되지 않았습니다.")
                     return False
@@ -1524,6 +1824,14 @@ class BlogWriterApp:
             color=ft.Colors.GREY_600
         )
 
+        # 다음 포스팅 시간 표시 텍스트
+        next_post_time_text = ft.Text(
+            "다음 포스팅 시간: --:--:--",
+            size=12,
+            color=ft.Colors.BLUE_600,
+            weight=ft.FontWeight.BOLD
+        )
+
         def save_user_settings(e, base_dir=None):
             try:
                 if base_dir is None:
@@ -1841,7 +2149,10 @@ class BlogWriterApp:
                 
                 # 자동 업로드가 설정된 경우
                 if auto_upload_checkbox.value:
-                    upload_to_blog(None)
+                    upload_result = upload_to_blog(None)
+                    # 업로드 결과를 저장 (자동 포스팅에서 사용)
+                    if hasattr(self, 'last_upload_success'):
+                        self.last_upload_success = upload_result if upload_result is not None else False
                 
             except Exception as e:
                 # 진행 대화상자 닫기
@@ -2088,7 +2399,12 @@ class BlogWriterApp:
                         )
                         page.snack_bar.open = True
                         page.update()
-                        return
+                        
+                        # 성공 상태 저장
+                        if hasattr(self, 'last_upload_success'):
+                            self.last_upload_success = True
+                        
+                        return True  # 성공 반환
                     else:
                         raise Exception("블로그 포스팅 작성에 실패했습니다")
                         
@@ -2103,6 +2419,12 @@ class BlogWriterApp:
                 page.snack_bar = ft.SnackBar(content=ft.Text(f"업로드 중 오류가 발생했습니다: {str(e)}"))
                 page.snack_bar.open = True
                 page.update()
+                
+                # 실패 상태 저장
+                if hasattr(self, 'last_upload_success'):
+                    self.last_upload_success = False
+                
+                return False  # 실패 반환
 
         # 버튼 컴포넌트
         send_button = ft.ElevatedButton(
@@ -2156,6 +2478,7 @@ class BlogWriterApp:
                         ft.Text("📊 사용 현황", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700),
                         daily_usage_text,
                         total_usage_text,
+                        next_post_time_text
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
                     padding=10,
                     margin=ft.margin.only(top=10, bottom=10),
@@ -2461,6 +2784,7 @@ class BlogWriterApp:
         # 타이머에서 사용할 참조들 저장
         self.page_ref = page
         self.send_message_func = send_message
+        self.next_post_time_text_ref = next_post_time_text  # 다음 포스팅 시간 텍스트 참조 추가
 
 if __name__ == "__main__":
     app = BlogWriterApp()
