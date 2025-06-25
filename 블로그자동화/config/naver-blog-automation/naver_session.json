@@ -1,0 +1,11 @@
+{
+  "login_time": 1749877870.218675,
+  "current_url": "https://section.blog.naver.com/BlogHome.naver?directoryNo=0&currentPage=1&groupId=0",
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+  "login_confirmed": true,
+  "found_indicators": [
+    "로그아웃",
+    "님",
+    "글쓰기"
+  ]
+}
