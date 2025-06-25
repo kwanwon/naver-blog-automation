@@ -1,0 +1,4 @@
+[12797:2570958:0616/133411.991331:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[12797:2570958:0616/133412.012188:ERROR:components/content_settings/core/browser/content_settings_pref.cc:381] Invalid pattern strings: https://*.naver.com
+[12805:2571087:0616/133417.827620:WARNING:net/extras/sqlite/sqlite_persistent_store_backend_base.cc:176] Failed to post task from FlushAndNotifyInBackground@net/extras/sqlite/sqlite_persistent_store_backend_base.cc:226 to client_task_runner_.
+[12805:2571087:0616/133417.827765:WARNING:net/extras/sqlite/sqlite_persistent_store_backend_base.cc:176] Failed to post task from FlushAndNotifyInBackground@net/extras/sqlite/sqlite_persistent_store_backend_base.cc:226 to client_task_runner_.

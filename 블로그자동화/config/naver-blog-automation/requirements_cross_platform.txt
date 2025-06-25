@@ -1,0 +1,136 @@
+# 크로스 플랫폼 블로그 자동화 도구 - 필수 패키지
+# Windows, macOS, Linux 모든 플랫폼 지원
+# 기존 requirements.txt 기반으로 크로스 플랫폼 최적화 추가
+
+# === 기본 GUI 프레임워크 ===
+flet>=0.27.4
+flet-desktop>=0.27.4
+flet-web>=0.27.4
+
+# === 웹 자동화 ===
+selenium>=4.18.1
+webdriver-manager>=4.0.1
+
+# === HTTP 및 네트워크 ===
+requests>=2.31.0
+httpx>=0.28.1
+aiohttp>=3.11.16
+urllib3>=2.3.0
+certifi>=2025.1.31
+
+# === AI/GPT 연동 ===
+openai>=0.28.1
+
+# === 이미지 처리 ===
+pillow>=11.1.0
+
+# === 프로세스 관리 (크로스 플랫폼 핵심) ===
+psutil>=5.9.8
+
+# === 날짜/시간 처리 ===
+python-dateutil>=2.9.0
+
+# === 환경 변수 관리 ===
+python-dotenv>=1.0.1
+
+# === JSON/YAML 처리 ===
+PyYAML>=6.0.2
+
+# === 자연어 처리 ===
+nltk>=3.9.1
+konlpy>=0.6.0
+jpype1>=1.5.2
+
+# === 데이터 처리 ===
+numpy>=2.2.4
+pandas>=2.0.0
+
+# === 웹 프레임워크 ===
+fastapi>=0.115.12
+Flask>=3.0.2
+Flask-SocketIO>=5.3.6
+uvicorn>=0.34.0
+
+# === 암호화/보안 ===
+cryptography>=41.0.0
+
+# === 파일 시스템 모니터링 ===
+watchfiles>=1.0.4
+
+# === 클립보드 관리 ===
+pyperclip>=1.9.0
+
+# === 패키징 및 빌드 ===
+PyInstaller>=6.12.0
+pyinstaller-hooks-contrib>=2025.2
+
+# === Windows 전용 패키지 (조건부 설치) ===
+pywin32>=306; platform_system=="Windows"
+wmi>=1.5.1; platform_system=="Windows"
+
+# === macOS 전용 패키지 (조건부 설치) ===
+pyobjc-core>=10.0; platform_system=="Darwin"
+pyobjc-framework-Cocoa>=10.0; platform_system=="Darwin"
+macholib>=1.16.3; platform_system=="Darwin"
+
+# === Linux 전용 패키지 (조건부 설치) ===
+python-xlib>=0.33; platform_system=="Linux"
+
+# === 기타 필수 패키지 ===
+altgraph>=0.17.4
+annotated-types>=0.7.0
+anyio>=4.8.0
+attrs>=25.1.0
+bidict>=0.23.1
+blinker>=1.9.0
+boto3>=1.37.9
+botocore>=1.37.9
+charset-normalizer>=3.4.1
+click>=8.1.8
+distro>=1.9.0
+frozenlist>=1.5.0
+h11>=0.14.0
+httpcore>=1.0.7
+httptools>=0.6.4
+idna>=3.10
+itsdangerous>=2.2.0
+Jinja2>=3.1.5
+jiter>=0.8.2
+jmespath>=1.0.1
+joblib>=1.4.2
+lxml>=5.3.1
+MarkupSafe>=3.0.2
+multidict>=6.3.2
+oauthlib>=3.2.2
+outcome>=1.3.0
+packaging>=24.2
+propcache>=0.3.1
+pydantic>=2.10.6
+pydantic_core>=2.27.2
+PySocks>=1.7.1
+python-engineio>=4.11.2
+python-socketio>=5.12.1
+regex>=2024.11.6
+repath>=0.9.0
+s3transfer>=0.11.4
+setuptools>=78.1.0
+simple-websocket>=1.1.0
+six>=1.17.0
+sniffio>=1.3.1
+sortedcontainers>=2.4.0
+starlette>=0.46.1
+tqdm>=4.67.1
+trio>=0.29.0
+trio-websocket>=0.12.2
+typing_extensions>=4.12.2
+uvloop>=0.21.0; platform_system!="Windows"
+websocket-client>=1.8.0
+websockets>=15.0.1
+Werkzeug>=3.1.3
+wsproto>=1.2.0
+yarl>=1.19.0
+
+# === 개발 도구 (선택사항) ===
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0 

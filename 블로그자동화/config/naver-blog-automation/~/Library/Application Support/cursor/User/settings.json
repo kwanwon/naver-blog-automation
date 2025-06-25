@@ -1,0 +1,24 @@
+{
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "files.trimTrailingWhitespace": true,
+    "telemetry.telemetryLevel": "off",
+    "privacy.mode": "off",
+    "terminal.integrated.env.osx": {
+        "CURSOR_MCP_PATH": "/Users/gm2hapkido/.cursor/mcp.json"
+    },
+    "terminal.integrated.env.linux": {
+        "CURSOR_MCP_PATH": "/Users/gm2hapkido/.cursor/mcp.json"
+    },
+    "terminal.integrated.env.windows": {
+        "CURSOR_MCP_PATH": "C:\\Users\\gm2hapkido\\.cursor\\mcp.json"
+    },
+    "mcp.enabled": true,
+    "mcp.configPath": "/Users/gm2hapkido/.cursor/mcp.json",
+    "workbench.colorTheme": "Default Dark+",
+    "editor.fontFamily": "Menlo, Monaco, 'Courier New', monospace",
+    "editor.fontSize": 14,
+    "mcp.github.enabled": true
+} 
