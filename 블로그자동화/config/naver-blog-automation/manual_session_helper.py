@@ -44,8 +44,26 @@ class ManualSessionHelper:
         user_data_dir = os.path.join(self.base_dir, f"manual_chrome_profile_{timestamp}_{os.urandom(4).hex()}")
         chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
         
-        driver_path = ChromeDriverManager().install()
-        service = Service(executable_path=driver_path)
+        # 프로젝트 루트의 ChromeDriver 사용
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(self.base_dir)))
+        chromedriver_path = os.path.join(project_root, "chromedriver")
+        
+        if os.path.exists(chromedriver_path):
+            print(f"✅ 프로젝트 ChromeDriver 사용: {chromedriver_path}")
+            service = Service(executable_path=chromedriver_path)
+        else:
+            print("⚠️ 프로젝트 ChromeDriver 없음. WebDriverManager 사용...")
+            driver_path = ChromeDriverManager().install()
+            
+            # WebDriverManager가 잘못된 파일을 반환하는 경우 수정
+            if driver_path.endswith('THIRD_PARTY_NOTICES.chromedriver'):
+                actual_chromedriver = os.path.dirname(driver_path) + '/chromedriver'
+                if os.path.exists(actual_chromedriver):
+                    print(f"✅ 올바른 ChromeDriver 파일 사용: {actual_chromedriver}")
+                    os.chmod(actual_chromedriver, 0o755)
+                    driver_path = actual_chromedriver
+            
+            service = Service(executable_path=driver_path)
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
         
         # 최소한의 자동화 감지 방지
