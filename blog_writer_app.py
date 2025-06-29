@@ -839,7 +839,7 @@ class BlogWriterApp:
             # UI에 타이머 중지 상태 표시
             if hasattr(self, 'next_post_time_text_ref') and self.next_post_time_text_ref:
                 self.next_post_time_text_ref.value = "다음 포스팅 시간: --:--:--"
-                page.update()
+            page.update()
             
             # 성공 다이얼로그 표시
             self.show_dialog(
@@ -1093,13 +1093,16 @@ class BlogWriterApp:
                         self.calculate_next_post_time(timer_settings)
                         print(f"다음 포스팅 시간: {self.next_post_time.strftime('%H:%M:%S')}")
                     else:
-                        failure_message = "❌ 자동 포스팅 실패 (업로드 실패), 포스팅 수 카운트 안함, 5분 후 재시도"
+                        failure_message = "❌ 자동 포스팅 실패 (업로드 실패), 포스팅 수 카운트 안함, 정상 간격으로 다음 포스팅 예약"
                         print(failure_message)
+                        
+                        # 다음 포스팅 시간을 정상 랜덤 간격으로 계산
+                        self.calculate_next_post_time(timer_settings)
                         
                         # UI 다이얼로그로 실패 알림 (별도 스레드에서 실행)
                         if self.page_ref:
                             try:
-                                retry_time = (datetime.now() + timedelta(minutes=5)).strftime('%H:%M:%S')
+                                next_time_str = self.next_post_time.strftime('%H:%M:%S') if self.next_post_time else '계산 중...'
                                 
                                 # UI 스레드에서 안전하게 실행
                                 import threading
@@ -1108,7 +1111,7 @@ class BlogWriterApp:
                                         self.show_dialog(
                                             self.page_ref,
                                             "⚠️ 자동 포스팅 실패",
-                                            f"포스팅 업로드에 실패했습니다.\n\n📊 오늘의 포스팅 수: {self.daily_post_count}회 (변경 없음)\n🔄 재시도 시간: {retry_time}\n\n브라우저 로그인 상태를 확인해주세요.",
+                                            f"포스팅 업로드에 실패했습니다.\n\n📊 오늘의 포스팅 수: {self.daily_post_count}회 (변경 없음)\n⏰ 다음 포스팅 시간: {next_time_str}\n\n브라우저 로그인 상태를 확인해주세요.",
                                             ft.Colors.ORANGE
                                         )
                                     except Exception as dialog_e:
@@ -1120,7 +1123,7 @@ class BlogWriterApp:
                             except Exception as e:
                                 print(f"❌ 실패 알림 처리 중 오류: {e}")
                         
-                        self.next_post_time = datetime.now() + timedelta(minutes=5)
+                        print(f"다음 포스팅 시간: {self.next_post_time.strftime('%H:%M:%S')}")
                 
                 # 1초마다 확인
                 time.sleep(1)
