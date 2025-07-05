@@ -383,53 +383,70 @@ class NaverBlogAutomation:
                 }
             })
             
+            # 로컬 ChromeDriver 우선 시도
             try:
-                # 배포 친화적 ChromeDriver 설정 (자동 버전 관리)
-                print("ChromeDriver 자동 설정 시작...")
-                
-                # WebDriverManager를 사용하여 자동으로 최신 ChromeDriver 다운로드
-                from webdriver_manager.chrome import ChromeDriverManager
-                from selenium.webdriver.chrome.service import Service as ChromeService
-                
-                # 자동으로 Chrome 버전에 맞는 ChromeDriver 다운로드 및 설치
-                driver_path = ChromeDriverManager().install()
-                print(f"ChromeDriver 자동 설치 완료: {driver_path}")
-                
-                # macOS에서 ChromeDriver 권한 수정
-                self._fix_chromedriver_permissions(driver_path)
-                
-                service = ChromeService(executable_path=driver_path)
-                self.driver = webdriver.Chrome(service=service, options=chrome_options)
-                print("ChromeDriver 초기화 성공!")
-                    
-            except Exception as e:
-                print(f"ChromeDriver 자동 설정 실패: {str(e)}")
                 print("로컬 ChromeDriver 사용을 시도합니다...")
                 
-                # 백업 방법: 로컬 ChromeDriver 시도
+                # 프로젝트 루트의 ChromeDriver도 포함
+                project_root = os.path.dirname(os.path.dirname(os.path.dirname(self.base_dir)))
+                chromedriver_paths = [
+                    os.path.join(project_root, "chromedriver"),  # 프로젝트 루트
+                    os.path.join(self.base_dir, "chromedriver-mac-arm64", "chromedriver"),
+                    os.path.join(self.base_dir, "chromedriver"),
+                    resource_path("chromedriver-mac-arm64/chromedriver"),
+                    resource_path("chromedriver")
+                ]
+                
+                driver_found = False
+                for chromedriver_path in chromedriver_paths:
+                    if os.path.exists(chromedriver_path):
+                        print(f"✅ 로컬 ChromeDriver 발견: {chromedriver_path}")
+                        if not os.access(chromedriver_path, os.X_OK):
+                            os.chmod(chromedriver_path, 0o755)
+                        
+                        # macOS에서 ChromeDriver 권한 수정
+                        self._fix_chromedriver_permissions(chromedriver_path)
+                        
+                        service = Service(executable_path=chromedriver_path)
+                        self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                        print("✅ 로컬 ChromeDriver 초기화 성공!")
+                        driver_found = True
+                        break
+                
+                if not driver_found:
+                    raise Exception("로컬 ChromeDriver를 찾을 수 없습니다.")
+                        
+            except Exception as e:
+                print(f"로컬 ChromeDriver 실패: {str(e)}")
+                print("WebDriverManager를 사용하여 자동 다운로드를 시도합니다...")
+                
+                # 백업 방법: WebDriverManager 사용
                 try:
-                    chromedriver_paths = [
-                        os.path.join(self.base_dir, "chromedriver-mac-arm64", "chromedriver"),
-                        os.path.join(self.base_dir, "chromedriver"),
-                        resource_path("chromedriver-mac-arm64/chromedriver"),
-                        resource_path("chromedriver")
-                    ]
+                    # WebDriverManager를 사용하여 자동으로 최신 ChromeDriver 다운로드
+                    from webdriver_manager.chrome import ChromeDriverManager
+                    from selenium.webdriver.chrome.service import Service as ChromeService
                     
-                    for chromedriver_path in chromedriver_paths:
-                        if os.path.exists(chromedriver_path):
-                            print(f"로컬 ChromeDriver 발견: {chromedriver_path}")
-                            if not os.access(chromedriver_path, os.X_OK):
-                                os.chmod(chromedriver_path, 0o755)
-                            
-                            service = Service(executable_path=chromedriver_path)
-                            self.driver = webdriver.Chrome(service=service, options=chrome_options)
-                            print("로컬 ChromeDriver 초기화 성공!")
-                            break
-                    else:
-                        raise Exception("사용 가능한 ChromeDriver를 찾을 수 없습니다.")
+                    # 자동으로 Chrome 버전에 맞는 ChromeDriver 다운로드 및 설치
+                    driver_path = ChromeDriverManager().install()
+                    print(f"ChromeDriver 자동 설치 완료: {driver_path}")
+                    
+                    # WebDriverManager가 잘못된 파일을 반환하는 경우 수정
+                    if driver_path.endswith('THIRD_PARTY_NOTICES.chromedriver'):
+                        actual_chromedriver = os.path.dirname(driver_path) + '/chromedriver'
+                        if os.path.exists(actual_chromedriver):
+                            print(f"✅ 올바른 ChromeDriver 파일 사용: {actual_chromedriver}")
+                            os.chmod(actual_chromedriver, 0o755)
+                            driver_path = actual_chromedriver
+                    
+                    # macOS에서 ChromeDriver 권한 수정
+                    self._fix_chromedriver_permissions(driver_path)
+                    
+                    service = ChromeService(executable_path=driver_path)
+                    self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                    print("WebDriverManager ChromeDriver 초기화 성공!")
                         
                 except Exception as backup_error:
-                    print(f"로컬 ChromeDriver도 실패: {str(backup_error)}")
+                    print(f"WebDriverManager도 실패: {str(backup_error)}")
                     raise Exception(f"ChromeDriver를 초기화할 수 없습니다. Chrome 브라우저가 설치되어 있는지 확인하세요. 원본 오류: {str(e)}")
             
             self.driver.implicitly_wait(10)

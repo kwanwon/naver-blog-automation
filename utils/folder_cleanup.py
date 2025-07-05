@@ -31,7 +31,7 @@ class FolderCleanup:
                 if os.path.isdir(item_path):
                     should_delete = False
                     
-                    # 날짜 형식(YYYY-MM-DD) 폴더 확인
+                                        # 날짜 형식(YYYY-MM-DD) 폴더 확인
                     if self._is_date_folder(item):
                         folder_date = self._parse_folder_date(item)
                         if folder_date and folder_date < cutoff_date:

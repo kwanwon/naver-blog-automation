@@ -1135,47 +1135,31 @@ class BlogWriterApp:
     def auto_post(self, page):
         """자동 포스팅 실행 - 전송 버튼만 클릭"""
         try:
-            print("자동 포스팅 시작...")
-            print("📋 전송 버튼만 클릭합니다.")
-            
-            # 업로드 성공 상태 초기화
-            self.last_upload_success = False
+            print("🔘 타이머 자동 포스팅: 전송 버튼 클릭!")
             
             # UI에서 전송 버튼 클릭 시뮬레이션
-            try:
-                # send_button의 on_click 이벤트를 직접 호출
-                if self.send_message_func:
-                    print("🔘 전송 버튼 클릭 중...")
-                    
-                    # send_message 함수 호출 (전송 버튼과 동일한 동작)
-                    self.send_message_func(None)
-                    
-                    print("✅ 전송 버튼 클릭 완료!")
-                    
-                    # 스낵바로 알림
-                    if self.page_ref:
-                        self.page_ref.snack_bar = ft.SnackBar(
-                            content=ft.Text("🤖 전송 버튼이 자동으로 클릭되었습니다!"),
-                            bgcolor=ft.Colors.GREEN
-                        )
-                        self.page_ref.snack_bar.open = True
-                        self.page_ref.update()
-                    
-                    # 잠시 대기 후 실제 업로드 성공 여부 확인
-                    time.sleep(2)  # 업로드 처리 시간 대기
-                    
-                    # 실제 업로드 성공 여부 반환
-                    return self.last_upload_success
-                else:
-                    print("❌ 전송 버튼 함수가 설정되지 않았습니다.")
-                    return False
-                    
-            except Exception as e:
-                print(f"전송 버튼 클릭 중 오류: {str(e)}")
+            if self.send_message_func:
+                # send_message 함수 호출 (전송 버튼과 동일한 동작)
+                self.send_message_func(None)
+                
+                print("✅ 전송 버튼 클릭 완료! 이후 자동 처리됩니다.")
+                
+                # 스낵바로 알림
+                if self.page_ref:
+                    self.page_ref.snack_bar = ft.SnackBar(
+                        content=ft.Text("🤖 타이머가 전송 버튼을 클릭했습니다!"),
+                        bgcolor=ft.Colors.GREEN
+                    )
+                    self.page_ref.snack_bar.open = True
+                    self.page_ref.update()
+                
+                return True  # 전송 클릭 성공
+            else:
+                print("❌ 전송 버튼 함수가 설정되지 않았습니다.")
                 return False
-            
+                
         except Exception as e:
-            print(f"자동 포스팅 중 오류: {str(e)}")
+            print(f"전송 버튼 클릭 중 오류: {str(e)}")
             return False
     
     def update_usage_display(self):
@@ -1750,6 +1734,15 @@ class BlogWriterApp:
             max_lines=4
         )
 
+        # 본문 첫 문장 설정 필드 추가
+        first_sentence = ft.TextField(
+            label="본문 글의 첫 문장 (선택사항)",
+            hint_text="본문에 고정으로 사용할 첫 문장을 입력하세요. 예: 안녕하세요, 한국체대 라이온 블로거 입니다. 함께 공부한다고 지식을 나누고자 합니다.",
+            multiline=True,
+            min_lines=2,
+            max_lines=3
+        )
+
         # 개발자 정보
         developer_info = ft.Container(
             content=ft.Column([
@@ -1851,6 +1844,7 @@ class BlogWriterApp:
                     "blog_tags": blog_tags.value,
                     "blog_topics": blog_topics.value,
                     "slogan": slogan.value,
+                    "first_sentence": first_sentence.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 with open(os.path.join(base_dir, 'config/user_settings.txt'), 'w', encoding='utf-8') as f:
@@ -1883,6 +1877,7 @@ class BlogWriterApp:
                         blog_tags.value = settings.get('blog_tags', '')
                         blog_topics.value = settings.get('blog_topics', '')
                         slogan.value = settings.get('slogan', '바른 인성을 가진 인재를 기르는 한국체대 라이온 태권도 합기도')
+                        first_sentence.value = settings.get('first_sentence', '')
                         page.update()
             except Exception as e:
                 print(f"사용자 설정 로드 중 오류 발생: {str(e)}")
@@ -2660,6 +2655,7 @@ class BlogWriterApp:
                     blog_tags,
                     blog_topics,
                     slogan,
+                    first_sentence,
                     save_user_button,
                     developer_info
                 ],
