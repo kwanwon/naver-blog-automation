@@ -1,5 +1,7 @@
 import flet as ft # type: ignore
 from modules.gpt_handler import GPTHandler
+from modules.serial_auth import BlogSerialAuth
+
 import subprocess
 import os
 import sys  # sys 모듈 추가
@@ -25,6 +27,9 @@ class BlogWriterApp:
         
         # 기본 디렉토리 설정
         self.base_dir = self._get_base_directory()
+        
+        # 시리얼 인증 초기화
+        self.serial_auth = BlogSerialAuth()
         
         print(f"📁 최종 기본 디렉토리: {self.base_dir}")
         print(f"🔄 현재 작업 디렉토리: {os.getcwd()}")
@@ -283,6 +288,9 @@ class BlogWriterApp:
             # 시계 중지
             self.stop_clock()
             
+            # 시리얼 상태 업데이터 중지
+            self.stop_serial_status_updater()
+            
             # 타이머 중지
             if self.timer_running:
                 self.timer_running = False
@@ -494,6 +502,138 @@ class BlogWriterApp:
         """네이버 로그인 상태 확인"""
         cookies_path = os.path.join(self.base_dir, 'naver_cookies.json')
         return os.path.exists(cookies_path)
+    
+    def get_serial_status(self):
+        """시리얼 인증 상태 정보 반환"""
+        try:
+            config = self.serial_auth.load_config()
+            
+            if not config.get("serial_number"):
+                return {
+                    "status": "❌ 미인증",
+                    "message": "시리얼 번호가 등록되지 않았습니다",
+                    "color": ft.Colors.RED,
+                    "days_remaining": 0
+                }
+            
+            # 시리얼 번호 검증으로 실제 만료일 확인
+            serial_number = config.get("serial_number")
+            valid, message, expiry_date = self.serial_auth.check_serial(serial_number)
+            
+            if not valid:
+                return {
+                    "status": "❌ 만료/오류",
+                    "message": message,
+                    "color": ft.Colors.RED,
+                    "days_remaining": 0
+                }
+            
+            # 실제 만료일이 있는 경우 사용
+            if expiry_date:
+                from datetime import datetime
+                now = datetime.now()
+                
+                # 만료일이 datetime 객체가 아닌 경우 변환
+                if isinstance(expiry_date, str):
+                    try:
+                        expiry_date = datetime.fromisoformat(expiry_date)
+                    except:
+                        try:
+                            expiry_date = datetime.strptime(expiry_date, "%Y-%m-%d")
+                        except:
+                            # 파싱 실패 시 기본 30일 사용
+                            from datetime import timedelta
+                            last_validation = config.get("last_validation")
+                            if last_validation:
+                                last_check = datetime.fromisoformat(last_validation)
+                                expiry_date = last_check + timedelta(days=30)
+                            else:
+                                expiry_date = now + timedelta(days=30)
+                
+                # 남은 일수 계산
+                days_remaining = max(0, (expiry_date - now).days)
+                
+                if days_remaining <= 0:
+                    return {
+                        "status": "❌ 만료됨",
+                        "message": "시리얼 번호가 만료되었습니다",
+                        "color": ft.Colors.RED,
+                        "days_remaining": 0
+                    }
+                elif days_remaining <= 7:
+                    return {
+                        "status": "⚠️ 곧 만료",
+                        "message": f"시리얼 번호가 {days_remaining}일 후 만료됩니다",
+                        "color": ft.Colors.ORANGE,
+                        "days_remaining": days_remaining
+                    }
+                else:
+                    return {
+                        "status": "✅ 인증됨",
+                        "message": f"시리얼 번호가 정상적으로 인증되었습니다",
+                        "color": ft.Colors.GREEN,
+                        "days_remaining": days_remaining
+                    }
+            else:
+                # 만료일 정보가 없는 경우 기본 처리
+                last_validation = config.get("last_validation")
+                if not last_validation:
+                    return {
+                        "status": "⚠️ 검증 필요",
+                        "message": "시리얼 번호 재검증이 필요합니다",
+                        "color": ft.Colors.ORANGE,
+                        "days_remaining": 0
+                    }
+                
+                from datetime import datetime, timedelta
+                try:
+                    last_check = datetime.fromisoformat(last_validation)
+                    # 기본 30일 사용
+                    expiry_date = last_check + timedelta(days=30)
+                    now = datetime.now()
+                    days_remaining = max(0, (expiry_date - now).days)
+                    
+                    if days_remaining <= 0:
+                        return {
+                            "status": "❌ 만료됨",
+                            "message": "시리얼 번호가 만료되었습니다",
+                            "color": ft.Colors.RED,
+                            "days_remaining": 0
+                        }
+                    elif days_remaining <= 7:
+                        return {
+                            "status": "⚠️ 곧 만료",
+                            "message": f"시리얼 번호가 {days_remaining}일 후 만료됩니다",
+                            "color": ft.Colors.ORANGE,
+                            "days_remaining": days_remaining
+                        }
+                    else:
+                        return {
+                            "status": "✅ 인증됨",
+                            "message": f"시리얼 번호가 정상적으로 인증되었습니다",
+                            "color": ft.Colors.GREEN,
+                            "days_remaining": days_remaining
+                        }
+                        
+                except Exception as date_e:
+                    print(f"날짜 파싱 오류: {date_e}")
+                    return {
+                        "status": "⚠️ 오류",
+                        "message": "시리얼 상태 확인 중 오류가 발생했습니다",
+                        "color": ft.Colors.ORANGE,
+                        "days_remaining": 0
+                    }
+                
+        except Exception as e:
+            print(f"시리얼 상태 확인 오류: {e}")
+            return {
+                "status": "❌ 오류",
+                "message": "시리얼 인증 시스템 오류",
+                "color": ft.Colors.RED,
+                "days_remaining": 0
+            }
+
+
 
     def create_simple_login_button(self, page):
         """간단한 로그인 버튼 생성"""
@@ -1217,6 +1357,49 @@ class BlogWriterApp:
             except Exception as e:
                 print(f"시계 업데이트 중 오류: {str(e)}")
                 time.sleep(1)
+    
+    def start_serial_status_updater(self):
+        """시리얼 상태 실시간 업데이트 시작"""
+        if not hasattr(self, 'serial_status_running'):
+            self.serial_status_running = True
+            self.serial_status_thread = threading.Thread(target=self.serial_status_worker)
+            self.serial_status_thread.daemon = True
+            self.serial_status_thread.start()
+    
+    def stop_serial_status_updater(self):
+        """시리얼 상태 업데이트 중지"""
+        if hasattr(self, 'serial_status_running'):
+            self.serial_status_running = False
+    
+    def serial_status_worker(self):
+        """시리얼 상태 업데이트 워커"""
+        while getattr(self, 'serial_status_running', False):
+            try:
+                if (hasattr(self, 'serial_status_text_ref') and 
+                    hasattr(self, 'days_text_ref') and 
+                    self.page_ref):
+                    
+                    # 시리얼 상태 업데이트
+                    serial_status = self.get_serial_status()
+                    
+                    self.serial_status_text_ref.value = f"🔐 {serial_status['status']} | {serial_status['message']}"
+                    self.serial_status_text_ref.color = serial_status['color']
+                    
+                    if serial_status['days_remaining'] > 0:
+                        self.days_text_ref.value = f"📅 유효기간: {serial_status['days_remaining']}일 남음"
+                        self.days_text_ref.visible = True
+                    else:
+                        self.days_text_ref.value = ""
+                        self.days_text_ref.visible = False
+                    
+                    self.page_ref.update()
+                
+                # 5분마다 업데이트 (시리얼 상태는 자주 변경되지 않으므로)
+                time.sleep(300)
+                
+            except Exception as e:
+                print(f"시리얼 상태 업데이트 중 오류: {str(e)}")
+                time.sleep(60)  # 오류 발생 시 1분 대기
             
     def create_image_folders(self):
         """10개의 이미지 폴더를 생성합니다."""
@@ -1369,6 +1552,30 @@ class BlogWriterApp:
             print(f"본문 변경 처리 중 오류 발생: {str(e)}")
 
     def main(self, page: ft.Page):
+        # 시리얼 인증 확인 (필수)
+        if self.serial_auth.is_serial_required():
+            print("🔐 시리얼 인증이 필요합니다. 시리얼 인증 창을 실행합니다...")
+            try:
+                # 시리얼 인증 창 실행
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                serial_auth_path = os.path.join(current_dir, "start_with_serial_auth.py")
+                python_executable = sys.executable
+                
+                subprocess.Popen([python_executable, serial_auth_path], 
+                               cwd=current_dir,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               text=True)
+                
+                # 현재 프로그램 종료
+                sys.exit(0)
+                return
+            except Exception as e:
+                print(f"❌ 시리얼 인증 창 실행 중 오류: {e}")
+                # 시리얼 인증 실패 시 프로그램 종료
+                sys.exit(1)
+                return
+        
         # 페이지 설정
         page.title = "블로그 글쓰기 도우미"
         page.theme_mode = ft.ThemeMode.LIGHT
@@ -1376,6 +1583,8 @@ class BlogWriterApp:
         page.window_width = 1200
         page.window_height = 800
         page.window_resizable = True
+        
+
         
         # 실시간 시계 컴포넌트 생성
         self.clock_text = ft.Text(
@@ -1393,9 +1602,6 @@ class BlogWriterApp:
         def on_window_close(e):
             print("🚪 앱 종료 요청 감지됨")
             try:
-                # 페이지 파괴
-                page.window_destroy()
-                
                 # 안전한 종료 실행
                 self._safe_exit(0)
                 
@@ -2729,12 +2935,40 @@ class BlogWriterApp:
             expand=True
         )
 
-        # 상단 헤더 (시계)
+        # 시리얼 인증 상태 정보 가져오기
+        serial_status = self.get_serial_status()
+        
+        # 시리얼 상태 표시 컴포넌트
+        serial_status_text = ft.Text(
+            value=f"🔐 {serial_status['status']} | {serial_status['message']}",
+            size=14,
+            weight=ft.FontWeight.BOLD,
+            color=serial_status['color']
+        )
+        
+        # 유효기간 표시 (인증된 경우에만)
+        days_text = ft.Text(
+            value=f"📅 유효기간: {serial_status['days_remaining']}일 남음" if serial_status['days_remaining'] > 0 else "",
+            size=12,
+            color=ft.Colors.GREY_600
+        )
+        
+        # 상단 헤더 (시계 + 시리얼 상태)
         header = ft.Container(
             content=ft.Row([
-                self.clock_text
-            ], alignment=ft.MainAxisAlignment.CENTER),
-            padding=ft.padding.symmetric(vertical=10, horizontal=20),
+                # 왼쪽: 시리얼 상태
+                ft.Column([
+                    serial_status_text,
+                    days_text
+                ], spacing=2, horizontal_alignment=ft.CrossAxisAlignment.START),
+                
+                # 중앙: 시계
+                self.clock_text,
+                
+                # 오른쪽: 공간 균형을 위한 빈 컨테이너
+                ft.Container(width=200)
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            padding=ft.padding.symmetric(vertical=15, horizontal=20),
             bgcolor=ft.Colors.BLUE_GREY_50,
             border=ft.border.all(1, ft.Colors.BLUE_GREY_200),
             border_radius=10,
@@ -2784,6 +3018,13 @@ class BlogWriterApp:
         self.page_ref = page
         self.send_message_func = send_message
         self.next_post_time_text_ref = next_post_time_text  # 다음 포스팅 시간 텍스트 참조 추가
+        
+        # 시리얼 상태 UI 참조 저장
+        self.serial_status_text_ref = serial_status_text
+        self.days_text_ref = days_text
+        
+        # 시리얼 상태 실시간 업데이트 시작
+        self.start_serial_status_updater()
 
 if __name__ == "__main__":
     app = BlogWriterApp()
