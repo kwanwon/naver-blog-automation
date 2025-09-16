@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "release_date": "2024-09-16",
+  "changelog": [
+    "✨ 자동 업데이트 기능 추가",
+    "🔒 시리얼 정보 및 설정 파일 보존",
+    "🔄 안전한 백업 및 롤백 시스템",
+    "🌐 크로스 플랫폼 지원",
+    "🤖 자동 중복 시리얼 정리"
+  ],
+  "min_requirements": {
+    "python": "3.7+",
+    "os": ["Windows", "macOS", "Linux"]
+  },
+  "preserved_files": [
+    "modules/serial_config.json",
+    "naver_cookies.pkl",
+    "naver_session.json",
+    "user_data.json",
+    "config.json",
+    "settings.json"
+  ]
+}
