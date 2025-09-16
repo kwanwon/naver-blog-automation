@@ -386,16 +386,22 @@ class NaverBlogAutomation:
             # 로컬 ChromeDriver 우선 시도
             try:
                 print("로컬 ChromeDriver 사용을 시도합니다...")
+                print(f"현재 base_dir: {self.base_dir}")
                 
                 # 프로젝트 루트의 ChromeDriver도 포함
                 project_root = os.path.dirname(os.path.dirname(os.path.dirname(self.base_dir)))
                 chromedriver_paths = [
+                    os.path.join(self.base_dir, "chromedriver"),  # 현재 디렉토리 우선
                     os.path.join(project_root, "chromedriver"),  # 프로젝트 루트
                     os.path.join(self.base_dir, "chromedriver-mac-arm64", "chromedriver"),
-                    os.path.join(self.base_dir, "chromedriver"),
                     resource_path("chromedriver-mac-arm64/chromedriver"),
                     resource_path("chromedriver")
                 ]
+                
+                print(f"ChromeDriver 검색 경로들:")
+                for i, path in enumerate(chromedriver_paths):
+                    exists = os.path.exists(path)
+                    print(f"  {i+1}. {path} -> {'✅ 존재' if exists else '❌ 없음'}")
                 
                 driver_found = False
                 for chromedriver_path in chromedriver_paths:

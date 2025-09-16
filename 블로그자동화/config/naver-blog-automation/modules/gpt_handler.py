@@ -94,18 +94,27 @@ class GPTHandler:
 """  # 끝에 줄바꿈 두 개 추가하기
         
         try:
-            # 일반 경로 시도
-            settings_path = 'config/gpt_settings.txt'
+            # 스크립트 파일의 위치를 기준으로 경로 계산
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(script_dir)
             
-            # 빌드된 앱에서 경로 시도
-            if not os.path.exists(settings_path):
-                bundled_path = resource_path('config/gpt_settings.txt')
-                if os.path.exists(bundled_path):
-                    settings_path = bundled_path
-                    print(f"빌드 환경에서 GPT 설정 파일 발견: {bundled_path}")
+            # 여러 경로 시도
+            possible_paths = [
+                os.path.join(parent_dir, 'config', 'gpt_settings.txt'),
+                os.path.join(os.getcwd(), 'config', 'gpt_settings.txt'),
+                'config/gpt_settings.txt',
+                resource_path('config/gpt_settings.txt')
+            ]
+            
+            settings_path = None
+            for path in possible_paths:
+                abs_path = os.path.abspath(path)
+                if os.path.exists(abs_path):
+                    settings_path = abs_path
+                    break
             
             # 설정 파일이 존재하면 로드
-            if os.path.exists(settings_path):
+            if settings_path:
                 with open(settings_path, 'r', encoding='utf-8') as f:
                     loaded_settings = json.load(f)
                     
@@ -116,7 +125,7 @@ class GPTHandler:
                 
                 print(f"GPT 설정 파일 로드 성공: {settings_path}")
             else:
-                print(f"GPT 설정 파일을 찾을 수 없습니다: {settings_path}")
+                print(f"GPT 설정 파일을 찾을 수 없습니다")
         except Exception as e:
             print(f"GPT 설정 파일 로드 중 오류 발생: {str(e)}")
             traceback.print_exc()
@@ -134,28 +143,102 @@ class GPTHandler:
         custom_prompts = {}
         
         try:
-            # 일반 경로 시도
-            prompts_path = 'config/custom_prompts.txt'
+            # 스크립트 파일의 위치를 기준으로 경로 계산
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(script_dir)
             
-            # 빌드된 앱에서 경로 시도
-            if not os.path.exists(prompts_path):
-                bundled_path = resource_path('config/custom_prompts.txt')
-                if os.path.exists(bundled_path):
-                    prompts_path = bundled_path
-                    print(f"빌드 환경에서 커스텀 프롬프트 파일 발견: {bundled_path}")
+            # 여러 경로 시도
+            possible_paths = [
+                os.path.join(parent_dir, 'config', 'custom_prompts.txt'),
+                os.path.join(os.getcwd(), 'config', 'custom_prompts.txt'),
+                'config/custom_prompts.txt',
+                resource_path('config/custom_prompts.txt')
+            ]
+            
+            prompts_path = None
+            for path in possible_paths:
+                abs_path = os.path.abspath(path)
+                if os.path.exists(abs_path):
+                    prompts_path = abs_path
+                    break
             
             # 프롬프트 파일이 존재하면 로드
-            if os.path.exists(prompts_path):
+            if prompts_path:
                 with open(prompts_path, 'r', encoding='utf-8') as f:
-                    custom_prompts = json.load(f)
+                    content = f.read().strip()
+                    if content:  # 파일이 비어있지 않은 경우만 JSON 파싱
+                        custom_prompts = json.loads(content)
+                    else:
+                        print(f"커스텀 프롬프트 파일이 비어있습니다: {prompts_path}")
                 print(f"커스텀 프롬프트 파일 로드 성공: {prompts_path}")
             else:
-                print(f"커스텀 프롬프트 파일을 찾을 수 없습니다: {prompts_path}")
+                print(f"커스텀 프롬프트 파일을 찾을 수 없습니다")
+        except json.JSONDecodeError as e:
+            print(f"커스텀 프롬프트 파일 JSON 파싱 오류: {str(e)}")
+            print(f"파일이 비어있거나 잘못된 JSON 형식입니다. 기본 설정을 사용합니다.")
         except Exception as e:
             print(f"커스텀 프롬프트 파일 로드 중 오류 발생: {str(e)}")
             traceback.print_exc()
             
         return custom_prompts
+
+    def _load_user_settings(self):
+        """사용자 설정을 로드합니다."""
+        user_settings = {}
+        
+        try:
+            # 스크립트 파일의 위치를 기준으로 경로 계산
+            script_dir = os.path.dirname(os.path.abspath(__file__))  # modules 디렉토리
+            parent_dir = os.path.dirname(script_dir)  # naver-blog-automation 디렉토리
+            
+            # 다양한 경로 시도 (더 robust하게)
+            possible_paths = [
+                # 상대 경로들
+                os.path.join(parent_dir, 'config', 'user_settings.txt'),
+                os.path.join(os.getcwd(), 'config', 'user_settings.txt'),
+                os.path.join(script_dir, '..', 'config', 'user_settings.txt'),
+                # 레거시 경로들
+                'config/user_settings.txt',
+                './config/user_settings.txt',
+                '../config/user_settings.txt',
+                # 리소스 경로
+                resource_path('config/user_settings.txt'),
+                # 절대 경로 시도
+                os.path.abspath(os.path.join(parent_dir, 'config', 'user_settings.txt'))
+            ]
+            
+            settings_path = None
+            current_dir = os.getcwd()
+            print(f"🔥 현재 작업 디렉토리: {current_dir}")
+            print(f"🔥 스크립트 디렉토리: {script_dir}")
+            print(f"🔥 부모 디렉토리: {parent_dir}")
+            
+            for path in possible_paths:
+                abs_path = os.path.abspath(path)
+                print(f"🔥 경로 시도: {path} -> {abs_path}")
+                if os.path.exists(abs_path):
+                    settings_path = abs_path
+                    print(f"🔥 파일 발견: {abs_path}")
+                    break
+                else:
+                    print(f"🔥 파일 없음: {abs_path}")
+            
+            # 설정 파일이 존재하면 로드
+            if settings_path:
+                with open(settings_path, 'r', encoding='utf-8') as f:
+                    user_settings = json.load(f)
+                print(f"🔥 사용자 설정 파일 로드 성공: {settings_path}")
+                print(f"🔥 로드된 first_sentence: '{user_settings.get('first_sentence', '없음')}'")
+            else:
+                print(f"🔥 사용자 설정 파일을 어떤 경로에서도 찾을 수 없습니다.")
+                print(f"🔥 시도한 경로들:")
+                for path in possible_paths:
+                    print(f"🔥   - {os.path.abspath(path)}")
+        except Exception as e:
+            print(f"🔥 사용자 설정 파일 로드 중 오류 발생: {str(e)}")
+            traceback.print_exc()
+            
+        return user_settings
 
     def generate_content(self, topic):
         """주어진 주제로 블로그 콘텐츠를 생성합니다."""
@@ -166,6 +249,7 @@ class GPTHandler:
         # 사용자 설정 로드
         settings = self._load_settings()
         custom_prompt = self._load_custom_prompt()
+        user_settings = self._load_user_settings()  # 사용자 설정 로드 추가
         
         # 시스템 메시지 구성 (페르소나와 지침 적용)
         system_message = f"""당신은 블로그 작성자입니다.
@@ -256,6 +340,19 @@ class GPTHandler:
                 # 모바일 최적화 및 포맷팅
                 body = self._format_content_for_mobile(body)
                 body = self._enhance_formatting(body)
+                
+                # 사용자 설정에서 첫 문장 추가 처리
+                first_sentence = user_settings.get('first_sentence', '').strip()
+                if first_sentence:
+                    logger.info(f"🔥 첫 문장 설정 발견: '{first_sentence}'")
+                    logger.info(f"🔥 원본 본문 시작 부분: '{body[:100]}...'")
+                    
+                    # 무조건 설정된 첫 문장을 본문 맨 앞에 추가
+                    body = f"{first_sentence}\n\n{body}"
+                    
+                    logger.info(f"🔥 첫 문장 추가 후 본문 시작 부분: '{body[:100]}...'")
+                else:
+                    logger.info("🔥 첫 문장 설정이 없습니다.")
                 
                 logger.info(f"OpenAI API 호출 완료: 제목 '{title}'")
                 
@@ -402,7 +499,24 @@ class GPTHandler:
             }
         }
         
-        return dummy_contents.get(topic, dummy_contents["default"])
+        # 더미 콘텐츠 가져오기
+        dummy_content = dummy_contents.get(topic, dummy_contents["default"])
+        
+        # 사용자 설정에서 첫 문장 추가 처리
+        user_settings = self._load_user_settings()
+        first_sentence = user_settings.get('first_sentence', '').strip()
+        if first_sentence:
+            logger.info(f"🔥 더미 콘텐츠에 첫 문장 추가: '{first_sentence}'")
+            logger.info(f"🔥 더미 원본 본문: '{dummy_content['content'][:100]}...'")
+            
+            # 무조건 설정된 첫 문장을 본문 맨 앞에 추가
+            dummy_content["content"] = f"{first_sentence}\n\n{dummy_content['content']}"
+            
+            logger.info(f"🔥 더미 첫 문장 추가 후: '{dummy_content['content'][:100]}...'")
+        else:
+            logger.info("🔥 더미 콘텐츠: 첫 문장 설정이 없습니다.")
+        
+        return dummy_content
 
     def _create_prompt(self, topic, style):
         """GPT 프롬프트를 생성합니다."""
