@@ -1,6 +1,7 @@
 import flet as ft # type: ignore
 from modules.gpt_handler import GPTHandler
 from modules.serial_auth import BlogSerialAuth
+from modules.auto_updater import AutoUpdater  # 자동 업데이트 추가
 
 import subprocess
 import os
@@ -33,6 +34,9 @@ class BlogWriterApp:
         
         print(f"📁 최종 기본 디렉토리: {self.base_dir}")
         print(f"🔄 현재 작업 디렉토리: {os.getcwd()}")
+        
+        # 자동 업데이트 확인 (백그라운드에서)
+        self.check_for_updates()
         
         # 디렉토리 존재 확인 및 생성
         self._ensure_directories()
@@ -3025,7 +3029,96 @@ class BlogWriterApp:
         
         # 시리얼 상태 실시간 업데이트 시작
         self.start_serial_status_updater()
+        
+    def check_for_updates(self):
+        """백그라운드에서 업데이트 확인"""
+        def update_check():
+            try:
+                print("🔄 업데이트 확인 중...")
+                
+                # 현재 버전 로드
+                current_version = self.get_current_version()
+                updater = AutoUpdater(current_version)
+                
+                # 원격 버전 확인
+                remote_version, changelog = updater.get_remote_version()
+                
+                if remote_version and updater.compare_versions(remote_version):
+                    print(f"🎉 새 버전 발견: v{remote_version}")
+                    print("📋 변경사항:")
+                    for change in changelog:
+                        print(f"  - {change}")
+                    print("\n💡 프로그램 재시작 시 자동으로 업데이트됩니다.")
+                else:
+                    print("✅ 현재 버전이 최신입니다.")
+                    
+            except Exception as e:
+                print(f"⚠️ 업데이트 확인 실패: {e}")
+                
+        # 백그라운드 스레드에서 실행
+        threading.Thread(target=update_check, daemon=True).start()
+        
+    def get_current_version(self):
+        """현재 버전 가져오기"""
+        try:
+            version_file = os.path.join(self.base_dir, 'version.json')
+            if os.path.exists(version_file):
+                with open(version_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    return data.get('version', '1.0.0')
+            return '1.0.0'
+        except:
+            return '1.0.0'
+            
+    def perform_update(self):
+        """업데이트 실행"""
+        try:
+            print("🔄 업데이트 시작...")
+            
+            current_version = self.get_current_version()
+            updater = AutoUpdater(current_version)
+            
+            success, message = updater.check_and_update()
+            
+            if success:
+                print(f"✅ {message}")
+                print("🔄 프로그램을 재시작해주세요.")
+                return True
+            else:
+                print(f"ℹ️ {message}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ 업데이트 실패: {e}")
+            return False
 
 if __name__ == "__main__":
+    # 프로그램 시작 전 업데이트 확인
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        version_file = os.path.join(current_dir, 'version.json')
+        
+        current_version = '1.0.0'
+        if os.path.exists(version_file):
+            with open(version_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                current_version = data.get('version', '1.0.0')
+                
+        updater = AutoUpdater(current_version)
+        
+        # 업데이트 확인 및 적용
+        print("🚀 블로그 자동화 프로그램 시작...")
+        success, message = updater.check_and_update()
+        
+        if success:
+            print(f"✅ {message}")
+            print("🔄 업데이트된 프로그램을 시작합니다...")
+            time.sleep(2)  # 잠깐 대기
+            
+    except Exception as e:
+        print(f"⚠️ 업데이트 확인 중 오류: {e}")
+        print("🔄 기존 프로그램을 시작합니다...")
+    
+    # 메인 앱 실행
     app = BlogWriterApp()
     ft.app(target=app.main) 
