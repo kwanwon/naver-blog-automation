@@ -13,7 +13,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
 try:
-    from blog_writer_app_improved import main
+    from blog_writer_app_improved import main # type: ignore
     import flet as ft
     
     print("🚀 개선된 블로그 자동화 앱을 시작합니다...")

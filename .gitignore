@@ -15,6 +15,15 @@ dist/
 build/
 *.spec
 
+# Chrome 브라우저 프로필 및 세션 데이터
+chrome_profile/
+manual_chrome_profile_*/
+chromedriver*
+*.crx
+
+# 날짜별 생성된 폴더들 (로그, 임시 파일)
+20??-??-??/
+
 # 기타 파일
 .DS_Store
 
@@ -47,13 +56,7 @@ ENV/
 config/local_settings.py
 
 # Logs
-*.log .env
-*.pem
-config/user_settings.txt
-.env
-config/user_settings.txt
-*.pem
-*.key
+*.log
 
 # Python
 __pycache__/
