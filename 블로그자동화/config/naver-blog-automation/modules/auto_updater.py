@@ -20,9 +20,13 @@ import logging
 class AutoUpdater:
     def __init__(self, current_version="1.0.0"):
         self.current_version = current_version
-        self.github_repo = "kwanwon/-"  # 하이픈 저장소
+        self.github_repo = "kwanwon/naver-blog-automation"  # 올바른 저장소 이름
+        self.github_branch = "main"  # 올바른 브랜치 이름
         self.github_api_url = f"https://api.github.com/repos/{self.github_repo}"
-        self.github_raw_url = f"https://raw.githubusercontent.com/{self.github_repo}/main"
+        self.github_raw_url = f"https://raw.githubusercontent.com/{self.github_repo}/{self.github_branch}"
+        
+        # 올바른 경로 설정 (블로그자동화/config/naver-blog-automation 폴더 내의 파일들)
+        self.remote_base_path = "블로그자동화/config/naver-blog-automation"
         
         # 현재 프로그램 경로
         self.app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
