@@ -234,6 +234,13 @@ class SerialManager:
         
         # 초기화 순서 변경
         self.refresh_serial_list()
+        
+        # 초기 데이터베이스 동기화
+        try:
+            self.sync_databases()
+        except Exception as e:
+            logging.warning(f"초기 동기화 실패 (무시 가능): {e}")
+        
         self.process_background_tasks()
         self.update_time()
         self.check_serial_status()  # 상태 체크 시작
@@ -339,6 +346,7 @@ class SerialManager:
         
         ttk.Button(button_frame, text="시리얼 생성", command=self.create_serial).pack(side=tk.LEFT, padx=2)
         ttk.Button(button_frame, text="새로고침", command=self.refresh_serial_list).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_frame, text="DB 동기화", command=self.manual_sync_databases).pack(side=tk.LEFT, padx=2)
         ttk.Button(button_frame, text="엑셀 내보내기", command=self.export_to_excel).pack(side=tk.LEFT, padx=2)
         ttk.Button(button_frame, text="데이터 백업", command=self.backup_database).pack(side=tk.LEFT, padx=2)
         
@@ -780,9 +788,33 @@ class SerialManager:
             self.cursor.execute("SELECT serial_number, memo FROM local_memos")
             local_memos = dict(self.cursor.fetchall())
             
-            response = requests.get(f"{SERVER_URL}/api/serials", timeout=60)
-            if response.status_code == 200:
-                server_data = response.json()
+            # 임시로 서버 동기화 비활성화 - 로컬 DB만 사용
+            # response = requests.get(f"{SERVER_URL}/api/serials", timeout=60)
+            # if response.status_code == 200:
+            #     server_data = response.json()
+            if True:  # 항상 로컬 DB 사용
+                # 로컬 DB에서 데이터 가져오기
+                self.cursor.execute("""
+                    SELECT serial_number, status, created_date, expiry_date, 
+                           device_info, memo, activation_count, is_blacklisted
+                    FROM serials 
+                    WHERE is_deleted = 0
+                """)
+                local_data = self.cursor.fetchall()
+                
+                # 서버 데이터 형식으로 변환
+                server_data = []
+                for row in local_data:
+                    server_data.append({
+                        'serial_number': row[0],
+                        'status': row[1],
+                        'created_date': row[2],
+                        'expiry_date': row[3],
+                        'device_info': row[4],
+                        'memo': row[5],
+                        'activation_count': row[6],
+                        'is_blacklisted': bool(row[7])
+                    })
                 
                 # 트랜잭션 시작
                 self.cursor.execute("BEGIN TRANSACTION")
@@ -856,6 +888,10 @@ class SerialManager:
                     
                     # 트랜잭션 커밋
                     self.cursor.execute("COMMIT")
+                    
+                    # 데이터베이스 동기화 실행
+                    self.sync_databases()
+                    
                     self.update_ui()
                 except Exception as e:
                     # 오류 발생 시 롤백
@@ -872,6 +908,45 @@ class SerialManager:
         except Exception as e:
             logging.error(f"데이터 동기화 오류: {e}")
             messagebox.showerror("오류", f"데이터 동기화 중 오류가 발생했습니다.\n{str(e)}")
+    
+    def sync_databases(self):
+        """메인 데이터베이스와 블로그 데이터베이스 동기화"""
+        try:
+            # 블로그 데이터베이스 연결
+            blog_db_path = get_db_path().replace('serials.db', 'blogs.db')
+            if os.path.exists(blog_db_path):
+                # 메인 DB에서 블로그 DB로 activation_count 동기화
+                blog_conn = sqlite3.connect(blog_db_path)
+                blog_cursor = blog_conn.cursor()
+                
+                # 메인 DB의 activation_count를 블로그 DB에 업데이트
+                self.cursor.execute("SELECT serial_number, activation_count FROM serials")
+                main_data = self.cursor.fetchall()
+                
+                for serial_number, activation_count in main_data:
+                    blog_cursor.execute("""
+                        UPDATE blog_serials 
+                        SET activation_count = ? 
+                        WHERE serial_number = ?
+                    """, (activation_count, serial_number))
+                
+                blog_conn.commit()
+                blog_conn.close()
+                logging.info("데이터베이스 동기화 완료")
+                
+        except Exception as e:
+            logging.error(f"데이터베이스 동기화 오류: {e}")
+    
+    def manual_sync_databases(self):
+        """수동 데이터베이스 동기화 (사용자 버튼 클릭 시)"""
+        try:
+            self.sync_databases()
+            messagebox.showinfo("완료", "데이터베이스 동기화가 완료되었습니다.")
+            # 동기화 후 화면 새로고침
+            self.refresh_serial_list()
+        except Exception as e:
+            logging.error(f"수동 동기화 오류: {e}")
+            messagebox.showerror("오류", f"데이터베이스 동기화 중 오류가 발생했습니다:\n{str(e)}")
     
     def format_device_info(self, device_info_str):
         """디바이스 정보 형식화"""

@@ -1204,3 +1204,394 @@ AttributeError: 'list' object has no attribute 'get'
 2025-05-16 15:47:14,525 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serial_manager.log
 2025-05-16 15:47:14,992 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리통합/시리얼관리/serials.db
 2025-05-16 15:47:14,995 - INFO - 데이터베이스 초기화 완료
+2025-08-30 10:30:34,689 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 10:30:34,876 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 10:30:34,876 - INFO - 데이터베이스 초기화 완료
+2025-08-30 10:32:00,059 - INFO - 컨텍스트 메뉴 이벤트: 4, x=871, y=32
+2025-08-30 10:32:09,488 - INFO - 컨텍스트 메뉴 이벤트: 4, x=883, y=56
+2025-08-30 10:32:32,537 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1107, y=127
+2025-08-30 10:32:38,938 - INFO - 컨텍스트 메뉴 이벤트: 4, x=902, y=70
+2025-08-30 10:33:03,986 - INFO - 컨텍스트 메뉴 이벤트: 4, x=674, y=86
+2025-08-30 10:42:15,752 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 10:47:42,701 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 10:47:43,052 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 10:47:43,054 - INFO - 데이터베이스 초기화 완료
+2025-08-30 10:47:43,674 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 10:47:43,676 - INFO - 데이터베이스 동기화 완료
+2025-08-30 10:47:43,680 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 10:47:43,681 - INFO - 데이터베이스 동기화 완료
+2025-08-30 10:47:53,275 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 10:47:53,277 - INFO - 데이터베이스 동기화 완료
+2025-08-30 10:47:55,180 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 10:47:55,182 - INFO - 데이터베이스 동기화 완료
+2025-08-30 10:47:58,015 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 10:47:58,016 - INFO - 데이터베이스 동기화 완료
+2025-08-30 10:49:02,873 - INFO - 디바이스 정보 수집 시작
+2025-08-30 10:49:02,874 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 10:49:02,874 - INFO - 호스트명: 10.nate.com
+2025-08-30 10:49:02,917 - ERROR - IP 주소 가져오기 오류: [Errno 8] nodename nor servname provided, or not known
+2025-08-30 10:49:02,918 - INFO - 메모리 정보: svmem(total=8589934592, available=2418851840, percent=71.8, used=3556278272, free=131710976, active=2291154944, inactive=2256224256, wired=1265123328)
+2025-08-30 10:49:02,932 - INFO - 모델 정보: Mac14,15
+2025-08-30 10:49:02,932 - INFO - OS 정보: Darwin Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112
+2025-08-30 10:49:02,940 - INFO - 프로세서 정보: Apple M2
+2025-08-30 10:49:02,940 - INFO - 디바이스 정보 수집 완료: {'hostname': '10.nate.com', 'ip_address': '0.0.0.0', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-08-30 10:49:02'}
+2025-08-30 10:49:03,730 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 10:49:03,732 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:13:33,044 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 21:13:33,226 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:13:33,228 - INFO - 데이터베이스 초기화 완료
+2025-08-30 21:16:48,397 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 21:16:48,551 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:16:48,553 - INFO - 데이터베이스 초기화 완료
+2025-08-30 21:16:49,315 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:16:49,316 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:16:49,319 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:16:49,319 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:17:05,377 - INFO - 컨텍스트 메뉴 이벤트: 4, x=249, y=56
+2025-08-30 21:23:14,924 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 21:23:15,094 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:23:15,097 - INFO - 데이터베이스 초기화 완료
+2025-08-30 21:23:15,656 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:23:15,657 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:23:15,660 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:23:15,661 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:39:39,496 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 21:39:39,708 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:39:39,711 - INFO - 데이터베이스 초기화 완료
+2025-08-30 21:39:39,896 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:39:39,897 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:39:39,898 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:39:39,899 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:40:08,631 - INFO - 컨텍스트 메뉴 이벤트: 4, x=325, y=41
+2025-08-30 21:40:14,100 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:40:14,102 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:44:18,122 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 21:44:18,336 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:44:18,338 - INFO - 데이터베이스 초기화 완료
+2025-08-30 21:44:18,577 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:44:18,578 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:44:18,579 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:44:18,580 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:47:49,134 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 21:47:49,286 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:47:49,286 - INFO - 데이터베이스 초기화 완료
+2025-08-30 21:47:49,506 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:47:49,507 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:47:49,509 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:47:49,509 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:48:34,026 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 21:48:34,181 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:48:34,182 - INFO - 데이터베이스 초기화 완료
+2025-08-30 21:48:34,370 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:48:34,370 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:48:34,373 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:48:34,373 - INFO - 데이터베이스 동기화 완료
+2025-08-30 21:48:54,362 - INFO - 컨텍스트 메뉴 이벤트: 4, x=167, y=39
+2025-08-30 21:48:59,139 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 21:48:59,140 - INFO - 데이터베이스 동기화 완료
+2025-08-30 22:00:08,459 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 22:00:08,630 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 22:00:08,632 - INFO - 데이터베이스 초기화 완료
+2025-08-30 22:00:09,087 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 22:00:09,088 - INFO - 데이터베이스 동기화 완료
+2025-08-30 22:00:09,090 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 22:00:09,090 - INFO - 데이터베이스 동기화 완료
+2025-08-30 22:00:26,791 - INFO - 디바이스 정보 수집 시작
+2025-08-30 22:00:26,791 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-30 22:00:26,791 - INFO - 호스트명: lionui-MacBookAir.local
+2025-08-30 22:00:26,800 - INFO - IP 주소: 127.0.0.1
+2025-08-30 22:00:26,800 - INFO - 메모리 정보: svmem(total=8589934592, available=2635448320, percent=69.3, used=3680092160, free=98893824, active=2537619456, inactive=2515206144, wired=1142472704)
+2025-08-30 22:00:26,817 - INFO - 모델 정보: Mac14,15
+2025-08-30 22:00:26,817 - INFO - OS 정보: Darwin Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112
+2025-08-30 22:00:26,826 - INFO - 프로세서 정보: Apple M2
+2025-08-30 22:00:26,826 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-08-30 22:00:26'}
+2025-08-30 22:00:27,558 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-30 22:00:27,560 - INFO - 데이터베이스 동기화 완료
+2025-08-30 22:00:41,738 - INFO - 컨텍스트 메뉴 이벤트: 4, x=215, y=139
+2025-08-31 16:28:59,773 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-31 16:28:59,962 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:28:59,964 - INFO - 데이터베이스 초기화 완료
+2025-08-31 16:29:44,974 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:29:44,976 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:29:44,979 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:29:44,980 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:29:58,497 - INFO - 컨텍스트 메뉴 이벤트: 4, x=624, y=38
+2025-08-31 16:30:01,275 - INFO - 컨텍스트 메뉴 이벤트: 4, x=411, y=35
+2025-08-31 16:30:40,180 - INFO - 디바이스 정보 수집 시작
+2025-08-31 16:30:40,181 - INFO - 로그 파일 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-31 16:30:40,181 - INFO - 호스트명: lionui-MacBookAir.local
+2025-08-31 16:30:40,281 - INFO - IP 주소: 192.168.219.54
+2025-08-31 16:30:40,282 - INFO - 메모리 정보: svmem(total=8589934592, available=2041872384, percent=76.2, used=3229040640, free=58327040, active=1977597952, inactive=1978351616, wired=1251442688)
+2025-08-31 16:30:40,317 - INFO - 모델 정보: Mac14,15
+2025-08-31 16:30:40,318 - INFO - OS 정보: Darwin Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112
+2025-08-31 16:30:40,327 - INFO - 프로세서 정보: Apple M2
+2025-08-31 16:30:40,327 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '192.168.219.54', 'system_manufacturer': 'Apple', 'system_model': 'Mac14,15', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'total_memory': '8.00GB', 'registration_date': '2025-08-31 16:30:40'}
+2025-08-31 16:30:41,911 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:30:41,913 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:30:58,153 - INFO - 컨텍스트 메뉴 이벤트: 4, x=227, y=159
+2025-08-31 16:31:45,719 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-31 16:31:45,884 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:31:45,884 - INFO - 데이터베이스 초기화 완료
+2025-08-31 16:31:47,188 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:31:47,189 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:31:47,192 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:31:47,193 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:31:52,617 - INFO - 컨텍스트 메뉴 이벤트: 4, x=634, y=33
+2025-08-31 16:32:43,375 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-31 16:32:43,532 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:32:43,533 - INFO - 데이터베이스 초기화 완료
+2025-08-31 16:32:44,930 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:32:44,932 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:32:44,935 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:32:44,936 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:32:52,936 - INFO - 컨텍스트 메뉴 이벤트: 4, x=579, y=35
+2025-08-31 16:34:38,940 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-31 16:34:39,105 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:34:39,107 - INFO - 데이터베이스 초기화 완료
+2025-08-31 16:34:39,898 - ERROR - 서버 응답 실패: 502
+2025-08-31 16:34:42,191 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:34:42,194 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:34:46,414 - ERROR - 서버 응답 실패: 502
+2025-08-31 16:34:49,591 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:34:49,593 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:34:58,370 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:34:58,372 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:35:03,351 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:35:03,353 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:35:07,067 - ERROR - 서버 응답 실패: 502
+2025-08-31 16:37:22,405 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-31 16:37:22,584 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:37:22,584 - INFO - 데이터베이스 초기화 완료
+2025-08-31 16:37:23,007 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:37:23,008 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:37:23,009 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:37:23,010 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:39:18,635 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-31 16:39:18,803 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:39:18,805 - INFO - 데이터베이스 초기화 완료
+2025-08-31 16:39:19,008 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:39:19,009 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:39:19,012 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:39:19,013 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:39:37,931 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:39:37,932 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:39:50,050 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:39:50,051 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:39:50,279 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:39:50,280 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:40:51,584 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-31 16:40:51,754 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:40:51,756 - INFO - 데이터베이스 초기화 완료
+2025-08-31 16:40:51,959 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:40:51,960 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:40:51,963 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:40:51,963 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:42:08,286 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-08-31 16:42:08,438 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:42:08,439 - INFO - 데이터베이스 초기화 완료
+2025-08-31 16:42:08,668 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:42:08,669 - INFO - 데이터베이스 동기화 완료
+2025-08-31 16:42:08,672 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-08-31 16:42:08,673 - INFO - 데이터베이스 동기화 완료
+2025-09-08 09:17:26,525 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/-/시리얼관리/serial_manager.log
+2025-09-08 09:17:26,704 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-09-08 09:17:26,705 - INFO - 데이터베이스 초기화 완료
+2025-09-08 09:18:31,586 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-09-08 09:18:31,590 - INFO - 데이터베이스 동기화 완료
+2025-09-08 09:18:37,703 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/-/시리얼관리/serials.db
+2025-09-08 09:18:37,704 - INFO - 데이터베이스 동기화 완료
+2025-09-08 09:19:31,726 - INFO - 컨텍스트 메뉴 이벤트: 4, x=660, y=32
+2025-09-08 09:19:46,430 - INFO - 컨텍스트 메뉴 이벤트: 4, x=598, y=38
+2025-09-08 09:20:29,286 - INFO - 컨텍스트 메뉴 이벤트: 4, x=237, y=34
+2025-09-16 16:06:02,818 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 16:06:33,612 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 16:06:34,133 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 16:06:34,136 - INFO - 데이터베이스 초기화 완료
+2025-09-16 16:07:08,192 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 16:07:08,366 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 16:07:08,368 - INFO - 데이터베이스 초기화 완료
+2025-09-16 16:07:36,069 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 16:07:36,073 - INFO - 데이터베이스 동기화 완료
+2025-09-16 16:30:55,206 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 16:30:55,214 - INFO - 데이터베이스 동기화 완료
+2025-09-16 16:31:08,548 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 16:31:08,864 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 16:31:08,865 - INFO - 데이터베이스 초기화 완료
+2025-09-16 16:31:09,077 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 16:31:09,078 - INFO - 데이터베이스 동기화 완료
+2025-09-16 16:31:09,081 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 16:31:09,082 - INFO - 데이터베이스 동기화 완료
+2025-09-16 16:31:25,812 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 16:31:25,813 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:24:39,851 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:24:40,333 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:24:40,333 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:24:40,780 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:24:40,782 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:24:40,785 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:24:40,785 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:26:25,628 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:26:25,928 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:26:25,928 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:26:26,166 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:26:26,167 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:26:26,169 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:26:26,170 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:26:39,408 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:26:39,669 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:26:39,670 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:26:40,104 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:26:40,106 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:26:40,108 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:26:40,109 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:27:33,732 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:27:34,000 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:27:34,000 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:27:34,185 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:27:34,186 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:27:34,188 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:27:34,188 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:28:44,306 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:28:44,472 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:28:44,474 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:28:44,976 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:28:44,977 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:28:44,978 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:28:44,978 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:29:04,320 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:29:04,322 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:32:18,942 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:32:19,233 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:32:19,233 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:32:19,425 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:32:19,426 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:32:19,427 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:32:19,427 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:33:50,125 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:33:50,305 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:33:50,307 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:33:50,545 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:33:50,546 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:33:50,550 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:33:50,550 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:34:10,217 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:34:10,219 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:34:11,391 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:34:11,391 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:34:13,184 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:34:13,185 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:40:37,329 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:40:37,652 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:40:37,652 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:40:37,657 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:40:37,658 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:40:37,658 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:40:37,658 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:41:39,752 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:41:39,753 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:41:39,755 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:41:39,756 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:41:40,705 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:41:40,706 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:43:42,652 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:43:42,869 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:43:42,875 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:43:42,884 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:43:42,884 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:43:42,885 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:43:42,885 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:43:59,314 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1097, y=33
+2025-09-16 17:44:17,581 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:44:17,583 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:45:43,808 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:45:44,130 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:45:44,132 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:45:44,137 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:45:44,137 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:45:44,138 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:45:44,138 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:46:17,269 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:46:17,558 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:46:17,558 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:46:17,563 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:46:17,563 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:46:17,564 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:46:17,564 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:51:25,065 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:51:25,381 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:51:25,381 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:51:25,386 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:51:25,387 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:51:25,387 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:51:25,387 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:34,118 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 17:53:34,309 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:34,311 - INFO - 데이터베이스 초기화 완료
+2025-09-16 17:53:34,320 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:34,321 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:34,321 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:34,321 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:40,040 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:40,041 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:40,524 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:40,524 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:40,716 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:40,717 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:41,919 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:41,920 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:42,094 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:42,095 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:42,277 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:42,278 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:42,453 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:42,454 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:42,619 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:42,620 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:42,797 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:42,797 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:42,965 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:42,966 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:43,149 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:43,149 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:43,333 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:43,334 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:43,527 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:43,528 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:43,709 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:43,710 - INFO - 데이터베이스 동기화 완료
+2025-09-16 17:53:43,902 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 17:53:43,903 - INFO - 데이터베이스 동기화 완료
+2025-09-16 18:34:25,080 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 18:34:25,305 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 18:34:25,306 - INFO - 데이터베이스 초기화 완료
+2025-09-16 18:34:25,315 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 18:34:25,316 - INFO - 데이터베이스 동기화 완료
+2025-09-16 18:34:25,316 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 18:34:25,316 - INFO - 데이터베이스 동기화 완료
+2025-09-16 20:27:19,971 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 20:27:20,195 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 20:27:20,195 - INFO - 데이터베이스 초기화 완료
+2025-09-16 20:27:20,209 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 20:27:20,210 - INFO - 데이터베이스 동기화 완료
+2025-09-16 20:27:20,210 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 20:27:20,210 - INFO - 데이터베이스 동기화 완료
+2025-09-16 20:28:13,258 - INFO - 컨텍스트 메뉴 이벤트: 4, x=1121, y=117
+2025-09-16 21:48:57,392 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 21:48:57,771 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 21:48:57,773 - INFO - 데이터베이스 초기화 완료
+2025-09-16 21:48:57,794 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 21:48:57,794 - INFO - 데이터베이스 동기화 완료
+2025-09-16 21:48:57,795 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 21:48:57,795 - INFO - 데이터베이스 동기화 완료
+2025-09-16 21:49:14,411 - INFO - 컨텍스트 메뉴 이벤트: 4, x=638, y=37
+2025-09-16 21:49:18,117 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 21:49:18,118 - INFO - 데이터베이스 동기화 완료
+2025-09-16 21:49:24,805 - INFO - 컨텍스트 메뉴 이벤트: 4, x=228, y=96
+2025-09-16 21:54:46,451 - INFO - 로깅 시작, 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2025-09-16 21:54:46,697 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 21:54:46,699 - INFO - 데이터베이스 초기화 완료
+2025-09-16 21:54:46,712 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 21:54:46,712 - INFO - 데이터베이스 동기화 완료
+2025-09-16 21:54:46,713 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-16 21:54:46,713 - INFO - 데이터베이스 동기화 완료
+2025-09-16 21:55:01,904 - INFO - 컨텍스트 메뉴 이벤트: 4, x=993, y=100
