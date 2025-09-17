@@ -1,0 +1,45 @@
+[25968:8233808:0916/234834.042924:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:206] No machine level policy manager exists.
+[25968:8233808:0916/234835.095382:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[25968:8233808:0916/234835.538688:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/d538d2d/f8d35bd15d044a58dbbb.js (2)
+[25968:8233868:0916/234838.352258:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[25977:8233886:0916/234849.138742:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 559079338
+[25977:8233886:0916/234849.139058:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 733108593
+[25977:8233886:0916/234849.139072:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 1104477328
+[25977:8233886:0916/234849.139080:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 1235441726
+[25977:8233886:0916/234849.139084:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 1398109417
+[25977:8233886:0916/234849.139089:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 1745445570
+[25977:8233886:0916/234849.139096:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 2629264519
+[25977:8233886:0916/234849.139101:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 2928374096
+[25977:8233886:0916/234849.139106:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 3162947791
+[25977:8233886:0916/234849.139110:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 3189316647
+[25968:8233868:0916/234903.531451:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[25968:8233868:0916/234947.643118:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[25968:8233808:0916/235035.625457:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235040.207391:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235043.986258:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235047.290296:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235049.817753:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235051.784311:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235053.752255:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235054.291606:INFO:CONSOLE:1] "File chooser dialog can only be shown with a user activation.", source: https://editor-static.pstatic.net/e/basic.desktop/1.69.0/se-editor.js?t=1755855480440 (1)
+[25968:8233808:0916/235055.707610:INFO:CONSOLE:2] "클립보드 읽기 권한 상태: prompt", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235056.219066:INFO:CONSOLE:1] "File chooser dialog can only be shown with a user activation.", source: https://editor-static.pstatic.net/e/basic.desktop/1.69.0/se-editor.js?t=1755855480440 (1)
+[25968:8233808:0916/235110.816383:INFO:CONSOLE:2] "키보드 입력 차단 해제 완료", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235112.583808:INFO:CONSOLE:2] "Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235118.894102:INFO:CONSOLE:2] "추가 버튼 발견, 5번 클릭 시도 시작...", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235118.894933:INFO:CONSOLE:2] "1번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235119.895694:INFO:CONSOLE:2] "2번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235120.895787:INFO:CONSOLE:2] "3번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235121.896338:INFO:CONSOLE:2] "4번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235122.895698:INFO:CONSOLE:2] "5번째 클릭 시도...", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235123.913723:INFO:CONSOLE:2] "정확한 선택자로 확인 버튼 발견", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233868:0916/235146.205217:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[25968:8233808:0916/235212.136640:INFO:CONSOLE:2] "=== 최종 발행 버튼 찾기 시작 ===", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235212.136751:INFO:CONSOLE:2] "🎯 data-testid로 발행 버튼 찾기...", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235212.136946:INFO:CONSOLE:2] "🎯 confirm_btn 클래스로 발행 버튼 찾기...", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235212.137296:INFO:CONSOLE:2] "🎯 텍스트로 발행 버튼 찾기...", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235212.137484:INFO:CONSOLE:2] "✅ 텍스트로 발행 버튼 발견: [object Object]", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235212.141195:INFO:CONSOLE:2] "✅ 텍스트 발행 버튼 클릭 완료", source: https://feblog.pstatic.net/real/pc/2025.09.10/js/vendor.cabff38a66e79e50b20b.js (2)
+[25968:8233808:0916/235229.576677:INFO:CONSOLE:275] "Google Maps JavaScript API has been loaded directly without loading=async. This can result in suboptimal performance. For best-practice loading patterns please see https://goo.gle/js-api-loading", source: https://maps.google.co.kr/maps/api/js?v=3&client=gme-nhncorp&language=ko&channel=naver_blog (275)
+[25978:8233913:0916/235231.574193:WARNING:net/spdy/spdy_session.cc:3029] Received WINDOW_UPDATE for invalid stream 51
+[25978:8233913:0916/235231.584249:WARNING:net/spdy/spdy_session.cc:3074] Received HEADERS for invalid stream 51

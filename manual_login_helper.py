@@ -43,9 +43,15 @@ class ManualLoginHelper:
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-notifications")
             
-            # WebDriverManager 사용
-            driver_path = ChromeDriverManager().install()
-            service = Service(executable_path=driver_path)
+            # 프로젝트 로컬 ChromeDriver 사용
+            local_chromedriver_path = os.path.join(self.base_dir, 'chromedriver')
+            if os.path.exists(local_chromedriver_path):
+                print(f"✅ 로컬 ChromeDriver 사용: {local_chromedriver_path}")
+                service = Service(executable_path=local_chromedriver_path)
+            else:
+                print("⚠️ 로컬 ChromeDriver가 없어 WebDriverManager 사용")
+                driver_path = ChromeDriverManager().install()
+                service = Service(executable_path=driver_path)
             
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
             self.driver.implicitly_wait(10)

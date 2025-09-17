@@ -1,0 +1,24 @@
+[14427:7982320:0916/214953.398192:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:206] No machine level policy manager exists.
+[14427:7982320:0916/214954.688118:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[14427:7982320:0916/214955.157943:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/d538d2d/f8d35bd15d044a58dbbb.js (2)
+[14427:7982434:0916/214958.026947:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[14444:7982458:0916/215008.332220:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 559079338
+[14444:7982458:0916/215008.332543:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 733108593
+[14444:7982458:0916/215008.332557:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 1104477328
+[14444:7982458:0916/215008.332564:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 1235441726
+[14444:7982458:0916/215008.332569:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 1398109417
+[14444:7982458:0916/215008.332575:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 1745445570
+[14444:7982458:0916/215008.332582:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 2629264519
+[14444:7982458:0916/215008.332588:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 2928374096
+[14444:7982458:0916/215008.332594:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 3162947791
+[14444:7982458:0916/215008.332599:WARNING:cc/paint/skottie_wrapper_impl.cc:130] Encountered unknown property node with hash: 3189316647
+[14427:7982434:0916/215024.505730:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[14427:7982434:0916/215110.467548:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[14427:7982434:0916/215122.923680:ERROR:google_apis/gcm/engine/connection_factory_impl.cc:483] ConnectionHandler failed with net error: -2
+[14427:7982351:0916/215122.927025:INFO:third_party/crashpad/crashpad/client/crashpad_client_mac.cc:313] restarting handler
+[14427:7982320:0916/215122.932041:ERROR:content/browser/gpu/gpu_process_host.cc:964] GPU process exited unexpectedly: exit_code=15
+[14427:7982320:0916/215122.932094:WARNING:content/browser/gpu/gpu_process_host.cc:1405] The GPU process has crashed 1 time(s)
+[14427:7982320:0916/215122.937124:ERROR:content/browser/network_service_instance_impl.cc:595] Network service crashed, restarting service.
+[14427:7982320:0916/215122.940354:WARNING:chrome/browser/ui/sad_tab.cc:257] Tab Killed: https://section.blog.naver.com/
+[14600:7985217:0916/215123.001369:WARNING:components/prefs/pref_notifier_impl.cc:26] Init observer found at shutdown.
+[14427:7982351:0916/215123.162641:INFO:third_party/crashpad/crashpad/client/crashpad_client_mac.cc:307] restarting handler in 0.764s

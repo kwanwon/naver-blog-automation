@@ -1,8 +1,8 @@
 {
-  "start_time": "08:00",
-  "end_time": "23:55",
-  "min_interval": "10",
-  "max_interval": "13",
+  "start_time": "07:00",
+  "end_time": "23:30",
+  "min_interval": "16",
+  "max_interval": "25",
   "max_posts": "100",
-  "last_updated": "2025-07-05 14:16:09"
+  "last_updated": "2025-09-09 10:20:52"
 }

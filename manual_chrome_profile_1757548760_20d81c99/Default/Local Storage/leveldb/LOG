@@ -1,0 +1,38 @@
+2025/09/11-08:59:20.550 27271e Creating DB /Users/gm2hapkido/Desktop/-/블로그자동화/config/naver-blog-automation/manual_chrome_profile_1757548760_20d81c99/Default/Local Storage/leveldb since it was missing.
+2025/09/11-08:59:20.556 27271e Reusing MANIFEST /Users/gm2hapkido/Desktop/-/블로그자동화/config/naver-blog-automation/manual_chrome_profile_1757548760_20d81c99/Default/Local Storage/leveldb/MANIFEST-000001
+2025/09/11-15:18:45.406 272721 Level-0 table #5: started
+2025/09/11-15:18:45.414 272721 Level-0 table #5: 11484 bytes OK
+2025/09/11-15:18:45.421 272721 Delete type=0 #3
+2025/09/11-21:18:22.983 272721 Level-0 table #7: started
+2025/09/11-21:18:22.990 272721 Level-0 table #7: 10263 bytes OK
+2025/09/11-21:18:22.993 272721 Delete type=0 #4
+2025/09/12-18:19:27.608 272721 Level-0 table #9: started
+2025/09/12-18:19:27.614 272721 Level-0 table #9: 10529 bytes OK
+2025/09/12-18:19:27.616 272721 Delete type=0 #6
+2025/09/13-09:01:30.664 272721 Level-0 table #11: started
+2025/09/13-09:01:30.667 272721 Level-0 table #11: 10855 bytes OK
+2025/09/13-09:01:30.670 272721 Delete type=0 #8
+2025/09/13-16:15:49.317 272721 Level-0 table #13: started
+2025/09/13-16:15:49.323 272721 Level-0 table #13: 10339 bytes OK
+2025/09/13-16:15:49.325 272721 Delete type=0 #10
+2025/09/14-10:48:04.024 272721 Level-0 table #15: started
+2025/09/14-10:48:04.028 272721 Level-0 table #15: 10573 bytes OK
+2025/09/14-10:48:04.031 272721 Delete type=0 #12
+2025/09/14-10:48:04.033 27271e Compacting 4@0 + 1@1 files
+2025/09/14-10:48:04.039 27271e Generated table #16@0: 8 keys, 775 bytes
+2025/09/14-10:48:04.039 27271e Compacted 4@0 + 1@1 files => 775 bytes
+2025/09/14-10:48:04.041 27271e compacted to: files[ 0 1 1 0 0 0 0 ]
+2025/09/14-10:48:04.042 27271e Delete type=2 #15
+2025/09/14-10:48:04.042 27271e Delete type=2 #7
+2025/09/14-10:48:04.042 27271e Delete type=2 #13
+2025/09/14-10:48:04.042 27271e Delete type=2 #11
+2025/09/14-10:48:04.042 27271e Delete type=2 #9
+2025/09/14-22:19:37.615 272721 Level-0 table #18: started
+2025/09/14-22:19:37.618 272721 Level-0 table #18: 9868 bytes OK
+2025/09/14-22:19:37.621 272721 Delete type=0 #14
+2025/09/15-18:55:55.085 272721 Level-0 table #20: started
+2025/09/15-18:55:55.090 272721 Level-0 table #20: 10379 bytes OK
+2025/09/15-18:55:55.093 272721 Delete type=0 #17
+2025/09/16-11:23:09.274 272721 Level-0 table #22: started
+2025/09/16-11:23:09.277 272721 Level-0 table #22: 10639 bytes OK
+2025/09/16-11:23:09.281 272721 Delete type=0 #19

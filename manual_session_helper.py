@@ -48,7 +48,12 @@ class ManualSessionHelper:
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(self.base_dir)))
         chromedriver_path = os.path.join(project_root, "chromedriver")
         
-        if os.path.exists(chromedriver_path):
+        # 로컬 ChromeDriver 우선 시도
+        local_chromedriver_path = os.path.join(self.base_dir, 'chromedriver')
+        if os.path.exists(local_chromedriver_path):
+            print(f"✅ 로컬 ChromeDriver 사용: {local_chromedriver_path}")
+            service = Service(executable_path=local_chromedriver_path)
+        elif os.path.exists(chromedriver_path):
             print(f"✅ 프로젝트 ChromeDriver 사용: {chromedriver_path}")
             service = Service(executable_path=chromedriver_path)
         else:

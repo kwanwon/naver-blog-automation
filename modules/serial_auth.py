@@ -339,6 +339,8 @@ class BlogSerialAuth:
             
             if server_valid:
                 self.logger.info("서버 검증 성공")
+                # AI마스터 방식: 검증 성공 시 사용횟수 증가
+                self.update_device_info_and_usage(serial_number)
                 return True, server_message, expiry_date
             elif "오프라인" not in server_message and "연결 실패" not in server_message:
                 # 서버에서 명확히 거부한 경우 (블랙리스트, 삭제, 사용중 등)
@@ -357,6 +359,8 @@ class BlogSerialAuth:
         
         if local_valid:
             self.logger.info("로컬 DB 백업 검증 성공")
+            # AI마스터 방식: 로컬 검증 성공 시에도 사용횟수 증가
+            self.update_device_info_and_usage(serial_number)
             return True, f"{local_message} (오프라인 모드)", local_expiry
         else:
             self.logger.warning(f"로컬 DB 검증도 실패: {local_message}")
@@ -567,8 +571,8 @@ class BlogSerialAuth:
         self.save_config(config)
         self.logger.info(f"시리얼 검증 저장: {serial_number}")
         
-        # 디바이스 정보 업데이트 및 사용횟수 증가
-        self.update_device_info_and_usage(serial_number)
+        # 주의: 사용횟수는 check_serial에서 증가하므로 여기서는 제거
+        # (중복 증가 방지)
 
 # 간단한 테스트 함수
 if __name__ == "__main__":

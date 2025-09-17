@@ -1,0 +1,7 @@
+[14611:7985263:0916/215123.514550:INFO:components/enterprise/browser/controller/chrome_browser_cloud_management_controller.cc:206] No machine level policy manager exists.
+[14611:7985263:0916/215124.331383:INFO:CONSOLE:0] "[DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o", source: https://nid.naver.com/nidlogin.login (0)
+[14611:7985263:0916/215124.764806:INFO:CONSOLE:2] "Error", source: https://wtm.pstatic.net/d538d2d/f8d35bd15d044a58dbbb.js (2)
+[14611:7985499:0916/215126.126315:ERROR:base/process/process_mac.cc:53] task_policy_set TASK_CATEGORY_POLICY: (os/kern) invalid argument (4)
+[14611:7985499:0916/215126.126351:ERROR:base/process/process_mac.cc:98] task_policy_set TASK_SUPPRESSION_POLICY: (os/kern) invalid argument (4)
+[14623:7985549:0916/215126.164814:WARNING:net/extras/sqlite/sqlite_persistent_store_backend_base.cc:176] Failed to post task from FlushAndNotifyInBackground@net/extras/sqlite/sqlite_persistent_store_backend_base.cc:226 to client_task_runner_.
+[14623:7985549:0916/215126.165353:WARNING:net/extras/sqlite/sqlite_persistent_store_backend_base.cc:176] Failed to post task from FlushAndNotifyInBackground@net/extras/sqlite/sqlite_persistent_store_backend_base.cc:226 to client_task_runner_.
