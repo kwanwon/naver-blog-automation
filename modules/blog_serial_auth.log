@@ -527,3 +527,49 @@ AttributeError: 'Page' object has no attribute 'window_destroy'
 2025-09-17 14:56:22,426 - INFO - 디바이스 정보 및 사용횟수 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 7)
 2025-09-17 14:56:22,426 - INFO - 서버 업데이트 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 14:56:22', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}, 'activation_count': 7, 'status': '사용중', 'expiry_date': '2026-05-30'}
 2025-09-17 14:56:24,104 - INFO - 서버 업데이트 성공
+2025-09-17 16:27:20,901 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 16:27:20,901 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 16:27:20,901 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 16:27:20,901 - INFO - 시리얼 검증 시작 (서버 우선): TEST-SER...
+2025-09-17 16:27:20,901 - INFO - 서버 우선 검증 시작: TEST-SER...
+2025-09-17 16:27:51,007 - WARNING - 서버 연결 실패: HTTPSConnectionPool(host='aimaster-serial.onrender.com', port=443): Read timed out. (read timeout=30)
+2025-09-17 16:27:51,008 - WARNING - 서버 연결 실패, 로컬 DB로 백업 검증: 서버 연결 실패 (오프라인 모드)
+2025-09-17 16:27:51,008 - INFO - 로컬 DB 백업 검증 시작
+2025-09-17 16:27:51,013 - WARNING - 로컬 DB 검증도 실패: 유효하지 않은 시리얼 번호입니다.
+2025-09-17 17:18:09,858 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:18:09,858 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:18:09,858 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:18:09,858 - INFO - 시리얼 설정 확인됨 - 추가 검증은 메인 앱에서 수행
+2025-09-17 17:18:09,858 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:18:09,858 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:18:10,053 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:18:10,054 - INFO - 서버 상태 확인 - status: 사용가능, blacklisted: False, deleted: False
+2025-09-17 17:18:10,059 - INFO - 서버 검증 성공
+2025-09-17 17:18:10,080 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 17:18:10', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}
+2025-09-17 17:18:10,081 - INFO - 같은 디바이스 시리얼 정리 시작 - 호스트: lionui-MacBookAir.local, 앱: 블로그자동화
+2025-09-17 17:18:10,081 - INFO - 보호 대상 시리얼: ea920794... (설정 파일)
+2025-09-17 17:18:10,081 - INFO - 정리할 같은 디바이스 시리얼 없음
+2025-09-17 17:18:10,081 - INFO - 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7, 디바이스 정보 길이: 363
+2025-09-17 17:18:10,082 - INFO - 업데이트된 행 수: 1
+2025-09-17 17:18:10,082 - INFO - 업데이트 후 확인 - 디바이스 정보 길이: 363, 사용횟수: 14
+2025-09-17 17:18:10,082 - INFO - 디바이스 정보 및 사용횟수 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 14)
+2025-09-17 17:18:10,082 - INFO - 서버 업데이트 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 17:18:10', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}, 'activation_count': 14, 'status': '사용중', 'expiry_date': '2026-05-30'}
+2025-09-17 17:18:11,636 - INFO - 서버 업데이트 성공
+2025-09-17 17:18:29,847 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:18:29,847 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:18:29,847 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:18:29,847 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:18:29,847 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:18:30,293 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:18:30,293 - INFO - 서버 상태 확인 - status: 사용가능, blacklisted: False, deleted: False
+2025-09-17 17:18:30,295 - INFO - 서버 검증 성공
+2025-09-17 17:18:30,306 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 17:18:30', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}
+2025-09-17 17:18:30,306 - INFO - 같은 디바이스 시리얼 정리 시작 - 호스트: lionui-MacBookAir.local, 앱: 블로그자동화
+2025-09-17 17:18:30,306 - INFO - 보호 대상 시리얼: ea920794... (설정 파일)
+2025-09-17 17:18:30,306 - INFO - 정리할 같은 디바이스 시리얼 없음
+2025-09-17 17:18:30,306 - INFO - 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7, 디바이스 정보 길이: 363
+2025-09-17 17:18:30,307 - INFO - 업데이트된 행 수: 1
+2025-09-17 17:18:30,307 - INFO - 업데이트 후 확인 - 디바이스 정보 길이: 363, 사용횟수: 15
+2025-09-17 17:18:30,307 - INFO - 디바이스 정보 및 사용횟수 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 15)
+2025-09-17 17:18:30,307 - INFO - 서버 업데이트 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 17:18:30', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}, 'activation_count': 15, 'status': '사용중', 'expiry_date': '2026-05-30'}
+2025-09-17 17:18:31,957 - INFO - 서버 업데이트 성공

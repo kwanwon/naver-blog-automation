@@ -526,7 +526,7 @@ class BlogSerialAuth:
             return False
     
     def is_serial_required(self) -> bool:
-        """시리얼 입력이 필요한지 확인 (실제 유효성 검증 포함)"""
+        """시리얼 입력이 필요한지 확인 (캐시된 결과 사용으로 중복 호출 방지)"""
         config = self.load_config()
         
         # 시리얼이 없으면 필요
@@ -546,16 +546,9 @@ class BlogSerialAuth:
         except:
             return True
         
-        # 실제 시리얼 유효성 확인
-        try:
-            valid, message, expiry_date = self.check_serial(serial_number)
-            if not valid:
-                self.logger.info(f"시리얼이 무효하므로 재입력 필요: {message}")
-                return True
-        except Exception as e:
-            self.logger.error(f"시리얼 검증 중 오류: {e}")
-            return True
-        
+        # 중복 호출 방지: 캐시된 검증 결과만 확인
+        # 실제 검증은 메인 앱에서 별도로 수행
+        self.logger.info("시리얼 설정 확인됨 - 추가 검증은 메인 앱에서 수행")
         return False
     
     def save_validation(self, serial_number: str, expiry_date: Optional[datetime] = None):
