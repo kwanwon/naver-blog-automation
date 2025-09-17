@@ -697,3 +697,122 @@ AttributeError: 'Page' object has no attribute 'window_destroy'
 2025-09-17 17:35:00,231 - INFO - 시리얼 자동 복구 성공: ea920794...
 2025-09-17 17:35:00,232 - INFO - 설정 파일 저장 완료
 2025-09-17 17:35:00,412 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
+2025-09-17 17:37:31,564 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:37:31,564 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:37:31,564 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:37:31,564 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-09-17 17:37:31,565 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/GaqJd4izcy
+2025-09-17 17:37:31,565 - INFO - Flet app has started...
+2025-09-17 17:37:31,566 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/GaqJd4izcy
+2025-09-17 17:37:31,567 - INFO - Starting Flet View app...
+2025-09-17 17:37:31,567 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-09-17 17:37:31,777 - INFO - App session started
+2025-09-17 17:37:32,252 - WARNING - 블랙리스트 감지: ea920794...
+2025-09-17 17:37:32,256 - INFO - 설정 파일 저장 완료
+2025-09-17 17:44:05,235 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:44:05,235 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:44:05,235 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:44:05,235 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:44:05,235 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:44:05,640 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:44:05,640 - INFO - 서버 상태 확인 - status: 사용가능, blacklisted: False, deleted: False
+2025-09-17 17:44:05,648 - INFO - 서버 검증 성공
+2025-09-17 17:44:05,675 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 17:44:05', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}
+2025-09-17 17:44:05,676 - INFO - 같은 디바이스 시리얼 정리 시작 - 호스트: lionui-MacBookAir.local, 앱: 블로그자동화
+2025-09-17 17:44:05,676 - INFO - 보호 대상 시리얼: ea920794... (설정 파일)
+2025-09-17 17:44:05,676 - INFO - 정리할 같은 디바이스 시리얼 없음
+2025-09-17 17:44:05,676 - INFO - 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7, 디바이스 정보 길이: 363
+2025-09-17 17:44:05,676 - INFO - 업데이트된 행 수: 0
+2025-09-17 17:44:05,677 - ERROR - 업데이트 후 시리얼을 찾을 수 없음: ea920794-39ca-458d-b2ad-4681b6a4aaa7
+2025-09-17 17:44:05,677 - INFO - 디바이스 정보 및 사용횟수 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 1)
+2025-09-17 17:44:05,677 - INFO - 서버 업데이트 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 17:44:05', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}, 'activation_count': 1, 'status': '사용중'}
+2025-09-17 17:44:06,067 - WARNING - 서버 업데이트 실패: 400
+2025-09-17 17:44:06,287 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
+2025-09-17 17:45:27,622 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:45:27,622 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:45:27,622 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:45:27,622 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:45:27,622 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:45:29,720 - INFO - 서버에서 7개 시리얼 조회 완료
+2025-09-17 17:45:29,720 - INFO - 서버 상태 확인 - status: 사용가능, blacklisted: False, deleted: False
+2025-09-17 17:45:29,726 - WARNING - 서버에서 시리얼 거부: 만료일 형식 오류입니다.
+2025-09-17 17:45:31,450 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
+2025-09-17 17:46:11,659 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:46:11,659 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:46:11,659 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:46:11,659 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:46:11,659 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:46:12,061 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:46:12,061 - INFO - 서버 상태 확인 - status: 사용가능, blacklisted: False, deleted: False
+2025-09-17 17:46:12,064 - INFO - 서버 검증 성공
+2025-09-17 17:46:12,096 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 17:46:12', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}
+2025-09-17 17:46:12,098 - INFO - 같은 디바이스 시리얼 정리 시작 - 호스트: lionui-MacBookAir.local, 앱: 블로그자동화
+2025-09-17 17:46:12,098 - INFO - 보호 대상 시리얼: ea920794... (설정 파일)
+2025-09-17 17:46:12,100 - INFO - 정리할 같은 디바이스 시리얼 없음
+2025-09-17 17:46:12,100 - INFO - 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7, 디바이스 정보 길이: 363
+2025-09-17 17:46:12,100 - INFO - 업데이트된 행 수: 0
+2025-09-17 17:46:12,100 - ERROR - 업데이트 후 시리얼을 찾을 수 없음: ea920794-39ca-458d-b2ad-4681b6a4aaa7
+2025-09-17 17:46:12,100 - INFO - 디바이스 정보 및 사용횟수 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 1)
+2025-09-17 17:46:12,100 - INFO - 서버 업데이트 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 17:46:12', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}, 'activation_count': 1, 'status': '사용중'}
+2025-09-17 17:46:12,287 - WARNING - 서버 업데이트 실패: 400
+2025-09-17 17:46:12,500 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
+2025-09-17 17:46:28,001 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:46:28,001 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:46:28,001 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:46:28,001 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:46:28,001 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:46:28,457 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:46:28,457 - INFO - 서버 상태 확인 - status: 만료됨, blacklisted: False, deleted: False
+2025-09-17 17:46:28,459 - WARNING - 서버에서 시리얼 거부: 사용할 수 없는 상태입니다: 만료됨
+2025-09-17 17:46:28,900 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
+2025-09-17 17:46:56,758 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:46:56,759 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:46:56,759 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:46:56,759 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:46:56,759 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:46:57,200 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:46:57,200 - INFO - 서버 상태 확인 - status: 만료됨, blacklisted: False, deleted: False
+2025-09-17 17:46:57,204 - WARNING - 서버에서 시리얼 거부: 사용할 수 없는 상태입니다: 만료됨
+2025-09-17 17:46:57,397 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
+2025-09-17 17:47:10,620 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:47:10,620 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:47:10,620 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:47:27,221 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:47:27,221 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:47:27,221 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:47:27,221 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:47:27,221 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:47:27,676 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:47:27,677 - INFO - 서버 상태 확인 - status: 만료됨, blacklisted: False, deleted: False
+2025-09-17 17:47:27,679 - WARNING - 서버에서 시리얼 거부: 사용할 수 없는 상태입니다: 만료됨
+2025-09-17 17:47:27,680 - INFO - 실시간 상태 확인 시작: ea920794...
+2025-09-17 17:47:28,190 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
+2025-09-17 17:47:42,952 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:47:42,952 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:47:42,952 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:47:55,863 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:47:55,863 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:47:55,863 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:48:22,146 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:48:22,146 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:48:22,146 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:48:22,146 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:48:22,146 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:48:22,326 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:48:22,326 - INFO - 서버 상태 확인 - status: 만료됨, blacklisted: False, deleted: False
+2025-09-17 17:48:22,329 - WARNING - 서버에서 시리얼 거부: 사용할 수 없는 상태입니다: 만료됨
+2025-09-17 17:48:22,329 - INFO - 실시간 상태 확인 시작: ea920794...
+2025-09-17 17:48:22,538 - INFO - 서버 연결 성공 - 시리얼 설정 확인됨
+2025-09-17 17:48:30,973 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:48:30,973 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:48:30,973 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:48:50,655 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:48:50,655 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:48:50,655 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:48:50,655 - INFO - 시리얼 검증 시작 (서버 우선): ea920794...
+2025-09-17 17:48:50,655 - INFO - 서버 우선 검증 시작: ea920794...
+2025-09-17 17:48:51,088 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:48:51,088 - INFO - 서버 상태 확인 - status: 만료됨, blacklisted: False, deleted: False
+2025-09-17 17:48:51,089 - WARNING - 서버에서 시리얼 거부: 사용할 수 없는 상태입니다: 만료됨
+2025-09-17 17:48:51,089 - INFO - 실시간 상태 확인 시작: ea920794...
+2025-09-17 17:48:51,266 - WARNING - 만료된 시리얼 감지: ea920794...

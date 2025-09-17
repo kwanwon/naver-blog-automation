@@ -299,7 +299,14 @@ class BlogSerialAuth:
                 expiry_date = None
                 if expiry_date_str:
                     try:
-                        expiry_date = datetime.strptime(expiry_date_str, "%Y-%m-%d")
+                        # ISO 형식과 날짜 형식 모두 처리
+                        if 'T' in expiry_date_str:
+                            # ISO 형식: "2026-05-30T00:00:00"
+                            expiry_date = datetime.fromisoformat(expiry_date_str.replace('Z', '+00:00'))
+                        else:
+                            # 날짜 형식: "2026-05-30"
+                            expiry_date = datetime.strptime(expiry_date_str, "%Y-%m-%d")
+                        
                         if expiry_date < datetime.now():
                             return False, "시리얼 번호가 만료되었습니다.", expiry_date
                         
@@ -557,6 +564,10 @@ class BlogSerialAuth:
         except:
             return True
         
+        # 보안상 중요: 실시간 상태 확인 (블랙리스트, 삭제, 만료 등)
+        # 캐시된 설정이 있어도 서버/로컬 DB에서 실시간 상태 확인
+        self.logger.info(f"실시간 상태 확인 시작: {serial_number[:8]}...")
+        
         # 보안상 중요: 블랙리스트 상태는 반드시 확인
         # 서버 우선으로 블랙리스트 상태만 빠르게 확인
         try:
@@ -572,28 +583,53 @@ class BlogSerialAuth:
                         if is_blacklisted or status == "블랙리스트":
                             self.logger.warning(f"블랙리스트 감지: {serial_number[:8]}...")
                             return True  # 블랙리스트 시 시리얼 입력 필요
+                        
+                        # 만료된 시리얼 감지
+                        if status == "만료됨":
+                            self.logger.warning(f"만료된 시리얼 감지: {serial_number[:8]}...")
+                            return True  # 만료된 시리얼 시 시리얼 입력 필요
+                        
+                        # 삭제된 시리얼 감지
+                        if status == "삭제됨":
+                            self.logger.warning(f"삭제된 시리얼 감지: {serial_number[:8]}...")
+                            return True  # 삭제된 시리얼 시 시리얼 입력 필요
+                        
                         break
         except Exception as e:
             self.logger.warning(f"블랙리스트 확인 중 오류: {e}")
-            # 서버 연결 실패 시 로컬 DB로 블랙리스트 상태 확인
+            # 서버 연결 실패 시 로컬 DB로 상태 확인
             try:
                 import sqlite3
                 conn = sqlite3.connect('/Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db')
                 cursor = conn.cursor()
                 
-                cursor.execute('SELECT status, is_blacklisted FROM serials WHERE serial_number = ?', (serial_number,))
+                cursor.execute('SELECT status, is_blacklisted, is_deleted FROM serials WHERE serial_number = ?', (serial_number,))
                 local_result = cursor.fetchone()
                 
                 if local_result:
-                    status, is_blacklisted = local_result
+                    status, is_blacklisted, is_deleted = local_result
+                    
+                    # 블랙리스트 확인
                     if is_blacklisted or status == "블랙리스트":
                         self.logger.warning(f"로컬 DB에서 블랙리스트 감지: {serial_number[:8]}...")
                         conn.close()
                         return True
-                    else:
-                        self.logger.info(f"로컬 DB에서 블랙리스트 아님: {serial_number[:8]}...")
+                    
+                    # 삭제된 시리얼 확인
+                    if is_deleted or status == "삭제됨":
+                        self.logger.warning(f"로컬 DB에서 삭제된 시리얼 감지: {serial_number[:8]}...")
                         conn.close()
-                        return False
+                        return True
+                    
+                    # 만료된 시리얼 확인
+                    if status == "만료됨":
+                        self.logger.warning(f"로컬 DB에서 만료된 시리얼 감지: {serial_number[:8]}...")
+                        conn.close()
+                        return True
+                    
+                    self.logger.info(f"로컬 DB에서 정상 시리얼: {serial_number[:8]}...")
+                    conn.close()
+                    return False
                 else:
                     self.logger.warning(f"로컬 DB에서 시리얼을 찾을 수 없음: {serial_number[:8]}...")
                     conn.close()
@@ -604,8 +640,8 @@ class BlogSerialAuth:
                 # 최후의 수단: 안전을 위해 시리얼 입력 요구
                 return True
         
-        # 블랙리스트가 아닌 경우에만 캐시된 결과 사용
-        self.logger.info("시리얼 설정 확인됨 - 블랙리스트 아님")
+        # 서버 연결 성공 시에만 캐시된 결과 사용
+        self.logger.info("서버 연결 성공 - 시리얼 설정 확인됨")
         return False
     
     def _try_recover_serial(self) -> Optional[str]:
