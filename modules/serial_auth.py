@@ -546,9 +546,29 @@ class BlogSerialAuth:
         except:
             return True
         
-        # 중복 호출 방지: 캐시된 검증 결과만 확인
-        # 실제 검증은 메인 앱에서 별도로 수행
-        self.logger.info("시리얼 설정 확인됨 - 추가 검증은 메인 앱에서 수행")
+        # 보안상 중요: 블랙리스트 상태는 반드시 확인
+        # 서버 우선으로 블랙리스트 상태만 빠르게 확인
+        try:
+            # 서버에서 블랙리스트 상태만 빠르게 확인 (전체 검증 아님)
+            response = requests.get(f"{self.server_url}/api/serials", timeout=10)
+            if response.status_code == 200:
+                serials_list = response.json()
+                for serial_data in serials_list:
+                    if serial_data.get("serial_number") == serial_number:
+                        is_blacklisted = serial_data.get("is_blacklisted", False)
+                        status = serial_data.get("status", "")
+                        
+                        if is_blacklisted or status == "블랙리스트":
+                            self.logger.warning(f"블랙리스트 감지: {serial_number[:8]}...")
+                            return True  # 블랙리스트 시 시리얼 입력 필요
+                        break
+        except Exception as e:
+            self.logger.warning(f"블랙리스트 확인 중 오류: {e}")
+            # 서버 연결 실패 시 안전을 위해 시리얼 입력 요구
+            return True
+        
+        # 블랙리스트가 아닌 경우에만 캐시된 결과 사용
+        self.logger.info("시리얼 설정 확인됨 - 블랙리스트 아님")
         return False
     
     def save_validation(self, serial_number: str, expiry_date: Optional[datetime] = None):
