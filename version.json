@@ -1,0 +1,28 @@
+{
+  "version": "1.2.0",
+  "release_date": "2024-09-17",
+  "changelog": [
+    "🚀 시리얼 검증 시스템 대폭 개선 (AI마스터 방식 적용)",
+    "⚡ 서버 우선 검증으로 실시간 상태 확인",
+    "🚫 블랙리스트 및 삭제된 시리얼 즉시 차단",
+    "🔒 다른 디바이스 사용중 시리얼 즉시 감지",
+    "🌐 관리자의 모든 변경사항 실시간 적용",
+    "🔄 GUI 업데이트 버튼 추가",
+    "✨ 원클릭 업데이트 기능",
+    "📊 업데이트 진행 상황 표시",
+    "🔄 자동 재시작 기능",
+    "🔒 모든 설정 및 시리얼 정보 보존"
+  ],
+  "min_requirements": {
+    "python": "3.7+",
+    "os": ["Windows", "macOS", "Linux"]
+  },
+  "preserved_files": [
+    "modules/serial_config.json",
+    "naver_cookies.pkl",
+    "naver_session.json",
+    "user_data.json",
+    "config.json",
+    "settings.json"
+  ]
+}
