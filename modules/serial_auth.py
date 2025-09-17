@@ -529,10 +529,21 @@ class BlogSerialAuth:
         """시리얼 입력이 필요한지 확인 (캐시된 결과 사용으로 중복 호출 방지)"""
         config = self.load_config()
         
-        # 시리얼이 없으면 필요
+        # 시리얼이 없으면 자동 복구 시도
         serial_number = config.get("serial_number")
         if not serial_number:
-            return True
+            self.logger.info("시리얼이 비어있음 - 자동 복구 시도")
+            recovered_serial = self._try_recover_serial()
+            if recovered_serial:
+                self.logger.info(f"시리얼 자동 복구 성공: {recovered_serial[:8]}...")
+                # 복구된 시리얼로 설정 업데이트
+                config["serial_number"] = recovered_serial
+                config["last_validation"] = datetime.now().isoformat()  # 마지막 검증일도 업데이트
+                self.save_config(config)
+                serial_number = recovered_serial
+            else:
+                self.logger.warning("시리얼 자동 복구 실패")
+                return True
         
         # 마지막 검증일이 없으면 필요
         if not config.get("last_validation"):
@@ -564,12 +575,79 @@ class BlogSerialAuth:
                         break
         except Exception as e:
             self.logger.warning(f"블랙리스트 확인 중 오류: {e}")
-            # 서버 연결 실패 시 안전을 위해 시리얼 입력 요구
-            return True
+            # 서버 연결 실패 시 로컬 DB로 블랙리스트 상태 확인
+            try:
+                import sqlite3
+                conn = sqlite3.connect('/Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db')
+                cursor = conn.cursor()
+                
+                cursor.execute('SELECT status, is_blacklisted FROM serials WHERE serial_number = ?', (serial_number,))
+                local_result = cursor.fetchone()
+                
+                if local_result:
+                    status, is_blacklisted = local_result
+                    if is_blacklisted or status == "블랙리스트":
+                        self.logger.warning(f"로컬 DB에서 블랙리스트 감지: {serial_number[:8]}...")
+                        conn.close()
+                        return True
+                    else:
+                        self.logger.info(f"로컬 DB에서 블랙리스트 아님: {serial_number[:8]}...")
+                        conn.close()
+                        return False
+                else:
+                    self.logger.warning(f"로컬 DB에서 시리얼을 찾을 수 없음: {serial_number[:8]}...")
+                    conn.close()
+                    return True
+                    
+            except Exception as local_e:
+                self.logger.error(f"로컬 DB 확인 중 오류: {local_e}")
+                # 최후의 수단: 안전을 위해 시리얼 입력 요구
+                return True
         
         # 블랙리스트가 아닌 경우에만 캐시된 결과 사용
         self.logger.info("시리얼 설정 확인됨 - 블랙리스트 아님")
         return False
+    
+    def _try_recover_serial(self) -> Optional[str]:
+        """시리얼 자동 복구 시도 (블랙리스트 해제 후)"""
+        try:
+            import sqlite3
+            import platform
+            import socket
+            
+            # 현재 디바이스 정보 수집
+            device_info = {
+                "hostname": socket.gethostname(),
+                "os": platform.system(),
+                "cpu": platform.processor() or platform.machine(),
+                "memory": "Unknown"
+            }
+            
+            # 로컬 DB에서 현재 디바이스의 사용중인 시리얼 찾기
+            conn = sqlite3.connect('/Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db')
+            cursor = conn.cursor()
+            
+            # 블로그자동화 프로그램의 사용중인 시리얼 찾기
+            cursor.execute('''
+                SELECT serial_number FROM serials 
+                WHERE status = '사용중' 
+                AND is_blacklisted = 0
+                AND device_info LIKE ?
+                ORDER BY last_check_date DESC
+            ''', (f'%{device_info["hostname"]}%',))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                return result[0]
+            else:
+                self.logger.warning("복구할 시리얼을 찾을 수 없음")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"시리얼 복구 중 오류: {e}")
+            return None
     
     def save_validation(self, serial_number: str, expiry_date: Optional[datetime] = None):
         """검증 성공 정보 저장 및 디바이스 정보 업데이트"""

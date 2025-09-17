@@ -610,3 +610,90 @@ AttributeError: 'Page' object has no attribute 'window_destroy'
 2025-09-17 17:24:12,144 - INFO - 서버 업데이트 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-09-17 17:24:12', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}, 'activation_count': 21, 'status': '사용중', 'expiry_date': '2026-05-30'}
 2025-09-17 17:24:13,728 - INFO - 서버 업데이트 성공
 2025-09-17 17:24:13,944 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
+2025-09-17 17:26:14,341 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:26:14,341 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:26:14,342 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:26:14,342 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-09-17 17:26:14,343 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/aYPI8Yf8mL
+2025-09-17 17:26:14,343 - INFO - Flet app has started...
+2025-09-17 17:26:14,344 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/aYPI8Yf8mL
+2025-09-17 17:26:14,344 - INFO - Starting Flet View app...
+2025-09-17 17:26:14,344 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-09-17 17:26:14,551 - INFO - App session started
+2025-09-17 17:26:14,754 - WARNING - 블랙리스트 감지: ea920794...
+2025-09-17 17:26:14,756 - INFO - 설정 파일 저장 완료
+2025-09-17 17:26:38,228 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:26:38,228 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:26:38,228 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:26:38,228 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-09-17 17:26:38,230 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/aeVWtMGGQ5
+2025-09-17 17:26:38,230 - INFO - Flet app has started...
+2025-09-17 17:26:38,232 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/aeVWtMGGQ5
+2025-09-17 17:26:38,232 - INFO - Starting Flet View app...
+2025-09-17 17:26:38,232 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-09-17 17:26:38,480 - INFO - App session started
+2025-09-17 17:26:50,241 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:26:50,241 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:26:50,241 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:26:50,242 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-09-17 17:26:50,242 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/WksZ7uSUnD
+2025-09-17 17:26:50,242 - INFO - Flet app has started...
+2025-09-17 17:26:50,244 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/WksZ7uSUnD
+2025-09-17 17:26:50,244 - INFO - Starting Flet View app...
+2025-09-17 17:26:50,244 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-09-17 17:26:50,446 - INFO - App session started
+2025-09-17 17:27:32,848 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:27:32,849 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:27:32,849 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:27:32,850 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-09-17 17:27:32,850 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/JbGWQba1Tn
+2025-09-17 17:27:32,850 - INFO - Flet app has started...
+2025-09-17 17:27:32,852 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/JbGWQba1Tn
+2025-09-17 17:27:32,852 - INFO - Starting Flet View app...
+2025-09-17 17:27:32,852 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-09-17 17:27:33,061 - INFO - App session started
+2025-09-17 17:27:55,279 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:27:55,279 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:27:55,279 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:27:55,279 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-09-17 17:27:55,280 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/kSnAMH52yx
+2025-09-17 17:27:55,280 - INFO - Flet app has started...
+2025-09-17 17:27:55,282 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/kSnAMH52yx
+2025-09-17 17:27:55,282 - INFO - Starting Flet View app...
+2025-09-17 17:27:55,282 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-09-17 17:27:55,490 - INFO - App session started
+2025-09-17 17:32:27,431 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:32:27,431 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:32:27,431 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:32:27,431 - INFO - 시리얼 검증 시작 (서버 우선): ...
+2025-09-17 17:32:27,431 - INFO - 서버 우선 검증 시작: ...
+2025-09-17 17:32:27,621 - INFO - 서버에서 6개 시리얼 조회 완료
+2025-09-17 17:32:27,622 - WARNING - 서버에서 시리얼 거부: 유효하지 않은 시리얼 번호입니다.
+2025-09-17 17:32:53,773 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:32:53,774 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:32:53,774 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:33:12,363 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:33:12,363 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:33:12,363 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:33:17,062 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:33:17,062 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:33:17,062 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:33:17,066 - INFO - 설정 파일 저장 완료
+2025-09-17 17:33:41,034 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:33:41,034 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:33:41,034 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:33:45,637 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:33:45,637 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:33:45,637 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:33:45,638 - INFO - 설정 파일 저장 완료
+2025-09-17 17:33:45,855 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
+2025-09-17 17:34:10,720 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:34:10,720 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:34:10,720 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:35:00,225 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-09-17 17:35:00,225 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:35:00,225 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-09-17 17:35:00,226 - INFO - 시리얼이 비어있음 - 자동 복구 시도
+2025-09-17 17:35:00,231 - INFO - 시리얼 자동 복구 성공: ea920794...
+2025-09-17 17:35:00,232 - INFO - 설정 파일 저장 완료
+2025-09-17 17:35:00,412 - INFO - 시리얼 설정 확인됨 - 블랙리스트 아님
