@@ -35,33 +35,131 @@ class GPTHandler:
         self.settings = self._load_settings()
         # model 속성을 기본값으로 초기화
         self.model = Config.GPT_MODEL
+        # client 초기화
+        self.client = None
         
         try:
             # 먼저 GPT 설정 파일에서 API 키 확인
             api_key = None
+            logger.info(f"🔍 GPT 핸들러 초기화 시작 (use_dummy: {self.use_dummy})")
+            
+            # 1순위: GPT 설정 파일에서 API 키 확인
+            logger.info(f"🔍 설정 파일 상태: {self.settings is not None}")
+            if self.settings:
+                logger.info(f"🔍 설정 파일 키들: {list(self.settings.keys())}")
+                logger.info(f"🔍 api_key 키 존재: {'api_key' in self.settings}")
+                if 'api_key' in self.settings:
+                    logger.info(f"🔍 api_key 값: {self.settings['api_key'][:20] if self.settings['api_key'] else 'None'}...")
+            
             if self.settings and 'api_key' in self.settings and self.settings['api_key']:
                 api_key = self.settings['api_key']
-                logger.info("GPT 설정 파일에서 API 키를 로드했습니다.")
+                logger.info("📁 GPT 설정 파일에서 API 키를 로드했습니다.")
+                logger.info(f"🔑 API 키 길이: {len(api_key) if api_key else 0}자")
+                logger.info(f"🔑 API 키 시작: {api_key[:20] if api_key else 'None'}...")
             else:
-                # 환경변수에서 API 키 확인
+                # 2순위: 환경변수에서 API 키 확인
                 api_key = Config.GPT_API_KEY
-                logger.info("환경변수에서 API 키를 로드했습니다.")
+                logger.info("🌐 환경변수에서 API 키를 로드했습니다.")
+                logger.info(f"🔑 API 키 길이: {len(api_key) if api_key else 0}자")
+                logger.info(f"🔑 API 키 시작: {api_key[:20] if api_key else 'None'}...")
+                
+                # 환경변수가 비어있으면 직접 .env 파일에서 로드 시도
+                if not api_key or api_key == 'your-api-key-here':
+                    logger.warning("⚠️ 환경변수에서 API 키를 찾을 수 없습니다. 직접 .env 파일 로드 시도...")
+                    try:
+                        import os
+                        from dotenv import load_dotenv
+                        
+                        # 여러 경로에서 .env 파일 찾기
+                        possible_env_paths = [
+                            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'),
+                            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '.env'),
+                            '/Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/.env',
+                        ]
+                        
+                        for env_path in possible_env_paths:
+                            logger.info(f"🔍 .env 파일 검색: {env_path}")
+                            if os.path.exists(env_path):
+                                logger.info(f"✅ .env 파일 발견: {env_path}")
+                                load_dotenv(dotenv_path=env_path)
+                                api_key = os.getenv('OPENAI_API_KEY')
+                                if api_key:
+                                    logger.info("✅ .env 파일에서 API 키 로드 성공")
+                                    break
+                        
+                        if not api_key:
+                            logger.error("❌ 모든 경로에서 API 키를 찾을 수 없습니다.")
+                            
+                    except Exception as e:
+                        logger.error(f"❌ .env 파일 직접 로드 실패: {str(e)}")
             
-            if api_key == 'your-api-key-here' or not api_key:
+            # API 키 유효성 검사
+            if not api_key or api_key == 'your-api-key-here' or api_key == 'your-openai-api-key-here':
                 # 오류 대신 자동으로 더미 모드로 설정
-                logger.warning("API 키가 설정되지 않았습니다. 더미 모드로 전환합니다.")
+                logger.warning("⚠️ API 키가 설정되지 않았습니다. 더미 모드로 전환합니다.")
+                logger.warning("💡 해결방법: config/gpt_settings.txt 파일에 'api_key' 필드를 추가하고 OpenAI API 키를 입력하세요.")
                 self.use_dummy = True
+                self.client = None
             else:
-                # OpenAI 클라이언트 초기화 (0.28.1 버전)
-                openai.api_key = api_key
-                # model은 이미 위에서 초기화되었으므로 여기서는 다시 할당하지 않아도 됨
-                logger.info("OpenAI 클라이언트 초기화 성공")
+                # OpenAI 클라이언트 초기화 (1.0+ 버전)
+                logger.info("🚀 OpenAI 클라이언트 초기화 시도...")
+                try:
+                    # OpenAI 클라이언트 초기화 (버전 호환성 처리)
+                    try:
+                        # 최신 버전 (1.0+) 시도
+                        self.client = openai.OpenAI(api_key=api_key)
+                        logger.info("✅ OpenAI 클라이언트 초기화 성공 (최신 버전)")
+                    except AttributeError:
+                        # 구버전 호환성 처리
+                        logger.info("🔄 구버전 OpenAI 라이브러리 감지, 호환 모드로 전환")
+                        openai.api_key = api_key
+                        self.client = openai
+                        logger.info("✅ OpenAI 클라이언트 초기화 성공 (구버전 호환)")
+                    
+                    logger.info(f"🤖 사용 모델: {self.model}")
+                    
+                    # 간단한 API 테스트
+                    try:
+                        if hasattr(self.client, 'chat'):
+                            # 최신 버전 테스트
+                            test_response = self.client.chat.completions.create(
+                                model=self.model,
+                                messages=[{"role": "user", "content": "Hello"}],
+                                max_tokens=10
+                            )
+                        else:
+                            # 구버전 테스트
+                            test_response = openai.ChatCompletion.create(
+                                model=self.model,
+                                messages=[{"role": "user", "content": "Hello"}],
+                                max_tokens=10
+                            )
+                        logger.info("✅ API 테스트 성공")
+                    except Exception as test_error:
+                        logger.error(f"❌ API 테스트 실패: {str(test_error)}")
+                        logger.error("💡 API 키가 유효하지 않거나 만료되었을 수 있습니다.")
+                        
+                except Exception as client_error:
+                    logger.error(f"❌ OpenAI 클라이언트 초기화 실패: {str(client_error)}")
+                    logger.error("💡 가능한 원인:")
+                    logger.error("   1. API 키가 유효하지 않음")
+                    logger.error("   2. API 키가 만료됨")
+                    logger.error("   3. 네트워크 연결 문제")
+                    logger.error("   4. OpenAI 서비스 문제")
+                    logger.error("   5. OpenAI 라이브러리 버전 문제")
+                    logger.warning("⚠️ 더미 모드로 전환합니다.")
+                    self.use_dummy = True
+                    self.client = None
             
         except Exception as e:
-            logger.error(f"OpenAI 클라이언트 초기화 중 오류 발생: {str(e)}")
+            logger.error(f"❌ OpenAI 클라이언트 초기화 중 오류 발생: {str(e)}")
+            logger.error("=== 전체 오류 정보 ===")
+            import traceback
+            traceback.print_exc()
             # 오류 발생 시 더미 모드로 자동 전환
-            logger.warning("오류로 인해 더미 모드로 전환합니다.")
+            logger.warning("⚠️ 오류로 인해 더미 모드로 전환합니다.")
             self.use_dummy = True
+            self.client = None
         
         self.custom_prompt = self._load_custom_prompt()
 
@@ -118,12 +216,17 @@ class GPTHandler:
                 with open(settings_path, 'r', encoding='utf-8') as f:
                     loaded_settings = json.load(f)
                     
-                    # 기본 설정 업데이트
-                    for key in ['persona', 'instructions', 'style']:
+                    # 기본 설정 업데이트 (api_key 포함)
+                    for key in ['api_key', 'persona', 'instructions', 'style']:
                         if key in loaded_settings:
                             default_settings[key] = loaded_settings[key]
                 
                 print(f"GPT 설정 파일 로드 성공: {settings_path}")
+                print(f"로드된 설정 키들: {list(loaded_settings.keys())}")
+                if 'api_key' in loaded_settings:
+                    print(f"API 키 발견: {loaded_settings['api_key'][:20]}...")
+                else:
+                    print("⚠️ API 키가 설정 파일에 없습니다.")
             else:
                 print(f"GPT 설정 파일을 찾을 수 없습니다")
         except Exception as e:
@@ -307,26 +410,56 @@ class GPTHandler:
         if custom_prompt:
             user_prompt = f"{custom_prompt}\n\n{base_prompt}"
         
+        # 더미 모드 체크 (GPT만 사용)
+        if self.use_dummy or self.client is None:
+            logger.error("GPT 클라이언트가 초기화되지 않았습니다.")
+            raise RuntimeError("GPT 클라이언트가 초기화되지 않았습니다. API 키를 확인해주세요.")
+        
         while retry_count < max_retries:
             try:
                 logger.info(f"OpenAI API 호출 시작: 주제 '{topic}' (시도 {retry_count + 1}/{max_retries})")
                 
-                # API 호출 (0.28.1 버전)
-                response = openai.ChatCompletion.create(
-                    model=self.model,
-                    messages=[
-                        {"role": "system", "content": system_message},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.7,
-                    max_tokens=2000,
-                    top_p=0.9,
-                    frequency_penalty=0.5,
-                    presence_penalty=0.5
-                )
+                # API 호출 (버전 호환성 처리)
+                if hasattr(self.client, 'chat'):
+                    # 최신 버전 (1.0+)
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=[
+                            {"role": "system", "content": system_message},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=0.7,
+                        max_tokens=2000,
+                        top_p=0.9,
+                        frequency_penalty=0.5,
+                        presence_penalty=0.5
+                    )
+                else:
+                    # 구버전 호환
+                    response = openai.ChatCompletion.create(
+                        model=self.model,
+                        messages=[
+                            {"role": "system", "content": system_message},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=0.7,
+                        max_tokens=2000,
+                        top_p=0.9,
+                        frequency_penalty=0.5,
+                        presence_penalty=0.5
+                    )
                 
-                # 응답 파싱 및 포맷팅
-                content = response['choices'][0]['message']['content'].strip()
+                # 응답 파싱 및 포맷팅 (안전성 검사 추가)
+                if not response.choices or len(response.choices) == 0:
+                    raise ValueError("응답에 choices가 없습니다.")
+                
+                if not response.choices[0].message:
+                    raise ValueError("응답에 message가 없습니다.")
+                
+                if not hasattr(response.choices[0].message, 'content') or not response.choices[0].message.content:
+                    raise ValueError("응답에 content가 없습니다.")
+                
+                content = response.choices[0].message.content.strip()
                 title, body = self._parse_content(content)
                 
                 # 응답 검증
@@ -363,11 +496,20 @@ class GPTHandler:
                 
             except Exception as e:
                 last_error = e
+                logger.error(f"API 호출 중 오류 발생: {str(e)}")
+                
                 if "rate_limit" in str(e).lower():
                     wait_time = 5
                     logger.warning(f"API 속도 제한에 도달했습니다. {wait_time}초 후 재시도합니다.")
                     time.sleep(wait_time)
                     retry_count += 1
+                    continue
+                elif "content" in str(e).lower() or "choices" in str(e).lower():
+                    logger.error(f"응답 파싱 오류: {str(e)}")
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        logger.error("최대 재시도 횟수에 도달했습니다.")
+                        raise RuntimeError(f"응답 파싱 오류가 지속됩니다: {str(e)}")
                     continue
                 else:
                     logger.error(f"OpenAI API 호출 중 오류 발생: {str(e)}")
@@ -617,6 +759,42 @@ class GPTHandler:
                 formatted_paragraphs.append(p.strip())
         
         return '\n\n'.join(formatted_paragraphs)
+
+    def _generate_dummy_content(self, topic, user_settings):
+        """더미 모드에서 사용할 샘플 콘텐츠 생성"""
+        logger.info(f"더미 콘텐츠 생성: {topic}")
+        
+        # 사용자 설정에서 첫 문장 추가 처리
+        first_sentence = user_settings.get('first_sentence', '').strip()
+        
+        # 더미 제목 생성
+        title = f"{topic}에 대한 유용한 정보"
+        
+        # 더미 본문 생성
+        body = f"""안녕하세요! {topic}에 대해 알아보겠습니다.
+
+{first_sentence if first_sentence else f"{topic}는 많은 분들이 관심을 가지고 있는 주제입니다."}
+
+◆ 주요 특징
+{topic}의 가장 중요한 특징들을 살펴보면 다음과 같습니다.
+
+◆ 실용적인 팁
+일상생활에서 바로 적용할 수 있는 실용적인 팁들을 소개해드립니다.
+
+◆ 주의사항
+{topic}에 대해 알아두면 좋은 주의사항들도 있습니다.
+
+◆ 마무리
+{topic}에 대한 정보를 통해 더 나은 선택을 하실 수 있기를 바랍니다.
+
+이 글이 도움이 되셨다면 댓글로 의견을 남겨주세요!"""
+        
+        return {
+            "title": title,
+            "body": body,
+            "success": True,
+            "message": "더미 모드로 콘텐츠가 생성되었습니다."
+        }
 
 if __name__ == "__main__":
     # 테스트 코드
