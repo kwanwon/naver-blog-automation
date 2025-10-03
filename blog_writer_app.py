@@ -1,7 +1,7 @@
 import flet as ft # type: ignore
 from modules.gpt_handler import GPTHandler
 from modules.serial_auth import BlogSerialAuth
-from modules.auto_updater import AutoUpdater  # 자동 업데이트 추가
+from modules.auto_updater import AutoUpdater  # 자동 업데이트 복원
 
 import subprocess
 import os
@@ -35,8 +35,7 @@ class BlogWriterApp:
         print(f"📁 최종 기본 디렉토리: {self.base_dir}")
         print(f"🔄 현재 작업 디렉토리: {os.getcwd()}")
         
-        # 자동 업데이트 확인 (백그라운드에서)
-        self.check_for_updates()
+        # 자동 업데이트 확인은 시리얼 인증 성공 후에 실행됩니다
         
         # 디렉토리 존재 확인 및 생성
         self._ensure_directories()
@@ -289,6 +288,86 @@ class BlogWriterApp:
         except Exception as e:
             print(f"⚠️ 브라우저 프로세스 종료 중 오류: {e}")
 
+    def _create_user_folders(self, base_path):
+        """사용자 데이터 폴더 구조 생성"""
+        try:
+            print(f"📁 사용자 폴더 구조 생성 중: {base_path}")
+            
+            # 이미지 폴더들 생성 (0~10)
+            for i in range(11):
+                folder_name = f"default_images_{i}" if i > 0 else "default_images"
+                folder_path = os.path.join(base_path, folder_name)
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path, exist_ok=True)
+                    print(f"  ✅ {folder_name} 폴더 생성")
+            
+            # config 폴더 생성
+            config_path = os.path.join(base_path, "config")
+            if not os.path.exists(config_path):
+                os.makedirs(config_path, exist_ok=True)
+                print(f"  ✅ config 폴더 생성")
+            
+            # 기본 설정 파일들 생성
+            self._create_default_config_files(config_path)
+            
+            print(f"✅ 사용자 폴더 구조 생성 완료")
+            
+        except Exception as e:
+            print(f"❌ 사용자 폴더 생성 중 오류: {e}")
+    
+    def _create_default_config_files(self, config_path):
+        """기본 설정 파일들 생성"""
+        try:
+            # GPT 사용자 설정 파일
+            gpt_user_settings = {
+                "persona": "건강, 성장, 교육에 관심 많은 대상으로 친근하게 조언하는 전문가",
+                "instructions": "글자 수: 1500자 이상 ~ 1600자 이내\n구성: 도입 – 본문 – 결론",
+                "style": "말투: 친근하고 따뜻한 부드러운 존댓말 사용"
+            }
+            
+            gpt_file = os.path.join(config_path, "gpt_user_settings.json")
+            if not os.path.exists(gpt_file):
+                with open(gpt_file, 'w', encoding='utf-8') as f:
+                    json.dump(gpt_user_settings, f, indent=2, ensure_ascii=False)
+                print(f"  ✅ gpt_user_settings.json 생성")
+            
+            # 사용자 설정 파일
+            user_settings_file = os.path.join(config_path, "user_settings.txt")
+            if not os.path.exists(user_settings_file):
+                with open(user_settings_file, 'w', encoding='utf-8') as f:
+                    f.write("")
+                print(f"  ✅ user_settings.txt 생성")
+            
+            # 타이머 설정 파일
+            timer_settings = {
+                "enabled": False,
+                "start_time": "09:00",
+                "end_time": "18:00",
+                "interval_minutes": 60
+            }
+            
+            timer_file = os.path.join(config_path, "timer_settings.json")
+            if not os.path.exists(timer_file):
+                with open(timer_file, 'w', encoding='utf-8') as f:
+                    json.dump(timer_settings, f, indent=2, ensure_ascii=False)
+                print(f"  ✅ timer_settings.json 생성")
+            
+            # 앱 설정 파일
+            app_settings = {
+                "use_dummy": False,
+                "auto_save": True,
+                "notifications": True
+            }
+            
+            app_file = os.path.join(config_path, "app_settings.json")
+            if not os.path.exists(app_file):
+                with open(app_file, 'w', encoding='utf-8') as f:
+                    json.dump(app_settings, f, indent=2, ensure_ascii=False)
+                print(f"  ✅ app_settings.json 생성")
+                
+        except Exception as e:
+            print(f"❌ 기본 설정 파일 생성 중 오류: {e}")
+
     def _get_base_directory(self):
         """플랫폼별 기본 디렉토리 결정"""
         if getattr(sys, 'frozen', False):
@@ -297,43 +376,59 @@ class BlogWriterApp:
             print(f"🔧 Frozen 모드: {base_dir}")
             
             # 플랫폼별 실행 파일 처리
-            if self.is_macos and "Contents/MacOS" in base_dir:
-                print(f"🍎 macOS 앱 번들 감지")
-                # .app 번들에서 리소스 디렉토리 찾기
-                possible_dirs = [
-                    # Resources 디렉토리 (표준 macOS 앱 구조)
-                    os.path.join(os.path.dirname(base_dir), "Resources"),
-                    # 번들 외부 디렉토리
-                    os.path.dirname(os.path.dirname(os.path.dirname(base_dir))),
-                    # 현재 작업 디렉토리
-                    os.getcwd(),
-                    # 실행 파일 디렉토리
-                    base_dir
-                ]
+            if self.is_macos:
+                print(f"🍎 macOS 실행 파일 모드")
+                # 바탕화면에 독립적인 폴더 생성
+                desktop_path = os.path.expanduser("~/Desktop")
+                app_folder = os.path.join(desktop_path, "블로그자동화_사용자데이터")
                 
-                for dir_path in possible_dirs:
-                    print(f"📂 확인 중: {dir_path}")
-                    if os.path.exists(dir_path):
-                        print(f"  ✅ 디렉토리 존재함")
-                        # config 디렉토리 확인
-                        config_path = os.path.join(dir_path, 'config')
-                        if os.path.exists(config_path):
-                            print(f"  📁 config 디렉토리 찾음: {config_path}")
-                            return dir_path
-                            
-                        # 상위 디렉토리의 config 확인
-                        parent_config = os.path.join(os.path.dirname(dir_path), 'config')
-                        if os.path.exists(parent_config):
-                            print(f"  📁 상위 디렉토리에서 config 찾음: {parent_config}")
-                            return os.path.dirname(dir_path)
-            
+                print(f"📁 바탕화면 독립 폴더: {app_folder}")
+                
+                # 폴더가 없으면 생성
+                if not os.path.exists(app_folder):
+                    os.makedirs(app_folder, exist_ok=True)
+                    print(f"✅ 바탕화면 폴더 생성: {app_folder}")
+                
+                # 필요한 하위 폴더들 생성
+                self._create_user_folders(app_folder)
+                
+                return app_folder
+                
             elif self.is_windows:
                 print(f"🪟 Windows 실행 파일 모드")
-                # Windows에서는 일반적으로 실행 파일과 같은 디렉토리에 리소스 배치
+                # Windows 바탕화면에 독립적인 폴더 생성
+                desktop_path = os.path.expanduser("~/Desktop")
+                app_folder = os.path.join(desktop_path, "블로그자동화_사용자데이터")
+                
+                print(f"📁 바탕화면 독립 폴더: {app_folder}")
+                
+                # 폴더가 없으면 생성
+                if not os.path.exists(app_folder):
+                    os.makedirs(app_folder, exist_ok=True)
+                    print(f"✅ 바탕화면 폴더 생성: {app_folder}")
+                
+                # 필요한 하위 폴더들 생성
+                self._create_user_folders(app_folder)
+                
+                return app_folder
                 
             elif self.is_linux:
                 print(f"🐧 Linux 실행 파일 모드")
-                # Linux에서는 일반적으로 실행 파일과 같은 디렉토리에 리소스 배치
+                # Linux 바탕화면에 독립적인 폴더 생성
+                desktop_path = os.path.expanduser("~/Desktop")
+                app_folder = os.path.join(desktop_path, "블로그자동화_사용자데이터")
+                
+                print(f"📁 바탕화면 독립 폴더: {app_folder}")
+                
+                # 폴더가 없으면 생성
+                if not os.path.exists(app_folder):
+                    os.makedirs(app_folder, exist_ok=True)
+                    print(f"✅ 바탕화면 폴더 생성: {app_folder}")
+                
+                # 필요한 하위 폴더들 생성
+                self._create_user_folders(app_folder)
+                
+                return app_folder
                 
             # 기본 디렉토리에 config가 없는 경우 상위 디렉토리 탐색
             config_dir = os.path.join(base_dir, 'config')
@@ -1724,29 +1819,105 @@ class BlogWriterApp:
             print(f"본문 변경 처리 중 오류 발생: {str(e)}")
 
     def main(self, page: ft.Page):
-        # 시리얼 인증 확인 (필수)
-        if self.serial_auth.is_serial_required():
-            print("🔐 시리얼 인증이 필요합니다. 시리얼 인증 창을 실행합니다...")
+        # 시리얼 인증 확인 (배포용: 항상 시리얼 인증 필요)
+        if getattr(sys, 'frozen', False):
+            # 번들 환경: 시리얼 인증 필요
+            print("🔐 배포용 파일 - 시리얼 인증이 필요합니다.")
+            
+            # 먼저 기존 시리얼이 유효한지 확인
+            print("🔍 기존 시리얼 검증 중...")
             try:
-                # 시리얼 인증 창 실행
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                serial_auth_path = os.path.join(current_dir, "start_with_serial_auth.py")
-                python_executable = sys.executable
+                # 시리얼 인증 객체 생성
+                serial_auth = BlogSerialAuth()
                 
-                subprocess.Popen([python_executable, serial_auth_path], 
-                               cwd=current_dir,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
-                               text=True)
+                # 시리얼 인증이 필요한지 확인
+                if serial_auth.is_serial_required():
+                    print("❌ 시리얼 인증이 필요합니다 - 시리얼 인증창 실행")
+                    show_auth_window = True
+                else:
+                    print("✅ 기존 시리얼이 유효합니다 - 메인 UI 실행")
+                    # 시리얼 인증 성공 후 업데이트 확인
+                    print("🔄 시리얼 인증 성공 - 업데이트 확인 시작")
+                    self.check_for_updates()
+                    show_auth_window = False
                 
-                # 현재 프로그램 종료
-                sys.exit(0)
-                return
+                # 시리얼 인증창이 필요한 경우
+                if show_auth_window:
+                    # 시리얼 인증창 실행
+                    print("🔐 시리얼 인증창 실행 시작...")
+                    try:
+                        # 시리얼 인증창을 별도 프로세스로 실행
+                        import subprocess
+                        current_dir = os.path.dirname(os.path.abspath(__file__))
+                        serial_auth_path = os.path.join(current_dir, "serial_auth_window.py")
+                        python_executable = sys.executable
+                        
+                        print(f"🔐 시리얼 인증창 프로세스 실행: {python_executable} {serial_auth_path}")
+                        
+                        # 시리얼 인증창 프로세스 실행
+                        process = subprocess.Popen([python_executable, serial_auth_path], 
+                                                 cwd=current_dir,
+                                                 stdout=subprocess.PIPE,
+                                                 stderr=subprocess.PIPE,
+                                                 text=True)
+                        
+                        # 프로세스 완료 대기
+                        stdout, stderr = process.communicate()
+                        
+                        if process.returncode == 0:
+                            print("✅ 시리얼 인증 성공 - 메인 UI 실행")
+                            # 시리얼 인증 성공 후 업데이트 확인
+                            print("🔄 시리얼 인증 성공 - 업데이트 확인 시작")
+                            self.check_for_updates()
+                        else:
+                            print(f"❌ 시리얼 인증 실패: {stderr}")
+                            print("❌ 유효한 시리얼이 필요합니다. 프로그램을 종료합니다.")
+                            # 시리얼 인증 실패 시 프로그램 종료
+                            sys.exit(1)
+                            return
+                            
+                    except Exception as e:
+                        print(f"❌ 시리얼 인증창 실행 중 오류: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        print("⚠️ 시리얼 인증창 실행 오류 - 프로그램을 계속 실행합니다.")
+                        # 시리얼 인증창 실행 오류 시에도 프로그램 계속 실행
+                        # sys.exit(1)  # 무한반복 방지를 위해 주석 처리
+                        # return
+                        
             except Exception as e:
-                print(f"❌ 시리얼 인증 창 실행 중 오류: {e}")
-                # 시리얼 인증 실패 시 프로그램 종료
-                sys.exit(1)
-                return
+                print(f"❌ 시리얼 검증 중 오류: {e}")
+                import traceback
+                traceback.print_exc()
+                print("⚠️ 시리얼 검증 오류 - 시리얼 인증창을 실행합니다.")
+                # 시리얼 검증 오류 시에도 시리얼 인증창 실행
+                show_auth_window = True
+        else:
+            # 개발 환경: 기존 시리얼 인증 로직 사용
+            if self.serial_auth.is_serial_required():
+                print("🔐 시리얼 인증이 필요합니다. 시리얼 인증 창을 실행합니다...")
+                try:
+                    # 개발 환경: 별도 프로세스로 실행
+                    import subprocess  # 지역적으로 import
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    serial_auth_path = os.path.join(current_dir, "start_with_serial_auth.py")
+                    python_executable = sys.executable
+                    
+                    subprocess.Popen([python_executable, serial_auth_path], 
+                                   cwd=current_dir,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   text=True)
+                    
+                    # 현재 프로그램 종료
+                    sys.exit(0)
+                    return
+                except Exception as e:
+                    print(f"❌ 시리얼 인증 창 실행 중 오류: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    # 시리얼 인증 실패해도 계속 진행
+                    pass
         
         # 페이지 설정
         page.title = "블로그 글쓰기 도우미"
@@ -3284,13 +3455,33 @@ class BlogWriterApp:
     def get_current_version(self):
         """현재 버전 가져오기"""
         try:
-            version_file = os.path.join(self.base_dir, 'version.json')
+            # PyInstaller 환경과 개발 환경 모두 지원
+            if getattr(sys, 'frozen', False):
+                # 빌드된 실행 파일 환경
+                if hasattr(sys, '_MEIPASS'):
+                    # PyInstaller 임시 디렉토리에서 찾기
+                    version_file = os.path.join(sys._MEIPASS, 'version.json')
+                else:
+                    # 실행 파일과 같은 디렉토리에서 찾기
+                    version_file = os.path.join(os.path.dirname(sys.executable), 'version.json')
+            else:
+                # 개발 환경
+                version_file = os.path.join(self.base_dir, 'version.json')
+            
+            print(f"🔍 버전 파일 경로: {version_file}")
+            print(f"🔍 파일 존재 여부: {os.path.exists(version_file)}")
+            
             if os.path.exists(version_file):
                 with open(version_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    return data.get('version', '1.0.0')
-            return '1.0.0'
-        except:
+                    version = data.get('version', '1.0.0')
+                    print(f"📦 로드된 버전: {version}")
+                    return version
+            else:
+                print("⚠️ version.json 파일을 찾을 수 없습니다. 기본 버전 사용")
+                return '1.0.0'
+        except Exception as e:
+            print(f"❌ 버전 로드 오류: {e}")
             return '1.0.0'
             
     def perform_update(self):
@@ -3487,39 +3678,101 @@ class BlogWriterApp:
         """애플리케이션 재시작"""
         try:
             print("🔄 프로그램을 재시작합니다...")
-            python = sys.executable
-            os.execl(python, python, *sys.argv)
+            
+            # 현재 프로세스 완전 종료 후 새 프로세스 시작
+            if hasattr(self, 'page') and self.page:
+                self.page.window.close()
+            
+            # 잠시 대기 후 새 프로세스 시작
+            import time
+            time.sleep(1)
+            
+            # 번들 환경에서 재시작 처리
+            import sys  # sys 모듈을 먼저 import
+            import subprocess
+            import os  # os 모듈도 import
+            
+            if getattr(sys, 'frozen', False):
+                
+                # 현재 실행 파일 경로
+                executable_path = sys.executable
+                print(f"🔄 번들 재시작: {executable_path}")
+                
+                # macOS에서 번들 재시작을 위한 특별한 처리
+                if self.is_macos:
+                    # macOS 번들 재시작
+                    try:
+                        # 번들 경로에서 실행
+                        bundle_path = os.path.dirname(os.path.dirname(os.path.dirname(executable_path)))
+                        print(f"🍎 macOS 번들 경로: {bundle_path}")
+                        
+                        # 번들 실행
+                        subprocess.Popen(['open', bundle_path])
+                        print("✅ 번들 재시작 명령 실행")
+                        
+                        # 현재 프로세스 종료
+                        os._exit(0)
+                    except Exception as e:
+                        print(f"❌ 번들 재시작 실패: {e}")
+                        # 대안: 직접 실행 파일 실행
+                        subprocess.Popen([executable_path])
+                        os._exit(0)
+                else:
+                    # 다른 플랫폼
+                    subprocess.Popen([executable_path])
+                    os._exit(0)
+            else:
+                # 개발 환경: Python 스크립트 재실행
+                python = sys.executable
+                script_path = os.path.abspath(__file__)
+                
+                print(f"🔄 개발 환경 재시작: {python} {script_path}")
+                
+                # 새 프로세스 시작
+                os.execl(python, python, script_path)
+            
         except Exception as e:
             print(f"❌ 재시작 실패: {e}")
             print("수동으로 프로그램을 재시작해주세요.")
 
 if __name__ == "__main__":
-    # 프로그램 시작 전 업데이트 확인
+    print("🚀 블로그 자동화 프로그램 시작...")
+    print("✅ 업데이트 기능 복원됨")
+    
+    # 빌드 환경 진단
+    print(f"🔍 sys.frozen: {getattr(sys, 'frozen', False)}")
+    print(f"🔍 sys._MEIPASS: {getattr(sys, '_MEIPASS', 'None')}")
+    print(f"🔍 현재 디렉토리: {os.getcwd()}")
+    print(f"🔍 스크립트 경로: {os.path.abspath(__file__)}")
+    print(f"🔍 Python 버전: {sys.version}")
+    print(f"🔍 플랫폼: {platform.platform()}")
+    
+    # 무한반복 진단을 위한 카운터
+    restart_count = 0
+    restart_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'restart_count.txt')
+    
     try:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        version_file = os.path.join(current_dir, 'version.json')
+        if os.path.exists(restart_file):
+            with open(restart_file, 'r') as f:
+                restart_count = int(f.read().strip())
+        restart_count += 1
+        with open(restart_file, 'w') as f:
+            f.write(str(restart_count))
         
-        current_version = '1.0.0'
-        if os.path.exists(version_file):
-            with open(version_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                current_version = data.get('version', '1.0.0')
-                
-        updater = AutoUpdater(current_version)
+        print(f"🔄 재시작 횟수: {restart_count}")
         
-        # 업데이트 확인 및 적용
-        print("🚀 블로그 자동화 프로그램 시작...")
-        success, message = updater.check_and_update()
-        
-        if success:
-            print(f"✅ {message}")
-            print("🔄 업데이트된 프로그램을 시작합니다...")
-            time.sleep(2)  # 잠깐 대기
+        if restart_count > 3:  # 3번으로 줄임
+            print("⚠️ 무한반복 감지! 프로그램을 종료합니다.")
+            sys.exit(1)
             
     except Exception as e:
-        print(f"⚠️ 업데이트 확인 중 오류: {e}")
-        print("🔄 기존 프로그램을 시작합니다...")
+        print(f"⚠️ 재시작 카운터 오류: {e}")
     
-    # 메인 앱 실행
-    app = BlogWriterApp()
-    ft.app(target=app.main) 
+    try:
+        # 메인 앱 실행
+        app = BlogWriterApp()
+        ft.app(target=app.main)
+    except Exception as e:
+        print(f"❌ 앱 실행 오류: {e}")
+        import traceback
+        traceback.print_exc() 
