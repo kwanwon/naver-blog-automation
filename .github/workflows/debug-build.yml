@@ -1,0 +1,60 @@
+name: 🔧 빌드 디버깅
+
+on:
+  workflow_dispatch:  # 수동 실행만
+
+jobs:
+  debug-build:
+    name: 🔍 빌드 과정 디버깅
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 코드 체크아웃
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Python 설정
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: 📦 의존성 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+        
+    - name: 📋 빌드 전 환경 확인
+      run: |
+        echo "=== Python 정보 ==="
+        python --version
+        which python
+        echo ""
+        echo "=== PyInstaller 정보 ==="
+        pyinstaller --version
+        echo ""
+        echo "=== 메인 파일 확인 ==="
+        ls -la blog_writer_app.py
+        head -20 blog_writer_app.py
+        echo ""
+        echo "=== 필요한 디렉토리 확인 ==="
+        ls -la config/ || echo "config 디렉토리 없음"
+        ls -la modules/ || echo "modules 디렉토리 없음"
+        ls -la default_images/ || echo "default_images 디렉토리 없음"
+        
+    - name: 🔨 PyInstaller 빌드 테스트 (간단 버전)
+      run: |
+        echo "=== 간단한 빌드 테스트 ==="
+        pyinstaller --onefile --name="테스트빌드" blog_writer_app.py
+        echo "빌드 완료!"
+        ls -la dist/
+        
+    - name: 🔨 PyInstaller 빌드 테스트 (복잡 버전)
+      run: |
+        echo "=== 복잡한 빌드 테스트 (실제 설정) ==="
+        pyinstaller --onedir --windowed --name="블로그자동화" \
+          --add-data "config:config" \
+          --add-data "modules:modules" \
+          --add-data "version.json:." \
+          blog_writer_app.py || echo "복잡한 빌드 실패 - 정상적인 현상일 수 있음"
+        echo "빌드 시도 완료!"
+        ls -la dist/ || echo "dist 디렉토리 없음"
