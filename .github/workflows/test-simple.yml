@@ -1,0 +1,63 @@
+name: 🧪 간단한 테스트 빌드
+
+on:
+  workflow_dispatch:  # 수동 실행만 가능
+  push:
+    branches: [ main ]
+
+jobs:
+  test-basic:
+    name: 🔍 기본 환경 테스트
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 코드 체크아웃
+      uses: actions/checkout@v4
+      
+    - name: 📋 파일 목록 확인
+      run: |
+        echo "=== 현재 디렉토리 파일 목록 ==="
+        ls -la
+        echo ""
+        echo "=== 필수 파일 존재 확인 ==="
+        if [ -f "blog_writer_app.py" ]; then
+          echo "✅ blog_writer_app.py 존재"
+        else
+          echo "❌ blog_writer_app.py 없음"
+        fi
+        
+        if [ -f "requirements.txt" ]; then
+          echo "✅ requirements.txt 존재"
+        else
+          echo "❌ requirements.txt 없음"
+        fi
+        
+        if [ -f "version.json" ]; then
+          echo "✅ version.json 존재"
+        else
+          echo "❌ version.json 없음"
+        fi
+        
+    - name: 🐍 Python 설정
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: 📦 의존성 설치 테스트
+      run: |
+        echo "=== Python 버전 확인 ==="
+        python --version
+        echo ""
+        echo "=== pip 업그레이드 ==="
+        python -m pip install --upgrade pip
+        echo ""
+        echo "=== requirements.txt 내용 확인 ==="
+        head -10 requirements.txt
+        echo ""
+        echo "=== 의존성 설치 시도 ==="
+        pip install -r requirements.txt
+        echo ""
+        echo "=== PyInstaller 설치 ==="
+        pip install pyinstaller
+        echo ""
+        echo "✅ 모든 의존성 설치 완료!"
