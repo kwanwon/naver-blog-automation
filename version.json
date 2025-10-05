@@ -1,0 +1,26 @@
+{
+  "version": "1.5.0",
+  "release_date": "2025-09-25",
+  "changelog": [
+    "🎉 v1.5.0: 완벽한 빌드 시스템 구현",
+    "🔧 모든 기능 포함 빌드 (통신, 시리얼인증, 이미지)",
+    "📦 이미지 폴더 11개 포함 (default_images ~ default_images_10)",
+    "⚡ 시리얼 인증 시스템 완전 구현",
+    "🌐 업데이트 및 시리얼 관리 연동 완성",
+    "🔄 완전한 자동 업데이트 시스템 구현",
+    "🛠️ 재시작 오류 수정 및 안정성 향상"
+  ],
+  "preserved_files": [
+    "config/serial_config.json",
+    "config/user_settings.json", 
+    "config/app_settings.json",
+    "naver_cookies.pkl",
+    "naver_session.json",
+    "naver_cookies.json",
+    "used_folders.json"
+  ],
+  "min_requirements": {
+    "python": "3.7+",
+    "os": ["Windows", "macOS", "Linux"]
+  }
+}
