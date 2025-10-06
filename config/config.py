@@ -3,71 +3,26 @@ from dotenv import load_dotenv
 import sys
 import datetime
 from datetime import date
-import logging
-
-# 로깅 설정
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('config')
 
 # 실행 파일 또는 스크립트 기준 경로 설정
 if getattr(sys, 'frozen', False):
     # 실행 파일로 실행된 경우 (PyInstaller 등으로 빌드된 경우)
     base_dir = os.path.dirname(sys.executable)
-    logger.info(f"빌드된 앱에서 실행 중 - 기본 경로: {base_dir}")
-    
-    # 가능한 .env 파일 위치들
-    possible_paths = [
-        os.path.join(base_dir, '.env'),  # 실행 파일과 같은 디렉토리
-        os.path.join(os.path.dirname(base_dir), '.env'),  # 상위 디렉토리
-        os.path.join(base_dir, 'config', '.env'),  # config 디렉토리 내부
-        os.path.join(base_dir, 'resources', '.env')  # resources 디렉토리 내부
-    ]
-    
-    # 현재 사용자 홈 디렉토리도 확인
-    home_dir = os.path.expanduser("~")
-    possible_paths.append(os.path.join(home_dir, '.naver_blog_auto.env'))
-    
-    # 가능한 모든 경로에서 .env 파일 찾기
-    env_path = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            env_path = path
-            logger.info(f".env 파일 발견: {env_path}")
-            break
-    
-    if not env_path:
-        logger.warning("빌드된 앱에서 .env 파일을 찾을 수 없습니다. 기본 경로를 사용합니다.")
-        env_path = os.path.join(base_dir, '.env')
-        
-        # 빌드된 앱에서 .env 파일이 없으면 새로 생성
-        if not os.path.exists(env_path):
-            try:
-                with open(env_path, 'w', encoding='utf-8') as f:
-                    f.write("# 자동 생성된 환경 변수 파일\n")
-                    f.write("OPENAI_API_KEY=\n")
-                logger.info(f"새 .env 파일 생성됨: {env_path}")
-            except Exception as e:
-                logger.error(f".env 파일 생성 실패: {str(e)}")
+    # 상위 디렉토리 확인 (배포 구조에 따라 조정)
+    if not os.path.exists(os.path.join(base_dir, '.env')):
+        parent_dir = os.path.dirname(base_dir)
+        if os.path.exists(os.path.join(parent_dir, '.env')):
+            base_dir = parent_dir
 else:
     # 스크립트로 실행된 경우
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    logger.info(f"스크립트 모드에서 실행 중 - 기본 경로: {base_dir}")
-    env_path = os.path.join(base_dir, '.env')
 
-# .env 파일 경로 로깅
-logger.info(f"ENV 파일 경로: {env_path}")
+# .env 파일 경로
+env_path = os.path.join(base_dir, '.env')
+print(f"ENV 파일 경로: {env_path}")
 
 # .env 파일에서 환경 변수 로드
-try:
-    load_dotenv(dotenv_path=env_path)
-    logger.info("환경 변수 로드 성공")
-    
-    # OpenAI 모듈 초기화 문제 해결을 위한 임시 처리
-    if 'OPENAI_API_KEY' not in os.environ or not os.environ['OPENAI_API_KEY']:
-        logger.warning("API 키가 설정되지 않았습니다. 임시 API 키를 설정합니다.")
-        os.environ['OPENAI_API_KEY'] = "sk-empty-key-for-initialization"
-except Exception as e:
-    logger.error(f"환경 변수 로드 실패: {str(e)}")
+load_dotenv(dotenv_path=env_path)
 
 class Config:
     """애플리케이션 설정"""

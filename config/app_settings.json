@@ -3,6 +3,7 @@
   "auto_upload": true,
   "auto_image": true,
   "auto_topic": true,
+  "auto_final_publish": true,
   "image_insert_mode": "random",
-  "last_updated": "2025-05-11 10:38:43"
+  "last_updated": "2025-08-10 09:27:23"
 }
