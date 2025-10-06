@@ -1,10 +1,4 @@
 import openai
-# OpenAI 모듈 임포트 후 바로 임시 API 키 설정 (오류 방지)
-try:
-    openai.api_key = openai.api_key or "sk-empty-key-for-initialization"
-except:
-    openai.api_key = "sk-empty-key-for-initialization"
-
 from config.config import Config
 import logging
 import random
@@ -14,8 +8,6 @@ import json
 import time
 import traceback
 from datetime import datetime
-import requests
-import re
 
 # 로깅 설정
 logging.basicConfig(
@@ -26,108 +18,53 @@ logger = logging.getLogger(__name__)
 
 # 리소스 경로 처리 함수 추가
 def resource_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller"""
+    """앱이 번들되었을 때와 그렇지 않을 때 모두 리소스 경로를 올바르게 가져옵니다."""
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        # PyInstaller가 만든 임시 폴더에서 실행될 때
         base_path = sys._MEIPASS
     except Exception:
+        # 일반적인 Python 인터프리터에서 실행될 때
         base_path = os.path.abspath(".")
     
     return os.path.join(base_path, relative_path)
 
 class GPTHandler:
-    def __init__(self, api_key=None, model="gpt-4o", use_dummy=False):
-        """GPT 핸들러 초기화"""
-        # 로거 초기화
-        self.logger = logging.getLogger('gpt_handler')
-        
-        # 핸들러 및 포맷터 초기화
-        if not self.logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-            self.logger.setLevel(logging.INFO)
-        
-        # 더미 데이터 사용 여부
+    def __init__(self, use_dummy=False):
+        """GPT 핸들러를 초기화합니다."""
         self.use_dummy = use_dummy
-        self.api_key_error = None  # API 키 오류 메시지 저장용
-        
-        if self.use_dummy:
-            self.logger.warning("더미 데이터 모드로 실행합니다. API 호출이 이루어지지 않습니다.")
-            self.api_key = None
-        else:
-            # API 키 설정 (우선순위: 1. 직접 전달된 키, 2. 환경 변수)
-            self.api_key = api_key or os.environ.get('OPENAI_API_KEY')
-            
-            # 디버깅을 위한 로그 추가
-            if api_key:
-                self.logger.info("API 키가 직접 전달됨")
-            elif os.environ.get('OPENAI_API_KEY'):
-                self.logger.info("API 키가 환경 변수에서 로드됨")
-            else:
-                self.logger.warning("API 키를 찾을 수 없음")
-            
-            # API 키 유효성 검사
-            if self.api_key and self.api_key != "sk-empty-key-for-initialization":
-                if self.api_key.startswith('sk-') or self.api_key.startswith('sk-proj-'):
-                    self.logger.info(f"API 키 설정됨 (첫 8자: {self.api_key[:8]}...)")
-                    
-                    # openai 모듈에 API 키 설정
-                    openai.api_key = self.api_key
-                    
-                    # API 키 테스트
-                    if self._test_api_key():
-                        self.logger.info("API 키 테스트 성공: 유효한 키입니다")
-                    else:
-                        self.api_key_error = "API 키 테스트 실패: 유효하지 않은 키이거나 OpenAI 서버에 접속할 수 없습니다."
-                        self.logger.error(self.api_key_error)
-                        # API 키가 유효하지 않더라도 더미 데이터로 자동 전환하지 않음
-                else:
-                    self.api_key_error = "API 키가 잘못된 형식입니다. 'sk-' 또는 'sk-proj-'로 시작해야 합니다."
-                    self.logger.error(self.api_key_error)
-                    # 잘못된 형식이더라도 더미 데이터로 자동 전환하지 않음
-            else:
-                self.api_key_error = "API 키가 설정되지 않았습니다. GPT 설정에서 API 키를 입력해주세요."
-                self.logger.warning(self.api_key_error)
-                # API 키가 없더라도 더미 데이터로 자동 전환하지 않음
-        
-        self.model = model
         self.settings = self._load_settings()
-        self.custom_prompts = self._load_custom_prompt()
+        # model 속성을 기본값으로 초기화
+        self.model = Config.GPT_MODEL
         
-        self.logger.info(f"GPT 핸들러 초기화 완료. 모델: {self.model}")
-        self.logger.info(f"API 키 상태: {'설정됨' if self.api_key and self.api_key != 'sk-empty-key-for-initialization' and not self.api_key_error else '설정되지 않음'}")
-        self.logger.info(f"더미 데이터 모드: {'활성화' if self.use_dummy else '비활성화'}")
-        self.logger.info(f"GPT 설정 로드됨: {self.settings}")
-        self.logger.info(f"커스텀 프롬프트 로드됨: {self.custom_prompts}")
-    
-    def _test_api_key(self):
-        """API 키의 유효성을 테스트합니다."""
         try:
-            # 간단한 요청으로 API 키 테스트
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.api_key}"
-                },
-                json={
-                    "model": "gpt-3.5-turbo",  # 테스트용으로 가장 저렴한 모델 사용
-                    "messages": [{"role": "user", "content": "Hello"}],
-                    "max_tokens": 5  # 최소한의 토큰만 요청
-                },
-                timeout=5  # 5초 이내 응답이 없으면 타임아웃
-            )
+            # 먼저 GPT 설정 파일에서 API 키 확인
+            api_key = None
+            if self.settings and 'api_key' in self.settings and self.settings['api_key']:
+                api_key = self.settings['api_key']
+                logger.info("GPT 설정 파일에서 API 키를 로드했습니다.")
+            else:
+                # 환경변수에서 API 키 확인
+                api_key = Config.GPT_API_KEY
+                logger.info("환경변수에서 API 키를 로드했습니다.")
             
-            self.logger.info(f"API 키 테스트 응답 코드: {response.status_code}")
+            if api_key == 'your-api-key-here' or not api_key:
+                # 오류 대신 자동으로 더미 모드로 설정
+                logger.warning("API 키가 설정되지 않았습니다. 더미 모드로 전환합니다.")
+                self.use_dummy = True
+            else:
+                # OpenAI 클라이언트 초기화 (0.28.1 버전)
+                openai.api_key = api_key
+                # model은 이미 위에서 초기화되었으므로 여기서는 다시 할당하지 않아도 됨
+                logger.info("OpenAI 클라이언트 초기화 성공")
             
-            # 응답 코드가 200이면 API 키가 유효
-            return response.status_code == 200
         except Exception as e:
-            self.logger.error(f"API 키 테스트 중 오류 발생: {str(e)}")
-            return False
-    
+            logger.error(f"OpenAI 클라이언트 초기화 중 오류 발생: {str(e)}")
+            # 오류 발생 시 더미 모드로 자동 전환
+            logger.warning("오류로 인해 더미 모드로 전환합니다.")
+            self.use_dummy = True
+        
+        self.custom_prompt = self._load_custom_prompt()
+
     def _load_settings(self):
         """GPT 설정을 로드합니다."""
         default_settings = {
@@ -154,239 +91,293 @@ class GPTHandler:
 4. 불필요한 반복이나 중복 표현이 없는지 확인
 5. 전체적인 글의 통일성과 완성도 검토
 
-"""  # 끝에 줄바꿈 두 개 추가하여 다음 텍스트와 구분
-
+"""  # 끝에 줄바꿈 두 개 추가하기
+        
         try:
-            # 먼저 일반 경로에서 시도
-            config_path = 'config/gpt_settings.txt'
+            # 스크립트 파일의 위치를 기준으로 경로 계산
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(script_dir)
             
-            # 빌드된 환경에서 경로 시도
-            if not os.path.exists(config_path):
-                config_path = resource_path('config/gpt_settings.txt')
-                if os.path.exists(config_path):
-                    self.logger.info(f"빌드 환경에서 GPT 설정 파일 찾음: {config_path}")
-                else:
-                    self.logger.warning(f"GPT 설정 파일을 찾을 수 없음: {config_path}")
-                    return default_settings
+            # 여러 경로 시도
+            possible_paths = [
+                os.path.join(parent_dir, 'config', 'gpt_settings.txt'),
+                os.path.join(os.getcwd(), 'config', 'gpt_settings.txt'),
+                'config/gpt_settings.txt',
+                resource_path('config/gpt_settings.txt')
+            ]
             
-            with open(config_path, 'r', encoding='utf-8') as f:
-                settings = json.load(f)
-                self.logger.info(f"GPT 설정 파일 로드됨: {config_path}")
+            settings_path = None
+            for path in possible_paths:
+                abs_path = os.path.abspath(path)
+                if os.path.exists(abs_path):
+                    settings_path = abs_path
+                    break
+            
+            # 설정 파일이 존재하면 로드
+            if settings_path:
+                with open(settings_path, 'r', encoding='utf-8') as f:
+                    loaded_settings = json.load(f)
+                    
+                    # 기본 설정 업데이트
+                    for key in ['persona', 'instructions', 'style']:
+                        if key in loaded_settings:
+                            default_settings[key] = loaded_settings[key]
                 
-                # 최종 업데이트 시간 기록
-                settings['last_updated'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                
-                # 고정 검토 지침 추가
-                settings['review_instructions'] = fixed_review_instructions
-                
-                return settings
-                
+                print(f"GPT 설정 파일 로드 성공: {settings_path}")
+            else:
+                print(f"GPT 설정 파일을 찾을 수 없습니다")
         except Exception as e:
-            self.logger.error(f"GPT 설정 로드 중 오류 발생: {str(e)}")
-            self.logger.error(traceback.format_exc())
-            return default_settings
-    
+            print(f"GPT 설정 파일 로드 중 오류 발생: {str(e)}")
+            traceback.print_exc()
+        
+        # 고정 검토 지침 추가
+        if 'instructions' not in default_settings:
+            default_settings['instructions'] = fixed_review_instructions
+        else:
+            default_settings['instructions'] += fixed_review_instructions
+            
+        return default_settings
+
     def _load_custom_prompt(self):
-        """사용자 정의 프롬프트를 로드합니다."""
-        default_prompt = {
-            "base_prompt": "블로그 게시물을 작성할 때는 자연스럽고 유익한 내용을 제공해 주세요."
-        }
+        """커스텀 프롬프트를 로드합니다."""
+        custom_prompts = {}
         
         try:
-            # 먼저 일반 경로에서 시도
-            config_path = 'config/custom_prompts.txt'
+            # 스크립트 파일의 위치를 기준으로 경로 계산
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(script_dir)
             
-            # 빌드된 환경에서 경로 시도
-            if not os.path.exists(config_path):
-                config_path = resource_path('config/custom_prompts.txt')
-                if os.path.exists(config_path):
-                    self.logger.info(f"빌드 환경에서 커스텀 프롬프트 파일 찾음: {config_path}")
-                else:
-                    self.logger.warning(f"커스텀 프롬프트 파일을 찾을 수 없음: {config_path}")
-                    return default_prompt
+            # 여러 경로 시도
+            possible_paths = [
+                os.path.join(parent_dir, 'config', 'custom_prompts.txt'),
+                os.path.join(os.getcwd(), 'config', 'custom_prompts.txt'),
+                'config/custom_prompts.txt',
+                resource_path('config/custom_prompts.txt')
+            ]
             
-            with open(config_path, 'r', encoding='utf-8') as f:
-                custom_prompts = json.load(f)
-                self.logger.info(f"커스텀 프롬프트 파일 로드됨: {config_path}")
-                return custom_prompts
-                
-        except Exception as e:
-            self.logger.error(f"커스텀 프롬프트 로드 중 오류 발생: {str(e)}")
-            self.logger.error(traceback.format_exc())
-            return default_prompt
-
-    def generate_content(self, topic, keywords=None, depth=None):
-        """주어진 주제에 대한 블로그 내용을 생성합니다."""
-        if self.use_dummy:
-            self.logger.info(f"더미 데이터 모드: 주제 '{topic}'에 대한 더미 콘텐츠를 생성합니다.")
-            return self._get_dummy_content(topic)
+            prompts_path = None
+            for path in possible_paths:
+                abs_path = os.path.abspath(path)
+                if os.path.exists(abs_path):
+                    prompts_path = abs_path
+                    break
             
-        # API 키 오류가 있는 경우, 오류 메시지를 반환
-        if self.api_key_error:
-            self.logger.error(f"API 키 오류로 인해 콘텐츠 생성 불가: {self.api_key_error}")
-            return {
-                "title": f"API 키 오류",
-                "content": f"""⚠️ API 키 오류
-
-{self.api_key_error}
-
-GPT 설정 메뉴에서 유효한 OpenAI API 키를 입력해주세요.
-API 키는 https://platform.openai.com/account/api-keys 에서 생성할 수 있습니다.
-
-문제가 지속되면 관리자에게 문의해주세요."""
-            }
-            
-        if not self.api_key:
-            self.logger.error("API 키가 설정되지 않았습니다.")
-            return {
-                "title": "API 키가 설정되지 않았습니다",
-                "content": """⚠️ API 키 오류
-
-OpenAI API 키가 설정되지 않았습니다.
-GPT 설정 메뉴에서 유효한 OpenAI API 키를 입력해주세요.
-API 키는 https://platform.openai.com/account/api-keys 에서 생성할 수 있습니다.
-
-문제가 지속되면 관리자에게 문의해주세요."""
-            }
-            
-        # 키워드가 없으면 빈 리스트로 초기화
-        if keywords is None:
-            keywords = []
-            
-        # 심도 설정
-        content_depth = depth or "중간"  # 기본값은 "중간" 심도
-        
-        # 시스템 프롬프트 구성
-        system_prompt = ""
-        
-        # 기본 프롬프트 추가 (custom_prompts에서 가져옴)
-        if 'base_prompt' in self.custom_prompts:
-            system_prompt += self.custom_prompts['base_prompt'] + "\n\n"
-        
-        # 페르소나 정보 추가
-        if 'persona' in self.settings:
-            system_prompt += f"### 페르소나\n{self.settings['persona']}\n\n"
-            
-        # 지시사항 추가
-        if 'instructions' in self.settings:
-            system_prompt += f"### 지시사항\n{self.settings['instructions']}\n\n"
-            
-        # 글 스타일 추가
-        if 'style' in self.settings:
-            system_prompt += f"### 스타일\n{self.settings['style']}\n\n"
-            
-        # 검토 지침 추가
-        if 'review_instructions' in self.settings:
-            system_prompt += f"### 검토 지침\n{self.settings['review_instructions']}\n\n"
-        
-        # 사용자 프롬프트 구성
-        user_prompt = f"주제: {topic}\n"
-        
-        if keywords and len(keywords) > 0:
-            user_prompt += f"키워드: {', '.join(keywords)}\n"
-            
-        user_prompt += f"심도: {content_depth}\n"
-            
-        # API 요청 데이터 구성
-        data = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": 0.7,
-        }
-        
-        # 요청 시작 시간 기록
-        start_time = time.time()
-        
-        try:
-            # API 요청 보내기
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.api_key}"
-                },
-                json=data
-            )
-            
-            # 요청 소요 시간 계산
-            elapsed_time = time.time() - start_time
-            self.logger.info(f"GPT API 요청 처리 시간: {elapsed_time:.2f}초")
-            
-            # 응답 확인 및 디버깅
-            self.logger.info(f"API 응답 상태 코드: {response.status_code}")
-            
-            if response.status_code == 200:
-                result = response.json()
-                
-                # 기존 모델 형식과 새로운 모델 형식 모두 처리
-                if 'choices' in result and len(result['choices']) > 0:
-                    if 'message' in result['choices'][0]:
-                        # 기존 형식 (gpt-3.5-turbo, gpt-4 등)
-                        generated_text = result['choices'][0]['message']['content']
-                    elif 'content' in result['choices'][0]:
-                        # 새로운 API 형식 (추가 필드 구조 대응)
-                        generated_text = result['choices'][0]['content']
+            # 프롬프트 파일이 존재하면 로드
+            if prompts_path:
+                with open(prompts_path, 'r', encoding='utf-8') as f:
+                    content = f.read().strip()
+                    if content:  # 파일이 비어있지 않은 경우만 JSON 파싱
+                        custom_prompts = json.loads(content)
                     else:
-                        self.logger.error(f"알 수 없는 응답 형식: {result}")
-                        return self._get_api_error_content("알 수 없는 응답 형식")
+                        print(f"커스텀 프롬프트 파일이 비어있습니다: {prompts_path}")
+                print(f"커스텀 프롬프트 파일 로드 성공: {prompts_path}")
+            else:
+                print(f"커스텀 프롬프트 파일을 찾을 수 없습니다")
+        except json.JSONDecodeError as e:
+            print(f"커스텀 프롬프트 파일 JSON 파싱 오류: {str(e)}")
+            print(f"파일이 비어있거나 잘못된 JSON 형식입니다. 기본 설정을 사용합니다.")
+        except Exception as e:
+            print(f"커스텀 프롬프트 파일 로드 중 오류 발생: {str(e)}")
+            traceback.print_exc()
+            
+        return custom_prompts
+
+    def _load_user_settings(self):
+        """사용자 설정을 로드합니다."""
+        user_settings = {}
+        
+        try:
+            # 스크립트 파일의 위치를 기준으로 경로 계산
+            script_dir = os.path.dirname(os.path.abspath(__file__))  # modules 디렉토리
+            parent_dir = os.path.dirname(script_dir)  # naver-blog-automation 디렉토리
+            
+            # 다양한 경로 시도 (더 robust하게)
+            possible_paths = [
+                # 상대 경로들
+                os.path.join(parent_dir, 'config', 'user_settings.txt'),
+                os.path.join(os.getcwd(), 'config', 'user_settings.txt'),
+                os.path.join(script_dir, '..', 'config', 'user_settings.txt'),
+                # 레거시 경로들
+                'config/user_settings.txt',
+                './config/user_settings.txt',
+                '../config/user_settings.txt',
+                # 리소스 경로
+                resource_path('config/user_settings.txt'),
+                # 절대 경로 시도
+                os.path.abspath(os.path.join(parent_dir, 'config', 'user_settings.txt'))
+            ]
+            
+            settings_path = None
+            current_dir = os.getcwd()
+            print(f"🔥 현재 작업 디렉토리: {current_dir}")
+            print(f"🔥 스크립트 디렉토리: {script_dir}")
+            print(f"🔥 부모 디렉토리: {parent_dir}")
+            
+            for path in possible_paths:
+                abs_path = os.path.abspath(path)
+                print(f"🔥 경로 시도: {path} -> {abs_path}")
+                if os.path.exists(abs_path):
+                    settings_path = abs_path
+                    print(f"🔥 파일 발견: {abs_path}")
+                    break
                 else:
-                    self.logger.error(f"API 응답에 'choices' 필드가 없거나 비어 있습니다: {result}")
-                    return self._get_api_error_content("API 응답 형식 오류")
+                    print(f"🔥 파일 없음: {abs_path}")
+            
+            # 설정 파일이 존재하면 로드
+            if settings_path:
+                with open(settings_path, 'r', encoding='utf-8') as f:
+                    user_settings = json.load(f)
+                print(f"🔥 사용자 설정 파일 로드 성공: {settings_path}")
+                print(f"🔥 로드된 first_sentence: '{user_settings.get('first_sentence', '없음')}'")
+            else:
+                print(f"🔥 사용자 설정 파일을 어떤 경로에서도 찾을 수 없습니다.")
+                print(f"🔥 시도한 경로들:")
+                for path in possible_paths:
+                    print(f"🔥   - {os.path.abspath(path)}")
+        except Exception as e:
+            print(f"🔥 사용자 설정 파일 로드 중 오류 발생: {str(e)}")
+            traceback.print_exc()
+            
+        return user_settings
+
+    def generate_content(self, topic):
+        """주어진 주제로 블로그 콘텐츠를 생성합니다."""
+        max_retries = 3  # 최대 재시도 횟수
+        retry_count = 0
+        last_error = None
+        
+        # 사용자 설정 로드
+        settings = self._load_settings()
+        custom_prompt = self._load_custom_prompt()
+        user_settings = self._load_user_settings()  # 사용자 설정 로드 추가
+        
+        # 시스템 메시지 구성 (페르소나와 지침 적용)
+        system_message = f"""당신은 블로그 작성자입니다.
+페르소나: {settings['persona']}
+
+지침:
+{settings['instructions']}
+
+글쓰기 스타일:
+{settings['style']}
+
+작성 규칙:
+1. 제목
+- SEO 최적화된 매력적인 제목
+- 핵심 키워드 포함
+- 독자의 호기심을 자극하는 표현
+
+2. 콘텐츠 구성
+- 자연스러운 도입과 전개
+- 핵심 정보 위주의 설명
+- 실용적인 조언이나 팁 제공
+- 깔끔한 마무리
+
+3. 기본 요구사항
+- 검색 키워드 자연스럽게 포함
+- 위에 명시된 페르소나, 지침, 글쓰기 스타일을 엄격히 준수"""
+
+        # 사용자 프롬프트 구성 (커스텀 프롬프트 적용)
+        base_prompt = f"""주제: {topic}
+
+위 주제로 다음 형식에 맞춰 블로그 포스트를 작성해주세요.
+
+1. 먼저 [제목] 아래에 SEO 최적화된 제목을 작성해주세요.
+2. 그 다음 [본문] 아래에 본문을 작성해주세요.
+
+예시 형식:
+[제목]
+(여기에 제목 작성)
+
+[본문]
+(여기에 본문 작성)
+
+작성 시 다음 사항을 반드시 지켜주세요:
+- 위에서 명시한 페르소나, 지침, 글쓰기 스타일을 엄격히 준수
+- 자연스러운 글의 흐름을 유지하면서 정보 전달
+- 실제 사례나 통계 자료 포함 (가능한 경우)
+- 실용적인 정보와 조언 제공
+- 전문적인 내용을 쉽게 설명
+- 깔끔한 마무리
+
+중요: 모든 작성 규칙은 위에서 설정한 지침과 스타일을 최우선으로 따라주세요."""
+
+        # 커스텀 프롬프트가 있으면 추가
+        user_prompt = base_prompt
+        if custom_prompt:
+            user_prompt = f"{custom_prompt}\n\n{base_prompt}"
+        
+        while retry_count < max_retries:
+            try:
+                logger.info(f"OpenAI API 호출 시작: 주제 '{topic}' (시도 {retry_count + 1}/{max_retries})")
                 
-                # 생성된 텍스트를 제목과 본문으로 분리
-                title, body = self._parse_content(generated_text)
+                # API 호출 (0.28.1 버전)
+                response = openai.ChatCompletion.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_message},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2000,
+                    top_p=0.9,
+                    frequency_penalty=0.5,
+                    presence_penalty=0.5
+                )
                 
-                # 본문 포맷팅
-                formatted_body = self._enhance_formatting(body)
+                # 응답 파싱 및 포맷팅
+                content = response['choices'][0]['message']['content'].strip()
+                title, body = self._parse_content(content)
                 
-                # 최종 결과 반환
+                # 응답 검증
+                if not self._validate_content(body):
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        raise ValueError(f"{max_retries}회 시도 후에도 유효한 응답을 받지 못했습니다.")
+                    logger.warning(f"응답이 요구사항을 충족하지 않아 다시 시도합니다. (시도 {retry_count}/{max_retries})")
+                    continue
+                
+                # 모바일 최적화 및 포맷팅
+                body = self._format_content_for_mobile(body)
+                body = self._enhance_formatting(body)
+                
+                # 사용자 설정에서 첫 문장 추가 처리
+                first_sentence = user_settings.get('first_sentence', '').strip()
+                if first_sentence:
+                    logger.info(f"🔥 첫 문장 설정 발견: '{first_sentence}'")
+                    logger.info(f"🔥 원본 본문 시작 부분: '{body[:100]}...'")
+                    
+                    # 무조건 설정된 첫 문장을 본문 맨 앞에 추가
+                    body = f"{first_sentence}\n\n{body}"
+                    
+                    logger.info(f"🔥 첫 문장 추가 후 본문 시작 부분: '{body[:100]}...'")
+                else:
+                    logger.info("🔥 첫 문장 설정이 없습니다.")
+                
+                logger.info(f"OpenAI API 호출 완료: 제목 '{title}'")
+                
                 return {
                     "title": title,
-                    "content": formatted_body
+                    "content": body
                 }
-            else:
-                # 오류 응답 상세 로깅
-                self.logger.error(f"GPT API 오류: {response.status_code}")
-                self.logger.error(f"오류 세부 정보: {response.text}")
                 
-                # 응답 내용 확인
-                try:
-                    error_data = response.json()
-                    error_message = error_data.get('error', {}).get('message', '알 수 없는 오류')
-                    error_type = error_data.get('error', {}).get('type', '알 수 없는 유형')
-                    error_code = error_data.get('error', {}).get('code', '')
-                    
-                    error_info = f"오류 메시지: {error_message}\n오류 유형: {error_type}\n오류 코드: {error_code}"
-                    self.logger.error(error_info)
-                    
-                    return self._get_api_error_content(f"API 오류 ({response.status_code}): {error_message}")
-                except:
-                    self.logger.error("JSON 형식이 아닌 오류 응답")
-                    return self._get_api_error_content(f"API 오류 ({response.status_code})")
-                
-        except Exception as e:
-            self.logger.error(f"GPT 내용 생성 중 오류 발생: {str(e)}")
-            self.logger.error(traceback.format_exc())
-            return self._get_api_error_content(f"네트워크 오류: {str(e)}")
-
-    def _get_api_error_content(self, error_message):
-        """API 오류 메시지를 포함한 콘텐츠를 반환합니다."""
-        return {
-            "title": "API 요청 중 오류가 발생했습니다",
-            "content": f"""⚠️ OpenAI API 오류
-
-{error_message}
-
-다음을 확인해주세요:
-1. 입력한 API 키가 유효한지 확인
-2. 인터넷 연결 상태 확인
-3. OpenAI 서비스 상태 확인 (https://status.openai.com)
-
-문제가 지속되면 관리자에게 문의해주세요."""
-        }
+            except Exception as e:
+                last_error = e
+                if "rate_limit" in str(e).lower():
+                    wait_time = 5
+                    logger.warning(f"API 속도 제한에 도달했습니다. {wait_time}초 후 재시도합니다.")
+                    time.sleep(wait_time)
+                    retry_count += 1
+                    continue
+                else:
+                    logger.error(f"OpenAI API 호출 중 오류 발생: {str(e)}")
+                    raise  # 알 수 없는 오류는 즉시 상위로 전파
+        
+        # 최대 재시도 횟수 초과
+        error_msg = f"최대 재시도 횟수({max_retries}회)를 초과했습니다."
+        if last_error:
+            error_msg += f" 마지막 오류: {str(last_error)}"
+        raise RuntimeError(error_msg)
 
     def _validate_content(self, content):
         """생성된 콘텐츠가 요구사항을 충족하는지 검증합니다."""
@@ -415,7 +406,7 @@ API 키는 https://platform.openai.com/account/api-keys 에서 생성할 수 있
                 lines = content.split('\n')
                 title = lines[0].replace('[제목]', '').strip()
                 body = '\n'.join(lines[1:]).strip()
-                return self._clean_title(title), body
+                return title, body
             
             title_part = parts[0].split('[제목]')
             if len(title_part) != 2:
@@ -425,11 +416,21 @@ API 키는 https://platform.openai.com/account/api-keys 에서 생성할 수 있
             
             body = parts[1].strip()
             
-            # 본문의 가독성 향상을 위한 후처리
-            body = body.replace('•', '◆')  # 글머리 기호 통일
-            body = body.replace('- ', '◆ ')  # 하이픈을 글머리 기호로 변경
+            # 사용자 설정에 따른 후처리 (기호 사용 금지 설정 확인)
+            settings = self._load_settings()
+            if '기호' in settings.get('instructions', '') and '사용하지 말' in settings.get('instructions', ''):
+                # 기호 사용 금지 설정인 경우 기호 제거
+                body = body.replace('◆', '')
+                body = body.replace('•', '')
+                body = body.replace('- ', '')
+                body = body.replace('▶', '')
+                body = body.replace('★', '')
+            else:
+                # 기호 사용이 허용된 경우에만 통일
+                body = body.replace('•', '◆')
+                body = body.replace('- ', '◆ ')
             
-            return self._clean_title(title), body
+            return title, body
             
         except Exception as e:
             logger.error(f"콘텐츠 파싱 중 오류 발생: {str(e)}")
@@ -437,26 +438,7 @@ API 키는 https://platform.openai.com/account/api-keys 에서 생성할 수 있
             lines = content.strip().split("\n")
             title = lines[0].strip()
             body = "\n".join(lines[2:]).strip()
-            return self._clean_title(title), body
-
-    def _clean_title(self, title):
-        """제목에서 마크다운 태그를 제거합니다."""
-        # 헤더 마크다운 제거 (## 또는 ### 등)
-        cleaned_title = re.sub(r'^#+\s+', '', title)
-        
-        # 굵은 텍스트 마크다운 제거 (**텍스트**)
-        cleaned_title = re.sub(r'\*\*(.*?)\*\*', r'\1', cleaned_title)
-        
-        # 기울임 텍스트 마크다운 제거 (*텍스트*)
-        cleaned_title = re.sub(r'\*(.*?)\*', r'\1', cleaned_title)
-        
-        # 밑줄 마크다운 제거 (_텍스트_)
-        cleaned_title = re.sub(r'_(.*?)_', r'\1', cleaned_title)
-        
-        # 백틱(`) 제거
-        cleaned_title = re.sub(r'`(.*?)`', r'\1', cleaned_title)
-        
-        return cleaned_title
+            return title, body
 
     def _get_dummy_content(self, topic):
         """테스트용 더미 콘텐츠를 반환합니다."""
@@ -517,7 +499,24 @@ API 키는 https://platform.openai.com/account/api-keys 에서 생성할 수 있
             }
         }
         
-        return dummy_contents.get(topic, dummy_contents["default"])
+        # 더미 콘텐츠 가져오기
+        dummy_content = dummy_contents.get(topic, dummy_contents["default"])
+        
+        # 사용자 설정에서 첫 문장 추가 처리
+        user_settings = self._load_user_settings()
+        first_sentence = user_settings.get('first_sentence', '').strip()
+        if first_sentence:
+            logger.info(f"🔥 더미 콘텐츠에 첫 문장 추가: '{first_sentence}'")
+            logger.info(f"🔥 더미 원본 본문: '{dummy_content['content'][:100]}...'")
+            
+            # 무조건 설정된 첫 문장을 본문 맨 앞에 추가
+            dummy_content["content"] = f"{first_sentence}\n\n{dummy_content['content']}"
+            
+            logger.info(f"🔥 더미 첫 문장 추가 후: '{dummy_content['content'][:100]}...'")
+        else:
+            logger.info("🔥 더미 콘텐츠: 첫 문장 설정이 없습니다.")
+        
+        return dummy_content
 
     def _create_prompt(self, topic, style):
         """GPT 프롬프트를 생성합니다."""
@@ -564,54 +563,51 @@ API 키는 https://platform.openai.com/account/api-keys 에서 생성할 수 있
             
             if current_line:
                 formatted_lines.append(current_line)
-            # 문단 사이 여백 - 더 넓은 간격을 위해 빈 줄 두 개 추가
-            formatted_lines.append('')
-            formatted_lines.append('')  # 추가된 빈 줄
+            formatted_lines.append('')  # 문단 사이 여백
         
         return '\n'.join(formatted_lines)
 
     def _enhance_formatting(self, content):
         """콘텐츠의 가독성을 향상시킵니다."""
-        # 마크다운 포맷 제거 (##, ###, **, ___ 등)
-        cleaned_content = content
+        # 사용자 설정 확인
+        settings = self._load_settings()
         
-        # 헤더 마크다운 제거 (## 또는 ### 등)
-        cleaned_content = re.sub(r'^#+\s+', '', cleaned_content, flags=re.MULTILINE)
-        
-        # 굵은 텍스트 마크다운 제거 (**텍스트**)
-        cleaned_content = re.sub(r'\*\*(.*?)\*\*', r'\1', cleaned_content)
-        
-        # 기울임 텍스트 마크다운 제거 (*텍스트*)
-        cleaned_content = re.sub(r'\*(.*?)\*', r'\1', cleaned_content)
-        
-        # 밑줄 마크다운 제거 (_텍스트_)
-        cleaned_content = re.sub(r'_(.*?)_', r'\1', cleaned_content)
-        
-        # 구분선 제거 (---, ___, *** 등)
-        cleaned_content = re.sub(r'^([-_*]{3,})$', '', cleaned_content, flags=re.MULTILINE)
-        
-        # 이모지 매핑
-        emoji_map = {
-            '도입': '👋',
-            '소개': '📝',
-            '장점': '✨',
-            '특징': '🔍',
-            '방법': '📌',
-            '팁': '💡',
-            '주의': '⚠️',
-            '결론': '✅',
-            '요약': '📋',
-            '제안': '💪'
-        }
-        
-        # 이모지 추가
-        formatted_content = cleaned_content
-        for key, emoji in emoji_map.items():
-            formatted_content = formatted_content.replace(f"◆ {key}", f"{emoji} {key}")
-        
-        # 강조 표시 개선
-        formatted_content = formatted_content.replace('•', '◆')
-        formatted_content = formatted_content.replace('- ', '◆ ')
+        # 기호나 이모티콘 사용 금지 설정 확인
+        if ('기호' in settings.get('instructions', '') and '사용하지 말' in settings.get('instructions', '')) or \
+           ('이모티콘' in settings.get('instructions', '') and '사용하지 말' in settings.get('instructions', '')):
+            # 기호와 이모티콘 제거
+            formatted_content = content
+            formatted_content = formatted_content.replace('◆', '')
+            formatted_content = formatted_content.replace('•', '')
+            formatted_content = formatted_content.replace('- ', '')
+            formatted_content = formatted_content.replace('▶', '')
+            formatted_content = formatted_content.replace('★', '')
+            # 이모티콘 제거 (일반적인 이모티콘들)
+            import re
+            formatted_content = re.sub(r'[👋📝✨🔍📌💡⚠️✅📋💪🎯💯🌟⭐️🚀💝]', '', formatted_content)
+        else:
+            # 기호와 이모티콘 사용이 허용된 경우
+            emoji_map = {
+                '도입': '👋',
+                '소개': '📝',
+                '장점': '✨',
+                '특징': '🔍',
+                '방법': '📌',
+                '팁': '💡',
+                '주의': '⚠️',
+                '결론': '✅',
+                '요약': '📋',
+                '제안': '💪'
+            }
+            
+            # 이모지 추가
+            formatted_content = content
+            for key, emoji in emoji_map.items():
+                formatted_content = formatted_content.replace(f"◆ {key}", f"{emoji} {key}")
+            
+            # 강조 표시 개선
+            formatted_content = formatted_content.replace('•', '◆')
+            formatted_content = formatted_content.replace('- ', '◆ ')
         
         # 문단 구분 개선
         paragraphs = formatted_content.split('\n\n')
@@ -624,7 +620,7 @@ API 키는 https://platform.openai.com/account/api-keys 에서 생성할 수 있
 
 if __name__ == "__main__":
     # 테스트 코드
-    handler = GPTHandler()  # 실제 GPT API 사용
+    handler = GPTHandler(use_dummy=False)  # 실제 GPT API 사용
     
     test_topics = [
         "태권도 수업의 장점",

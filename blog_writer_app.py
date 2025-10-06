@@ -1,7 +1,7 @@
 import flet as ft # type: ignore
 from modules.gpt_handler import GPTHandler
 from modules.serial_auth import BlogSerialAuth
-from modules.auto_updater import AutoUpdater  # 자동 업데이트 복원
+from modules.auto_updater import AutoUpdater  # 자동 업데이트 추가
 
 import subprocess
 import os
@@ -35,7 +35,8 @@ class BlogWriterApp:
         print(f"📁 최종 기본 디렉토리: {self.base_dir}")
         print(f"🔄 현재 작업 디렉토리: {os.getcwd()}")
         
-        # 자동 업데이트 확인은 시리얼 인증 성공 후에 실행됩니다
+        # 자동 업데이트 확인 (백그라운드에서)
+        self.check_for_updates()
         
         # 디렉토리 존재 확인 및 생성
         self._ensure_directories()
@@ -57,316 +58,71 @@ class BlogWriterApp:
         except Exception as e:
             print(f"앱 설정 로드 중 오류 발생: {str(e)}")
             
-        # GPT 핸들러 초기화를 지연시킴 (전송 버튼 클릭 시점으로 이동)
-        self.gpt_handler = None
-        print("⏳ GPT 핸들러 초기화를 지연시킴 (전송 버튼 클릭 시점으로 이동)")
+        self.gpt_handler = GPTHandler(use_dummy=self.use_dummy)
+        self.current_title = ""
+        self.current_content = ""
+        self.last_save_content = None
+        self.browser_driver = None  # 브라우저 드라이버 인스턴스
+        self.temp_driver = None  # 임시 브라우저 드라이버 인스턴스
         
-        # 모든 속성 안전 초기화
-        self._safe_init_all_attributes()
-    
-    def _safe_init_all_attributes(self):
-        """모든 속성을 안전하게 초기화"""
-        try:
-            print("🛡️ 모든 속성 안전 초기화 시작...")
-            
-            # 시계 관련 속성들
-            if not hasattr(self, 'clock_running'):
-                self.clock_running = False
-            if not hasattr(self, 'clock_text'):
-                self.clock_text = None
-            if not hasattr(self, 'clock_thread'):
-                self.clock_thread = None
-            
-            # 주제 관련 속성들
-            if not hasattr(self, 'current_topic_index'):
-                self.current_topic_index = -1
-            
-            # 타이머 관련 속성들
-            if not hasattr(self, 'timer_running'):
-                self.timer_running = False
-            if not hasattr(self, 'timer_thread'):
-                self.timer_thread = None
-            if not hasattr(self, 'next_post_time'):
-                self.next_post_time = None
-            if not hasattr(self, 'daily_post_count'):
-                self.daily_post_count = 0
-            
-            # 기타 속성들
-            if not hasattr(self, 'current_title'):
-                self.current_title = ""
-            if not hasattr(self, 'current_content'):
-                self.current_content = ""
-            if not hasattr(self, 'last_save_content'):
-                self.last_save_content = None
-            if not hasattr(self, 'browser_driver'):
-                self.browser_driver = None
-            if not hasattr(self, 'temp_driver'):
-                self.temp_driver = None
-            if not hasattr(self, 'send_message_func'):
-                self.send_message_func = None
-            if not hasattr(self, 'last_upload_success'):
-                self.last_upload_success = False
-            
-            # 절전 모드 방지 관련 속성들
-            if not hasattr(self, 'sleep_prevention_process'):
-                self.sleep_prevention_process = None
-            
-            print("✅ 모든 속성 안전 초기화 완료")
-            
-        except Exception as e:
-            print(f"❌ 속성 초기화 중 오류 발생: {str(e)}")
-            import traceback
-            traceback.print_exc()
-    
-    def _reload_environment_variables(self):
-        """환경변수 강제 재로딩"""
-        try:
-            import os
-            from dotenv import load_dotenv
-            
-            print("🔄 환경변수 강제 재로딩 시작...")
-            
-            # 여러 경로에서 .env 파일 찾기
-            possible_env_paths = [
-                os.path.join(self.base_dir, '.env'),
-                '/Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/.env',
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '.env'),
-                # 앱 번들 내부 경로들 추가
-                os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'),
-                os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'),
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '.env'),
-                # 실행 파일 기준 상대 경로들
-                os.path.join(os.path.dirname(sys.executable), '.env'),
-                os.path.join(os.path.dirname(os.path.dirname(sys.executable)), '.env'),
-            ]
-            
-            env_path = None
-            for path in possible_env_paths:
-                print(f"🔍 .env 파일 검색 중: {path}")
-                if os.path.exists(path):
-                    env_path = path
-                    print(f"✅ .env 파일 발견: {path}")
-                    break
-                else:
-                    print(f"❌ 파일 없음: {path}")
-            
-            if env_path:
-                print(f"📁 최종 ENV 파일 경로: {env_path}")
-                # .env 파일에서 환경 변수 로드
-                load_dotenv(dotenv_path=env_path, override=True)
-                print("✅ 환경변수 강제 재로딩 완료")
-                
-                # API 키 확인
-                api_key = os.getenv('OPENAI_API_KEY')
-                if api_key:
-                    print(f"🔑 API 키 확인됨: {api_key[:20]}...")
-                else:
-                    print("⚠️ API 키를 찾을 수 없습니다.")
-            else:
-                print("⚠️ .env 파일을 찾을 수 없습니다.")
-                print("🔍 환경변수에서 직접 로드 시도...")
-                # 환경변수에서 직접 로드 시도
-                load_dotenv(override=True)
-                print("✅ 환경변수 직접 로드 완료")
-                
-        except Exception as e:
-            print(f"❌ 환경변수 재로딩 중 오류: {str(e)}")
-            import traceback
-            traceback.print_exc()
-        # 주제 인덱스 로드 (안전 초기화 후)
-        try:
-            self.load_topic_index()  # 저장된 인덱스 로드
-        except Exception as e:
-            print(f"주제 인덱스 로드 중 오류 발생: {str(e)}")
-            self.current_topic_index = -1
+        # 순차적 주제 선택을 위한 인덱스 추적 변수
+        self.current_topic_index = -1
+        self.load_topic_index()  # 저장된 인덱스 로드
         
-        # 절전 모드 방지 시작
-        self._start_sleep_prevention()
+        # 타이머 관련 변수들
+        self.timer_running = False
+        self.timer_thread = None
+        self.next_post_time = None
+        self.daily_post_count = 0
+        self.timer_start_btn = None
+        self.timer_stop_btn = None
+        
+        # UI 참조들 (타이머에서 사용)
+        self.page_ref = None
+        self.send_message_func = None
+        self.last_upload_success = False  # 마지막 업로드 성공 여부 추적
+        
+        # 시계 관련 변수들
+        self.clock_text = None
+        self.clock_thread = None
+        self.clock_running = False
+        
+        # 절전 모드 방지 관련 변수들 (macOS 전용)
+        self.caffeinate_process = None
+        if self.is_macos:
+            self._start_caffeinate()
     
-    def _start_sleep_prevention(self):
-        """크로스 플랫폼 절전 모드 방지 시작"""
+    def _start_caffeinate(self):
+        """macOS에서 절전 모드 방지 시작"""
         try:
             import subprocess
-            import platform
-            
-            system = platform.system().lower()
-            
-            if system == "darwin":  # macOS
-                # caffeinate 명령어로 절전 모드 방지
-                # -d: 디스플레이 절전 방지, -i: 시스템 유휴 절전 방지, -s: 시스템 절전 방지
-                self.sleep_prevention_process = subprocess.Popen(
-                    ['caffeinate', '-d', '-i', '-s'],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL
-                )
-                print("🔋 macOS 절전 모드 방지 활성화됨 (caffeinate 실행)")
-                
-            elif system == "windows":  # Windows
-                # Windows에서는 powercfg 명령어로 절전 방지
-                try:
-                    subprocess.run(['powercfg', '/change', 'standby-timeout-ac', '0'], 
-                                check=True, capture_output=True)
-                    subprocess.run(['powercfg', '/change', 'hibernate-timeout-ac', '0'], 
-                                check=True, capture_output=True)
-                    print("🔋 Windows 절전 모드 방지 활성화됨 (powercfg 설정)")
-                except subprocess.CalledProcessError:
-                    print("⚠️ Windows 절전 모드 방지 설정 실패")
-                    
-            elif system == "linux":  # Linux
-                # Linux에서는 systemd-inhibit 사용 (systemd 기반 시스템)
-                try:
-                    self.sleep_prevention_process = subprocess.Popen(
-                        ['systemd-inhibit', '--what=sleep:idle', 'sleep', 'infinity'],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL
-                    )
-                    print("🔋 Linux 절전 모드 방지 활성화됨 (systemd-inhibit 실행)")
-                except FileNotFoundError:
-                    print("⚠️ Linux 절전 모드 방지 도구를 찾을 수 없습니다")
-                    
+            # caffeinate 명령어로 절전 모드 방지
+            # -d: 디스플레이 절전 방지, -i: 시스템 유휴 절전 방지, -s: 시스템 절전 방지
+            self.caffeinate_process = subprocess.Popen(
+                ['caffeinate', '-d', '-i', '-s'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            print("🔋 macOS 절전 모드 방지 활성화됨 (caffeinate 실행)")
         except Exception as e:
-            print(f"⚠️ 절전 모드 방지 설정 실패: {str(e)}")
-            self.sleep_prevention_process = None
+            print(f"⚠️ macOS 절전 모드 방지 설정 실패: {str(e)}")
+            self.caffeinate_process = None
     
-    def _stop_sleep_prevention(self):
-        """크로스 플랫폼 절전 모드 방지 중지"""
-        if self.sleep_prevention_process:
+    def _stop_caffeinate(self):
+        """macOS에서 절전 모드 방지 중지"""
+        if self.caffeinate_process:
             try:
-                self.sleep_prevention_process.terminate()
-                self.sleep_prevention_process.wait(timeout=5)
-                print("🔋 절전 모드 방지 해제됨")
+                self.caffeinate_process.terminate()
+                self.caffeinate_process.wait(timeout=5)
+                print("🔋 macOS 절전 모드 방지 해제됨 (caffeinate 종료)")
             except Exception as e:
-                print(f"⚠️ 절전 모드 방지 해제 중 오류: {str(e)}")
-        
-        # Windows의 경우 추가 정리
-        if self.is_windows:
-            try:
-                import subprocess
-                # 기본 절전 설정으로 복원
-                subprocess.run(['powercfg', '/change', 'standby-timeout-ac', '20'], 
-                            check=True, capture_output=True)
-                subprocess.run(['powercfg', '/change', 'hibernate-timeout-ac', '60'], 
-                            check=True, capture_output=True)
-                print("🔋 Windows 절전 설정 복원됨")
-            except subprocess.CalledProcessError:
-                print("⚠️ Windows 절전 설정 복원 실패")
+                print(f"⚠️ caffeinate 종료 중 오류: {str(e)}")
                 try:
-                    self.sleep_prevention_process.kill()
+                    self.caffeinate_process.kill()
                 except:
                     pass
             finally:
-                self.sleep_prevention_process = None
-
-    def _terminate_browser_processes(self):
-        """크로스 플랫폼 브라우저 프로세스 종료"""
-        try:
-            import platform
-            system = platform.system().lower()
-            
-            if system == "windows":
-                # Windows 프로세스 종료
-                try:
-                    subprocess.run(["taskkill", "/f", "/im", "chromedriver.exe"], 
-                                 capture_output=True, timeout=10)
-                    subprocess.run(["taskkill", "/f", "/im", "chrome.exe"], 
-                                 capture_output=True, timeout=10)
-                    print("✅ Windows 브라우저 프로세스 종료 완료")
-                except Exception as e:
-                    print(f"⚠️ Windows 브라우저 프로세스 종료 중 오류: {e}")
-                    
-            elif system in ["darwin", "linux"]:  # macOS/Linux
-                # macOS/Linux 프로세스 종료
-                try:
-                    subprocess.run(["pkill", "-f", "chromedriver"], 
-                                 capture_output=True, timeout=10)
-                    subprocess.run(["pkill", "-f", "chrome"], 
-                                 capture_output=True, timeout=10)
-                    print("✅ macOS/Linux 브라우저 프로세스 종료 완료")
-                except Exception as e:
-                    print(f"⚠️ macOS/Linux 브라우저 프로세스 종료 중 오류: {e}")
-                    
-        except Exception as e:
-            print(f"⚠️ 브라우저 프로세스 종료 중 오류: {e}")
-
-    def _create_user_folders(self, base_path):
-        """사용자 데이터 폴더 구조 생성"""
-        try:
-            print(f"📁 사용자 폴더 구조 생성 중: {base_path}")
-            
-            # 이미지 폴더들 생성 (0~10)
-            for i in range(11):
-                folder_name = f"default_images_{i}" if i > 0 else "default_images"
-                folder_path = os.path.join(base_path, folder_name)
-                if not os.path.exists(folder_path):
-                    os.makedirs(folder_path, exist_ok=True)
-                    print(f"  ✅ {folder_name} 폴더 생성")
-            
-            # config 폴더 생성
-            config_path = os.path.join(base_path, "config")
-            if not os.path.exists(config_path):
-                os.makedirs(config_path, exist_ok=True)
-                print(f"  ✅ config 폴더 생성")
-            
-            # 기본 설정 파일들 생성
-            self._create_default_config_files(config_path)
-            
-            print(f"✅ 사용자 폴더 구조 생성 완료")
-            
-        except Exception as e:
-            print(f"❌ 사용자 폴더 생성 중 오류: {e}")
-    
-    def _create_default_config_files(self, config_path):
-        """기본 설정 파일들 생성"""
-        try:
-            # GPT 사용자 설정 파일
-            gpt_user_settings = {
-                "persona": "건강, 성장, 교육에 관심 많은 대상으로 친근하게 조언하는 전문가",
-                "instructions": "글자 수: 1500자 이상 ~ 1600자 이내\n구성: 도입 – 본문 – 결론",
-                "style": "말투: 친근하고 따뜻한 부드러운 존댓말 사용"
-            }
-            
-            gpt_file = os.path.join(config_path, "gpt_user_settings.json")
-            if not os.path.exists(gpt_file):
-                with open(gpt_file, 'w', encoding='utf-8') as f:
-                    json.dump(gpt_user_settings, f, indent=2, ensure_ascii=False)
-                print(f"  ✅ gpt_user_settings.json 생성")
-            
-            # 사용자 설정 파일
-            user_settings_file = os.path.join(config_path, "user_settings.txt")
-            if not os.path.exists(user_settings_file):
-                with open(user_settings_file, 'w', encoding='utf-8') as f:
-                    f.write("")
-                print(f"  ✅ user_settings.txt 생성")
-            
-            # 타이머 설정 파일
-            timer_settings = {
-                "enabled": False,
-                "start_time": "09:00",
-                "end_time": "18:00",
-                "interval_minutes": 60
-            }
-            
-            timer_file = os.path.join(config_path, "timer_settings.json")
-            if not os.path.exists(timer_file):
-                with open(timer_file, 'w', encoding='utf-8') as f:
-                    json.dump(timer_settings, f, indent=2, ensure_ascii=False)
-                print(f"  ✅ timer_settings.json 생성")
-            
-            # 앱 설정 파일
-            app_settings = {
-                "use_dummy": False,
-                "auto_save": True,
-                "notifications": True
-            }
-            
-            app_file = os.path.join(config_path, "app_settings.json")
-            if not os.path.exists(app_file):
-                with open(app_file, 'w', encoding='utf-8') as f:
-                    json.dump(app_settings, f, indent=2, ensure_ascii=False)
-                print(f"  ✅ app_settings.json 생성")
-                
-        except Exception as e:
-            print(f"❌ 기본 설정 파일 생성 중 오류: {e}")
+                self.caffeinate_process = None
 
     def _get_base_directory(self):
         """플랫폼별 기본 디렉토리 결정"""
@@ -375,60 +131,41 @@ class BlogWriterApp:
             base_dir = os.path.dirname(sys.executable)
             print(f"🔧 Frozen 모드: {base_dir}")
             
-            # 플랫폼별 실행 파일 처리
-            if self.is_macos:
-                print(f"🍎 macOS 실행 파일 모드")
-                # 바탕화면에 독립적인 폴더 생성
-                desktop_path = os.path.expanduser("~/Desktop")
-                app_folder = os.path.join(desktop_path, "블로그자동화_사용자데이터")
+            # macOS .app 번들일 경우 처리
+            if self.is_macos and "Contents/MacOS" in base_dir:
+                print(f"🍎 macOS 앱 번들 감지")
+                # .app 번들에서 리소스 디렉토리 찾기
+                possible_dirs = [
+                    # Resources 디렉토리 (표준 macOS 앱 구조)
+                    os.path.join(os.path.dirname(base_dir), "Resources"),
+                    # 번들 외부 디렉토리
+                    os.path.dirname(os.path.dirname(os.path.dirname(base_dir))),
+                    # 현재 작업 디렉토리
+                    os.getcwd(),
+                    # 실행 파일 디렉토리
+                    base_dir
+                ]
                 
-                print(f"📁 바탕화면 독립 폴더: {app_folder}")
-                
-                # 폴더가 없으면 생성
-                if not os.path.exists(app_folder):
-                    os.makedirs(app_folder, exist_ok=True)
-                    print(f"✅ 바탕화면 폴더 생성: {app_folder}")
-                
-                # 필요한 하위 폴더들 생성
-                self._create_user_folders(app_folder)
-                
-                return app_folder
-                
+                for dir_path in possible_dirs:
+                    print(f"📂 확인 중: {dir_path}")
+                    if os.path.exists(dir_path):
+                        print(f"  ✅ 디렉토리 존재함")
+                        # config 디렉토리 확인
+                        config_path = os.path.join(dir_path, 'config')
+                        if os.path.exists(config_path):
+                            print(f"  📁 config 디렉토리 찾음: {config_path}")
+                            return dir_path
+                            
+                        # 상위 디렉토리의 config 확인
+                        parent_config = os.path.join(os.path.dirname(dir_path), 'config')
+                        if os.path.exists(parent_config):
+                            print(f"  📁 상위 디렉토리에서 config 찾음: {parent_config}")
+                            return os.path.dirname(dir_path)
+            
+            # Windows 실행 파일의 경우
             elif self.is_windows:
                 print(f"🪟 Windows 실행 파일 모드")
-                # Windows 바탕화면에 독립적인 폴더 생성
-                desktop_path = os.path.expanduser("~/Desktop")
-                app_folder = os.path.join(desktop_path, "블로그자동화_사용자데이터")
-                
-                print(f"📁 바탕화면 독립 폴더: {app_folder}")
-                
-                # 폴더가 없으면 생성
-                if not os.path.exists(app_folder):
-                    os.makedirs(app_folder, exist_ok=True)
-                    print(f"✅ 바탕화면 폴더 생성: {app_folder}")
-                
-                # 필요한 하위 폴더들 생성
-                self._create_user_folders(app_folder)
-                
-                return app_folder
-                
-            elif self.is_linux:
-                print(f"🐧 Linux 실행 파일 모드")
-                # Linux 바탕화면에 독립적인 폴더 생성
-                desktop_path = os.path.expanduser("~/Desktop")
-                app_folder = os.path.join(desktop_path, "블로그자동화_사용자데이터")
-                
-                print(f"📁 바탕화면 독립 폴더: {app_folder}")
-                
-                # 폴더가 없으면 생성
-                if not os.path.exists(app_folder):
-                    os.makedirs(app_folder, exist_ok=True)
-                    print(f"✅ 바탕화면 폴더 생성: {app_folder}")
-                
-                # 필요한 하위 폴더들 생성
-                self._create_user_folders(app_folder)
-                
-                return app_folder
+                # Windows에서는 일반적으로 실행 파일과 같은 디렉토리에 리소스 배치
                 
             # 기본 디렉토리에 config가 없는 경우 상위 디렉토리 탐색
             config_dir = os.path.join(base_dir, 'config')
@@ -475,8 +212,9 @@ class BlogWriterApp:
         try:
             print(f"🔄 프로세스 정리 시작 (플랫폼: {self.platform_system})")
             
-            # 절전 모드 방지 프로세스 종료 (크로스 플랫폼)
-            self._stop_sleep_prevention()
+            # macOS 절전 모드 방지 프로세스 종료
+            if self.is_macos:
+                self._stop_caffeinate()
             
             # 브라우저 드라이버 종료
             if hasattr(self, 'browser_driver') and self.browser_driver:
@@ -494,8 +232,28 @@ class BlogWriterApp:
                 except Exception as e:
                     print(f"⚠️ 임시 브라우저 드라이버 종료 중 오류: {e}")
             
-            # 크로스 플랫폼 프로세스 종료
-            self._terminate_browser_processes()
+            # 플랫폼별 프로세스 종료
+            if self.is_windows:
+                # Windows 프로세스 종료
+                try:
+                    subprocess.run(["taskkill", "/f", "/im", "chromedriver.exe"], 
+                                 capture_output=True, timeout=10)
+                    subprocess.run(["taskkill", "/f", "/im", "chrome.exe"], 
+                                 capture_output=True, timeout=10)
+                    print("✅ Windows 프로세스 종료 완료")
+                except Exception as e:
+                    print(f"⚠️ Windows 프로세스 종료 중 오류: {e}")
+                    
+            elif self.is_macos or self.is_linux:
+                # macOS/Linux 프로세스 종료
+                try:
+                    subprocess.run(["pkill", "-f", "chromedriver"], 
+                                 capture_output=True, timeout=10)
+                    subprocess.run(["pkill", "-f", "chrome"], 
+                                 capture_output=True, timeout=10)
+                    print("✅ macOS/Linux 프로세스 종료 완료")
+                except Exception as e:
+                    print(f"⚠️ macOS/Linux 프로세스 종료 중 오류: {e}")
             
             # psutil을 사용한 자식 프로세스 종료 (크로스 플랫폼)
             try:
@@ -1045,9 +803,6 @@ class BlogWriterApp:
     def save_topic_index(self):
         """현재 주제 인덱스 저장"""
         try:
-            # current_topic_index 속성이 없으면 초기화
-            if not hasattr(self, 'current_topic_index'):
-                self.current_topic_index = -1
             with open(os.path.join(self.base_dir, 'config/topic_index.json'), 'w', encoding='utf-8') as f:
                 json.dump({'current_index': self.current_topic_index}, f)
         except Exception as e:
@@ -1266,7 +1021,7 @@ class BlogWriterApp:
             return None
     
     def is_operating_time(self, timer_settings):
-        """현재 시간이 운영 시간인지 확인 (하루종일 운영 지원)"""
+        """현재 시간이 운영 시간인지 확인"""
         try:
             now = datetime.now()
             start_time_str = timer_settings.get('start_time', '09:00')
@@ -1278,15 +1033,6 @@ class BlogWriterApp:
             start_time = now.replace(hour=start_hour, minute=start_min, second=0, microsecond=0)
             end_time = now.replace(hour=end_hour, minute=end_min, second=0, microsecond=0)
             
-            # 하루종일 운영인지 확인 (00:00 ~ 23:59)
-            if start_time_str == "00:00" and end_time_str == "23:59":
-                return True
-            
-            # 자정을 넘나드는 경우 처리 (예: 22:00 ~ 06:00)
-            if start_time > end_time:
-                return now >= start_time or now <= end_time
-            
-            # 일반적인 경우 (같은 날 내)
             return start_time <= now <= end_time
         except Exception as e:
             print(f"운영 시간 확인 중 오류: {str(e)}")
@@ -1382,43 +1128,40 @@ class BlogWriterApp:
                     last_date = current_date
                     print(f"새로운 날짜: {current_date}, 일일 포스팅 카운트 리셋")
                 
-                # 운영 시간 확인 (하루종일 운영이 아닌 경우에만 확인)
-                start_time = timer_settings.get('start_time', '09:00')
-                end_time = timer_settings.get('end_time', '23:00')
-                
-                # 하루종일 운영이 아닌 경우에만 운영시간 확인
-                if not (start_time == "00:00" and end_time == "23:59"):
-                    if not self.is_operating_time(timer_settings):
-                        current_time = now.strftime('%H:%M')
-                        
-                        print(f"운영 시간이 아니므로 타이머 대기 중... (현재: {current_time}, 운영시간: {start_time}~{end_time})")
+                # 운영 시간 확인
+                if not self.is_operating_time(timer_settings):
+                    current_time = now.strftime('%H:%M')
+                    start_time = timer_settings.get('start_time', '09:00')
+                    end_time = timer_settings.get('end_time', '23:00')
                     
-                        # 5분마다 한번씩만 다이얼로그 표시 (너무 자주 표시되지 않도록)
-                        if not hasattr(self, '_last_operating_time_alert') or (now - self._last_operating_time_alert).total_seconds() >= 300:
-                            self._last_operating_time_alert = now
-                            if self.page_ref:
-                                try:
-                                    # UI 스레드에서 안전하게 실행
-                                    import threading
-                                    def show_operating_time_dialog():
-                                        try:
-                                            self.show_dialog(
-                                                self.page_ref,
-                                                "⏰ 운영 시간 대기 중",
-                                                f"현재는 운영 시간이 아닙니다.\n\n현재 시간: {current_time}\n운영 시간: {start_time} ~ {end_time}\n\n운영 시간까지 대기합니다.",
-                                                ft.Colors.BLUE
-                                            )
-                                        except Exception as dialog_e:
-                                            print(f"❌ 운영 시간 다이얼로그 표시 실패: {dialog_e}")
-                                    
-                                    # 메인 스레드에서 실행
-                                    threading.Timer(0.1, show_operating_time_dialog).start()
-                                    
-                                except Exception as e:
-                                    print(f"❌ 운영 시간 알림 처리 중 오류: {e}")
-                        
-                        time.sleep(60)  # 1분마다 확인
-                        continue
+                    print(f"운영 시간이 아니므로 타이머 대기 중... (현재: {current_time}, 운영시간: {start_time}~{end_time})")
+                    
+                    # 5분마다 한번씩만 다이얼로그 표시 (너무 자주 표시되지 않도록)
+                    if not hasattr(self, '_last_operating_time_alert') or (now - self._last_operating_time_alert).total_seconds() >= 300:
+                        self._last_operating_time_alert = now
+                        if self.page_ref:
+                            try:
+                                # UI 스레드에서 안전하게 실행
+                                import threading
+                                def show_operating_time_dialog():
+                                    try:
+                                        self.show_dialog(
+                                            self.page_ref,
+                                            "⏰ 운영 시간 대기 중",
+                                            f"현재는 운영 시간이 아닙니다.\n\n현재 시간: {current_time}\n운영 시간: {start_time} ~ {end_time}\n\n운영 시간까지 대기합니다.",
+                                            ft.Colors.BLUE
+                                        )
+                                    except Exception as dialog_e:
+                                        print(f"❌ 운영 시간 다이얼로그 표시 실패: {dialog_e}")
+                                
+                                # 메인 스레드에서 실행
+                                threading.Timer(0.1, show_operating_time_dialog).start()
+                                
+                            except Exception as e:
+                                print(f"❌ 운영 시간 알림 처리 중 오류: {e}")
+                    
+                    time.sleep(60)  # 1분마다 확인
+                    continue
                 
                 # 일일 포스팅 제한 확인
                 max_posts = int(timer_settings.get('max_posts', 20))
@@ -1590,8 +1333,6 @@ class BlogWriterApp:
     
     def start_clock(self):
         """실시간 시계 시작"""
-        if not hasattr(self, 'clock_running'):
-            self.clock_running = False
         if not self.clock_running:
             self.clock_running = True
             self.clock_thread = threading.Thread(target=self.clock_worker)
@@ -1600,12 +1341,11 @@ class BlogWriterApp:
     
     def stop_clock(self):
         """실시간 시계 중지"""
-        if hasattr(self, 'clock_running'):
-            self.clock_running = False
+        self.clock_running = False
     
     def clock_worker(self):
         """시계 업데이트 워커"""
-        while hasattr(self, 'clock_running') and self.clock_running:
+        while self.clock_running:
             try:
                 if self.clock_text and self.page_ref:
                     current_time = datetime.now()
@@ -1791,9 +1531,6 @@ class BlogWriterApp:
                     if topics_str:
                         topics = [topic.strip() for topic in topics_str.split(',') if topic.strip()]
                         if topics:
-                            # current_topic_index 속성이 없으면 초기화
-                            if not hasattr(self, 'current_topic_index'):
-                                self.current_topic_index = -1
                             # 다음 인덱스로 이동 (마지막 주제를 사용했으면 처음으로 돌아감)
                             self.current_topic_index = (self.current_topic_index + 1) % len(topics)
                             # 선택된 인덱스 저장
@@ -1819,95 +1556,29 @@ class BlogWriterApp:
             print(f"본문 변경 처리 중 오류 발생: {str(e)}")
 
     def main(self, page: ft.Page):
-        # 시리얼 인증 확인 (배포용: 항상 시리얼 인증 필요)
-        if getattr(sys, 'frozen', False):
-            # 번들 환경: 시리얼 인증 필요
-            print("🔐 배포용 파일 - 시리얼 인증이 필요합니다.")
-            
-            # 먼저 기존 시리얼이 유효한지 확인
-            print("🔍 기존 시리얼 검증 중...")
+        # 시리얼 인증 확인 (필수)
+        if self.serial_auth.is_serial_required():
+            print("🔐 시리얼 인증이 필요합니다. 시리얼 인증 창을 실행합니다...")
             try:
-                # 시리얼 인증 객체 생성
-                serial_auth = BlogSerialAuth()
+                # 시리얼 인증 창 실행
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                serial_auth_path = os.path.join(current_dir, "start_with_serial_auth.py")
+                python_executable = sys.executable
                 
-                # 시리얼 인증이 필요한지 확인
-                if serial_auth.is_serial_required():
-                    print("❌ 시리얼 인증이 필요합니다 - 시리얼 인증창 실행")
-                    show_auth_window = True
-                else:
-                    print("✅ 기존 시리얼이 유효합니다 - 메인 UI 실행")
-                    # 시리얼 인증 성공 후 업데이트 확인
-                    print("🔄 시리얼 인증 성공 - 업데이트 확인 시작")
-                    self.check_for_updates()
-                    show_auth_window = False
+                subprocess.Popen([python_executable, serial_auth_path], 
+                               cwd=current_dir,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               text=True)
                 
-                # 시리얼 인증창이 필요한 경우
-                if show_auth_window:
-                    # 시리얼 인증창 실행
-                    print("🔐 시리얼 인증창 실행 시작...")
-                    try:
-                        # 빌드된 환경에서는 메인 앱 내부에서 시리얼 인증 UI 표시
-                        print("🔐 빌드 환경 - 내장 시리얼 인증 UI 표시")
-                        
-                        # 시리얼 인증 UI를 메인 페이지에 표시
-                        auth_success = self.show_serial_auth_ui(page, serial_auth)
-                        
-                        if auth_success:
-                            print("✅ 시리얼 인증 성공 - 메인 UI 실행")
-                            # 시리얼 인증 성공 후 업데이트 확인
-                            print("🔄 시리얼 인증 성공 - 업데이트 확인 시작")
-                            self.check_for_updates()
-                        else:
-                            print("❌ 시리얼 인증 실패")
-                            print("❌ 유효한 시리얼이 필요합니다. 프로그램을 종료합니다.")
-                            # 시리얼 인증 실패 시 프로그램 종료
-                            sys.exit(1)
-                            return
-                            
-                    except Exception as e:
-                        print(f"❌ 시리얼 인증 UI 표시 중 오류: {e}")
-                        import traceback
-                        traceback.print_exc()
-                        print("❌ 시리얼 인증 실패 - 프로그램을 종료합니다.")
-                        sys.exit(1)
-                        return
-                        # 시리얼 인증창 실행 오류 시에도 프로그램 계속 실행
-                        # sys.exit(1)  # 무한반복 방지를 위해 주석 처리
-                        # return
-                        
+                # 현재 프로그램 종료
+                sys.exit(0)
+                return
             except Exception as e:
-                print(f"❌ 시리얼 검증 중 오류: {e}")
-                import traceback
-                traceback.print_exc()
-                print("⚠️ 시리얼 검증 오류 - 시리얼 인증창을 실행합니다.")
-                # 시리얼 검증 오류 시에도 시리얼 인증창 실행
-                show_auth_window = True
-        else:
-            # 개발 환경: 기존 시리얼 인증 로직 사용
-            if self.serial_auth.is_serial_required():
-                print("🔐 시리얼 인증이 필요합니다. 시리얼 인증 창을 실행합니다...")
-                try:
-                    # 개발 환경: 별도 프로세스로 실행
-                    import subprocess  # 지역적으로 import
-                    current_dir = os.path.dirname(os.path.abspath(__file__))
-                    serial_auth_path = os.path.join(current_dir, "start_with_serial_auth.py")
-                    python_executable = sys.executable
-                    
-                    subprocess.Popen([python_executable, serial_auth_path], 
-                                   cwd=current_dir,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE,
-                                   text=True)
-                    
-                    # 현재 프로그램 종료
-                    sys.exit(0)
-                    return
-                except Exception as e:
-                    print(f"❌ 시리얼 인증 창 실행 중 오류: {e}")
-                    import traceback
-                    traceback.print_exc()
-                    # 시리얼 인증 실패해도 계속 진행
-                    pass
+                print(f"❌ 시리얼 인증 창 실행 중 오류: {e}")
+                # 시리얼 인증 실패 시 프로그램 종료
+                sys.exit(1)
+                return
         
         # 페이지 설정
         page.title = "블로그 글쓰기 도우미"
@@ -2150,15 +1821,7 @@ class BlogWriterApp:
                 
                 # GPT 핸들러 재초기화
                 self.use_dummy = not use_api_checkbox.value
-                try:
-                    self.gpt_handler = GPTHandler(use_dummy=self.use_dummy)
-                    print(f"✅ GPT 핸들러 재초기화 성공 (use_dummy: {self.use_dummy})")
-                except Exception as e:
-                    print(f"❌ GPT 핸들러 재초기화 실패: {str(e)}")
-                    # 초기화 실패 시 더미 모드로 강제 전환
-                    self.use_dummy = True
-                    self.gpt_handler = GPTHandler(use_dummy=True)
-                    print("⚠️ 더미 모드로 강제 전환됨")
+                self.gpt_handler = GPTHandler(use_dummy=self.use_dummy)
                 
                 # 앱 설정 저장
                 save_app_settings()
@@ -2628,40 +2291,6 @@ class BlogWriterApp:
 
         # 메시지 전송 처리
         def send_message(e):
-            # GPT 핸들러 초기화 (지연 초기화)
-            if self.gpt_handler is None:
-                print("🔍 GPT 핸들러 지연 초기화 시작...")
-                try:
-                    # 환경변수 강제 재로딩
-                    self._reload_environment_variables()
-                    
-                    # GPT 핸들러 초기화
-                    self.gpt_handler = GPTHandler(use_dummy=self.use_dummy)
-                    print(f"✅ GPT 핸들러 지연 초기화 성공 (use_dummy: {self.use_dummy})")
-                    print(f"🔍 GPT 클라이언트 상태: {self.gpt_handler.client is not None}")
-                    
-                    # GPT 클라이언트가 초기화되지 않은 경우 사용자에게 알림
-                    if self.gpt_handler.client is None:
-                        print("⚠️ GPT 클라이언트가 초기화되지 않았습니다.")
-                        print("💡 해결방법: config/gpt_settings.txt 파일에 OpenAI API 키를 설정하세요.")
-                        page.snack_bar = ft.SnackBar(
-                            content=ft.Text("GPT API 키가 설정되지 않았습니다. 설정에서 API 키를 입력해주세요."),
-                            bgcolor=ft.Colors.ORANGE_300
-                        )
-                        page.snack_bar.open = True
-                        page.update()
-                        return
-                        
-                except Exception as e:
-                    print(f"❌ GPT 핸들러 지연 초기화 실패: {str(e)}")
-                    print("=== 전체 오류 정보 ===")
-                    import traceback
-                    traceback.print_exc()
-                    # 초기화 실패 시 더미 모드로 강제 전환
-                    self.use_dummy = True
-                    self.gpt_handler = GPTHandler(use_dummy=True)
-                    print("⚠️ 더미 모드로 강제 전환됨")
-            
             # 자동 주제 모드 체크
             if auto_topic_checkbox.value:
                 # 순차적 주제 선택
@@ -3445,31 +3074,14 @@ class BlogWriterApp:
     def get_current_version(self):
         """현재 버전 가져오기"""
         try:
-            # PyInstaller 환경과 개발 환경 모두 지원
-            if getattr(sys, 'frozen', False):
-                # 빌드된 실행 파일 환경 - 하드코딩된 버전 사용
-                print("🔍 빌드된 환경에서 하드코딩된 버전 사용")
-                version = '1.5.0'  # 빌드 시점의 버전을 하드코딩
-                print(f"📦 빌드된 앱 버전: {version}")
-                return version
-            else:
-                # 개발 환경: version.json 파일에서 읽기
-                version_file = os.path.join(self.base_dir, 'version.json')
-                print(f"🔍 버전 파일 경로: {version_file}")
-                print(f"🔍 파일 존재 여부: {os.path.exists(version_file)}")
-                
-                if os.path.exists(version_file):
-                    with open(version_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        version = data.get('version', '1.5.0')
-                        print(f"📦 로드된 버전: {version}")
-                        return version
-                else:
-                    print("⚠️ version.json 파일을 찾을 수 없습니다. 기본 버전 사용")
-                    return '1.5.0'
-        except Exception as e:
-            print(f"❌ 버전 로드 오류: {e}")
-            return '1.5.0'
+            version_file = os.path.join(self.base_dir, 'version.json')
+            if os.path.exists(version_file):
+                with open(version_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    return data.get('version', '1.0.0')
+            return '1.0.0'
+        except:
+            return '1.0.0'
             
     def perform_update(self):
         """업데이트 실행"""
@@ -3665,297 +3277,39 @@ class BlogWriterApp:
         """애플리케이션 재시작"""
         try:
             print("🔄 프로그램을 재시작합니다...")
-            
-            # 현재 프로세스 완전 종료 후 새 프로세스 시작
-            try:
-                if hasattr(self, 'page') and self.page:
-                    print("🔄 Flet 페이지 종료 중...")
-                    self.page.window.close()
-                    time.sleep(0.5)  # 페이지 종료 대기
-            except Exception as e:
-                print(f"⚠️ 페이지 종료 중 오류 (무시): {e}")
-            
-            # 잠시 대기 후 새 프로세스 시작
-            import time
-            time.sleep(1)
-            
-            # 번들 환경에서 재시작 처리
-            import sys  # sys 모듈을 먼저 import
-            import subprocess
-            import os  # os 모듈도 import
-            
-            if getattr(sys, 'frozen', False):
-                
-                # 현재 실행 파일 경로
-                executable_path = sys.executable
-                print(f"🔄 번들 재시작: {executable_path}")
-                
-                # macOS에서 번들 재시작을 위한 특별한 처리
-                if self.is_macos:
-                    # macOS 번들 재시작
-                    try:
-                        # 번들 경로 찾기 (.app 경로)
-                        app_bundle_path = executable_path
-                        while app_bundle_path and not app_bundle_path.endswith('.app'):
-                            app_bundle_path = os.path.dirname(app_bundle_path)
-                        
-                        if app_bundle_path and app_bundle_path.endswith('.app'):
-                            print(f"🍎 macOS 앱 번들 경로: {app_bundle_path}")
-                            
-                            # AppleScript를 사용한 더 안정적인 재시작
-                            applescript = f'''
-                            tell application "System Events"
-                                delay 3
-                                open application file "{app_bundle_path}"
-                            end tell
-                            '''
-                            
-                            try:
-                                # AppleScript로 재시작 실행
-                                subprocess.Popen(['osascript', '-e', applescript])
-                                print("✅ AppleScript 재시작 명령 실행")
-                            except Exception as e:
-                                print(f"⚠️ AppleScript 실패, open 명령 사용: {e}")
-                                # 대안: open 명령 사용
-                                subprocess.Popen(['open', '-n', app_bundle_path])
-                            
-                            print("🔄 현재 프로세스 종료")
-                            os._exit(0)
-                        else:
-                            print("❌ 앱 번들 경로를 찾을 수 없음, 직접 실행")
-                            subprocess.Popen([executable_path])
-                            time.sleep(1)
-                            os._exit(0)
-                    except Exception as e:
-                        print(f"❌ 번들 재시작 실패: {e}")
-                        # 대안: 직접 실행 파일 실행
-                        subprocess.Popen([executable_path])
-                        os._exit(0)
-                else:
-                    # 다른 플랫폼
-                    subprocess.Popen([executable_path])
-                    os._exit(0)
-            else:
-                # 개발 환경: Python 스크립트 재실행
-                python = sys.executable
-                script_path = os.path.abspath(__file__)
-                
-                print(f"🔄 개발 환경 재시작: {python} {script_path}")
-                
-                # 새 프로세스 시작
-                os.execl(python, python, script_path)
-            
+            python = sys.executable
+            os.execl(python, python, *sys.argv)
         except Exception as e:
             print(f"❌ 재시작 실패: {e}")
             print("수동으로 프로그램을 재시작해주세요.")
 
-    def show_serial_auth_ui(self, page: ft.Page, serial_auth):
-        """빌드된 환경에서 시리얼 인증 UI 표시"""
-        try:
-            print("🔐 시리얼 인증 UI 초기화 중...")
-            
-            # 페이지 설정
-            page.title = "🔐 시리얼 번호 인증"
-            page.window.width = 500
-            page.window.height = 400
-            page.window.resizable = False
-            page.window.center()
-            
-            # 시리얼 입력 필드
-            serial_input = ft.TextField(
-                label="시리얼 번호를 입력하세요",
-                width=400,
-                password=True,
-                autofocus=True
-            )
-            
-            # 상태 메시지
-            status_text = ft.Text(
-                "시리얼 번호를 입력하고 인증 버튼을 클릭하세요.",
-                color=ft.Colors.BLUE_700,
-                text_align=ft.TextAlign.CENTER
-            )
-            
-            # 인증 성공 여부
-            auth_success = [False]  # 리스트로 감싸서 참조 전달
-            
-            def validate_serial(e):
-                """시리얼 검증"""
-                serial_number = serial_input.value.strip()
-                
-                if not serial_number:
-                    status_text.value = "❌ 시리얼 번호를 입력해주세요."
-                    status_text.color = ft.Colors.RED
-                    page.update()
-                    return
-                
-                # 인증 버튼 비활성화
-                auth_button.disabled = True
-                status_text.value = "🔄 시리얼 검증 중..."
-                status_text.color = ft.Colors.ORANGE
-                page.update()
-                
-                try:
-                    # 시리얼 검증
-                    is_valid, message, expiry_date = serial_auth.check_serial(serial_number)
-                    
-                    if is_valid:
-                        # 인증 성공
-                        status_text.value = f"✅ 인증 성공! 만료일: {expiry_date}"
-                        status_text.color = ft.Colors.GREEN
-                        auth_success[0] = True
-                        
-                        # 설정 저장
-                        config = serial_auth.load_config()
-                        config["serial_number"] = serial_number
-                        config["last_validation"] = datetime.now().isoformat()
-                        serial_auth.save_config(config)
-                        
-                        # 잠시 후 창 닫기
-                        page.update()
-                        time.sleep(2)
-                        page.window.close()
-                        
-                    else:
-                        # 인증 실패
-                        status_text.value = f"❌ 인증 실패: {message}"
-                        status_text.color = ft.Colors.RED
-                        auth_button.disabled = False
-                        
-                except Exception as ex:
-                    status_text.value = f"❌ 인증 오류: {str(ex)}"
-                    status_text.color = ft.Colors.RED
-                    auth_button.disabled = False
-                
-                page.update()
-            
-            # 인증 버튼
-            auth_button = ft.ElevatedButton(
-                "인증",
-                on_click=validate_serial,
-                width=400,
-                height=50
-            )
-            
-            # Enter 키 처리
-            def on_key_down(e):
-                if e.key == "Enter":
-                    validate_serial(e)
-            
-            serial_input.on_submit = validate_serial
-            page.on_keyboard_event = on_key_down
-            
-            # UI 구성
-            page.add(
-                ft.Column([
-                    ft.Container(height=20),
-                    ft.Text(
-                        "🔐 시리얼 번호 인증",
-                        size=24,
-                        weight=ft.FontWeight.BOLD,
-                        text_align=ft.TextAlign.CENTER,
-                        color=ft.Colors.BLUE_700
-                    ),
-                    ft.Container(height=20),
-                    ft.Text(
-                        "프로그램을 사용하려면 유효한 시리얼 번호가 필요합니다.",
-                        text_align=ft.TextAlign.CENTER,
-                        color=ft.Colors.GREY_700
-                    ),
-                    ft.Container(height=30),
-                    serial_input,
-                    ft.Container(height=20),
-                    auth_button,
-                    ft.Container(height=20),
-                    status_text
-                ], 
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=10)
-            )
-            
-            # 페이지 업데이트
-            page.update()
-            
-            # 인증 완료까지 대기 (비동기적 처리)
-            import time
-            timeout = 300  # 5분 타임아웃
-            elapsed = 0
-            
-            # 페이지가 활성 상태인지 확인
-            try:
-                # 초기 대기 시간
-                time.sleep(1)
-                
-                while not auth_success[0] and elapsed < timeout:
-                    time.sleep(0.1)  # 더 짧은 간격으로 체크
-                    elapsed += 0.1
-                    
-                    # 페이지 상태 확인
-                    try:
-                        if hasattr(page, 'session_id') and not page.session_id:
-                            print("🔍 페이지 세션이 종료됨")
-                            break
-                    except:
-                        pass
-                        
-                    # 주기적으로 페이지 업데이트
-                    if int(elapsed * 10) % 10 == 0:  # 1초마다
-                        try:
-                            page.update()
-                        except:
-                            pass
-                
-                print(f"🔍 인증 대기 완료: 성공={auth_success[0]}, 경과시간={elapsed:.1f}초")
-                return auth_success[0]
-                
-            except Exception as wait_error:
-                print(f"❌ 인증 대기 중 오류: {wait_error}")
-                return False
-            
-        except Exception as e:
-            print(f"❌ 시리얼 인증 UI 오류: {e}")
-            import traceback
-            traceback.print_exc()
-            return False
-
 if __name__ == "__main__":
-    print("🚀 블로그 자동화 프로그램 시작...")
-    print("✅ 업데이트 기능 복원됨")
-    
-    # 빌드 환경 진단
-    print(f"🔍 sys.frozen: {getattr(sys, 'frozen', False)}")
-    print(f"🔍 sys._MEIPASS: {getattr(sys, '_MEIPASS', 'None')}")
-    print(f"🔍 현재 디렉토리: {os.getcwd()}")
-    print(f"🔍 스크립트 경로: {os.path.abspath(__file__)}")
-    print(f"🔍 Python 버전: {sys.version}")
-    print(f"🔍 플랫폼: {platform.platform()}")
-    
-    # 무한반복 진단을 위한 카운터
-    restart_count = 0
-    restart_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'restart_count.txt')
-    
+    # 프로그램 시작 전 업데이트 확인
     try:
-        if os.path.exists(restart_file):
-            with open(restart_file, 'r') as f:
-                restart_count = int(f.read().strip())
-        restart_count += 1
-        with open(restart_file, 'w') as f:
-            f.write(str(restart_count))
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        version_file = os.path.join(current_dir, 'version.json')
         
-        print(f"🔄 재시작 횟수: {restart_count}")
+        current_version = '1.0.0'
+        if os.path.exists(version_file):
+            with open(version_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                current_version = data.get('version', '1.0.0')
+                
+        updater = AutoUpdater(current_version)
         
-        if restart_count > 3:  # 3번으로 줄임
-            print("⚠️ 무한반복 감지! 프로그램을 종료합니다.")
-            sys.exit(1)
+        # 업데이트 확인 및 적용
+        print("🚀 블로그 자동화 프로그램 시작...")
+        success, message = updater.check_and_update()
+        
+        if success:
+            print(f"✅ {message}")
+            print("🔄 업데이트된 프로그램을 시작합니다...")
+            time.sleep(2)  # 잠깐 대기
             
     except Exception as e:
-        print(f"⚠️ 재시작 카운터 오류: {e}")
+        print(f"⚠️ 업데이트 확인 중 오류: {e}")
+        print("🔄 기존 프로그램을 시작합니다...")
     
-    try:
-        # 메인 앱 실행
-        app = BlogWriterApp()
-        ft.app(target=app.main)
-    except Exception as e:
-        print(f"❌ 앱 실행 오류: {e}")
-        import traceback
-        traceback.print_exc() 
+    # 메인 앱 실행
+    app = BlogWriterApp()
+    ft.app(target=app.main) 
