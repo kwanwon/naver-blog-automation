@@ -26,8 +26,18 @@ class BlogSerialAuth:
         self.config_file = os.path.join(self.base_dir, "serial_config.json")
         self.server_url = "https://aimaster-serial.onrender.com"
         
+        # 개발자 모드 확인
+        self.developer_mode = (
+            os.getenv('DEVELOPER_MODE') == 'true' or 
+            os.getenv('SKIP_SERIAL_AUTH') == 'true' or
+            os.path.exists(os.path.join(self.base_dir, '.developer_mode'))
+        )
+        
         # 로깅 설정
         self.setup_logging()
+        
+        if self.developer_mode:
+            self.logger.info("🔧 개발자 모드 활성화 - 시리얼 인증 우회")
         
         # 시리얼관리 DB 경로 (동적으로 찾기)
         self.serial_db_path = self.find_serial_db()
@@ -447,6 +457,12 @@ class BlogSerialAuth:
     
     def is_serial_required(self) -> bool:
         """시리얼 입력이 필요한지 확인 (실제 유효성 검증 포함)"""
+        
+        # 개발자 모드에서는 시리얼 인증 우회
+        if self.developer_mode:
+            self.logger.info("🔧 개발자 모드: 시리얼 인증 우회")
+            return False
+        
         config = self.load_config()
         
         # 시리얼이 없으면 필요
