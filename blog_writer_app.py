@@ -125,68 +125,155 @@ class BlogWriterApp:
                 self.caffeinate_process = None
 
     def _get_base_directory(self):
-        """플랫폼별 기본 디렉토리 결정"""
+        """플랫폼별 기본 디렉토리 결정 (개발자/배포 환경 구분)"""
+        # 개발자 모드 확인
+        is_developer_mode = self._is_developer_mode()
+        
         if getattr(sys, 'frozen', False):
             # 실행 파일로 실행된 경우 (PyInstaller 등으로 빌드된 경우)
             base_dir = os.path.dirname(sys.executable)
             print(f"🔧 Frozen 모드: {base_dir}")
             
-            # macOS .app 번들일 경우 처리
-            if self.is_macos and "Contents/MacOS" in base_dir:
-                print(f"🍎 macOS 앱 번들 감지")
-                # .app 번들에서 리소스 디렉토리 찾기
-                possible_dirs = [
-                    # Resources 디렉토리 (표준 macOS 앱 구조)
-                    os.path.join(os.path.dirname(base_dir), "Resources"),
-                    # 번들 외부 디렉토리
-                    os.path.dirname(os.path.dirname(os.path.dirname(base_dir))),
-                    # 현재 작업 디렉토리
-                    os.getcwd(),
-                    # 실행 파일 디렉토리
-                    base_dir
-                ]
-                
-                for dir_path in possible_dirs:
-                    print(f"📂 확인 중: {dir_path}")
-                    if os.path.exists(dir_path):
-                        print(f"  ✅ 디렉토리 존재함")
-                        # config 디렉토리 확인
-                        config_path = os.path.join(dir_path, 'config')
-                        if os.path.exists(config_path):
-                            print(f"  📁 config 디렉토리 찾음: {config_path}")
-                            return dir_path
-                            
-                        # 상위 디렉토리의 config 확인
-                        parent_config = os.path.join(os.path.dirname(dir_path), 'config')
-                        if os.path.exists(parent_config):
-                            print(f"  📁 상위 디렉토리에서 config 찾음: {parent_config}")
-                            return os.path.dirname(dir_path)
+            if is_developer_mode:
+                print("🔧 개발자 빌드 모드: 프로젝트 디렉토리 탐색")
+                # 개발자 빌드: 원본 프로젝트 디렉토리 찾기
+                return self._find_project_directory(base_dir)
+            else:
+                print("📦 배포 모드: 사용자 디렉토리 설정")
+                # 배포 모드: 사용자 홈 디렉토리 사용
+                return self._setup_user_directory()
             
-            # Windows 실행 파일의 경우
-            elif self.is_windows:
-                print(f"🪟 Windows 실행 파일 모드")
-                # Windows에서는 일반적으로 실행 파일과 같은 디렉토리에 리소스 배치
-                
-            # 기본 디렉토리에 config가 없는 경우 상위 디렉토리 탐색
-            config_dir = os.path.join(base_dir, 'config')
-            if not os.path.exists(config_dir):
-                print(f"⚠️ 기본 디렉토리에 config 폴더가 없습니다.")
-                # 실행 파일 경로에서 상위 디렉토리들 탐색
-                test_dir = base_dir
-                for i in range(3):  # 최대 3단계 상위까지 확인
-                    test_dir = os.path.dirname(test_dir)
-                    test_config = os.path.join(test_dir, 'config')
-                    print(f"  🔍 상위 {i+1}단계 확인: {test_config}")
-                    if os.path.exists(test_config):
-                        print(f"  ✅ 상위 디렉토리에서 config 찾음: {test_config}")
-                        return test_dir
-            
-            return base_dir
         else:
-            # 스크립트로 실행된 경우
+            # 스크립트로 실행된 경우 (개발 환경)
             base_dir = os.path.dirname(os.path.abspath(__file__))
-            print(f"📝 스크립트 모드: {base_dir}")
+            print(f"📝 스크립트 모드 (개발 환경): {base_dir}")
             return base_dir
+
+    def _is_developer_mode(self):
+        """개발자 모드 여부를 확인합니다."""
+        # 환경변수 확인
+        if os.getenv('DEVELOPER_MODE') == 'true' or os.getenv('SKIP_SERIAL_AUTH') == 'true':
+            return True
+        
+        # .developer_mode 파일 확인 (스크립트 디렉토리)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        developer_mode_file = os.path.join(script_dir, 'modules', '.developer_mode')
+        if os.path.exists(developer_mode_file):
+            return True
+            
+        # PyInstaller 번들 내부의 .developer_mode 파일 확인
+        try:
+            if hasattr(sys, '_MEIPASS'):
+                bundle_developer_file = os.path.join(sys._MEIPASS, 'modules', '.developer_mode')
+                if os.path.exists(bundle_developer_file):
+                    return True
+        except:
+            pass
+            
+        return False
+
+    def _find_project_directory(self, base_dir):
+        """개발자 빌드에서 원본 프로젝트 디렉토리를 찾습니다."""
+        # macOS .app 번들일 경우 처리
+        if self.is_macos and "Contents/MacOS" in base_dir:
+            print(f"🍎 macOS 앱 번들 감지")
+            # .app 번들에서 리소스 디렉토리 찾기
+            possible_dirs = [
+                # Resources 디렉토리 (표준 macOS 앱 구조)
+                os.path.join(os.path.dirname(base_dir), "Resources"),
+                # 번들 외부 디렉토리
+                os.path.dirname(os.path.dirname(os.path.dirname(base_dir))),
+                # 현재 작업 디렉토리
+                os.getcwd(),
+                # 실행 파일 디렉토리
+                base_dir
+            ]
+            
+            for dir_path in possible_dirs:
+                print(f"📂 확인 중: {dir_path}")
+                if os.path.exists(dir_path):
+                    print(f"  ✅ 디렉토리 존재함")
+                    # config 디렉토리 확인
+                    config_path = os.path.join(dir_path, 'config')
+                    if os.path.exists(config_path):
+                        print(f"  📁 config 디렉토리 찾음: {config_path}")
+                        return dir_path
+                        
+                    # 상위 디렉토리의 config 확인
+                    parent_config = os.path.join(os.path.dirname(dir_path), 'config')
+                    if os.path.exists(parent_config):
+                        print(f"  📁 상위 디렉토리에서 config 찾음: {parent_config}")
+                        return os.path.dirname(dir_path)
+        
+        # Windows 실행 파일의 경우
+        elif self.is_windows:
+            print(f"🪟 Windows 실행 파일 모드")
+            # Windows에서는 일반적으로 실행 파일과 같은 디렉토리에 리소스 배치
+            
+        # 기본 디렉토리에 config가 없는 경우 상위 디렉토리 탐색
+        config_dir = os.path.join(base_dir, 'config')
+        if not os.path.exists(config_dir):
+            print(f"⚠️ 기본 디렉토리에 config 폴더가 없습니다.")
+            # 실행 파일 경로에서 상위 디렉토리들 탐색
+            test_dir = base_dir
+            for i in range(3):  # 최대 3단계 상위까지 확인
+                test_dir = os.path.dirname(test_dir)
+                test_config = os.path.join(test_dir, 'config')
+                print(f"  🔍 상위 {i+1}단계 확인: {test_config}")
+                if os.path.exists(test_config):
+                    print(f"  ✅ 상위 디렉토리에서 config 찾음: {test_config}")
+                    return test_dir
+        
+        return base_dir
+
+    def _setup_user_directory(self):
+        """배포 모드에서 사용자 디렉토리를 설정합니다."""
+        # 사용자 홈 디렉토리에 앱 전용 폴더 생성
+        user_app_dir = os.path.expanduser("~/Documents/블로그자동화")
+        
+        try:
+            os.makedirs(user_app_dir, exist_ok=True)
+            print(f"📁 사용자 앱 디렉토리 생성: {user_app_dir}")
+            
+            # 필요한 하위 디렉토리들 생성
+            subdirs = ['config', 'drafts', 'settings', 'logs', 'images']
+            for subdir in subdirs:
+                subdir_path = os.path.join(user_app_dir, subdir)
+                os.makedirs(subdir_path, exist_ok=True)
+                print(f"📁 하위 디렉토리 생성: {subdir_path}")
+            
+            # 기본 설정 파일들이 없으면 번들에서 복사
+            self._copy_default_configs_to_user_dir(user_app_dir)
+            
+            return user_app_dir
+            
+        except Exception as e:
+            print(f"❌ 사용자 디렉토리 설정 실패: {e}")
+            # 실패 시 번들 디렉토리 사용
+            return os.path.dirname(sys.executable)
+
+    def _copy_default_configs_to_user_dir(self, user_dir):
+        """번들의 기본 설정을 사용자 디렉토리로 복사합니다."""
+        try:
+            # PyInstaller 번들 내부 경로
+            if hasattr(sys, '_MEIPASS'):
+                bundle_config_dir = os.path.join(sys._MEIPASS, 'config')
+                user_config_dir = os.path.join(user_dir, 'config')
+                
+                # 기본 설정 파일들 복사
+                config_files = ['gpt_settings.txt', 'user_settings.txt']
+                for config_file in config_files:
+                    bundle_file = os.path.join(bundle_config_dir, config_file)
+                    user_file = os.path.join(user_config_dir, config_file)
+                    
+                    # 사용자 파일이 없고 번들 파일이 있으면 복사
+                    if not os.path.exists(user_file) and os.path.exists(bundle_file):
+                        import shutil
+                        shutil.copy2(bundle_file, user_file)
+                        print(f"📋 기본 설정 복사: {config_file}")
+                        
+        except Exception as e:
+            print(f"⚠️ 기본 설정 복사 실패: {e}")
 
     def _ensure_directories(self):
         """필요한 디렉토리들을 생성합니다"""
