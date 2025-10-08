@@ -37,10 +37,11 @@ jobs:
         if exist config (echo "✅ config 디렉토리") else (echo "❌ config 없음" && exit 1)
         if exist modules (echo "✅ modules 디렉토리") else (echo "❌ modules 없음" && exit 1)
         
-    - name: 🔨 Windows PyInstaller 빌드
+    - name: 🔨 Windows PyInstaller 빌드 (배포용)
       run: |
-        echo "=== 개발자 모드 파일 생성 ==="
-        echo "DEVELOPER_MODE=true" > modules\.developer_mode
+        echo "=== 배포용 빌드 시작 ==="
+        echo "개발자 모드 파일 제거 (배포용)"
+        if exist modules\.developer_mode del modules\.developer_mode
         echo ""
         echo "=== PyInstaller 실행 ==="
         pyinstaller --onedir --windowed --name="블로그자동화" ^
@@ -104,10 +105,11 @@ jobs:
         test -d config && echo "✅ config 디렉토리" || (echo "❌ config 없음" && exit 1)
         test -d modules && echo "✅ modules 디렉토리" || (echo "❌ modules 없음" && exit 1)
         
-    - name: 🔨 macOS PyInstaller 빌드
+    - name: 🔨 macOS PyInstaller 빌드 (배포용)
       run: |
-        echo "=== 개발자 모드 파일 생성 ==="
-        echo "DEVELOPER_MODE=true" > modules/.developer_mode
+        echo "=== 배포용 빌드 시작 ==="
+        echo "개발자 모드 파일 제거 (배포용)"
+        rm -f modules/.developer_mode
         echo ""
         echo "=== PyInstaller 실행 ==="
         pyinstaller --onedir --windowed --name="블로그자동화" \
@@ -173,10 +175,11 @@ jobs:
         test -d config && echo "✅ config 디렉토리" || (echo "❌ config 없음" && exit 1)
         test -d modules && echo "✅ modules 디렉토리" || (echo "❌ modules 없음" && exit 1)
         
-    - name: 🔨 Linux PyInstaller 빌드
+    - name: 🔨 Linux PyInstaller 빌드 (배포용)
       run: |
-        echo "=== 개발자 모드 파일 생성 ==="
-        echo "DEVELOPER_MODE=true" > modules/.developer_mode
+        echo "=== 배포용 빌드 시작 ==="
+        echo "개발자 모드 파일 제거 (배포용)"
+        rm -f modules/.developer_mode
         echo ""
         echo "=== PyInstaller 실행 ==="
         pyinstaller --onedir --name="블로그자동화" \

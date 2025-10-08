@@ -94,17 +94,33 @@ class GPTHandler:
 """  # 끝에 줄바꿈 두 개 추가하기
         
         try:
+            # 환경 감지: 개발자 모드 vs 배포 모드
+            is_developer_mode = self._is_developer_mode()
+            
             # 스크립트 파일의 위치를 기준으로 경로 계산
             script_dir = os.path.dirname(os.path.abspath(__file__))
             parent_dir = os.path.dirname(script_dir)
             
-            # 여러 경로 시도
-            possible_paths = [
-                os.path.join(parent_dir, 'config', 'gpt_settings.txt'),
-                os.path.join(os.getcwd(), 'config', 'gpt_settings.txt'),
-                'config/gpt_settings.txt',
-                resource_path('config/gpt_settings.txt')
-            ]
+            # 환경에 따른 경로 설정
+            if is_developer_mode:
+                # 개발자 환경: 프로젝트 루트의 config 디렉토리 우선
+                possible_paths = [
+                    os.path.join(parent_dir, 'config', 'gpt_settings.txt'),
+                    os.path.join(os.getcwd(), 'config', 'gpt_settings.txt'),
+                    'config/gpt_settings.txt'
+                ]
+                logger.info("🔧 개발자 모드: 프로젝트 config 디렉토리에서 설정 로드")
+            else:
+                # 배포 환경: 사용자 홈 디렉토리 우선, 그 다음 번들 내부
+                user_config_dir = os.path.expanduser("~/Documents/블로그자동화/config")
+                os.makedirs(user_config_dir, exist_ok=True)
+                
+                possible_paths = [
+                    os.path.join(user_config_dir, 'gpt_settings.txt'),
+                    resource_path('config/gpt_settings.txt'),
+                    os.path.join(parent_dir, 'config', 'gpt_settings.txt')
+                ]
+                logger.info("📦 배포 모드: 사용자 설정 디렉토리에서 설정 로드")
             
             settings_path = None
             for path in possible_paths:
@@ -126,6 +142,10 @@ class GPTHandler:
                 print(f"GPT 설정 파일 로드 성공: {settings_path}")
             else:
                 print(f"GPT 설정 파일을 찾을 수 없습니다")
+                # 배포 환경에서 설정 파일이 없으면 기본 템플릿 생성
+                if not is_developer_mode:
+                    self._create_default_settings_template()
+                    
         except Exception as e:
             print(f"GPT 설정 파일 로드 중 오류 발생: {str(e)}")
             traceback.print_exc()
@@ -137,6 +157,53 @@ class GPTHandler:
             default_settings['instructions'] += fixed_review_instructions
             
         return default_settings
+
+    def _is_developer_mode(self):
+        """개발자 모드 여부를 확인합니다."""
+        # 환경변수 확인
+        if os.getenv('DEVELOPER_MODE') == 'true' or os.getenv('SKIP_SERIAL_AUTH') == 'true':
+            return True
+        
+        # .developer_mode 파일 확인
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        developer_mode_file = os.path.join(script_dir, '.developer_mode')
+        if os.path.exists(developer_mode_file):
+            return True
+            
+        # PyInstaller 번들 내부의 .developer_mode 파일 확인
+        try:
+            if hasattr(sys, '_MEIPASS'):
+                bundle_developer_file = os.path.join(sys._MEIPASS, 'modules', '.developer_mode')
+                if os.path.exists(bundle_developer_file):
+                    return True
+        except:
+            pass
+            
+        return False
+
+    def _create_default_settings_template(self):
+        """배포 환경에서 기본 설정 템플릿을 생성합니다."""
+        try:
+            user_config_dir = os.path.expanduser("~/Documents/블로그자동화/config")
+            os.makedirs(user_config_dir, exist_ok=True)
+            
+            template_path = os.path.join(user_config_dir, 'gpt_settings.txt')
+            if not os.path.exists(template_path):
+                template_settings = {
+                    "api_key": "",
+                    "persona": "친근하고 전문적인 블로그 작성자",
+                    "instructions": "1500자 이상 ~ 1600자 이내로 작성하며, 도입-본문-결론 구조로 구성해주세요.",
+                    "style": "친근하고 따뜻한 부드러운 존댓말 사용",
+                    "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                
+                with open(template_path, 'w', encoding='utf-8') as f:
+                    json.dump(template_settings, f, ensure_ascii=False, indent=2)
+                
+                logger.info(f"기본 설정 템플릿 생성: {template_path}")
+                
+        except Exception as e:
+            logger.error(f"기본 설정 템플릿 생성 실패: {e}")
 
     def _load_custom_prompt(self):
         """커스텀 프롬프트를 로드합니다."""
