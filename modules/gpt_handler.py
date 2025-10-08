@@ -104,7 +104,10 @@ class GPTHandler:
             # 환경에 따른 경로 설정
             if is_developer_mode:
                 # 개발자 환경: 프로젝트 루트의 config 디렉토리 우선
-                possible_paths = [
+                # 빌드된 앱에서 실제 프로젝트 디렉토리 찾기
+                project_config_paths = self._find_project_config_paths()
+                
+                possible_paths = project_config_paths + [
                     os.path.join(parent_dir, 'config', 'gpt_settings.txt'),
                     os.path.join(os.getcwd(), 'config', 'gpt_settings.txt'),
                     'config/gpt_settings.txt'
@@ -204,6 +207,36 @@ class GPTHandler:
                 
         except Exception as e:
             logger.error(f"기본 설정 템플릿 생성 실패: {e}")
+
+    def _find_project_config_paths(self):
+        """개발자 빌드에서 실제 프로젝트의 config 디렉토리 경로들을 찾습니다."""
+        project_paths = []
+        
+        try:
+            # PyInstaller 빌드에서 실행 중인 경우
+            if hasattr(sys, '_MEIPASS'):
+                # 실행 파일 경로에서 프로젝트 루트 찾기
+                executable_dir = os.path.dirname(sys.executable)
+                
+                # 여러 단계 상위 디렉토리 확인
+                current_dir = executable_dir
+                for i in range(5):  # 최대 5단계 상위까지 확인
+                    current_dir = os.path.dirname(current_dir)
+                    config_path = os.path.join(current_dir, 'config', 'gpt_settings.txt')
+                    if os.path.exists(config_path):
+                        project_paths.append(config_path)
+                        logger.info(f"🔍 프로젝트 config 발견: {config_path}")
+                        
+                # 현재 작업 디렉토리에서도 확인
+                cwd_config = os.path.join(os.getcwd(), 'config', 'gpt_settings.txt')
+                if os.path.exists(cwd_config) and cwd_config not in project_paths:
+                    project_paths.append(cwd_config)
+                    logger.info(f"🔍 작업 디렉토리 config 발견: {cwd_config}")
+                    
+        except Exception as e:
+            logger.warning(f"프로젝트 config 경로 탐색 중 오류: {e}")
+            
+        return project_paths
 
     def _load_custom_prompt(self):
         """커스텀 프롬프트를 로드합니다."""
