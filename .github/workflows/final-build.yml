@@ -39,6 +39,9 @@ jobs:
         
     - name: 🔨 Windows PyInstaller 빌드
       run: |
+        echo "=== 개발자 모드 파일 생성 ==="
+        echo "DEVELOPER_MODE=true" > modules\.developer_mode
+        echo ""
         echo "=== PyInstaller 실행 ==="
         pyinstaller --onedir --windowed --name="블로그자동화" ^
           --hidden-import=flet ^
@@ -103,6 +106,9 @@ jobs:
         
     - name: 🔨 macOS PyInstaller 빌드
       run: |
+        echo "=== 개발자 모드 파일 생성 ==="
+        echo "DEVELOPER_MODE=true" > modules/.developer_mode
+        echo ""
         echo "=== PyInstaller 실행 ==="
         pyinstaller --onedir --windowed --name="블로그자동화" \
           --hidden-import=flet \
@@ -169,6 +175,9 @@ jobs:
         
     - name: 🔨 Linux PyInstaller 빌드
       run: |
+        echo "=== 개발자 모드 파일 생성 ==="
+        echo "DEVELOPER_MODE=true" > modules/.developer_mode
+        echo ""
         echo "=== PyInstaller 실행 ==="
         pyinstaller --onedir --name="블로그자동화" \
           --hidden-import=flet \
