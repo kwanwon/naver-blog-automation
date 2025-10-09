@@ -1897,6 +1897,14 @@ class BlogWriterApp:
                     "style": gpt_style.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
+                
+                # API 키를 gpt_settings.txt에도 저장 (gpt_handler.py가 읽을 수 있도록)
+                if use_api_checkbox.value and api_key_field.value:
+                    settings["api_key"] = api_key_field.value
+                    print(f"🔑 API 키를 gpt_settings.txt에 저장: {api_key_field.value[:10]}...")
+                else:
+                    settings["api_key"] = ""  # 빈 문자열로 설정
+                
                 with open(os.path.join(self.base_dir, 'config/gpt_settings.txt'), 'w', encoding='utf-8') as f:
                     json.dump(settings, f, ensure_ascii=False, indent=2)
                 
@@ -1958,12 +1966,26 @@ class BlogWriterApp:
                         auto_topic_checkbox.value = app_settings.get('auto_topic', False)
                         auto_final_publish_checkbox.value = app_settings.get('auto_final_publish', True)  # 🎯 최종 발행 설정 로드
                 
-                # API 키 로드
-                if os.path.exists(os.path.join(self.base_dir, '.env')):
+                # API 키 로드 (gpt_settings.txt에서 우선적으로 읽기)
+                api_key_loaded = False
+                if os.path.exists(os.path.join(self.base_dir, 'config/gpt_settings.txt')):
+                    try:
+                        with open(os.path.join(self.base_dir, 'config/gpt_settings.txt'), 'r', encoding='utf-8') as f:
+                            settings = json.load(f)
+                            if 'api_key' in settings and settings['api_key']:
+                                api_key_field.value = settings['api_key']
+                                api_key_loaded = True
+                                print(f"🔑 API 키를 gpt_settings.txt에서 로드: {settings['api_key'][:10]}...")
+                    except Exception as e:
+                        print(f"gpt_settings.txt에서 API 키 로드 실패: {e}")
+                
+                # gpt_settings.txt에서 로드되지 않았으면 .env 파일에서 로드
+                if not api_key_loaded and os.path.exists(os.path.join(self.base_dir, '.env')):
                     with open(os.path.join(self.base_dir, '.env'), 'r', encoding='utf-8') as f:
                         for line in f:
                             if line.startswith('OPENAI_API_KEY='):
                                 api_key_field.value = line.split('=', 1)[1].strip()
+                                print(f"🔑 API 키를 .env 파일에서 로드: {line.split('=', 1)[1].strip()[:10]}...")
                                 break
                 
                 page.update()
@@ -3131,7 +3153,7 @@ class BlogWriterApp:
         self.start_serial_status_updater()
         
     def check_for_updates(self):
-        """백그라운드에서 업데이트 확인"""
+        """백그라운드에서 업데이트 확인 (개선된 버전)"""
         def update_check():
             try:
                 print("🔄 업데이트 확인 중...")
@@ -3140,23 +3162,325 @@ class BlogWriterApp:
                 current_version = self.get_current_version()
                 updater = AutoUpdater(current_version)
                 
-                # 원격 버전 확인
+                # 빠른 네트워크 확인 (타임아웃 5초)
+                import requests
+                try:
+                    requests.get("https://github.com", timeout=5)
+                except:
+                    print("⚠️ 네트워크 연결 불안정 - 업데이트 확인 건너뜀")
+                    return
+                
+                # 원격 버전 확인 (타임아웃 단축)
                 remote_version, changelog = updater.get_remote_version()
                 
                 if remote_version and updater.compare_versions(remote_version):
-                    print(f"🎉 새 버전 발견: v{remote_version}")
-                    print("📋 변경사항:")
-                    for change in changelog:
-                        print(f"  - {change}")
-                    print("\n💡 프로그램 재시작 시 자동으로 업데이트됩니다.")
+                    print(f"🎉 새 버전 발견: v{current_version} → v{remote_version}")
+                    print("📋 주요 변경사항:")
+                    for i, change in enumerate(changelog[:3], 1):  # 최대 3개만 표시
+                        print(f"  {i}. {change}")
+                    if len(changelog) > 3:
+                        print(f"  ... 외 {len(changelog)-3}개 항목")
+                    
+                    # UI에서 업데이트 알림 표시
+                    self.show_update_notification(current_version, remote_version, changelog)
                 else:
                     print("✅ 현재 버전이 최신입니다.")
                     
             except Exception as e:
                 print(f"⚠️ 업데이트 확인 실패: {e}")
+                # 개발자 모드에서는 상세 오류 표시
+                if hasattr(self, 'serial_auth') and getattr(self.serial_auth, 'developer_mode', False):
+                    import traceback
+                    print(f"상세 오류: {traceback.format_exc()}")
                 
         # 백그라운드 스레드에서 실행
         threading.Thread(target=update_check, daemon=True).start()
+        
+    def show_update_notification(self, current_version, new_version, changelog):
+        """업데이트 알림 표시"""
+        try:
+            if hasattr(self, 'page') and self.page:
+                # 메인 스레드에서 UI 업데이트
+                def show_notification():
+                    try:
+                        # 업데이트 알림 스낵바 표시
+                        snack_bar = ft.SnackBar(
+                            content=ft.Row([
+                                ft.Icon(ft.Icons.SYSTEM_UPDATE, color=ft.Colors.WHITE),
+                                ft.Text(
+                                    f"새 버전 v{new_version} 사용 가능! 설정 탭에서 업데이트하세요.",
+                                    color=ft.Colors.WHITE,
+                                    weight=ft.FontWeight.BOLD
+                                )
+                            ]),
+                            bgcolor=ft.Colors.BLUE_600,
+                            duration=8000,  # 8초간 표시
+                            action="업데이트",
+                            action_color=ft.Colors.WHITE,
+                            on_action=lambda _: self.show_update_dialog_from_notification(current_version, new_version, changelog)
+                        )
+                        self.page.overlay.append(snack_bar)
+                        snack_bar.open = True
+                        self.page.update()
+                    except Exception as e:
+                        print(f"알림 표시 오류: {e}")
+                
+                # UI 스레드에서 실행
+                self.page.run_thread(show_notification)
+        except Exception as e:
+            print(f"업데이트 알림 표시 실패: {e}")
+    
+    def show_update_dialog_from_notification(self, current_version, new_version, changelog):
+        """알림에서 업데이트 다이얼로그 표시"""
+        try:
+            self.show_update_dialog_ui(current_version, new_version, changelog)
+        except Exception as e:
+            print(f"업데이트 다이얼로그 표시 실패: {e}")
+    
+    def show_update_dialog_ui(self, current_version, new_version, changelog):
+        """개선된 업데이트 다이얼로그 UI"""
+        try:
+            if not hasattr(self, 'page') or not self.page:
+                return
+                
+            # 변경사항 텍스트 생성
+            changelog_text = "\n".join([f"• {change}" for change in changelog[:5]])
+            if len(changelog) > 5:
+                changelog_text += f"\n... 외 {len(changelog)-5}개 항목"
+            
+            # 업데이트 다이얼로그
+            update_dialog = ft.AlertDialog(
+                title=ft.Container(
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.SYSTEM_UPDATE, color=ft.Colors.BLUE_600, size=30),
+                        ft.Text("새 버전 업데이트", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_600)
+                    ], alignment=ft.MainAxisAlignment.CENTER),
+                    padding=ft.padding.only(bottom=10)
+                ),
+                content=ft.Container(
+                    content=ft.Column([
+                        # 버전 정보
+                        ft.Container(
+                            content=ft.Row([
+                                ft.Column([
+                                    ft.Text("현재 버전", size=12, color=ft.Colors.GREY_600),
+                                    ft.Text(f"v{current_version}", size=16, weight=ft.FontWeight.BOLD)
+                                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                                ft.Icon(ft.Icons.ARROW_FORWARD, color=ft.Colors.GREEN_600),
+                                ft.Column([
+                                    ft.Text("새 버전", size=12, color=ft.Colors.GREY_600),
+                                    ft.Text(f"v{new_version}", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_600)
+                                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                            ], alignment=ft.MainAxisAlignment.SPACE_AROUND),
+                            bgcolor=ft.Colors.GREY_100,
+                            padding=15,
+                            border_radius=10,
+                            margin=ft.margin.only(bottom=15)
+                        ),
+                        
+                        # 변경사항
+                        ft.Text("📋 주요 변경사항", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_800),
+                        ft.Container(
+                            content=ft.Text(
+                                changelog_text,
+                                size=12,
+                                color=ft.Colors.GREY_700,
+                                selectable=True
+                            ),
+                            bgcolor=ft.Colors.GREY_50,
+                            padding=10,
+                            border_radius=8,
+                            border=ft.border.all(1, ft.Colors.GREY_300),
+                            margin=ft.margin.only(bottom=15)
+                        ),
+                        
+                        # 업데이트 안내
+                        ft.Container(
+                            content=ft.Column([
+                                ft.Row([
+                                    ft.Icon(ft.Icons.BACKUP, color=ft.Colors.GREEN_600, size=16),
+                                    ft.Text("현재 설정과 데이터는 자동으로 보존됩니다", size=11, color=ft.Colors.GREEN_700)
+                                ]),
+                                ft.Row([
+                                    ft.Icon(ft.Icons.RESTORE, color=ft.Colors.BLUE_600, size=16),
+                                    ft.Text("문제 발생 시 자동으로 이전 버전으로 복원됩니다", size=11, color=ft.Colors.BLUE_700)
+                                ]),
+                                ft.Row([
+                                    ft.Icon(ft.Icons.WIFI, color=ft.Colors.ORANGE_600, size=16),
+                                    ft.Text("안정적인 인터넷 연결이 필요합니다", size=11, color=ft.Colors.ORANGE_700)
+                                ])
+                            ], spacing=5),
+                            padding=10,
+                            bgcolor=ft.Colors.BLUE_50,
+                            border_radius=8,
+                            border=ft.border.all(1, ft.Colors.BLUE_200)
+                        )
+                    ], spacing=10),
+                    width=500,
+                    height=400
+                ),
+                actions=[
+                    ft.Row([
+                        ft.TextButton(
+                            "나중에",
+                            on_click=lambda _: self.close_dialog(self.page, update_dialog),
+                            style=ft.ButtonStyle(color=ft.Colors.GREY_600)
+                        ),
+                        ft.TextButton(
+                            "이 버전 건너뛰기",
+                            on_click=lambda _: self.skip_version_update(new_version, update_dialog),
+                            style=ft.ButtonStyle(color=ft.Colors.ORANGE_600)
+                        ),
+                        ft.ElevatedButton(
+                            "지금 업데이트",
+                            on_click=lambda _: self.start_update_process(current_version, new_version, update_dialog),
+                            bgcolor=ft.Colors.BLUE_600,
+                            color=ft.Colors.WHITE,
+                            icon=ft.Icons.DOWNLOAD
+                        )
+                    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+                ],
+                modal=True
+            )
+            
+            self.page.overlay.append(update_dialog)
+            update_dialog.open = True
+            self.page.update()
+            
+        except Exception as e:
+            print(f"업데이트 다이얼로그 생성 실패: {e}")
+    
+    def skip_version_update(self, version, dialog):
+        """버전 건너뛰기"""
+        try:
+            # 건너뛴 버전을 설정에 저장
+            skip_file = os.path.join(self.base_dir, 'config', 'skipped_versions.json')
+            skipped_versions = []
+            
+            if os.path.exists(skip_file):
+                with open(skip_file, 'r', encoding='utf-8') as f:
+                    skipped_versions = json.load(f)
+            
+            if version not in skipped_versions:
+                skipped_versions.append(version)
+                
+                os.makedirs(os.path.dirname(skip_file), exist_ok=True)
+                with open(skip_file, 'w', encoding='utf-8') as f:
+                    json.dump(skipped_versions, f, indent=2)
+            
+            self.close_dialog(self.page, dialog)
+            print(f"버전 v{version} 업데이트를 건너뛰었습니다.")
+            
+        except Exception as e:
+            print(f"버전 건너뛰기 실패: {e}")
+            self.close_dialog(self.page, dialog)
+    
+    def start_update_process(self, current_version, new_version, dialog):
+        """안전한 업데이트 프로세스 시작"""
+        try:
+            # 기존 다이얼로그 닫기
+            self.close_dialog(self.page, dialog)
+            
+            # 업데이트 진행 다이얼로그 표시
+            progress_dialog = ft.AlertDialog(
+                title=ft.Text("🔄 업데이트 진행 중", text_align=ft.TextAlign.CENTER),
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.ProgressRing(),
+                        ft.Text(f"v{current_version} → v{new_version}", text_align=ft.TextAlign.CENTER, weight=ft.FontWeight.BOLD),
+                        ft.Text("업데이트 중입니다...", text_align=ft.TextAlign.CENTER),
+                        ft.Text("프로그램을 종료하지 마세요!", text_align=ft.TextAlign.CENTER, color=ft.Colors.RED_600, size=12)
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10),
+                    height=150
+                ),
+                modal=True
+            )
+            
+            self.page.overlay.append(progress_dialog)
+            progress_dialog.open = True
+            self.page.update()
+            
+            # 백그라운드에서 업데이트 실행
+            def update_process():
+                try:
+                    current_version = self.get_current_version()
+                    updater = AutoUpdater(current_version)
+                    success, message = updater.check_and_update()
+                    
+                    # UI 업데이트
+                    def update_ui():
+                        progress_dialog.open = False
+                        self.page.update()
+                        
+                        if success:
+                            # 성공 다이얼로그
+                            success_dialog = ft.AlertDialog(
+                                title=ft.Text("✅ 업데이트 완료!", color=ft.Colors.GREEN_600),
+                                content=ft.Text(f"{message}\n\n프로그램을 재시작해주세요."),
+                                actions=[
+                                    ft.ElevatedButton(
+                                        "재시작",
+                                        on_click=lambda _: self.restart_application(),
+                                        bgcolor=ft.Colors.GREEN_600,
+                                        color=ft.Colors.WHITE
+                                    )
+                                ]
+                            )
+                            self.page.overlay.append(success_dialog)
+                            success_dialog.open = True
+                        else:
+                            # 실패 다이얼로그
+                            error_dialog = ft.AlertDialog(
+                                title=ft.Text("❌ 업데이트 실패", color=ft.Colors.RED_600),
+                                content=ft.Text(f"업데이트 중 오류가 발생했습니다:\n{message}\n\n이전 버전으로 자동 복원되었습니다."),
+                                actions=[ft.TextButton("확인", on_click=lambda _: self.close_dialog(self.page, error_dialog))]
+                            )
+                            self.page.overlay.append(error_dialog)
+                            error_dialog.open = True
+                        
+                        self.page.update()
+                    
+                    # UI 스레드에서 실행
+                    self.page.run_thread(update_ui)
+                    
+                except Exception as e:
+                    print(f"업데이트 프로세스 오류: {e}")
+                    # 오류 처리 UI 업데이트
+                    def error_ui():
+                        progress_dialog.open = False
+                        error_dialog = ft.AlertDialog(
+                            title=ft.Text("❌ 업데이트 오류", color=ft.Colors.RED_600),
+                            content=ft.Text(f"예상치 못한 오류가 발생했습니다:\n{str(e)}"),
+                            actions=[ft.TextButton("확인", on_click=lambda _: self.close_dialog(self.page, error_dialog))]
+                        )
+                        self.page.overlay.append(error_dialog)
+                        error_dialog.open = True
+                        self.page.update()
+                    
+                    self.page.run_thread(error_ui)
+            
+            # 백그라운드 스레드에서 업데이트 실행
+            threading.Thread(target=update_process, daemon=True).start()
+            
+        except Exception as e:
+            print(f"업데이트 프로세스 시작 실패: {e}")
+    
+    def restart_application(self):
+        """애플리케이션 재시작"""
+        try:
+            print("🔄 프로그램 재시작 중...")
+            if hasattr(self, 'page') and self.page:
+                self.page.window.close()
+            
+            # 현재 프로세스 종료 후 재시작
+            import sys
+            import subprocess
+            subprocess.Popen([sys.executable] + sys.argv)
+            sys.exit(0)
+            
+        except Exception as e:
+            print(f"재시작 실패: {e}")
+            print("수동으로 프로그램을 재시작해주세요.")
         
     def get_current_version(self):
         """현재 버전 가져오기"""
