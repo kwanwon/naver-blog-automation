@@ -1,0 +1,47 @@
+2025-10-08 12:25:12,019 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-10-08 12:25:12,019 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/시리얼관리/serials.db
+2025-10-08 12:25:12,019 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/시리얼관리/serials.db
+2025-10-08 12:25:12,019 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-10-08 12:25:12,020 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/ixcDgzIv3K
+2025-10-08 12:25:12,020 - INFO - Flet app has started...
+2025-10-08 12:25:12,022 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/ixcDgzIv3K
+2025-10-08 12:25:12,022 - INFO - Starting Flet View app...
+2025-10-08 12:25:12,022 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-10-08 12:25:12,250 - INFO - App session started
+2025-10-08 12:25:12,251 - INFO - 설정 파일 저장 완료
+2025-10-08 12:25:25,307 - ERROR - Future exception was never retrieved
+future: <Future finished exception=AttributeError("'Page' object has no attribute 'window_destroy'")>
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.13/3.13.4/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/venv/lib/python3.13/site-packages/flet/core/page.py", line 903, in wrapper
+    handler(*args)
+    ~~~~~~~^^^^^^^
+  File "/Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/serial_auth_window.py", line 176, in on_cancel
+    page.window_destroy()
+    ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Page' object has no attribute 'window_destroy'
+2025-10-08 12:27:16,616 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-10-08 12:27:16,616 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/시리얼관리/serials.db
+2025-10-08 12:27:16,616 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/시리얼관리/serials.db
+2025-10-08 12:27:16,616 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-10-08 12:27:16,617 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/FwkGA9KPIl
+2025-10-08 12:27:16,617 - INFO - Flet app has started...
+2025-10-08 12:27:16,619 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/FwkGA9KPIl
+2025-10-08 12:27:16,619 - INFO - Starting Flet View app...
+2025-10-08 12:27:16,619 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-10-08 12:27:16,839 - INFO - App session started
+2025-10-08 23:19:48,440 - INFO - 🔧 개발자 모드 활성화 - 시리얼 인증 우회
+2025-10-08 23:19:48,440 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-10-08 23:19:48,440 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/시리얼관리/serials.db
+2025-10-08 23:19:48,440 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/시리얼관리/serials.db
+2025-10-08 23:32:02,177 - INFO - 🔧 개발자 모드 활성화 - 시리얼 인증 우회
+2025-10-08 23:32:02,177 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-10-08 23:32:02,177 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/시리얼관리/serials.db
+2025-10-08 23:32:02,177 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/시리얼관리/serials.db
+2025-10-08 23:37:43,175 - INFO - 🔧 개발자 모드 활성화 - 시리얼 인증 우회
+2025-10-08 23:37:43,176 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-10-08 23:37:43,176 - INFO - 🎯 라이온개발자 폴더 시리얼 DB 사용: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-10-08 23:37:55,441 - INFO - 🔧 개발자 모드 활성화 - 시리얼 인증 우회
+2025-10-08 23:37:55,441 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-10-08 23:37:55,441 - INFO - 🎯 라이온개발자 폴더 시리얼 DB 사용: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db

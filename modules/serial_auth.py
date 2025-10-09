@@ -57,8 +57,24 @@ class BlogSerialAuth:
         # 현재 경로: /Desktop/-/블로그자동화/config/naver-blog-automation/modules/
         # 목표 경로: /Desktop/-/시리얼관리/serials.db
         
-        # 현재 디렉토리에서 상위로 올라가면서 시리얼관리 폴더 찾기
+        # 우선순위 1: 라이온개발자 폴더의 시리얼관리 (원본)
+        lion_dev_path = None
         current_dir = self.base_dir
+        
+        # 라이온개발자 폴더 찾기
+        for i in range(10):
+            search_dir = current_dir
+            for _ in range(i):
+                search_dir = os.path.dirname(search_dir)
+            
+            # 라이온개발자 폴더인지 확인
+            if os.path.basename(search_dir) == "라이온개발자":
+                lion_serial_path = os.path.join(search_dir, "시리얼관리", "serials.db")
+                if os.path.exists(lion_serial_path):
+                    lion_dev_path = lion_serial_path
+                    break
+        
+        # 우선순위 2: 기존 탐색 로직 (프로젝트 내부)
         possible_paths = []
         
         # 상위 디렉토리를 순차적으로 탐색 (최대 10단계)
@@ -90,6 +106,12 @@ class BlogSerialAuth:
         
         self.logger.info(f"현재 base_dir: {self.base_dir}")
         
+        # 우선순위 1: 라이온개발자 폴더 확인
+        if lion_dev_path:
+            self.logger.info(f"🎯 라이온개발자 폴더 시리얼 DB 사용: {lion_dev_path}")
+            return lion_dev_path
+        
+        # 우선순위 2: 기존 경로들 확인
         for i, path in enumerate(possible_paths):
             self.logger.info(f"경로 {i+1} 시도: {path}")
             if os.path.exists(path):
