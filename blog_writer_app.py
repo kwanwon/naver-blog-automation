@@ -2,6 +2,7 @@ import flet as ft # type: ignore
 from modules.gpt_handler import GPTHandler
 from modules.serial_auth import BlogSerialAuth
 from modules.auto_updater import AutoUpdater  # 자동 업데이트 추가
+from modules.chrome_manager import ChromeManager  # Chrome 자동 관리 추가
 
 import subprocess
 import os
@@ -31,6 +32,9 @@ class BlogWriterApp:
         
         # 시리얼 인증 초기화
         self.serial_auth = BlogSerialAuth()
+        
+        # Chrome 관리자 초기화
+        self.chrome_manager = ChromeManager(self.base_dir)
         
         print(f"📁 최종 기본 디렉토리: {self.base_dir}")
         print(f"🔄 현재 작업 디렉토리: {os.getcwd()}")
@@ -1642,6 +1646,44 @@ class BlogWriterApp:
         except Exception as e:
             print(f"본문 변경 처리 중 오류 발생: {str(e)}")
 
+    def setup_chrome_environment(self) -> bool:
+        """
+        Chrome 환경 설정 (Chrome 설치 확인 및 ChromeDriver 자동 설치)
+        
+        Returns:
+            bool: Chrome 환경 설정 성공 여부
+        """
+        try:
+            print("🌐 Chrome 환경 설정을 시작합니다...")
+            
+            # Chrome 설치 확인
+            chrome_installed, chrome_info = self.chrome_manager.check_chrome_installed()
+            if not chrome_installed:
+                print("❌ Chrome이 설치되지 않았습니다!")
+                print("📥 Chrome 다운로드: https://www.google.com/chrome/")
+                return False
+            
+            print(f"✅ Chrome 설치 확인됨: {chrome_info}")
+            
+            # ChromeDriver 설정
+            print("🔧 ChromeDriver 설정 중...")
+            success, message = self.chrome_manager.setup_chromedriver()
+            
+            if success:
+                print(f"✅ ChromeDriver 설정 완료: {message}")
+                return True
+            else:
+                print(f"❌ ChromeDriver 설정 실패: {message}")
+                print("💡 해결 방법:")
+                print("   1. 인터넷 연결을 확인하세요")
+                print("   2. 방화벽이 ChromeDriver 다운로드를 차단하지 않는지 확인하세요")
+                print("   3. 프로그램을 관리자 권한으로 실행해보세요")
+                return False
+                
+        except Exception as e:
+            print(f"Chrome 환경 설정 중 오류 발생: {e}")
+            return False
+
     def main(self, page: ft.Page):
         # 시리얼 인증 확인 (필수)
         if self.serial_auth.is_serial_required():
@@ -1666,6 +1708,14 @@ class BlogWriterApp:
                 # 시리얼 인증 실패 시 프로그램 종료
                 sys.exit(1)
                 return
+        
+        # Chrome 환경 설정 확인
+        print("🌐 Chrome 환경을 확인하고 설정합니다...")
+        if not self.setup_chrome_environment():
+            print("❌ Chrome 환경 설정에 실패했습니다.")
+            print("💡 프로그램을 종료합니다. Chrome을 설치한 후 다시 실행해주세요.")
+            # Chrome 환경 설정 실패 시 프로그램 종료하지 않고 경고만 표시
+            # sys.exit(1)  # 주석 처리: 사용자가 직접 Chrome 설치 후 재시도할 수 있도록
         
         # 페이지 설정
         page.title = "블로그 글쓰기 도우미"
@@ -3154,6 +3204,11 @@ class BlogWriterApp:
         
     def check_for_updates(self):
         """백그라운드에서 업데이트 확인 (개선된 버전)"""
+        # 개발자 모드에서는 업데이트 확인을 건너뛰기
+        if hasattr(self, 'serial_auth') and getattr(self.serial_auth, 'developer_mode', False):
+            print("🔧 개발자 모드: 업데이트 확인 건너뛰기")
+            return
+            
         def update_check():
             try:
                 print("🔄 업데이트 확인 중...")
@@ -3723,4 +3778,5 @@ if __name__ == "__main__":
     
     # 메인 앱 실행
     app = BlogWriterApp()
-    ft.app(target=app.main) 
+    # Flet 렌더링 백엔드를 명시적으로 지정하여 반복 설치 방지
+    ft.app(target=app.main, view=ft.AppView.FLET_APP) 

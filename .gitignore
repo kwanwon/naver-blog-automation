@@ -33,6 +33,7 @@ build/
 
 # Virtual environments
 venv/
+blog_venv/
 env/
 ENV/
 
