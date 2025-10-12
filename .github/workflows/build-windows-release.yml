@@ -1,0 +1,215 @@
+name: 🪟 Windows 배포 빌드
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+    paths-ignore:
+      - 'README.md'
+      - '*.md'
+      - '.github/workflows/auto-version.yml'
+      - '.github/workflows/build-cross-platform.yml'
+  workflow_dispatch:  # 수동 실행 가능
+    inputs:
+      version:
+        description: '배포 버전 (예: 1.2.3)'
+        required: false
+        type: string
+
+jobs:
+  build-windows-release:
+    name: 🪟 Windows 배포 빌드
+    runs-on: windows-latest
+    
+    steps:
+    - name: 📥 코드 체크아웃
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+      
+    - name: 🐍 Python 설정
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        
+    - name: 📦 의존성 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+        
+    - name: 📄 버전 정보 확인
+      id: version_info
+      run: |
+        if (Test-Path "version.json") {
+          $version = (Get-Content version.json | ConvertFrom-Json).version
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "배포 버전: $version"
+        } else {
+          echo "version=1.0.0" >> $env:GITHUB_OUTPUT
+          echo "기본 버전: 1.0.0"
+        }
+      shell: pwsh
+        
+    - name: 🔨 Windows 배포 빌드
+      run: |
+        pyinstaller --clean --noconfirm `
+          --onedir `
+          --windowed `
+          --name="블로그자동화" `
+          --icon="config/app_icon.ico" `
+          --add-data "config;config" `
+          --add-data "modules;modules" `
+          --add-data "default_images;default_images" `
+          --add-data "default_images_1;default_images_1" `
+          --add-data "default_images_2;default_images_2" `
+          --add-data "default_images_3;default_images_3" `
+          --add-data "default_images_4;default_images_4" `
+          --add-data "default_images_5;default_images_5" `
+          --add-data "default_images_6;default_images_6" `
+          --add-data "default_images_7;default_images_7" `
+          --add-data "default_images_8;default_images_8" `
+          --add-data "default_images_9;default_images_9" `
+          --add-data "default_images_10;default_images_10" `
+          --add-data "requirements.txt;." `
+          --add-data "version.json;." `
+          --hidden-import=PIL `
+          --hidden-import=PIL._imaging `
+          --hidden-import=selenium `
+          --hidden-import=openai `
+          --collect-all openai `
+          --collect-all selenium `
+          --collect-all PIL `
+          blog_writer_app.py
+      shell: pwsh
+          
+    - name: 📝 배포 정보 파일 생성
+      run: |
+        $deployInfo = @"
+        블로그 자동화 프로그램 - Windows 배포판
+        ==========================================
+        
+        버전: ${{ steps.version_info.outputs.version }}
+        빌드 날짜: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+        플랫폼: Windows x64
+        
+        설치 방법:
+        1. '블로그자동화.exe' 파일을 실행하세요
+        2. 최초 실행 시 OpenAI API 키를 입력하세요
+        3. 네이버 블로그 자동화를 시작하세요
+        
+        문제 해결:
+        - Windows Defender에서 차단될 경우: '자세한 정보' > '실행' 클릭
+        - 프로그램이 실행되지 않을 경우: 관리자 권한으로 실행
+        
+        지원: https://github.com/yourusername/blog-automation/issues
+        "@
+        
+        $deployInfo | Out-File -FilePath "dist/블로그자동화/배포_정보.txt" -Encoding UTF8
+      shell: pwsh
+      
+    - name: 📁 빌드 결과 확인
+      run: |
+        Write-Host "빌드 디렉토리 내용:"
+        Get-ChildItem -Path "dist/블로그자동화" -Recurse | Select-Object FullName, Length | Format-Table -AutoSize
+        
+        Write-Host "`n빌드 크기:"
+        $size = (Get-ChildItem -Path "dist/블로그자동화" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
+        Write-Host "$([math]::Round($size, 2)) MB"
+      shell: pwsh
+      
+    - name: 📦 배포 패키지 압축
+      run: |
+        Compress-Archive -Path "dist/블로그자동화/*" -DestinationPath "블로그자동화-Windows-v${{ steps.version_info.outputs.version }}.zip" -Force
+        
+        # 압축 파일 정보
+        $zipFile = Get-Item "블로그자동화-Windows-v${{ steps.version_info.outputs.version }}.zip"
+        Write-Host "압축 파일 생성 완료: $($zipFile.Name)"
+        Write-Host "파일 크기: $([math]::Round($zipFile.Length / 1MB, 2)) MB"
+      shell: pwsh
+      
+    - name: 📤 Windows 배포 빌드 업로드
+      uses: actions/upload-artifact@v3
+      with:
+        name: 블로그자동화-Windows-Release
+        path: 블로그자동화-Windows-v${{ steps.version_info.outputs.version }}.zip
+        retention-days: 90
+        
+    - name: 🎉 릴리스 생성 (태그가 있을 경우)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: 블로그자동화-Windows-v${{ steps.version_info.outputs.version }}.zip
+        body: |
+          ## 🎉 블로그 자동화 Windows 배포판
+          
+          ### 📦 버전 정보
+          - **버전**: v${{ steps.version_info.outputs.version }}
+          - **플랫폼**: Windows x64
+          - **빌드 날짜**: ${{ github.event.head_commit.timestamp }}
+          
+          ### 🚀 새로운 기능
+          - OpenAI GPT API 연동
+          - 네이버 블로그 자동 포스팅
+          - 이미지 자동 업로드 및 최적화
+          - 시리얼 인증 시스템
+          - 자동 업데이트 기능
+          
+          ### 💾 다운로드 및 설치
+          1. `블로그자동화-Windows-v${{ steps.version_info.outputs.version }}.zip` 다운로드
+          2. 압축 해제
+          3. `블로그자동화.exe` 실행
+          
+          ### ⚠️ 주의사항
+          - Windows 10 이상 필요
+          - 최초 실행 시 Windows Defender 경고가 나타날 수 있습니다
+          - OpenAI API 키가 필요합니다
+          
+          ### 🔧 시스템 요구사항
+          - OS: Windows 10/11 (64-bit)
+          - RAM: 최소 4GB (권장 8GB)
+          - 디스크 공간: 500MB 이상
+          - 인터넷 연결 필수
+          
+          ### 📞 지원
+          - 버그 리포트: [Issues](https://github.com/${{ github.repository }}/issues)
+          - 문의: [Discussions](https://github.com/${{ github.repository }}/discussions)
+          
+          ---
+          **🤖 GitHub Actions로 자동 빌드됨**
+        draft: false
+        prerelease: false
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 📊 빌드 요약
+      run: |
+        echo "# 🎉 Windows 배포 빌드 완료!" >> $env:GITHUB_STEP_SUMMARY
+        echo "" >> $env:GITHUB_STEP_SUMMARY
+        echo "## 📦 빌드 정보" >> $env:GITHUB_STEP_SUMMARY
+        echo "- **버전**: v${{ steps.version_info.outputs.version }}" >> $env:GITHUB_STEP_SUMMARY
+        echo "- **플랫폼**: Windows x64" >> $env:GITHUB_STEP_SUMMARY
+        echo "- **빌드 날짜**: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" >> $env:GITHUB_STEP_SUMMARY
+        echo "- **커밋**: ${{ github.sha }}" >> $env:GITHUB_STEP_SUMMARY
+        echo "" >> $env:GITHUB_STEP_SUMMARY
+        echo "## 📥 다운로드" >> $env:GITHUB_STEP_SUMMARY
+        echo "아티팩트에서 `블로그자동화-Windows-Release`를 다운로드하세요" >> $env:GITHUB_STEP_SUMMARY
+        echo "" >> $env:GITHUB_STEP_SUMMARY
+        echo "## ✅ 배포 준비 완료" >> $env:GITHUB_STEP_SUMMARY
+        echo "사용자들에게 배포할 수 있습니다! 🚀" >> $env:GITHUB_STEP_SUMMARY
+      shell: pwsh
+
+  # 배포 알림 (선택사항)
+  notify-deployment:
+    name: 📢 배포 알림
+    needs: build-windows-release
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+    - name: 🔔 배포 완료 알림
+      run: |
+        echo "✅ Windows 배포 빌드가 성공적으로 완료되었습니다!"
+        echo "📦 아티팩트를 다운로드하여 사용자들에게 배포하세요"
+        echo "🌐 릴리스 페이지: https://github.com/${{ github.repository }}/releases"
+
