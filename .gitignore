@@ -37,6 +37,9 @@ blog_venv/
 env/
 ENV/
 
+# Chrome profiles (자동 생성되는 Chrome 프로필 폴더들)
+manual_chrome_profile_*/
+
 # IDE specific files
 .idea/
 .vscode/
