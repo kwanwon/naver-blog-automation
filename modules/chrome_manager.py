@@ -7,12 +7,19 @@ import os
 import sys
 import platform
 import subprocess
-import requests
 import json
 import zipfile
 import shutil
 from pathlib import Path
 from typing import Optional, Tuple
+
+# requests 모듈이 없을 때를 대비한 안전한 import
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+    print("⚠️ requests 모듈이 설치되지 않았습니다. ChromeDriver 자동 다운로드 기능을 사용할 수 없습니다.")
 
 class ChromeManager:
     def __init__(self, base_dir: str):
@@ -189,6 +196,10 @@ class ChromeManager:
         Returns:
             Optional[str]: ChromeDriver 버전 또는 None
         """
+        if not REQUESTS_AVAILABLE:
+            print("❌ requests 모듈이 없어 ChromeDriver 버전 정보를 가져올 수 없습니다.")
+            return None
+            
         try:
             # Chrome 버전에서 메이저 버전 추출 (예: "120")
             major_version = chrome_version.split('.')[0]
@@ -226,6 +237,10 @@ class ChromeManager:
         Returns:
             bool: 다운로드 성공 여부
         """
+        if not REQUESTS_AVAILABLE:
+            print("❌ requests 모듈이 없어 ChromeDriver를 다운로드할 수 없습니다.")
+            return False
+            
         try:
             # ChromeDriver 디렉토리 생성
             os.makedirs(self.chromedriver_dir, exist_ok=True)
