@@ -4,11 +4,6 @@ on:
   push:
     branches: [ main, master ]
     tags: [ 'v*' ]
-    paths-ignore:
-      - 'README.md'
-      - '*.md'
-      - '.github/workflows/auto-version.yml'
-      - '.github/workflows/build-cross-platform.yml'
   workflow_dispatch:  # 수동 실행 가능
     inputs:
       version:
@@ -62,7 +57,7 @@ jobs:
           --onedir `
           --windowed `
           --name="블로그자동화" `
-          --icon="config/app_icon.ico" `
+          --icon="build_resources/app_icon.png" `
           --add-data "config;config" `
           --add-data "modules;modules" `
           --add-data "default_images;default_images" `
@@ -82,9 +77,8 @@ jobs:
           --hidden-import=PIL._imaging `
           --hidden-import=selenium `
           --hidden-import=openai `
-          --collect-all openai `
-          --collect-all selenium `
-          --collect-all PIL `
+          --hidden-import=requests `
+          --hidden-import=webdriver_manager `
           blog_writer_app.py
       shell: pwsh
           
