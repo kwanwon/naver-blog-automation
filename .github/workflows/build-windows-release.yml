@@ -38,6 +38,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
+        pip install requests  # ChromeManager를 위한 명시적 설치
+        pip install Pillow   # PIL (Pillow) 명시적 설치
+        pip install selenium # selenium 명시적 설치
+        pip install openai   # openai 명시적 설치
         
     - name: 📄 버전 정보 확인
       id: version_info
