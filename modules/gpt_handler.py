@@ -140,8 +140,8 @@ class GPTHandler:
                 with open(settings_path, 'r', encoding='utf-8') as f:
                     loaded_settings = json.load(f)
                     
-                    # 기본 설정 업데이트
-                    for key in ['persona', 'instructions', 'style']:
+                    # 기본 설정 업데이트 (API 키 포함)
+                    for key in ['persona', 'instructions', 'style', 'api_key']:
                         if key in loaded_settings:
                             default_settings[key] = loaded_settings[key]
                 
