@@ -51,9 +51,11 @@ class GPTHandler:
                 # 오류 대신 자동으로 더미 모드로 설정
                 logger.warning("API 키가 설정되지 않았습니다. 더미 모드로 전환합니다.")
                 self.use_dummy = True
+                self.client = None  # 더미 모드에서는 client를 None으로 설정
             else:
-                # OpenAI 클라이언트 초기화 (0.28.1 버전)
+                # OpenAI 클라이언트 초기화 (최신 버전)
                 openai.api_key = api_key
+                self.client = openai.OpenAI(api_key=api_key)
                 # model은 이미 위에서 초기화되었으므로 여기서는 다시 할당하지 않아도 됨
                 logger.info("OpenAI 클라이언트 초기화 성공")
             
@@ -62,6 +64,7 @@ class GPTHandler:
             # 오류 발생 시 더미 모드로 자동 전환
             logger.warning("오류로 인해 더미 모드로 전환합니다.")
             self.use_dummy = True
+            self.client = None  # 오류 시에도 client를 None으로 설정
         
         self.custom_prompt = self._load_custom_prompt()
 
@@ -411,8 +414,8 @@ class GPTHandler:
             try:
                 logger.info(f"OpenAI API 호출 시작: 주제 '{topic}' (시도 {retry_count + 1}/{max_retries})")
                 
-                # API 호출 (0.28.1 버전)
-                response = openai.ChatCompletion.create(
+                # API 호출 (최신 버전)
+                response = self.client.chat.completions.create(
                     model=self.model,
                     messages=[
                         {"role": "system", "content": system_message},
@@ -426,7 +429,7 @@ class GPTHandler:
                 )
                 
                 # 응답 파싱 및 포맷팅
-                content = response['choices'][0]['message']['content'].strip()
+                content = response.choices[0].message.content.strip()
                 title, body = self._parse_content(content)
                 
                 # 응답 검증
