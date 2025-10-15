@@ -50,10 +50,37 @@ jobs:
           echo "기본 버전: 1.0.0"
         }
       shell: pwsh
+      
+    - name: 🖼️ 배포용 이미지 폴더 준비 (빈 폴더)
+      run: |
+        # 기존 이미지 폴더 백업
+        if (Test-Path "default_images_backup") { Remove-Item -Recurse -Force "default_images_backup" }
+        New-Item -ItemType Directory -Force -Path "default_images_backup" | Out-Null
+        
+        # 이미지 폴더들을 빈 폴더로 교체
+        for ($i=1; $i -le 10; $i++) {
+          $folderName = "default_images_$i"
+          if (Test-Path $folderName) {
+            Move-Item $folderName "default_images_backup/$folderName" -Force
+          }
+          New-Item -ItemType Directory -Force -Path $folderName | Out-Null
+          Write-Host "✅ 빈 이미지 폴더 생성: $folderName"
+        }
+        
+        # default_images 폴더도 빈 폴더로
+        if (Test-Path "default_images") {
+          Move-Item "default_images" "default_images_backup/default_images" -Force
+        }
+        New-Item -ItemType Directory -Force -Path "default_images" | Out-Null
+        Write-Host "✅ 배포용 빈 이미지 폴더 준비 완료"
+      shell: pwsh
         
     - name: 🔨 Windows 배포 빌드
+      env:
+        DISTRIBUTION_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        # 기본 빌드 (아이콘 없이)
+        # Windows 배포용 빌드 (사용자용)
+        echo "📦 배포 빌드 시작 (개발자 API 키 주입)"
         pyinstaller --clean --noconfirm `
           --onedir `
           --windowed `
@@ -76,33 +103,73 @@ jobs:
           --hidden-import=PIL `
           --hidden-import=selenium `
           --hidden-import=openai `
+          --hidden-import=openai._client `
+          --hidden-import=openai.resources `
+          --hidden-import=openai.resources.chat `
+          --hidden-import=openai.resources.chat.completions `
           --hidden-import=requests `
+          --hidden-import=flet `
+          --collect-all=openai `
+          --collect-all=flet `
           blog_writer_app.py
       shell: pwsh
           
+    - name: 🔄 이미지 폴더 복원
+      run: |
+        # 빌드 후 원본 이미지 폴더 복원
+        if (Test-Path "default_images_backup") {
+          Write-Host "📁 이미지 폴더 복원 중..."
+          
+          # 빈 폴더 삭제
+          if (Test-Path "default_images") { Remove-Item -Recurse -Force "default_images" }
+          for ($i=1; $i -le 10; $i++) {
+            $folderName = "default_images_$i"
+            if (Test-Path $folderName) { Remove-Item -Recurse -Force $folderName }
+          }
+          
+          # 백업된 원본 복원
+          Move-Item "default_images_backup/*" . -Force
+          Remove-Item -Recurse -Force "default_images_backup"
+          Write-Host "✅ 이미지 폴더 복원 완료"
+        }
+      shell: pwsh
+      
     - name: 📝 배포 정보 파일 생성
       run: |
         $deployInfo = @"
-        블로그 자동화 프로그램 - Windows 배포판
+        🎉 블로그 자동화 프로그램 - Windows 배포판
         ==========================================
         
-        버전: ${{ steps.version_info.outputs.version }}
-        빌드 날짜: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-        플랫폼: Windows x64
+        📦 버전: ${{ steps.version_info.outputs.version }}
+        📅 빌드 날짜: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+        💻 플랫폼: Windows x64
         
-        설치 방법:
+        ⚙️ 시작하기:
         1. '블로그자동화.exe' 파일을 실행하세요
-        2. 최초 실행 시 OpenAI API 키를 입력하세요
-        3. 네이버 블로그 자동화를 시작하세요
+        2. 시리얼 번호를 입력하여 인증받으세요
+        3. GPT 설정에서 원하는 글쓰기 스타일과 지침을 설정하세요
+        4. default_images 폴더에 원하는 이미지를 추가하세요
+        5. 네이버 블로그 자동화를 시작하세요!
         
-        문제 해결:
-        - Windows Defender에서 차단될 경우: '자세한 정보' > '실행' 클릭
-        - 프로그램이 실행되지 않을 경우: 관리자 권한으로 실행
+        📂 폴더 구조:
+        - default_images/: 블로그 포스팅에 사용할 이미지를 넣으세요
+        - default_images_1 ~ 10/: 추가 이미지 폴더 (선택사항)
+        - config/: 설정 파일이 자동으로 저장됩니다
         
-        지원: https://github.com/yourusername/blog-automation/issues
+        🔧 사용자 설정:
+        - GPT 설정(지침, 스타일)은 프로그램 내에서 커스터마이징 가능
+        - 모든 설정은 자동으로 사용자 디바이스에 저장됩니다
+        
+        ⚠️ 문제 해결:
+        - Windows Defender 경고: '자세한 정보' > '실행' 클릭
+        - 실행되지 않을 경우: 관리자 권한으로 실행
+        - 시리얼 인증 문제: 개발자에게 문의하세요
+        
+        📧 지원: https://github.com/yourusername/blog-automation/issues
         "@
         
         $deployInfo | Out-File -FilePath "dist/블로그자동화/배포_정보.txt" -Encoding UTF8
+        Write-Host "✅ 배포 정보 파일 생성 완료"
       shell: pwsh
       
     - name: 📁 빌드 결과 확인

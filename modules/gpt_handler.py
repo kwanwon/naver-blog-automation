@@ -37,15 +37,28 @@ class GPTHandler:
         self.model = Config.GPT_MODEL
         
         try:
-            # 먼저 GPT 설정 파일에서 API 키 확인
+            # 개발자 모드 확인
+            is_developer_mode = self._is_developer_mode()
+            
+            # API 키 로드 로직 (배포용 vs 개발자용)
             api_key = None
-            if self.settings and 'api_key' in self.settings and self.settings['api_key']:
-                api_key = self.settings['api_key']
-                logger.info("GPT 설정 파일에서 API 키를 로드했습니다.")
+            
+            if not is_developer_mode:
+                # 배포 모드: 환경변수에서 빌드 시 주입된 API 키 사용
+                api_key = os.environ.get('DISTRIBUTION_API_KEY')
+                if api_key:
+                    logger.info("📦 배포 모드: 빌드 시 주입된 개발자 API 키 사용")
+                else:
+                    logger.warning("⚠️ 배포 모드: API 키가 빌드에 포함되지 않았습니다")
             else:
-                # 환경변수에서 API 키 확인
-                api_key = Config.GPT_API_KEY
-                logger.info("환경변수에서 API 키를 로드했습니다.")
+                # 개발자 모드: 설정 파일에서 API 키 로드
+                if self.settings and 'api_key' in self.settings and self.settings['api_key']:
+                    api_key = self.settings['api_key']
+                    logger.info("🔧 개발자 모드: GPT 설정 파일에서 API 키를 로드했습니다.")
+                else:
+                    # 환경변수에서 API 키 확인
+                    api_key = Config.GPT_API_KEY
+                    logger.info("🔧 개발자 모드: 환경변수에서 API 키를 로드했습니다.")
             
             if api_key == 'your-api-key-here' or not api_key:
                 # 오류 대신 자동으로 더미 모드로 설정
