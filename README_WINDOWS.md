@@ -2,31 +2,33 @@
 
 ## 🚀 빠른 시작 (3분 완료)
 
-### 1️⃣ 환경 설정
+### 방법 A: 자동 메뉴 사용 (가장 쉬움)
 ```cmd
 # 프로젝트 폴더에서 실행
-quick-start-windows.bat
+QUICK_COMMANDS.bat
 ```
+→ 메뉴에서 번호 선택하여 실행
 
-### 2️⃣ Cursor 설정
-```
-1. Cursor 실행
-2. File > Open Folder > 이 폴더 선택
-3. PowerShell에서: .\mcp-setup\install-mcp-windows.ps1
-4. Cursor 재시작
-```
-
-### 3️⃣ 작업 시작
+### 방법 B: 단계별 실행
 ```cmd
-# 가상환경 활성화
-.\venv\Scripts\activate
+# 1. 환경 설정
+quick-start-windows.bat
 
-# 프로그램 실행
+# 2. Cursor 설정
+# - Cursor 실행
+# - File > Open Folder > 이 폴더 선택
+# - PowerShell에서: .\mcp-setup\install-mcp-windows.ps1
+# - Cursor 재시작
+
+# 3. 프로그램 실행
+.\venv\Scripts\activate
 python blog_writer_app.py
 ```
 
 ## 📋 상세 가이드
 
+- **실행 가이드**: `EXECUTION_GUIDE.md` ← **가장 상세한 실행 방법**
+- **자동 메뉴**: `QUICK_COMMANDS.bat` ← **가장 쉬운 방법**
 - **기본 설정**: `CURSOR_WINDOWS_SETUP.md`
 - **전체 가이드**: `WINDOWS_SETUP_GUIDE.md`
 - **빠른 시작**: `quick-start-windows.bat`
