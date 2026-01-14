@@ -42,6 +42,20 @@ class ChromeManager:
             self.chromedriver_path = os.path.join(self.chromedriver_dir, 'chromedriver.exe')
         else:
             self.chromedriver_path = os.path.join(self.chromedriver_dir, 'chromedriver')
+        
+        # PyInstaller 빌드 환경에서 번들 내부 ChromeDriver 확인
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            bundle_chromedriver_dir = os.path.join(sys._MEIPASS, 'chromedriver')
+            if self.is_windows:
+                bundle_chromedriver_path = os.path.join(bundle_chromedriver_dir, 'chromedriver.exe')
+            else:
+                bundle_chromedriver_path = os.path.join(bundle_chromedriver_dir, 'chromedriver')
+            
+            # 번들 내부에 ChromeDriver가 있으면 우선 사용
+            if os.path.exists(bundle_chromedriver_path):
+                self.chromedriver_dir = bundle_chromedriver_dir
+                self.chromedriver_path = bundle_chromedriver_path
+                print(f"🎯 번들 내부 ChromeDriver 사용: {self.chromedriver_path}")
     
     def check_chrome_installed(self) -> Tuple[bool, str]:
         """
@@ -250,7 +264,11 @@ class ChromeManager:
                 platform_name = "win32"
                 executable_name = "chromedriver.exe"
             elif platform.system() == 'Darwin':
-                platform_name = "mac-x64"
+                # macOS에서 ARM64 (M1/M2/M3) vs x64 확인
+                if platform.machine() == 'arm64':
+                    platform_name = "mac-arm64"
+                else:
+                    platform_name = "mac-x64"
                 executable_name = "chromedriver"
             else:
                 platform_name = "linux64"

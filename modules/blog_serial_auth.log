@@ -45,3 +45,47 @@ AttributeError: 'Page' object has no attribute 'window_destroy'
 2025-10-08 23:37:55,441 - INFO - 🔧 개발자 모드 활성화 - 시리얼 인증 우회
 2025-10-08 23:37:55,441 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
 2025-10-08 23:37:55,441 - INFO - 🎯 라이온개발자 폴더 시리얼 DB 사용: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-12-08 11:24:02,434 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-12-08 11:24:02,434 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-12-08 11:24:02,434 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-12-08 11:24:02,435 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-12-08 11:24:02,436 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/iNjZ1MM0K5
+2025-12-08 11:24:02,436 - INFO - Flet app has started...
+2025-12-08 11:24:02,437 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/iNjZ1MM0K5
+2025-12-08 11:24:02,437 - INFO - Starting Flet View app...
+2025-12-08 11:24:02,438 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-12-08 11:24:02,670 - INFO - App session started
+2025-12-08 11:24:02,671 - INFO - 설정 파일 저장 완료
+2025-12-08 11:25:28,290 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-12-08 11:25:28,290 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-12-08 11:25:28,290 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-12-08 11:25:28,291 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-12-08 11:25:28,292 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/vjq6aLAw9f
+2025-12-08 11:25:28,292 - INFO - Flet app has started...
+2025-12-08 11:25:28,293 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/vjq6aLAw9f
+2025-12-08 11:25:28,293 - INFO - Starting Flet View app...
+2025-12-08 11:25:28,293 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-12-08 11:25:28,507 - INFO - App session started
+2025-12-08 12:00:22,881 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/modules
+2025-12-08 12:00:22,881 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-12-08 12:00:22,881 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2025-12-08 12:00:22,882 - INFO - Assets path configured: /Users/gm2hapkido/Desktop/라이온개발자/블로그자동화/config/naver-blog-automation/assets
+2025-12-08 12:00:22,882 - INFO - Starting up UDS server on /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/rd2L6HTGSx
+2025-12-08 12:00:22,883 - INFO - Flet app has started...
+2025-12-08 12:00:22,884 - INFO - App URL: /var/folders/yp/_8rr9xmn3x94hg1bcvzv5hq80000gn/T/rd2L6HTGSx
+2025-12-08 12:00:22,884 - INFO - Starting Flet View app...
+2025-12-08 12:00:22,884 - INFO - Flet View found in: /Users/gm2hapkido/.flet/bin/flet-0.27.4
+2025-12-08 12:00:23,095 - INFO - App session started
+2025-12-08 12:00:39,742 - WARNING - 서버 검증 실패: 서버 인증 실패
+2025-12-08 12:00:39,744 - INFO - 설정 파일 저장 완료
+2025-12-08 12:00:39,744 - INFO - 시리얼 검증 저장: ea920794-39ca-458d-b2ad-4681b6a4aaa7
+2025-12-08 12:00:39,809 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-12-08 12:00:39', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}
+2025-12-08 12:00:39,810 - INFO - 같은 디바이스 시리얼 정리 시작 - 호스트: lionui-MacBookAir.local, 앱: 블로그자동화
+2025-12-08 12:00:39,810 - INFO - 보호 대상 시리얼: ea920794... (설정 파일)
+2025-12-08 12:00:39,810 - INFO - 정리할 같은 디바이스 시리얼 없음
+2025-12-08 12:00:39,810 - INFO - 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7, 디바이스 정보 길이: 367
+2025-12-08 12:00:39,810 - INFO - 업데이트된 행 수: 1
+2025-12-08 12:00:39,811 - INFO - 업데이트 후 확인 - 디바이스 정보 길이: 367, 사용횟수: 2
+2025-12-08 12:00:39,811 - INFO - 디바이스 정보 및 사용횟수 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 2)
+2025-12-08 12:00:39,811 - INFO - 서버 업데이트 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-12-08 12:00:39', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}, 'activation_count': 2, 'status': '사용중', 'expiry_date': '2026-05-30'}
+2025-12-08 12:00:41,488 - INFO - 서버 업데이트 성공

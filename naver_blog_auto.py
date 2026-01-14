@@ -5,6 +5,7 @@ import json
 import random
 import urllib.parse
 import traceback
+import subprocess
 import threading
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -206,6 +207,101 @@ class NaverBlogAutomation:
             print(f"⚠️ ChromeDriver 권한 수정 실패: {e}")
             return False
 
+    def _safe_remove(self, path):
+        """존재하면 삭제 시도"""
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+                print(f"🗑️ 삭제: {path}")
+        except Exception as e:
+            print(f"삭제 실패(무시): {e}")
+
+    def _purge_wdm_cache(self, driver_path: str):
+        """webdriver_manager 캐시 디렉터리 정리"""
+        try:
+            path_obj = Path(driver_path).expanduser().resolve()
+            # chromedriver 파일이면 상위 두 단계(…/chromedriver-mac-arm64)까지 삭제
+            target_dir = path_obj.parent
+            cache_root = target_dir.parent
+            print(f"🧹 WebDriverManager 캐시 정리: {cache_root}")
+            if cache_root.exists():
+                for item in cache_root.glob("*"):
+                    try:
+                        if item.is_dir():
+                            for sub in item.rglob("*"):
+                                if sub.is_file():
+                                    sub.unlink(missing_ok=True)
+                            item.rmdir()
+                        else:
+                            item.unlink(missing_ok=True)
+                    except Exception:
+                        continue
+                try:
+                    cache_root.rmdir()
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"캐시 정리 실패(무시): {e}")
+
+    def _cleanup_wdm_versions(self, keep_major: str | None = None):
+        """WDM 캐시에 버전별 1개만 남기고 나머지 정리"""
+        try:
+            root = Path("~/.wdm/drivers/chromedriver").expanduser()
+            if not root.exists():
+                return
+            # 수집
+            version_dirs = []
+            for ver_dir in root.glob("**/mac*/[0-9]*.*"):
+                if ver_dir.is_dir():
+                    version_dirs.append(ver_dir)
+            # 정리 대상 그룹핑
+            def major_of(p: Path):
+                ver = p.name
+                return ver.split(".")[0] if "." in ver else ver
+            keep_map = {}
+            for vd in version_dirs:
+                maj = major_of(vd)
+                keep_map.setdefault(maj, []).append(vd)
+            for maj, dirs in keep_map.items():
+                # 유지할 메이저가 지정된 경우 그 외 메이저는 모두 삭제
+                if keep_major and maj != keep_major:
+                    for d in dirs:
+                        print(f"🧹 다른 메이저 캐시 삭제: {d}")
+                        import shutil; shutil.rmtree(d, ignore_errors=True)
+                    continue
+                # 같은 메이저 내에서 최신 1개만 보존
+                if len(dirs) <= 1:
+                    continue
+                dirs_sorted = sorted(dirs, key=lambda p: p.name)
+                for old in dirs_sorted[:-1]:
+                    print(f"🧹 오래된 캐시 삭제: {old}")
+                    import shutil; shutil.rmtree(old, ignore_errors=True)
+        except Exception as e:
+            print(f"캐시 버전 정리 실패(무시): {e}")
+
+    def _get_chrome_major_version(self):
+        """설치된 Chrome 브라우저의 메이저 버전 확인"""
+        try:
+            from webdriver_manager.utils import get_browser_version_from_os
+            ver = get_browser_version_from_os()
+            if ver:
+                return int(ver.split('.')[0])
+        except Exception as e:
+            print(f"크롬 버전 확인 실패(무시): {e}")
+        return None
+
+    def _get_driver_major_version(self, driver_path):
+        """드라이버 파일의 메이저 버전 확인"""
+        try:
+            import subprocess
+            output = subprocess.check_output([driver_path, "--version"]).decode("utf-8")
+            for token in output.split():
+                if token[0].isdigit():
+                    return int(token.split('.')[0])
+        except Exception as e:
+            print(f"드라이버 버전 확인 실패(무시): {e}")
+        return None
+
     def setup_driver(self):
         """Chrome 드라이버 설정"""
         try:
@@ -387,6 +483,14 @@ class NaverBlogAutomation:
             try:
                 print("로컬 ChromeDriver 사용을 시도합니다...")
                 print(f"현재 base_dir: {self.base_dir}")
+                chrome_major = self._get_chrome_major_version()
+                # WDM 캐시 정리 (현재 메이저만 보존)
+                if chrome_major:
+                    self._cleanup_wdm_versions(chrome_major)
+                if chrome_major:
+                    print(f"감지된 Chrome 메이저 버전: {chrome_major}")
+                else:
+                    print("Chrome 버전을 감지하지 못했습니다. (무시)")
                 
                 # 프로젝트 루트의 ChromeDriver도 포함
                 project_root = os.path.dirname(os.path.dirname(os.path.dirname(self.base_dir)))
@@ -406,13 +510,24 @@ class NaverBlogAutomation:
                 driver_found = False
                 for chromedriver_path in chromedriver_paths:
                     if os.path.exists(chromedriver_path):
-                        print(f"✅ 로컬 ChromeDriver 발견: {chromedriver_path}")
+                        # 실행 권한 및 macOS 보안 속성 정리 후 버전 확인
                         if not os.access(chromedriver_path, os.X_OK):
                             os.chmod(chromedriver_path, 0o755)
-                        
-                        # macOS에서 ChromeDriver 권한 수정
                         self._fix_chromedriver_permissions(chromedriver_path)
-                        
+
+                        driver_major = self._get_driver_major_version(chromedriver_path)
+                        print(f"로컬 드라이버 버전 확인: path={chromedriver_path}, major={driver_major}")
+                        if chrome_major:
+                            if driver_major is None:
+                                print("❌ 드라이버 버전을 확인할 수 없어 파일을 건너뜁니다/삭제합니다 (Chrome 버전 존재).")
+                                self._safe_remove(chromedriver_path)
+                                continue
+                            if driver_major != chrome_major:
+                                print(f"❌ 로컬 드라이버 메이저({driver_major})와 Chrome({chrome_major}) 불일치 → 건너뜀/삭제")
+                                self._safe_remove(chromedriver_path)
+                                continue
+
+                        print(f"✅ 로컬 ChromeDriver 사용 시도: {chromedriver_path}")
                         service = Service(executable_path=chromedriver_path)
                         self.driver = webdriver.Chrome(service=service, options=chrome_options)
                         print("✅ 로컬 ChromeDriver 초기화 성공!")
@@ -420,7 +535,8 @@ class NaverBlogAutomation:
                         break
                 
                 if not driver_found:
-                    raise Exception("로컬 ChromeDriver를 찾을 수 없습니다.")
+                    print("로컬 ChromeDriver가 없거나 버전이 맞지 않습니다. WebDriverManager로 자동 설치를 진행합니다.")
+                    raise Exception("로컬 ChromeDriver 미발견 또는 버전 불일치")
                         
             except Exception as e:
                 print(f"로컬 ChromeDriver 실패: {str(e)}")
@@ -428,28 +544,39 @@ class NaverBlogAutomation:
                 
                 # 백업 방법: WebDriverManager 사용
                 try:
-                    # WebDriverManager를 사용하여 자동으로 최신 ChromeDriver 다운로드
+                    # 오래된 로컬 드라이버 삭제 후 진행
+                    for stale_path in chromedriver_paths:
+                        self._safe_remove(stale_path)
+                    
                     from webdriver_manager.chrome import ChromeDriverManager
                     from selenium.webdriver.chrome.service import Service as ChromeService
-                    
-                    # 자동으로 Chrome 버전에 맞는 ChromeDriver 다운로드 및 설치
-                    driver_path = ChromeDriverManager().install()
-                    print(f"ChromeDriver 자동 설치 완료: {driver_path}")
-                    
-                    # WebDriverManager가 잘못된 파일을 반환하는 경우 수정
-                    if driver_path.endswith('THIRD_PARTY_NOTICES.chromedriver'):
-                        actual_chromedriver = os.path.dirname(driver_path) + '/chromedriver'
-                        if os.path.exists(actual_chromedriver):
-                            print(f"✅ 올바른 ChromeDriver 파일 사용: {actual_chromedriver}")
-                            os.chmod(actual_chromedriver, 0o755)
-                            driver_path = actual_chromedriver
-                    
-                    # macOS에서 ChromeDriver 권한 수정
-                    self._fix_chromedriver_permissions(driver_path)
-                    
-                    service = ChromeService(executable_path=driver_path)
-                    self.driver = webdriver.Chrome(service=service, options=chrome_options)
-                    print("WebDriverManager ChromeDriver 초기화 성공!")
+
+                    def install_and_launch():
+                        driver_path = ChromeDriverManager().install()
+                        print(f"ChromeDriver 자동 설치 완료: {driver_path}")
+                        if driver_path.endswith('THIRD_PARTY_NOTICES.chromedriver'):
+                            actual_chromedriver = os.path.dirname(driver_path) + '/chromedriver'
+                            if os.path.exists(actual_chromedriver):
+                                print(f"✅ 올바른 ChromeDriver 파일 사용: {actual_chromedriver}")
+                                os.chmod(actual_chromedriver, 0o755)
+                                driver_path = actual_chromedriver
+                        self._fix_chromedriver_permissions(driver_path)
+                        service = ChromeService(executable_path=driver_path)
+                        return webdriver.Chrome(service=service, options=chrome_options)
+
+                    # 1차 시도
+                    try:
+                        self.driver = install_and_launch()
+                        print("WebDriverManager ChromeDriver 초기화 성공!")
+                    except Exception as inst_err:
+                        print(f"⚠️ WDM 초기화 1차 실패: {inst_err} → 캐시 제거 후 재시도")
+                        try:
+                            self._purge_wdm_cache(Path(ChromeDriverManager().install()).resolve())
+                        except Exception:
+                            pass
+                        # 2차 재다운로드 후 재시도
+                        self.driver = install_and_launch()
+                        print("WebDriverManager ChromeDriver 재시도 성공!")
                         
                 except Exception as backup_error:
                     print(f"WebDriverManager도 실패: {str(backup_error)}")
@@ -1565,10 +1692,13 @@ class NaverBlogAutomation:
             footer_result = post_finisher.add_footer()
             print(f"add_footer 메서드 결과: {footer_result}")
             
+            # 예약 모드 여부 확인 (외부에서 설정됨)
+            skip_final_publish = getattr(self, 'skip_final_publish', False)
+            
             # 태그 추가
             if tags:
                 print("add_tags 메서드 호출 시작 (사용자 제공 태그)...")
-                tags_result = post_finisher.add_tags(tags)
+                tags_result = post_finisher.add_tags(tags, skip_publish=skip_final_publish)
                 print(f"add_tags 메서드 결과: {tags_result}")
             else:
                 # 설정에서 로드한 태그 사용
@@ -1576,17 +1706,12 @@ class NaverBlogAutomation:
                 load_tags = self.settings.get('tags', [])
                 if load_tags:
                     print(f"설정에서 로드한 태그 수: {len(load_tags)}")
-                    tags_result = post_finisher.add_tags(load_tags)
+                    tags_result = post_finisher.add_tags(load_tags, skip_publish=skip_final_publish)
                     print(f"add_tags 메서드 결과: {tags_result}")
                 else:
                     print("설정된 태그가 없습니다. 태그 추가를 건너뜁니다.")
             
             print("============ 푸터 및 링크 추가 완료 ============\n")
-            
-            # 마지막 문구에서 사용자 설정 슬로건 사용
-            custom_slogan = self.settings.get('slogan', '바른 인성을 가진 인재를 기르는 한국체대 라이온 태권도 합기도')
-            final_message = f"이상 {custom_slogan} 이었습니다"
-            print(final_message)
             
             return True
             

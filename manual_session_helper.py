@@ -25,6 +25,23 @@ class ManualSessionHelper:
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.session_file = os.path.join(self.base_dir, "naver_session.pkl")
         self.cookies_file = os.path.join(self.base_dir, "naver_cookies.json")
+        self.wdm_root = os.path.join(os.path.expanduser("~"), ".wdm", "drivers", "chromedriver")
+
+    def _fix_permissions(self, path: str):
+        """드라이버 실행권한 복구 (실패는 무시)."""
+        try:
+            os.chmod(path, 0o755)
+        except Exception as e:
+            print(f"⚠️ 드라이버 권한 설정 실패(무시): {e}")
+
+    def _purge_wdm_cache(self):
+        """wdm 캐시 강제 삭제 (손상/버전 불일치 시 재설치 유도)."""
+        import shutil
+        try:
+            shutil.rmtree(self.wdm_root, ignore_errors=True)
+            print(f"🧹 WebDriverManager 캐시 삭제: {self.wdm_root}")
+        except Exception as e:
+            print(f"⚠️ 캐시 삭제 실패(무시): {e}")
         
     def setup_driver(self):
         """브라우저 설정 및 시작"""
@@ -52,9 +69,11 @@ class ManualSessionHelper:
         local_chromedriver_path = os.path.join(self.base_dir, 'chromedriver')
         if os.path.exists(local_chromedriver_path):
             print(f"✅ 로컬 ChromeDriver 사용: {local_chromedriver_path}")
+            self._fix_permissions(local_chromedriver_path)
             service = Service(executable_path=local_chromedriver_path)
         elif os.path.exists(chromedriver_path):
             print(f"✅ 프로젝트 ChromeDriver 사용: {chromedriver_path}")
+            self._fix_permissions(chromedriver_path)
             service = Service(executable_path=chromedriver_path)
         else:
             print("⚠️ 프로젝트 ChromeDriver 없음. WebDriverManager 사용...")
@@ -65,11 +84,26 @@ class ManualSessionHelper:
                 actual_chromedriver = os.path.dirname(driver_path) + '/chromedriver'
                 if os.path.exists(actual_chromedriver):
                     print(f"✅ 올바른 ChromeDriver 파일 사용: {actual_chromedriver}")
-                    os.chmod(actual_chromedriver, 0o755)
                     driver_path = actual_chromedriver
             
+            self._fix_permissions(driver_path)
             service = Service(executable_path=driver_path)
-        self.driver = webdriver.Chrome(service=service, options=chrome_options)
+
+        # 드라이버 실행 시도 + 실패 시 캐시 삭제 후 재설치
+        try:
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as first_err:
+            print(f"⚠️ ChromeDriver 실행 1차 실패: {first_err} → 캐시 삭제 후 재설치 시도")
+            self._purge_wdm_cache()
+            driver_path = ChromeDriverManager().install()
+            if driver_path.endswith('THIRD_PARTY_NOTICES.chromedriver'):
+                actual_chromedriver = os.path.dirname(driver_path) + '/chromedriver'
+                if os.path.exists(actual_chromedriver):
+                    print(f"✅ 올바른 ChromeDriver 파일 사용: {actual_chromedriver}")
+                    driver_path = actual_chromedriver
+            self._fix_permissions(driver_path)
+            service = Service(executable_path=driver_path)
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
         
         # 최소한의 자동화 감지 방지
         self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
