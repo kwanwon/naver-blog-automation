@@ -3,7 +3,8 @@ from datetime import datetime
 
 # 오늘 날짜로 폴더 이름 만들기
 today = datetime.now().strftime("%Y-%m-%d")  # 예: "2025-02-23"
-base_dir = "/Users/gm2hapkido/Desktop/블로그자동화"  # 본인 사용자 이름으로 수정
+# 🆕 크로스 플랫폼: 스크립트 위치 기준 상대 경로 사용
+base_dir = os.path.dirname(os.path.abspath(__file__))
 folder_path = os.path.join(base_dir, today)
 
 # 폴더 만들기

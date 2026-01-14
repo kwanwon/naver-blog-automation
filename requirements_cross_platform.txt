@@ -20,6 +20,7 @@ certifi>=2025.1.31
 
 # === AI/GPT 연동 ===
 openai>=0.28.1
+google-generativeai>=0.8.3
 
 # === 이미지 처리 ===
 pillow>=11.1.0
@@ -67,6 +68,7 @@ pyinstaller-hooks-contrib>=2025.2
 # === Windows 전용 패키지 (조건부 설치) ===
 pywin32>=306; platform_system=="Windows"
 wmi>=1.5.1; platform_system=="Windows"
+win10toast>=0.9; platform_system=="Windows"
 
 # === macOS 전용 패키지 (조건부 설치) ===
 pyobjc-core>=10.0; platform_system=="Darwin"
