@@ -26,18 +26,11 @@ class BlogSerialAuth:
         self.config_file = os.path.join(self.base_dir, "serial_config.json")
         self.server_url = "https://aimaster-serial.onrender.com"
         
-        # 개발자 모드 확인
-        self.developer_mode = (
-            os.getenv('DEVELOPER_MODE') == 'true' or 
-            os.getenv('SKIP_SERIAL_AUTH') == 'true' or
-            os.path.exists(os.path.join(self.base_dir, '.developer_mode'))
-        )
-        
         # 로깅 설정
         self.setup_logging()
         
-        if self.developer_mode:
-            self.logger.info("🔧 개발자 모드 활성화 - 시리얼 인증 우회")
+        # 개발자 모드 감지 (환경 변수 또는 modules/.developer_mode 파일)
+        self.developer_mode = self._check_developer_mode()
         
         # 시리얼관리 DB 경로 (동적으로 찾기)
         self.serial_db_path = self.find_serial_db()
@@ -51,30 +44,23 @@ class BlogSerialAuth:
             format='%(asctime)s - %(levelname)s - %(message)s'
         )
         self.logger = logging.getLogger(__name__)
+    
+    def _check_developer_mode(self) -> bool:
+        """개발자 모드 여부 확인"""
+        env_flag = os.getenv("DEVELOPER_MODE", "").lower() in ("1", "true", "yes", "on")
+        file_flag = os.path.exists(os.path.join(self.base_dir, ".developer_mode"))
+        
+        if env_flag or file_flag:
+            self.logger.info("개발자 모드 감지 - 시리얼 인증을 건너뜁니다.")
+        return env_flag or file_flag
         
     def find_serial_db(self) -> Optional[str]:
         """시리얼관리 DB 파일 찾기"""
         # 현재 경로: /Desktop/-/블로그자동화/config/naver-blog-automation/modules/
         # 목표 경로: /Desktop/-/시리얼관리/serials.db
         
-        # 우선순위 1: 라이온개발자 폴더의 시리얼관리 (원본)
-        lion_dev_path = None
+        # 현재 디렉토리에서 상위로 올라가면서 시리얼관리 폴더 찾기
         current_dir = self.base_dir
-        
-        # 라이온개발자 폴더 찾기
-        for i in range(10):
-            search_dir = current_dir
-            for _ in range(i):
-                search_dir = os.path.dirname(search_dir)
-            
-            # 라이온개발자 폴더인지 확인
-            if os.path.basename(search_dir) == "라이온개발자":
-                lion_serial_path = os.path.join(search_dir, "시리얼관리", "serials.db")
-                if os.path.exists(lion_serial_path):
-                    lion_dev_path = lion_serial_path
-                    break
-        
-        # 우선순위 2: 기존 탐색 로직 (프로젝트 내부)
         possible_paths = []
         
         # 상위 디렉토리를 순차적으로 탐색 (최대 10단계)
@@ -106,12 +92,6 @@ class BlogSerialAuth:
         
         self.logger.info(f"현재 base_dir: {self.base_dir}")
         
-        # 우선순위 1: 라이온개발자 폴더 확인
-        if lion_dev_path:
-            self.logger.info(f"🎯 라이온개발자 폴더 시리얼 DB 사용: {lion_dev_path}")
-            return lion_dev_path
-        
-        # 우선순위 2: 기존 경로들 확인
         for i, path in enumerate(possible_paths):
             self.logger.info(f"경로 {i+1} 시도: {path}")
             if os.path.exists(path):
@@ -298,25 +278,107 @@ class BlogSerialAuth:
             return False, "서버 연결 실패 (오프라인 모드)"
     
     def check_serial(self, serial_number: str) -> Tuple[bool, str, Optional[datetime]]:
-        """시리얼 번호 종합 검증 (로컬 우선, 서버 보조)"""
+        """
+        시리얼 번호 종합 검증 (서버 우선, 오프라인 백업)
         
-        # 1. 로컬 DB 검증 (주요)
-        local_valid, local_message, expiry_date = self.validate_serial_local(serial_number)
+        검증 흐름:
+        1. 서버 검증 (최대 3번 재시도, 점진적 타임아웃: 5초 → 25초 → 30초)
+        2. 서버 실패 시 오프라인 모드 (최근 7일 내 검증 성공 이력 있으면 허용)
+        3. 개발자 환경에서는 로컬 DB로 백업 검증
+        """
+        # 개발자 모드일 경우 바로 통과
+        if self.developer_mode:
+            return True, "개발자 모드 - 시리얼 인증 건너뜀", None
         
-        if not local_valid:
-            return False, local_message, expiry_date
+        expiry_date = None
+        last_error = None
         
-        # 2. 원격 서버 검증 (보조) - 실패해도 로컬이 유효하면 통과
+        # 점진적 타임아웃 설정 (총 60초)
+        # 1차: 빠른 응답 기대 (5초)
+        # 2차: Render 슬립 깨우기 (25초)
+        # 3차: 최종 시도 (30초)
+        timeouts = [5, 25, 30]
+        
+        # 1. 원격 서버 검증 (최대 3번 재시도 - Render 슬립 대응)
+        for attempt in range(3):
+            try:
+                current_timeout = timeouts[attempt]
+                self.logger.info(f"서버 검증 시도 {attempt + 1}/3 (타임아웃: {current_timeout}초)")
+                
+                response = requests.get(
+                    f"{self.server_url}/api/serial/{serial_number}", 
+                    timeout=current_timeout
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    status = data.get('status', 'unknown')
+                    
+                    # 블랙리스트 확인 (즉시 차단)
+                    if status == '블랙리스트' or data.get('is_blacklisted', False):
+                        return False, "시리얼이 블랙리스트 처리되었습니다.", None
+                    
+                    # 만료일 확인
+                    expiry_str = data.get('expiry_date', '')
+                    if expiry_str:
+                        try:
+                            expiry_date = datetime.strptime(expiry_str[:10], "%Y-%m-%d")
+                            if expiry_date < datetime.now():
+                                return False, "시리얼 번호가 만료되었습니다.", expiry_date
+                            
+                            # 만료 7주 전 경고
+                            days_left = (expiry_date - datetime.now()).days
+                            if days_left <= 49:
+                                return True, f"주의: {days_left}일 후 만료됩니다.", expiry_date
+                        except:
+                            pass
+                    
+                    # 상태 확인
+                    if status in ['사용가능', '사용중', 'active']:
+                        return True, "서버 인증 성공", expiry_date
+                    elif status == '만료됨':
+                        return False, "시리얼 번호가 만료되었습니다.", expiry_date
+                    else:
+                        return False, f"시리얼 상태: {status}", expiry_date
+                        
+                elif response.status_code == 404:
+                    return False, "유효하지 않은 시리얼 번호입니다.", None
+                else:
+                    last_error = f"서버 응답 오류: {response.status_code}"
+                    self.logger.warning(last_error)
+                    
+            except requests.RequestException as e:
+                last_error = str(e)
+                self.logger.warning(f"서버 연결 시도 {attempt + 1}/3 실패: {e}")
+                
+                # 마지막 시도가 아니면 잠시 대기 후 재시도
+                if attempt < 2:
+                    import time
+                    time.sleep(2)  # 2초 대기 후 재시도
+                continue
+        
+        # 2. 모든 서버 시도 실패 - 오프라인 모드 검토
+        self.logger.warning(f"서버 연결 3회 실패: {last_error}")
+        
+        # 2-1. 오프라인 모드: 최근 7일 내 검증 성공 이력 확인
+        config = self.load_config()
         try:
-            remote_valid, remote_message = self.validate_serial_remote(serial_number)
-            if not remote_valid and "오프라인" not in remote_message:
-                self.logger.warning(f"서버 검증 실패: {remote_message}")
-                # 서버 검증 실패해도 로컬이 유효하면 경고만 표시
-                local_message += f" (서버: {remote_message})"
-        except Exception as e:
-            self.logger.warning(f"서버 검증 중 오류: {e}")
+            last_validation = datetime.fromisoformat(config.get("last_validation", ""))
+            days_since_validation = (datetime.now() - last_validation).days
+            
+            if days_since_validation < 7:
+                self.logger.info(f"오프라인 모드 허용: 마지막 검증 {days_since_validation}일 전")
+                return True, f"오프라인 모드 (마지막 검증: {days_since_validation}일 전)", None
+        except:
+            pass
         
-        return True, local_message, expiry_date
+        # 2-2. 개발자 환경에서는 로컬 DB로 백업 검증
+        if self.serial_db_path and os.path.exists(self.serial_db_path):
+            self.logger.info("오프라인 모드: 로컬 DB로 검증 시도")
+            return self.validate_serial_local(serial_number)
+        
+        # 3. 모든 방법 실패
+        return False, "서버 연결 실패 - 인터넷 연결을 확인하세요.", None
     
     def _cleanup_same_device_serials(self, cursor, current_serial: str, current_device_info: dict):
         """같은 디바이스에서 같은 앱을 사용하는 다른 시리얼들을 정리"""
@@ -479,10 +541,8 @@ class BlogSerialAuth:
     
     def is_serial_required(self) -> bool:
         """시리얼 입력이 필요한지 확인 (실제 유효성 검증 포함)"""
-        
-        # 개발자 모드에서는 시리얼 인증 우회
+        # 개발자 모드에서는 시리얼 불필요
         if self.developer_mode:
-            self.logger.info("🔧 개발자 모드: 시리얼 인증 우회")
             return False
         
         config = self.load_config()
@@ -492,26 +552,28 @@ class BlogSerialAuth:
         if not serial_number:
             return True
         
-        # 마지막 검증일이 없으면 필요
-        if not config.get("last_validation"):
-            return True
-        
-        # 마지막 검증이 7일 이상 지났으면 재검증 필요
-        try:
-            last_validation = datetime.fromisoformat(config["last_validation"])
-            if (datetime.now() - last_validation).days >= 7:
-                return True
-        except:
-            return True
-        
-        # 실제 시리얼 유효성 확인
+        # 🔐 앱 시작 시 항상 서버 검증 (블랙리스트 즉시 적용)
+        # 이전: 7일 캐시 → 현재: 항상 검증
         try:
             valid, message, expiry_date = self.check_serial(serial_number)
             if not valid:
                 self.logger.info(f"시리얼이 무효하므로 재입력 필요: {message}")
                 return True
+            
+            # 검증 성공 시 마지막 검증일 업데이트
+            config["last_validation"] = datetime.now().isoformat()
+            self.save_config(config)
+            
         except Exception as e:
             self.logger.error(f"시리얼 검증 중 오류: {e}")
+            # 서버 연결 실패 시 오프라인 모드 허용 (마지막 검증 후 7일 이내일 경우)
+            try:
+                last_validation = datetime.fromisoformat(config.get("last_validation", ""))
+                if (datetime.now() - last_validation).days < 7:
+                    self.logger.info("오프라인 모드: 최근 검증 이력으로 허용")
+                    return False
+            except:
+                pass
             return True
         
         return False

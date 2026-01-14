@@ -13,16 +13,9 @@ import requests
 import subprocess
 import tempfile
 import zipfile
-import time
 from datetime import datetime
 from pathlib import Path
 import logging
-
-try:
-    from .update_monitor import UpdateMonitor
-except ImportError:
-    # 모니터링 시스템이 없어도 작동하도록
-    UpdateMonitor = None
 
 class AutoUpdater:
     def __init__(self, current_version="1.0.0"):
@@ -32,8 +25,8 @@ class AutoUpdater:
         self.github_api_url = f"https://api.github.com/repos/{self.github_repo}"
         self.github_raw_url = f"https://raw.githubusercontent.com/{self.github_repo}/{self.github_branch}"
         
-        # 올바른 경로 설정 (블로그자동화/config/naver-blog-automation 폴더 내의 파일들)
-        self.remote_base_path = "블로그자동화/config/naver-blog-automation"
+        # GitHub 저장소 루트에 파일들이 있음 (블로그자동화/... 경로 아님)
+        # 저장소 구조: kwanwon/naver-blog-automation/version.json (루트)
         
         # 현재 프로그램 경로
         self.app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,20 +35,33 @@ class AutoUpdater:
         
         # 보존해야 할 파일들 (업데이트되지 않아야 함)
         self.preserve_files = [
+            # 시리얼/인증 관련
             'modules/serial_config.json',
-            'modules/serial_auth.py',  # 설정만 보존, 코드는 업데이트
+            'modules/.developer_mode',
+            
+            # 네이버 로그인 정보
             'naver_cookies.pkl',
+            'naver_cookies.json',
             'naver_session.json',
+            'naver_session.pkl',
+            
+            # 사용자 설정
+            'config/user_settings.txt',
+            'config/gpt_settings.txt',
+            'config/custom_prompts.txt',
+            'config/post_history.json',
+            'config/smart_scheduler.json',
+            'config/environment.json',
+            
+            # 기타 설정
             'user_data.json',
             'config.json',
-            'settings.json'
+            'settings.json',
+            '.env',
         ]
         
         # 로깅 설정
         self.setup_logging()
-        
-        # 모니터링 시스템 초기화
-        self.monitor = UpdateMonitor(self.app_dir) if UpdateMonitor else None
         
     def setup_logging(self):
         """로깅 설정"""
@@ -71,50 +77,23 @@ class AutoUpdater:
         self.logger = logging.getLogger(__name__)
         
     def get_remote_version(self):
-        """깃허브에서 최신 버전 정보 가져오기 (개선된 버전)"""
+        """깃허브에서 최신 버전 정보 가져오기"""
         try:
-            version_url = f"{self.github_raw_url}/블로그자동화/config/naver-blog-automation/version.json"
-            
-            # 빠른 타임아웃으로 응답성 개선
-            response = requests.get(version_url, timeout=8)
+            # GitHub 저장소 루트의 version.json 확인
+            version_url = f"{self.github_raw_url}/version.json"
+            self.logger.info(f"버전 확인 URL: {version_url}")
+            response = requests.get(version_url, timeout=15)
             
             if response.status_code == 200:
                 version_info = response.json()
-                version = version_info.get('version')
-                changelog = version_info.get('changelog', [])
-                
-                # 건너뛴 버전 확인
-                if self.is_version_skipped(version):
-                    self.logger.info(f"버전 v{version}은 사용자가 건너뛰기로 설정했습니다.")
-                    return None, []
-                
-                return version, changelog
+                return version_info.get('version'), version_info.get('changelog', [])
             else:
                 self.logger.warning(f"버전 정보를 가져올 수 없습니다. HTTP {response.status_code}")
                 return None, []
                 
-        except requests.exceptions.Timeout:
-            self.logger.warning("버전 확인 타임아웃 - 네트워크 연결을 확인해주세요.")
-            return None, []
-        except requests.exceptions.ConnectionError:
-            self.logger.warning("네트워크 연결 오류 - 인터넷 연결을 확인해주세요.")
-            return None, []
         except Exception as e:
             self.logger.error(f"원격 버전 확인 오류: {e}")
             return None, []
-    
-    def is_version_skipped(self, version):
-        """버전이 건너뛰기로 설정되었는지 확인"""
-        try:
-            skip_file = os.path.join(self.app_dir, 'config', 'skipped_versions.json')
-            if os.path.exists(skip_file):
-                with open(skip_file, 'r', encoding='utf-8') as f:
-                    skipped_versions = json.load(f)
-                    return version in skipped_versions
-            return False
-        except Exception as e:
-            self.logger.error(f"건너뛴 버전 확인 오류: {e}")
-            return False
             
     def compare_versions(self, remote_version):
         """버전 비교"""
@@ -137,7 +116,7 @@ class AutoUpdater:
             return False
             
     def backup_current_version(self):
-        """현재 버전 백업 (개선된 버전)"""
+        """현재 버전 백업"""
         try:
             if not os.path.exists(self.backup_dir):
                 os.makedirs(self.backup_dir)
@@ -146,88 +125,19 @@ class AutoUpdater:
             backup_name = f"backup_v{self.current_version}_{timestamp}"
             backup_path = os.path.join(self.backup_dir, backup_name)
             
-            self.logger.info(f"백업 시작: {self.app_dir} -> {backup_path}")
-            
-            # 백업에서 제외할 패턴들 (성능 최적화)
-            ignore_patterns = [
-                'venv', '__pycache__', '*.pyc', '*.pyo', 
-                'backups', 'temp_*', 'logs', '*.log',
-                'chrome_profile*', 'manual_chrome_profile*',
-                'dist', 'build', '.git', '.vscode',
-                'default_images_*'  # 중복 이미지 폴더들 제외
-            ]
-            
-            # 전체 앱 디렉토리 백업
+            # 전체 앱 디렉토리 백업 (venv 제외)
             shutil.copytree(
                 self.app_dir, 
                 backup_path,
-                ignore=shutil.ignore_patterns(*ignore_patterns)
+                ignore=shutil.ignore_patterns('venv', '__pycache__', '*.pyc', 'backups', 'temp_*')
             )
             
-            # 백업 크기 확인
-            backup_size = self.get_directory_size(backup_path)
-            self.logger.info(f"백업 완료: {backup_path} (크기: {self.format_size(backup_size)})")
-            
-            # 오래된 백업 정리 (최대 5개 유지)
-            self.cleanup_old_backups(5)
-            
+            self.logger.info(f"백업 완료: {backup_path}")
             return backup_path
             
         except Exception as e:
             self.logger.error(f"백업 생성 실패: {e}")
             return None
-    
-    def get_directory_size(self, path):
-        """디렉토리 크기 계산"""
-        total_size = 0
-        try:
-            for dirpath, dirnames, filenames in os.walk(path):
-                for filename in filenames:
-                    filepath = os.path.join(dirpath, filename)
-                    if os.path.exists(filepath):
-                        total_size += os.path.getsize(filepath)
-        except Exception as e:
-            self.logger.warning(f"크기 계산 오류: {e}")
-        return total_size
-    
-    def format_size(self, size_bytes):
-        """바이트를 읽기 쉬운 형태로 변환"""
-        if size_bytes == 0:
-            return "0B"
-        size_names = ["B", "KB", "MB", "GB"]
-        import math
-        i = int(math.floor(math.log(size_bytes, 1024)))
-        p = math.pow(1024, i)
-        s = round(size_bytes / p, 2)
-        return f"{s} {size_names[i]}"
-    
-    def cleanup_old_backups(self, keep_count=5):
-        """오래된 백업 정리"""
-        try:
-            if not os.path.exists(self.backup_dir):
-                return
-                
-            # 백업 폴더 목록 가져오기
-            backup_folders = []
-            for item in os.listdir(self.backup_dir):
-                item_path = os.path.join(self.backup_dir, item)
-                if os.path.isdir(item_path) and item.startswith('backup_v'):
-                    backup_folders.append((item_path, os.path.getctime(item_path)))
-            
-            # 생성 시간 기준으로 정렬 (최신순)
-            backup_folders.sort(key=lambda x: x[1], reverse=True)
-            
-            # 지정된 개수를 초과하는 백업 삭제
-            if len(backup_folders) > keep_count:
-                for backup_path, _ in backup_folders[keep_count:]:
-                    try:
-                        shutil.rmtree(backup_path)
-                        self.logger.info(f"오래된 백업 삭제: {os.path.basename(backup_path)}")
-                    except Exception as e:
-                        self.logger.warning(f"백업 삭제 실패: {backup_path} - {e}")
-                        
-        except Exception as e:
-            self.logger.error(f"백업 정리 실패: {e}")
             
     def preserve_user_data(self):
         """사용자 데이터 보존"""
@@ -311,15 +221,24 @@ class AutoUpdater:
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
                 
-            # 압축 해제된 폴더 찾기
+            # 압축 해제된 폴더 찾기 (naver-blog-automation-main/)
             extracted_items = os.listdir(extract_path)
             if extracted_items:
                 repo_folder = os.path.join(extract_path, extracted_items[0])
-                blog_automation_path = os.path.join(repo_folder, '블로그자동화', 'config', 'naver-blog-automation')
                 
-                if os.path.exists(blog_automation_path):
-                    self.logger.info("업데이트 파일 압축 해제 완료")
-                    return blog_automation_path
+                # GitHub ZIP은 저장소 루트가 바로 폴더 안에 있음
+                # 예: naver-blog-automation-main/version.json, naver-blog-automation-main/modules/ 등
+                if os.path.exists(repo_folder) and os.path.isdir(repo_folder):
+                    # version.json이 있는지 확인하여 올바른 폴더인지 검증
+                    if os.path.exists(os.path.join(repo_folder, 'version.json')):
+                        self.logger.info("업데이트 파일 압축 해제 완료 (루트)")
+                        return repo_folder
+                    
+                    # 이전 구조 호환 (블로그자동화/config/... 경로)
+                    blog_automation_path = os.path.join(repo_folder, '블로그자동화', 'config', 'naver-blog-automation')
+                    if os.path.exists(blog_automation_path):
+                        self.logger.info("업데이트 파일 압축 해제 완료 (하위 경로)")
+                        return blog_automation_path
                     
             self.logger.error("블로그 자동화 폴더를 찾을 수 없습니다")
             return None
@@ -397,10 +316,7 @@ class AutoUpdater:
             self.logger.error(f"임시 파일 정리 실패: {e}")
             
     def check_and_update(self):
-        """업데이트 확인 및 실행 (개선된 안전 버전 + 모니터링)"""
-        backup_path = None
-        start_time = time.time()
-        
+        """업데이트 확인 및 실행"""
         try:
             self.logger.info("업데이트 확인 시작...")
             
@@ -418,103 +334,40 @@ class AutoUpdater:
                 
             self.logger.info(f"새 버전 발견: {self.current_version} -> {remote_version}")
             
-            # 모니터링: 업데이트 시도 기록
-            if self.monitor:
-                self.monitor.record_update_attempt(self.current_version, remote_version)
-            
-            # 1단계: 백업 생성
-            self.logger.info("1/6 백업 생성 중...")
+            # 백업 생성
             backup_path = self.backup_current_version()
             if not backup_path:
-                error_msg = "백업 실패 - 업데이트를 중단합니다"
-                if self.monitor:
-                    self.monitor.record_update_failure(self.current_version, remote_version, error_msg)
-                return False, error_msg
+                return False, "백업 실패"
                 
-            # 2단계: 사용자 데이터 보존
-            self.logger.info("2/6 사용자 데이터 보존 중...")
+            # 사용자 데이터 보존
             preserved_data = self.preserve_user_data()
             
-            # 3단계: 업데이트 다운로드
-            self.logger.info("3/6 업데이트 다운로드 중...")
+            # 업데이트 다운로드
             zip_path = self.download_update()
             if not zip_path:
-                error_msg = "다운로드 실패"
-                self.logger.error(f"{error_msg} - 롤백하지 않고 종료")
-                if self.monitor:
-                    self.monitor.record_update_failure(self.current_version, remote_version, error_msg)
-                return False, error_msg
+                return False, "다운로드 실패"
                 
-            # 4단계: 압축 해제
-            self.logger.info("4/6 업데이트 파일 압축 해제 중...")
+            # 압축 해제
             update_path = self.extract_update(zip_path)
             if not update_path:
-                error_msg = "압축 해제 실패"
-                self.logger.error(f"{error_msg} - 롤백하지 않고 종료")
-                if self.monitor:
-                    self.monitor.record_update_failure(self.current_version, remote_version, error_msg)
-                return False, error_msg
+                return False, "압축 해제 실패"
                 
-            # 5단계: 업데이트 적용 (위험 구간 - 실패 시 롤백 필요)
-            self.logger.info("5/6 업데이트 적용 중... (중요: 이 단계에서 실패하면 자동 롤백됩니다)")
-            try:
-                if not self.apply_update(update_path, preserved_data):
-                    self.logger.error("업데이트 적용 실패 - 롤백 시작")
-                    error_msg = "업데이트 적용 실패"
-                    if self.rollback_update(backup_path):
-                        if self.monitor:
-                            self.monitor.record_update_failure(self.current_version, remote_version, f"{error_msg} - 롤백 성공")
-                        return False, "업데이트 적용 실패 - 이전 버전으로 복원됨"
-                    else:
-                        if self.monitor:
-                            self.monitor.record_update_failure(self.current_version, remote_version, f"{error_msg} - 롤백도 실패")
-                        return False, "업데이트 적용 실패 - 롤백도 실패 (수동 복원 필요)"
-            except Exception as e:
-                self.logger.error(f"업데이트 적용 중 예외 발생: {e} - 롤백 시작")
-                error_msg = f"업데이트 적용 중 예외: {str(e)}"
-                if self.rollback_update(backup_path):
-                    if self.monitor:
-                        self.monitor.record_update_failure(self.current_version, remote_version, f"{error_msg} - 롤백 성공")
-                    return False, f"업데이트 중 오류 발생 - 이전 버전으로 복원됨: {str(e)}"
-                else:
-                    if self.monitor:
-                        self.monitor.record_update_failure(self.current_version, remote_version, f"{error_msg} - 롤백도 실패")
-                    return False, f"업데이트 중 오류 발생 - 롤백도 실패: {str(e)}"
+            # 업데이트 적용
+            if not self.apply_update(update_path, preserved_data):
+                return False, "업데이트 적용 실패"
                 
-            # 6단계: 버전 파일 업데이트 및 정리
-            self.logger.info("6/6 버전 정보 업데이트 및 정리 중...")
+            # 버전 파일 업데이트
             self.update_version_file(remote_version)
+            
+            # 임시 파일 정리
             self.cleanup_temp_files()
             
-            # 업데이트 완료 시간 계산
-            duration = time.time() - start_time
-            
-            # 모니터링: 업데이트 성공 기록
-            if self.monitor:
-                self.monitor.record_update_success(self.current_version, remote_version, duration)
-            
-            self.logger.info(f"✅ 업데이트 완료: {self.current_version} -> {remote_version} (소요시간: {duration:.1f}초)")
+            self.logger.info(f"업데이트 완료: {self.current_version} -> {remote_version}")
             return True, f"업데이트 완료: v{remote_version}"
             
         except Exception as e:
-            self.logger.error(f"업데이트 프로세스 예외: {e}")
-            
-            # 예외 발생 시 롤백 시도
-            if backup_path and os.path.exists(backup_path):
-                self.logger.info("예외 발생으로 인한 롤백 시도...")
-                error_msg = f"업데이트 프로세스 예외: {str(e)}"
-                if self.rollback_update(backup_path):
-                    if self.monitor:
-                        self.monitor.record_update_failure(self.current_version, remote_version, f"{error_msg} - 롤백 성공")
-                    return False, f"업데이트 중 오류 발생 - 이전 버전으로 복원됨: {str(e)}"
-                else:
-                    if self.monitor:
-                        self.monitor.record_update_failure(self.current_version, remote_version, f"{error_msg} - 롤백도 실패")
-                    return False, f"업데이트 중 오류 발생 - 롤백도 실패: {str(e)}"
-            else:
-                if self.monitor:
-                    self.monitor.record_update_failure(self.current_version, remote_version, f"업데이트 오류 (백업 없음): {str(e)}")
-                return False, f"업데이트 오류 (백업 없음): {str(e)}"
+            self.logger.error(f"업데이트 프로세스 오류: {e}")
+            return False, f"업데이트 오류: {str(e)}"
             
     def rollback_update(self, backup_path):
         """업데이트 롤백"""
@@ -546,7 +399,7 @@ class AutoUpdater:
                     
             self.logger.info("롤백 완료")
             return True
-                
+            
         except Exception as e:
             self.logger.error(f"롤백 실패: {e}")
             return False
