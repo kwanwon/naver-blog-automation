@@ -1,0 +1,77 @@
+name: Build Cross-Platform
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0 같은 태그 푸시 시 빌드
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_cross_platform.txt
+          pip install pyinstaller
+          
+      - name: Build Windows executable
+        run: |
+          python build_cross_platform.py --platform windows
+          
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlogAutomation-Windows
+          path: dist/BlogAutomation_Windows/
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_cross_platform.txt
+          pip install pyinstaller
+          
+      - name: Build macOS app
+        run: |
+          python build_cross_platform.py --platform macos
+          
+      - name: Upload macOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlogAutomation-macOS
+          path: dist/BlogAutomation_Macos.app/
+
+  create-release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            BlogAutomation-Windows/*
+            BlogAutomation-macOS/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
