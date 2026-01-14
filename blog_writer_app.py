@@ -8359,9 +8359,9 @@ class BlogWriterApp:
 
         # auto_topic_checkbox 변경 이벤트 처리
         def on_auto_topic_change(e):
+            topic_count = 0  # 함수 시작 시 초기화
             if auto_topic_checkbox.value:
                 # 주제 목록 수와 현재 인덱스 가져오기
-                topic_count = 0
                 try:
                     if os.path.exists(os.path.join(self.base_dir, 'config/user_settings.txt')):
                         with open(os.path.join(self.base_dir, 'config/user_settings.txt'), 'r', encoding='utf-8') as f:
