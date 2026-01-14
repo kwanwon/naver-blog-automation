@@ -5,11 +5,6 @@ on:
     tags:
       - 'v*'  # v1.0.0 같은 태그 푸시 시 빌드
   workflow_dispatch:  # 수동 실행 가능
-    inputs:
-      create_release:
-        description: 'Create a release after build'
-        required: false
-        default: 'false'
 
 jobs:
   build-windows:
@@ -25,23 +20,41 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements_cross_platform.txt
           pip install pyinstaller
+          pip install selenium webdriver-manager
+          pip install Pillow requests tkcalendar
+          pip install openai google-generativeai
+          pip install psutil cryptography
+          pip install pyperclip
           
       - name: Build Windows executable
         run: |
-          python build_cross_platform.py --platform windows
+          pyinstaller --onedir --windowed --name "BlogAutomation_Windows" ^
+            --add-data "modules;modules" ^
+            --add-data "config;config" ^
+            --hidden-import=PIL ^
+            --hidden-import=PIL.Image ^
+            --hidden-import=requests ^
+            --hidden-import=selenium ^
+            --hidden-import=webdriver_manager ^
+            --hidden-import=tkcalendar ^
+            --hidden-import=openai ^
+            --hidden-import=google.generativeai ^
+            --collect-all tkcalendar ^
+            blog_writer_app.py
+        shell: cmd
           
       - name: Create Windows ZIP
         run: |
           cd dist
-          Compress-Archive -Path "BlogAutomation_Windows" -DestinationPath "블로그자동화-Windows.zip"
+          Compress-Archive -Path "BlogAutomation_Windows" -DestinationPath "BlogAutomation-Windows.zip"
+        shell: powershell
           
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 블로그자동화-Windows
-          path: dist/블로그자동화-Windows.zip
+          name: BlogAutomation-Windows
+          path: dist/BlogAutomation-Windows.zip
 
   build-macos:
     runs-on: macos-latest
@@ -56,23 +69,39 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements_cross_platform.txt
           pip install pyinstaller
+          pip install selenium webdriver-manager
+          pip install Pillow requests tkcalendar
+          pip install openai google-generativeai
+          pip install psutil cryptography
+          pip install pyperclip
           
       - name: Build macOS app
         run: |
-          python build_cross_platform.py --platform macos
+          pyinstaller --onedir --windowed --name "BlogAutomation_Mac" \
+            --add-data "modules:modules" \
+            --add-data "config:config" \
+            --hidden-import=PIL \
+            --hidden-import=PIL.Image \
+            --hidden-import=requests \
+            --hidden-import=selenium \
+            --hidden-import=webdriver_manager \
+            --hidden-import=tkcalendar \
+            --hidden-import=openai \
+            --hidden-import=google.generativeai \
+            --collect-all tkcalendar \
+            blog_writer_app.py
           
       - name: Create macOS ZIP
         run: |
           cd dist
-          zip -r "블로그자동화-Mac.zip" "BlogAutomation_Macos.app"
+          zip -r "BlogAutomation-Mac.zip" "BlogAutomation_Mac.app" || zip -r "BlogAutomation-Mac.zip" "BlogAutomation_Mac"
           
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 블로그자동화-Mac
-          path: dist/블로그자동화-Mac.zip
+          name: BlogAutomation-Mac
+          path: dist/BlogAutomation-Mac.zip
 
   create-release:
     needs: [build-windows, build-macos]
@@ -86,30 +115,18 @@ jobs:
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: 블로그자동화-Windows
+          name: BlogAutomation-Windows
           path: ./release-files/
           
       - name: Download macOS artifact
         uses: actions/download-artifact@v4
         with:
-          name: 블로그자동화-Mac
+          name: BlogAutomation-Mac
           path: ./release-files/
       
       - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-      
-      - name: Read changelog
-        id: changelog
-        run: |
-          if [ -f version.json ]; then
-            CHANGELOG=$(python3 -c "import json; data=json.load(open('version.json')); print('\n'.join(data.get('changelog', [])))")
-            echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-            echo "$CHANGELOG" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "CHANGELOG=업데이트 내용이 없습니다." >> $GITHUB_OUTPUT
-          fi
           
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -118,12 +135,9 @@ jobs:
           body: |
             ## 🎉 블로그자동화 ${{ steps.get_version.outputs.VERSION }} 릴리스
             
-            ### 📋 변경 내용
-            ${{ steps.changelog.outputs.CHANGELOG }}
-            
             ### 📥 다운로드
-            - **Mac 사용자**: `블로그자동화-Mac.zip` 다운로드
-            - **Windows 사용자**: `블로그자동화-Windows.zip` 다운로드
+            - **Mac 사용자**: `BlogAutomation-Mac.zip` 다운로드
+            - **Windows 사용자**: `BlogAutomation-Windows.zip` 다운로드
             
             ### 📌 설치 방법
             1. ZIP 파일 다운로드
@@ -133,8 +147,8 @@ jobs:
             ---
             ⚡ 앱 내에서 자동 업데이트를 지원합니다!
           files: |
-            ./release-files/블로그자동화-Windows.zip
-            ./release-files/블로그자동화-Mac.zip
+            ./release-files/BlogAutomation-Windows.zip
+            ./release-files/BlogAutomation-Mac.zip
           draft: false
           prerelease: false
         env:
