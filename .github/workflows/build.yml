@@ -29,7 +29,7 @@ jobs:
           
       - name: Build with flet pack
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Windows --add-data "modules;modules" --add-data "config;config"
+          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.png --add-data "modules;modules" --add-data "config;config"
           
       - name: Create Windows ZIP
         run: |
@@ -65,7 +65,7 @@ jobs:
           
       - name: Build with flet pack
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Mac --add-data "modules:modules" --add-data "config:config"
+          flet pack blog_writer_app.py --name BlogAutomation_Mac --icon assets/icon.png --add-data "modules:modules" --add-data "config:config"
           
       - name: Create macOS ZIP
         run: |
