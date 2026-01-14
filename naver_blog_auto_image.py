@@ -70,10 +70,9 @@ class NaverBlogImageInserter:
                 self.images_folder = None
         
         # 대체 이미지 폴더 설정
-        if not fallback_folder:
-            self.fallback_folder = 'default_images'
-        else:
-            self.fallback_folder = fallback_folder
+        # custom_images_folder가 넘어오면 해당 폴더만 사용 (폴더 순환 비활성화)
+        self.fallback_folder = fallback_folder if fallback_folder else 'default_images'
+        self.use_single_folder = bool(fallback_folder)  # True면 폴더 순환을 건너뛰고 지정 폴더만 사용
             
         self.used_images = []
         self.sentence_end_markers = ['. ', '다. ', '요. ', '죠. ', '!', '?']
@@ -88,28 +87,39 @@ class NaverBlogImageInserter:
 
     def get_image_files(self):
         """이미지 폴더에서 사용 가능한 이미지 파일 목록을 가져옵니다. (폴더별 순환 시스템)"""
+        # 단일 폴더 사용 모드(포스팅 단위 고정 폴더)
+        if self.use_single_folder:
+            folder = self.fallback_folder
+            if not folder or not os.path.exists(folder):
+                print(f"❌ 지정된 이미지 폴더가 없거나 접근 불가: {folder}")
+                return []
+            valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+            files = [
+                os.path.join(folder, f)
+                for f in os.listdir(folder)
+                if os.path.splitext(f)[1].lower() in valid_exts
+            ]
+            if files:
+                print(f"✅ 고정 폴더에서 {len(files)}개의 이미지를 사용합니다: {folder}")
+                return files
+            else:
+                print(f"ℹ️ 고정 폴더에 이미지가 없습니다: {folder}")
+                return []
         
-        # 폴더 순환 시스템 사용
+        # 기존: 폴더 순환 시스템
         print("📁 폴더 순환 시스템을 사용합니다.")
-        
-        # 폴더 상태 출력
         self.folder_manager.show_folder_status()
         
-        # 현재 차례인 폴더 가져오기
         current_folder = self.folder_manager.get_current_folder()
         if not current_folder:
             print("❌ 사용 가능한 이미지 폴더가 없습니다.")
             return []
         
-        # 현재 폴더에서 이미지 가져오기
         current_images = self.folder_manager.get_images_from_folder(current_folder)
         
         if current_images:
             print(f"✅ {current_folder}에서 {len(current_images)}개의 이미지를 찾았습니다.")
-            
-            # 다음 업로드를 위해 폴더 인덱스 증가
             self.folder_manager.get_next_folder()
-            
             return current_images
         else:
             print(f"❌ {current_folder}에 이미지가 없습니다.")
@@ -384,11 +394,11 @@ class NaverBlogImageInserter:
                 file_input.send_keys(abs_image_path)
                 print("파일 경로 전송 완료")
                 
-                # 이미지 업로드 완료 대기 (시간 단축 및 폴링 간격 감소)
+                # 이미지 업로드 완료 대기 (기본 1초)
                 WebDriverWait(self.driver, 1, poll_frequency=0.05).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div.se-image-container img[src*='http']"))
                 )
-                print("이미지 업로드 확인됨 (1초로 단축)")
+                print("이미지 업로드 확인됨 (1초)")
                 
                 # 이미지 레이아웃 선택 대기 및 처리
                 try:

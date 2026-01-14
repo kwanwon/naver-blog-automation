@@ -63,6 +63,68 @@ class Config:
     GPT_MAX_TOKENS = 4000  # 토큰 수 증가
     GPT_TEMPERATURE = 0.8  # 창의성 약간 증가
     
+    # Gemini API 키 (환경 변수에서 가져옴)
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+    
+    # AI 모델 정보
+    AI_MODELS = {
+        "gpt-4o-mini": {
+            "provider": "openai",
+            "name": "GPT-4o Mini",
+            "context": "128K",
+            "input_cost_per_1k_krw": 0.2,   # 참고 추정치
+            "output_cost_per_1k_krw": 0.8
+        },
+        "gpt-4o": {
+            "provider": "openai",
+            "name": "GPT-4o",
+            "context": "128K",
+            "input_cost_per_1k_krw": 1.6,   # 참고 추정치
+            "output_cost_per_1k_krw": 8.0
+        },
+        "gpt-3.5-turbo": {
+            "provider": "openai",
+            "name": "GPT-3.5 Turbo",
+            "context": "16K",
+            "input_cost_per_1k_krw": 0.7,   # 참고 추정치
+            "output_cost_per_1k_krw": 2.0
+        },
+        "gemini-2.5-flash-lite": {
+            "provider": "gemini",
+            "name": "Gemini 2.5 Flash-Lite",
+            "context": "1M",
+            "free": True,  # 무료/저가 프로모 구간 가정
+            "input_cost_per_1k_krw": 0.0,
+            "output_cost_per_1k_krw": 0.0
+        },
+        "gemini-2.5-flash": {
+            "provider": "gemini",
+            "name": "Gemini 2.5 Flash",
+            "context": "1M",
+            "free": False,
+            "input_cost_per_1k_krw": 0.2,   # 추정 단가
+            "output_cost_per_1k_krw": 0.4
+        }
+    }
+    
+    @staticmethod
+    def calculate_monthly_cost(model_name, posts_per_day=10):
+        """월간 비용 계산 (단순 추정, 무료 모델은 0)"""
+        if model_name not in Config.AI_MODELS:
+            return (0, 0)
+        model = Config.AI_MODELS[model_name]
+        if model.get("free"):
+            return (0, 0)
+        # 기본 단가(USD/1M) 추정치
+        input_cost = model.get("input_cost", 0.001)
+        output_cost = model.get("output_cost", 0.002)
+        monthly_posts = posts_per_day * 30
+        input_tokens = monthly_posts * 1000 / 1000
+        output_tokens = monthly_posts * 2000 / 1000
+        usd = input_tokens * input_cost + output_tokens * output_cost
+        krw = usd * 1330
+        return (usd, krw)
+    
     # 블로그 관련 설정
     BLOG_STICKER_PATH = "assets/stickers"
     POST_SAVE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

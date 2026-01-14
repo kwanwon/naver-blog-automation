@@ -277,18 +277,11 @@ class NaverBlogPostFinisher:
             dojang_name = self.settings.get('dojang_name', '라이온태권도')
             print(f"푸터에 사용할 도장 이름: {dojang_name}")
             
-            # 사용자 설정 슬로건 사용 (줄바꿈 포함)
-            custom_slogan = self.settings.get('slogan', '바른 인성을 가진 인재를 기르는 한국체대 라이온 태권도 합기도')
-            footer_text = f"이상\n{custom_slogan}\n이었습니다"
-            for line in footer_text.split('\n'):
-                actions = ActionChains(self.driver)
-                actions.send_keys(line).perform()
-                time.sleep(0.2)
-                actions = ActionChains(self.driver)
-                actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
-                time.sleep(0.2)
+            # 슬로건은 GPT 생성 본문에 이미 포함되어 있으므로 여기서는 추가하지 않음
+            # 바로 상담&문의 섹션으로 진행
             
             # 줄바꿈 2번
+            actions = ActionChains(self.driver)
             actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
             time.sleep(0.2)
             actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
@@ -1062,9 +1055,8 @@ class NaverBlogPostFinisher:
             # 🎯 장소 정보 추가 완료 - '찾아 오는 길' 텍스트는 제거됨
             print("✅ 장소 정보 추가 완료 - 추가 텍스트 없이 진행")
 
-            # 발행 버튼 클릭
-            if not self.click_publish_button():
-                print("발행 버튼 클릭 실패")
+            # 발행 버튼 클릭은 예약 모드가 아닐 때만 실행 (add_tags에서 처리)
+            # (예약 모드에서는 set_reservation_time 후에 click_final_publish_button 호출)
             
             print("푸터 정보 추가 완료" if success else "푸터 정보 일부 추가 실패")
             return True  # 계속 진행하기 위해 True 반환
@@ -1074,7 +1066,7 @@ class NaverBlogPostFinisher:
             traceback.print_exc()
             return True  # 계속 진행하기 위해 True 반환
             
-    def add_tags(self, tags=None):
+    def add_tags(self, tags=None, skip_publish=False):
         """태그 추가"""
         try:
             if not tags:
@@ -1082,16 +1074,16 @@ class NaverBlogPostFinisher:
             
             if not tags:
                 print("태그가 설정되지 않았습니다.")
-                return
+                return True  # 태그 없어도 계속 진행
 
             print("태그 입력을 시작합니다...")
-            time.sleep(3)  # 발행 창이 완전히 로드될 때까지 대기
+            time.sleep(1)
             
             # 기본 프레임으로 전환
             try:
                 self.driver.switch_to.default_content()
                 print("기본 프레임으로 전환")
-                time.sleep(1)
+                time.sleep(0.5)
             except Exception as e:
                 print(f"기본 프레임 전환 중 오류: {str(e)}")
 
@@ -1103,12 +1095,55 @@ class NaverBlogPostFinisher:
                 )
                 self.driver.switch_to.frame(frame)
                 print("mainFrame으로 전환 성공")
-                time.sleep(2)
+                time.sleep(1)
             except Exception as e:
                 print(f"mainFrame 전환 중 오류: {str(e)}")
                 return False
             
-            # 태그 입력 필드 찾기
+            # 🎯 발행 버튼을 클릭해서 발행 패널 열기
+            print("📋 발행 버튼 클릭하여 발행 패널 열기...")
+            panel_opened = self.driver.execute_script("""
+            console.log('발행 버튼 클릭하여 발행 패널 열기...');
+            
+            const publishBtnSelectors = [
+                'button.publish_btn__m9KHH',
+                'button[class*="publish_btn"]',
+                'button[data-testid="btn-publish"]',
+                '.publish_btn__m9KHH'
+            ];
+            
+            for (const selector of publishBtnSelectors) {
+                try {
+                    const btn = document.querySelector(selector);
+                    if (btn && btn.offsetWidth > 0) {
+                        btn.click();
+                        console.log('✅ 발행 버튼 클릭 성공: ' + selector);
+                        return true;
+                    }
+                } catch (e) {}
+            }
+            
+            // 텍스트로 찾기
+            const allButtons = document.querySelectorAll('button');
+            for (const btn of allButtons) {
+                if (btn.textContent.includes('발행') && btn.offsetWidth > 0) {
+                    btn.click();
+                    console.log('✅ 텍스트로 발행 버튼 클릭 성공');
+                    return true;
+                }
+            }
+            
+            console.log('❌ 발행 버튼을 찾을 수 없습니다.');
+            return false;
+            """)
+            
+            if panel_opened:
+                print("✅ 발행 패널 열기 성공")
+                time.sleep(2)  # 발행 패널 로딩 대기
+            else:
+                print("⚠️ 발행 패널 열기 실패, 계속 진행...")
+            
+            # 태그 입력 필드 찾기 (발행 패널 안)
             try:
                 print("태그 입력 필드 찾기...")
                 tag_input = WebDriverWait(self.driver, 10).until(
@@ -1130,6 +1165,11 @@ class NaverBlogPostFinisher:
                         continue
                 
                 print("모든 태그 입력이 완료되었습니다.")
+                
+                # 🎯 예약 모드에서는 발행 버튼 클릭 스킵
+                if skip_publish:
+                    print("⏰ 예약 모드: 태그 추가 후 발행 버튼 클릭 스킵")
+                    return True
                 
                 # 🎯 앱 설정에서 최종 발행 자동 완료 설정 확인
                 auto_final_publish = self._get_auto_final_publish_setting()
@@ -1194,6 +1234,359 @@ class NaverBlogPostFinisher:
         except Exception as e:
             print(f"⚠️ 앱 설정 읽기 중 오류: {str(e)}. 기본값(자동 발행)을 사용합니다.")
             return True
+    
+    def set_reservation_time(self, reservation_time: str):
+        """
+        블로그 예약 발행 시간 설정
+        
+        Args:
+            reservation_time: 예약 시간 (문자열, "HH:MM" 24시간 형식)
+            
+        Returns:
+            bool: 예약 설정 성공 여부
+        """
+        try:
+            from datetime import datetime, timedelta
+            
+            print(f"⏰ 블로그 예약 시간 설정 시작: {reservation_time}")
+            
+            # 이미 mainFrame에 있어야 함 (add_tags에서 호출되므로)
+            # 필요 시 프레임 전환
+            try:
+                self.driver.switch_to.default_content()
+                frame = WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_element_located((By.ID, "mainFrame"))
+                )
+                self.driver.switch_to.frame(frame)
+                time.sleep(1)
+            except:
+                pass  # 이미 mainFrame에 있을 수 있음
+            
+            # 시간 파싱
+            try:
+                h, m = map(int, reservation_time.split(':'))
+            except:
+                print(f"❌ 예약 시간 형식 오류: {reservation_time} (HH:MM 형식 필요)")
+                return False
+            
+            # 분을 10분 단위로 맞춤 (네이버 블로그는 10분 단위)
+            m = (m // 10) * 10
+            if m >= 60:
+                m = 50
+            
+            # 날짜 계산: 예약 시간이 현재보다 이전이면 다음 날로 설정
+            now = datetime.now()
+            target_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
+            
+            is_tomorrow = False
+            if target_dt <= now:
+                target_dt += timedelta(days=1)
+                is_tomorrow = True
+                print(f"  📅 예약 시간이 현재보다 이전이므로 다음 날({target_dt.strftime('%Y-%m-%d')})로 설정합니다.")
+            
+            print(f"  🎯 설정할 예약 시간: {target_dt.strftime('%Y-%m-%d')} {h:02d}:{m:02d}")
+            
+            # 0. 먼저 발행 패널이 열려있는지 확인 (add_tags에서 이미 열었을 수 있음)
+            print("  📋 발행 옵션 패널 확인...")
+            panel_opened = self.driver.execute_script("""
+            // 예약 라디오 버튼이 이미 보이는지 확인
+            const reserveRadio = document.querySelector('input#radio_time2, label[for="radio_time2"]');
+            if (reserveRadio && reserveRadio.offsetWidth > 0) {
+                console.log('✅ 발행 패널이 이미 열려있음');
+                return true;
+            }
+            
+            console.log('발행 버튼 클릭하여 옵션 패널 열기...');
+            
+            // 발행 버튼 찾기
+            const publishBtnSelectors = [
+                'button.publish_btn__m9KHH',
+                'button[class*="publish_btn"]',
+                'button[data-testid="btn-publish"]',
+                '.publish_btn__m9KHH'
+            ];
+            
+            for (const selector of publishBtnSelectors) {
+                try {
+                    const btn = document.querySelector(selector);
+                    if (btn && btn.offsetWidth > 0) {
+                        btn.click();
+                        console.log('✅ 발행 버튼 클릭 성공: ' + selector);
+                        return true;
+                    }
+                } catch (e) {}
+            }
+            
+            console.log('❌ 발행 버튼을 찾을 수 없습니다.');
+            return false;
+            """)
+            
+            if not panel_opened:
+                print("  ⚠️ 발행 옵션 패널 열기 실패, 계속 진행...")
+            
+            time.sleep(1.5)  # 옵션 패널 로딩 대기
+            
+            # 1. 예약 라디오 버튼 클릭
+            reservation_success = self.driver.execute_script("""
+            console.log('=== 블로그 예약 시간 설정 시작 ===');
+            
+            // 1. 예약 라디오 버튼 찾기 및 클릭
+            console.log('1. 예약 라디오 버튼 찾기...');
+            
+            let reserveClicked = false;
+            
+            // 방법 1: input#radio_time2 직접 클릭 (가장 확실한 방법)
+            const radioInput = document.querySelector('input#radio_time2');
+            if (radioInput) {
+                radioInput.click();
+                console.log('✅ input#radio_time2 직접 클릭 성공');
+                reserveClicked = true;
+            }
+            
+            // 방법 2: 정확히 "예약" 텍스트만 있는 label 클릭
+            if (!reserveClicked) {
+                const allLabels = document.querySelectorAll('label.radio_label__mB6ia');
+                for (const label of allLabels) {
+                    const labelText = label.textContent.trim();
+                    if (labelText === '예약') {
+                        label.click();
+                        console.log('✅ 예약 label 클릭 성공');
+                        reserveClicked = true;
+                        break;
+                    }
+                }
+            }
+            
+            // 방법 3: input[name*="time"][value="pre"] 클릭
+            if (!reserveClicked) {
+                const preInput = document.querySelector('input[value="pre"]');
+                if (preInput) {
+                    preInput.click();
+                    console.log('✅ input[value="pre"] 클릭 성공');
+                    reserveClicked = true;
+                }
+            }
+            
+            // 방법 4: 발행 시간 영역에서 두 번째 라디오 버튼 클릭
+            if (!reserveClicked) {
+                const radioInputs = document.querySelectorAll('input[type="radio"]');
+                // radio_time1이 "현재", radio_time2가 "예약"
+                for (const input of radioInputs) {
+                    if (input.id === 'radio_time2' || input.name === 'radio_time' && input !== radioInputs[0]) {
+                        input.click();
+                        console.log('✅ 두 번째 라디오 버튼 클릭');
+                        reserveClicked = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!reserveClicked) {
+                console.log('❌ 예약 라디오 버튼을 찾을 수 없습니다.');
+                return false;
+            }
+            
+            return true;
+            """)
+            
+            if not reservation_success:
+                print("  ❌ 예약 라디오 버튼을 찾을 수 없습니다.")
+                return False
+            
+            print("  ✅ 예약 라디오 버튼 클릭 완료")
+            time.sleep(1.5)  # 시간 선택 UI 로딩 대기 (더 길게)
+            
+            # 2. 날짜 선택 (다음 날인 경우에만)
+            if is_tomorrow:
+                target_day = target_dt.day
+                target_month = target_dt.month
+                target_year = target_dt.year
+                
+                # 네이버 형식: "2025. 12. 29"
+                date_str = target_dt.strftime('%Y. %m. %d')
+                
+                print(f"  📅 날짜 변경 시도: {date_str}")
+                
+                # 1단계: 날짜 입력 필드 클릭하여 달력 열기
+                calendar_opened = self.driver.execute_script("""
+                console.log('1단계: 날짜 입력 필드 클릭하여 달력 열기...');
+                
+                const dateInput = document.querySelector('input.input_date__QmA0s');
+                if (dateInput && dateInput.offsetWidth > 0) {
+                    dateInput.click();
+                    console.log('✅ 날짜 입력 필드 클릭 성공');
+                    return true;
+                }
+                
+                // 대체 선택자
+                const altInput = document.querySelector('input[class*="input_date"]');
+                if (altInput && altInput.offsetWidth > 0) {
+                    altInput.click();
+                    console.log('✅ 대체 날짜 입력 필드 클릭 성공');
+                    return true;
+                }
+                
+                console.log('❌ 날짜 입력 필드를 찾을 수 없음');
+                return false;
+                """)
+                
+                if not calendar_opened:
+                    print("  ⚠️ 달력 열기 실패, 계속 진행...")
+                else:
+                    time.sleep(1)  # 달력 팝업 열림 대기
+                
+                # 2단계: 달력에서 다음 날 클릭
+                click_next_day = self.driver.execute_script(f"""
+                const targetDay = {target_day};
+                const today = new Date().getDate();
+                console.log('2단계: 달력에서 ' + targetDay + '일 클릭 시도... (오늘: ' + today + '일)');
+                
+                // 오늘 날짜 (녹색) 찾기
+                const todayBtn = document.querySelector('button.ui-state-highlight, a.ui-state-highlight');
+                console.log('오늘 날짜 버튼:', todayBtn ? todayBtn.textContent : '없음');
+                
+                // 오늘이 말일인지 확인하고 다음 달로 이동
+                const isLastDayOfMonth = (today === 28 || today === 29 || today === 30 || today === 31);
+                const targetIsNextMonth = targetDay < today;
+                
+                if (targetIsNextMonth || isLastDayOfMonth && targetDay === 1) {{
+                    // 다음 달 버튼 클릭
+                    const nextBtn = document.querySelector('button.ui-datepicker-next, a.ui-datepicker-next');
+                    if (nextBtn) {{
+                        nextBtn.click();
+                        console.log('✅ 다음 달 버튼 클릭');
+                        // 약간 대기 후 날짜 클릭
+                        return 'next_month';
+                    }}
+                }}
+                
+                // 모든 날짜 버튼에서 target 날짜 찾기
+                const allDayBtns = document.querySelectorAll('button.ui-state-default, a.ui-state-default, td[data-handler="selectDay"] a');
+                console.log('찾은 날짜 버튼 수:', allDayBtns.length);
+                
+                for (const btn of allDayBtns) {{
+                    const dayText = btn.textContent.trim();
+                    if (dayText === String(targetDay)) {{
+                        // disabled가 아닌지 확인
+                        if (!btn.classList.contains('ui-state-disabled') && 
+                            !btn.parentElement.classList.contains('ui-state-disabled')) {{
+                            btn.click();
+                            console.log('✅ ' + targetDay + '일 클릭 성공');
+                            return true;
+                        }}
+                    }}
+                }}
+                
+                console.log('⚠️ ' + targetDay + '일을 찾지 못함');
+                return false;
+                """)
+                
+                # 다음 달로 이동한 경우 날짜 다시 클릭
+                if click_next_day == 'next_month':
+                    time.sleep(0.5)
+                    self.driver.execute_script(f"""
+                    const targetDay = {target_day};
+                    const allDayBtns = document.querySelectorAll('button.ui-state-default, a.ui-state-default');
+                    for (const btn of allDayBtns) {{
+                        if (btn.textContent.trim() === String(targetDay)) {{
+                            btn.click();
+                            console.log('✅ 다음 달 ' + targetDay + '일 클릭 성공');
+                            return true;
+                        }}
+                    }}
+                    return false;
+                    """)
+                    print(f"  ✅ 다음 달 {target_day}일 선택 완료")
+                elif click_next_day:
+                    print(f"  ✅ 날짜 선택 완료: {target_dt.strftime('%Y-%m-%d')}")
+                else:
+                    print(f"  ⚠️ 날짜 선택 실패 - 기본값 사용")
+                
+                time.sleep(0.5)
+            
+            # 3. 시간 선택
+            hour_success = self.driver.execute_script(f"""
+            console.log('3. 시간 선택...');
+            const hour = '{h:02d}';
+            
+            // 시간 select 요소 찾기
+            const hourSelectors = [
+                'select.hour_option__J_heO',
+                'select[title*="시간"]',
+                'select[class*="hour"]',
+                '.hour__ckNMb select'
+            ];
+            
+            for (const selector of hourSelectors) {{
+                try {{
+                    const select = document.querySelector(selector);
+                    if (select) {{
+                        select.value = hour;
+                        select.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                        console.log('시간 선택 완료: ' + hour + ' (선택자: ' + selector + ')');
+                        return true;
+                    }}
+                }} catch (e) {{
+                    console.log('시간 선택 셀렉터 실패: ' + selector);
+                }}
+            }}
+            
+            console.log('❌ 시간 select 요소를 찾을 수 없습니다.');
+            return false;
+            """)
+            
+            if not hour_success:
+                print("  ❌ 시간 선택에 실패했습니다.")
+                return False
+            
+            print(f"  ✅ 시간 선택 완료: {h:02d}시")
+            time.sleep(0.5)
+            
+            # 4. 분 선택
+            minute_success = self.driver.execute_script(f"""
+            console.log('4. 분 선택...');
+            const minute = '{m:02d}';
+            
+            // 분 select 요소 찾기
+            const minuteSelectors = [
+                'select.minute_option__Vb3xB',
+                'select[title*="분"]',
+                'select[class*="minute"]',
+                '.minute__KXXvZ select'
+            ];
+            
+            for (const selector of minuteSelectors) {{
+                try {{
+                    const select = document.querySelector(selector);
+                    if (select) {{
+                        select.value = minute;
+                        select.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                        console.log('분 선택 완료: ' + minute + ' (선택자: ' + selector + ')');
+                        return true;
+                    }}
+                }} catch (e) {{
+                    console.log('분 선택 셀렉터 실패: ' + selector);
+                }}
+            }}
+            
+            console.log('❌ 분 select 요소를 찾을 수 없습니다.');
+            return false;
+            """)
+            
+            if not minute_success:
+                print("  ❌ 분 선택에 실패했습니다.")
+                return False
+            
+            print(f"  ✅ 분 선택 완료: {m:02d}분")
+            
+            print(f"✅ 블로그 예약 시간 설정 완료: {target_dt.strftime('%Y-%m-%d')} {h:02d}:{m:02d}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ 블로그 예약 시간 설정 중 오류: {e}")
+            traceback.print_exc()
+            return False
+
     
     def click_final_publish_button(self):
         """최종 발행 버튼 클릭 (녹색 발행 버튼)"""

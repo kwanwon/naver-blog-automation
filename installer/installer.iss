@@ -46,9 +46,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 6.1
 
 [Files]
-; 메인 실행 파일
+; 메인 실행 파일 (캐시 프로필 제외)
 Source: "..\dist\블로그자동화\블로그자동화.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\dist\블로그자동화\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\블로그자동화\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "manual_chrome_profile_*;manual_chrome_profile_*\\*"
 
 ; 필수 라이브러리들
 Source: "..\dist\블로그자동화\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
