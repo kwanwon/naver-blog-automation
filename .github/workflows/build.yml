@@ -25,11 +25,11 @@ jobs:
           pip install Pillow requests tkcalendar
           pip install openai google-generativeai
           pip install psutil cryptography
-          pip install pyperclip
+          pip install pyperclip httpx
           
       - name: Build with flet pack
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.png --add-data "modules;modules" --add-data "config;config"
+          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.png --add-data "modules;modules" --add-data "config;config" --add-data "utils;utils" --add-data "assets;assets" --add-data "version.json;."
           
       - name: Create Windows ZIP
         run: |
@@ -61,11 +61,11 @@ jobs:
           pip install Pillow requests tkcalendar
           pip install openai google-generativeai
           pip install psutil cryptography
-          pip install pyperclip
+          pip install pyperclip httpx
           
       - name: Build with flet pack
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Mac --icon assets/icon.png --add-data "modules:modules" --add-data "config:config"
+          flet pack blog_writer_app.py --name BlogAutomation_Mac --icon assets/icon.png --add-data "modules:modules" --add-data "config:config" --add-data "utils:utils" --add-data "assets:assets" --add-data "version.json:."
           
       - name: Create macOS ZIP
         run: |
