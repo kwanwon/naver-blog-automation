@@ -30,7 +30,17 @@ class AutoUpdater:
         
         # 현재 프로그램 경로
         self.app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.backup_dir = os.path.join(self.app_dir, 'backups')
+        
+        # 백업 디렉토리: 앱 외부의 쓰기 가능한 위치 사용
+        # macOS/Linux: ~/Library/Application Support/BlogAutomation/backups
+        # Windows: %APPDATA%/BlogAutomation/backups
+        if sys.platform == 'darwin':  # macOS
+            self.backup_dir = os.path.expanduser('~/Library/Application Support/BlogAutomation/backups')
+        elif sys.platform == 'win32':  # Windows
+            self.backup_dir = os.path.join(os.environ.get('APPDATA', ''), 'BlogAutomation', 'backups')
+        else:  # Linux
+            self.backup_dir = os.path.expanduser('~/.local/share/BlogAutomation/backups')
+        
         self.temp_dir = tempfile.mkdtemp()
         
         # 보존해야 할 파일들 (업데이트되지 않아야 함)

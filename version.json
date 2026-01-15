@@ -1,10 +1,10 @@
 {
-  "version": "1.1.1",
+  "version": "1.1.2",
   "release_date": "2026-01-15",
   "changelog": [
     "🔧 빌드 시 필수 파일 누락 문제 해결",
     "✅ version.json, utils, assets 폴더 포함",
-    "📦 완전한 실행 파일 생성",
+    "📂 업데이트 백업 폴더 위치 변경 (권한 문제 해결)",
     "🔄 GPT/AI 기능 정상 작동 확인"
   ],
   "min_requirements": {
