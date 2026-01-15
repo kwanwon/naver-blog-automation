@@ -38,6 +38,7 @@ jobs:
           xcopy /E /I utils dist\BlogAutomation_Windows\utils
           xcopy /E /I assets dist\BlogAutomation_Windows\assets
           copy version.json dist\BlogAutomation_Windows\
+          del /F dist\BlogAutomation_Windows\modules\.developer_mode 2>nul
         shell: cmd
           
       - name: Create Windows ZIP
@@ -84,6 +85,8 @@ jobs:
           cp -R utils "$APP_FRAMEWORKS/"
           cp -R assets "$APP_FRAMEWORKS/"
           cp version.json "$APP_FRAMEWORKS/"
+          # 개발자 모드 파일 삭제 (일반 사용자는 시리얼 인증 필요)
+          rm -f "$APP_FRAMEWORKS/modules/.developer_mode"
           
       - name: Create macOS ZIP
         run: |
