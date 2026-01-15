@@ -27,9 +27,18 @@ jobs:
           pip install psutil cryptography
           pip install pyperclip httpx
           
-      - name: Build with PyInstaller
+      - name: Build with flet pack
         run: |
-          pyinstaller --noconfirm --onedir --windowed --name BlogAutomation_Windows --icon assets/icon.png --add-data "modules;modules" --add-data "config;config" --add-data "utils;utils" --add-data "assets;assets" --add-data "version.json;." --hidden-import=flet --hidden-import=flet.core --hidden-import=flet_core --collect-all flet blog_writer_app.py
+          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.png
+          
+      - name: Copy additional data files
+        run: |
+          xcopy /E /I modules dist\BlogAutomation_Windows\modules
+          xcopy /E /I config dist\BlogAutomation_Windows\config
+          xcopy /E /I utils dist\BlogAutomation_Windows\utils
+          xcopy /E /I assets dist\BlogAutomation_Windows\assets
+          copy version.json dist\BlogAutomation_Windows\
+        shell: cmd
           
       - name: Create Windows ZIP
         run: |
@@ -63,14 +72,23 @@ jobs:
           pip install psutil cryptography
           pip install pyperclip httpx
           
-      - name: Build with PyInstaller
+      - name: Build with flet pack
         run: |
-          pyinstaller --noconfirm --onedir --windowed --name BlogAutomation_Mac --icon assets/icon.png --add-data "modules:modules" --add-data "config:config" --add-data "utils:utils" --add-data "assets:assets" --add-data "version.json:." --hidden-import=flet --hidden-import=flet.core --hidden-import=flet_core --collect-all flet blog_writer_app.py
+          flet pack blog_writer_app.py --name BlogAutomation_Mac --icon assets/icon.png
+          
+      - name: Copy additional data files to app bundle
+        run: |
+          APP_FRAMEWORKS="dist/BlogAutomation_Mac.app/Contents/Frameworks"
+          cp -R modules "$APP_FRAMEWORKS/"
+          cp -R config "$APP_FRAMEWORKS/"
+          cp -R utils "$APP_FRAMEWORKS/"
+          cp -R assets "$APP_FRAMEWORKS/"
+          cp version.json "$APP_FRAMEWORKS/"
           
       - name: Create macOS ZIP
         run: |
           cd dist
-          zip -r "BlogAutomation-Mac.zip" "BlogAutomation_Mac.app" || zip -r "BlogAutomation-Mac.zip" "BlogAutomation_Mac"
+          zip -r "BlogAutomation-Mac.zip" "BlogAutomation_Mac.app"
           
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
