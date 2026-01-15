@@ -48,7 +48,20 @@ class BlogSerialAuth:
     def _check_developer_mode(self) -> bool:
         """개발자 모드 여부 확인"""
         env_flag = os.getenv("DEVELOPER_MODE", "").lower() in ("1", "true", "yes", "on")
-        file_flag = os.path.exists(os.path.join(self.base_dir, ".developer_mode"))
+        
+        # 여러 경로에서 .developer_mode 파일 확인 (PyInstaller 빌드 환경 고려)
+        possible_paths = [
+            os.path.join(self.base_dir, ".developer_mode"),  # modules/.developer_mode
+            os.path.join(os.path.dirname(self.base_dir), "modules", ".developer_mode"),  # 상위/modules/.developer_mode
+        ]
+        
+        # PyInstaller 빌드 환경에서 _MEIPASS 확인
+        if hasattr(sys, '_MEIPASS'):
+            meipass = getattr(sys, '_MEIPASS')
+            possible_paths.append(os.path.join(meipass, "modules", ".developer_mode"))
+            possible_paths.append(os.path.join(meipass, ".developer_mode"))
+        
+        file_flag = any(os.path.exists(p) for p in possible_paths)
         
         if env_flag or file_flag:
             self.logger.info("개발자 모드 감지 - 시리얼 인증을 건너뜁니다.")
