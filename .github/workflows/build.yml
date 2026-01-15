@@ -27,14 +27,14 @@ jobs:
           pip install psutil cryptography
           pip install pyperclip httpx
           
-      - name: Build with flet pack
+      - name: Build with PyInstaller
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.png --add-data "modules;modules" --add-data "config;config" --add-data "utils;utils" --add-data "assets;assets" --add-data "version.json;."
+          pyinstaller --noconfirm --onedir --windowed --name BlogAutomation_Windows --icon assets/icon.png --add-data "modules;modules" --add-data "config;config" --add-data "utils;utils" --add-data "assets;assets" --add-data "version.json;." --hidden-import=flet --hidden-import=flet.core --hidden-import=flet_core --collect-all flet blog_writer_app.py
           
       - name: Create Windows ZIP
         run: |
           cd dist
-          Compress-Archive -Path "BlogAutomation_Windows.exe" -DestinationPath "BlogAutomation-Windows.zip"
+          Compress-Archive -Path "BlogAutomation_Windows" -DestinationPath "BlogAutomation-Windows.zip"
         shell: powershell
           
       - name: Upload Windows artifact
@@ -63,14 +63,14 @@ jobs:
           pip install psutil cryptography
           pip install pyperclip httpx
           
-      - name: Build with flet pack
+      - name: Build with PyInstaller
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Mac --icon assets/icon.png --add-data "modules:modules" --add-data "config:config" --add-data "utils:utils" --add-data "assets:assets" --add-data "version.json:."
+          pyinstaller --noconfirm --onedir --windowed --name BlogAutomation_Mac --icon assets/icon.png --add-data "modules:modules" --add-data "config:config" --add-data "utils:utils" --add-data "assets:assets" --add-data "version.json:." --hidden-import=flet --hidden-import=flet.core --hidden-import=flet_core --collect-all flet blog_writer_app.py
           
       - name: Create macOS ZIP
         run: |
           cd dist
-          zip -r "BlogAutomation-Mac.zip" "BlogAutomation_Mac.app"
+          zip -r "BlogAutomation-Mac.zip" "BlogAutomation_Mac.app" || zip -r "BlogAutomation-Mac.zip" "BlogAutomation_Mac"
           
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
