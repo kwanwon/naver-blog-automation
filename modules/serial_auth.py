@@ -7,6 +7,7 @@
 - 원격 서버 연동 지원
 """
 
+import sys
 import os
 import json
 import sqlite3
