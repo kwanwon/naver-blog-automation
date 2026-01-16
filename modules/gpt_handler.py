@@ -404,6 +404,11 @@ class GPTHandler:
                     else:
                         logger.info(f"밴드 {task_type} 작업이므로 설정된 첫 문장(아침 인사)을 건너뜁니다.")
                         first_sentence = ""
+                elif platform in ['drive_auto', 'manual_topic']:
+                    # 🟢 드라이브 자동포스팅/수동주제 포스팅은 밴드에 올라가므로 밴드 첫 문장 사용
+                    first_sentence = user_settings.get('band_first_sentence', '').strip()
+                    if first_sentence:
+                        logger.info(f"드라이브 자동포스팅에 밴드 첫 문장 적용: {first_sentence[:30]}...")
                 
                 if first_sentence:
                      body = f"{first_sentence}\n\n{body}"
@@ -416,6 +421,9 @@ class GPTHandler:
                 elif platform == 'cafe':
                     slogan = user_settings.get('cafe_slogan', '').strip()
                 elif platform == 'band':
+                    slogan = user_settings.get('band_slogan', '').strip()
+                elif platform in ['drive_auto', 'manual_topic']:
+                    # 🟢 드라이브 자동포스팅/수동주제 포스팅은 밴드 슬로건 사용
                     slogan = user_settings.get('band_slogan', '').strip()
                 
                 if slogan:

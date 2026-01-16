@@ -229,10 +229,14 @@ class BlogWriterApp:
     
     def _start_drive_auto_post(self, page):
         """드라이브 자동 포스팅 시작"""
+        print("🔄 [드라이브 자동 포스팅] 시작 버튼 클릭됨...")
+        
         if not self.drive_auto_post_system:
+            print("⚙️ 드라이브 자동 포스팅 시스템 초기화 중...")
             self._init_drive_auto_post()
         
         if not self.drive_auto_post_system:
+            print("❌ 드라이브 자동 포스팅 시스템 초기화 실패")
             page.snack_bar = ft.SnackBar(content=ft.Text("❌ 드라이브 자동 포스팅 시스템 초기화 실패"))
             page.snack_bar.open = True
             page.update()
@@ -240,7 +244,10 @@ class BlogWriterApp:
         
         # 상위 폴더 경로
         parent_folder = self.settings.get('drive_parent_folder', '')
+        print(f"📁 상위 폴더 경로: '{parent_folder}'")
+        
         if not parent_folder:
+            print("❌ 상위 폴더 경로가 비어 있음")
             page.snack_bar = ft.SnackBar(content=ft.Text("❌ 상위 폴더 경로를 입력해주세요."), bgcolor=ft.Colors.RED)
             page.snack_bar.open = True
             page.update()
@@ -262,8 +269,11 @@ class BlogWriterApp:
         print(f"📁 실패 폴더: {error_dir}")
         
         # 설정 적용
+        sheet_url = self.settings.get('google_sheet_url', '')
+        print(f"📊 스프레드시트 URL 설정: '{sheet_url[:60]}...' " if sheet_url else "📊 스프레드시트 URL: 없음")
+        
         self.drive_auto_post_system.configure({
-            "google_sheet_url": self.settings.get('google_sheet_url', ''),
+            "google_sheet_url": sheet_url,
             "backup_dir": backup_dir,
             "error_dir": error_dir
         })
@@ -5962,6 +5972,23 @@ class BlogWriterApp:
                 "idle": "대기"
             }
             
+            # 🆕 작업별 예상 소요 시간 (분)
+            task_duration_map = {
+                "morning": 3,
+                "regular": 3,
+                "closing": 3,
+                "visit": 1,
+                "reply": 1,
+                "reservation_batch": 5,  # 기본값, 실제는 data에서 계산
+                "neighbor": 1,
+                "댓글답글": 5
+            }
+            
+            # 현재 시간 기준 누적 예상 시간 계산
+            from datetime import datetime, timedelta
+            current_time = datetime.now()
+            cumulative_minutes = 0
+            
             for idx, task in enumerate(self.scheduler.tasks):
                 order_num = idx + 1  # 순서 번호
                 type_text = type_map.get(task.task_type, task.task_type)
@@ -5969,6 +5996,29 @@ class BlogWriterApp:
                 
                 # 🎵 플레이리스트 스타일: 순서와 상태만 표시
                 is_current = (idx == self.scheduler.current_index and self.scheduler.running)
+                
+                # 🆕 예상 소요 시간 계산
+                estimated_minutes = task_duration_map.get(task.task_type, 3)
+                
+                # 예약 일괄 실행은 건수에 따라 계산
+                if task.data and 'times' in task.data:
+                    post_count = len(task.data['times'])
+                    per_post_minutes = task.data.get('per_post_minutes', 1)
+                    estimated_minutes = int(post_count * (3 + per_post_minutes))  # 포스팅 3분 + 대기
+                
+                # 방문/답글은 횟수에 따라 계산
+                if task.data and 'visit_count' in task.data:
+                    estimated_minutes = max(1, task.data['visit_count'] // 2)  # 2회당 1분
+                if task.data and 'limit' in task.data:
+                    estimated_minutes = max(1, task.data['limit'] // 3)  # 3개당 1분
+                
+                # 🆕 예상 실행 시간 계산 (앞 작업들의 누적)
+                if idx < self.scheduler.current_index or task.is_completed:
+                    estimated_time_str = ""  # 이미 완료된 작업
+                else:
+                    estimated_time = current_time + timedelta(minutes=cumulative_minutes)
+                    estimated_time_str = f"⏰ ~{estimated_time.strftime('%H:%M')}"
+                    cumulative_minutes += estimated_minutes + 1  # 1분 여유
                 
                 # 상세 정보 구성
                 detail_text = ""
@@ -6012,7 +6062,7 @@ class BlogWriterApp:
                     bg_color = ft.Colors.GREY_100
                     border_color = ft.Colors.GREY_300
                     status_icon = ft.Icons.CIRCLE_OUTLINED
-                    status_text = "대기"
+                    status_text = f"대기 {estimated_time_str}"  # 🆕 예상 시간 표시
                 
                 items.append(
                     ft.Container(
@@ -6318,7 +6368,7 @@ class BlogWriterApp:
         blog_preset_end = ft.TextField(label="예약 종료", value="23:00", width=100)
         blog_preset_interval = ft.Dropdown(
             label="간격 (고정)",
-            options=[ft.dropdown.Option(str(i), f"{i}시간") for i in range(1, 5)],
+            options=[ft.dropdown.Option(str(i), f"{i}시간") for i in range(1, 13)],  # 🆕 1~12시간
             value="2",
             width=120
         )
@@ -6509,6 +6559,8 @@ class BlogWriterApp:
         )
         
         # ========== 밴드 예약 프리셋 UI ==========
+        # 🆕 각 시간대 활성화 체크박스
+        band_preset_morning_enabled = ft.Checkbox(label="", value=True, width=30)
         band_preset_morning_time = ft.TextField(label="오전 시간", value="07:00", width=100)
         band_preset_morning_type = ft.Dropdown(
             label="유형",
@@ -6520,6 +6572,7 @@ class BlogWriterApp:
             value="morning",
             width=100
         )
+        band_preset_afternoon_enabled = ft.Checkbox(label="", value=True, width=30)
         band_preset_afternoon_time = ft.TextField(label="오후 시간", value="14:30", width=100)
         band_preset_afternoon_type = ft.Dropdown(
             label="유형",
@@ -6531,6 +6584,7 @@ class BlogWriterApp:
             value="regular",
             width=100
         )
+        band_preset_closing_enabled = ft.Checkbox(label="", value=True, width=30)
         band_preset_closing_time = ft.TextField(label="마감 시간", value="20:00", width=100)
         band_preset_closing_type = ft.Dropdown(
             label="유형",
@@ -6619,7 +6673,7 @@ class BlogWriterApp:
             page.update()
         
         def register_band_preset(e):
-            """밴드 예약 프리셋 일괄 등록"""
+            """밴드 예약 프리셋 일괄 등록 (체크된 시간대만)"""
             # 먼저 계산 실행 (시간 덮어쓰기 방지는 내부에서 처리)
             calculate_band_preset()
             
@@ -6632,12 +6686,23 @@ class BlogWriterApp:
             
             band_url = self.settings.get('band_url', '')
             
-            # 3건을 하나의 작업으로 등록
-            times_data = [
-                {'time': band_preset_morning_time.value, 'type': band_preset_morning_type.value},
-                {'time': band_preset_afternoon_time.value, 'type': band_preset_afternoon_type.value},
-                {'time': band_preset_closing_time.value, 'type': band_preset_closing_type.value}
-            ]
+            # 🆕 체크된 시간대만 등록
+            times_data = []
+            if band_preset_morning_enabled.value:
+                times_data.append({'time': band_preset_morning_time.value, 'type': band_preset_morning_type.value})
+            if band_preset_afternoon_enabled.value:
+                times_data.append({'time': band_preset_afternoon_time.value, 'type': band_preset_afternoon_type.value})
+            if band_preset_closing_enabled.value:
+                times_data.append({'time': band_preset_closing_time.value, 'type': band_preset_closing_type.value})
+            
+            if not times_data:
+                page.snack_bar = ft.SnackBar(
+                    content=ft.Text("⚠️ 최소 1개 시간대를 선택해주세요"),
+                    bgcolor=ft.Colors.ORANGE
+                )
+                page.snack_bar.open = True
+                page.update()
+                return
             
             self.scheduler.add_task(
                 platform='band',
@@ -6654,7 +6719,7 @@ class BlogWriterApp:
             
             update_scheduler_ui()
             page.snack_bar = ft.SnackBar(
-                content=ft.Text(f"✅ 밴드 예약 3건 등록! (플레이리스트에 추가됨)"),
+                content=ft.Text(f"✅ 밴드 예약 {len(times_data)}건 등록! (플레이리스트에 추가됨)"),
                 bgcolor=ft.Colors.GREEN
             )
             page.snack_bar.open = True
@@ -6670,13 +6735,42 @@ class BlogWriterApp:
         # 초기 계산 실행
         calculate_band_preset()
         
+        # 🆕 체크박스 변경 시 예약 건수 재계산
+        def update_band_count(e=None):
+            enabled_count = sum([
+                band_preset_morning_enabled.value,
+                band_preset_afternoon_enabled.value,
+                band_preset_closing_enabled.value
+            ])
+            per_post_seconds = int(band_preset_per_post.value)
+            total_time_seconds = enabled_count * (per_post_seconds + 180)
+            total_time_minutes = total_time_seconds // 60 + 1 if enabled_count > 0 else 0
+            
+            times_list = []
+            if band_preset_morning_enabled.value:
+                times_list.append(band_preset_morning_time.value)
+            if band_preset_afternoon_enabled.value:
+                times_list.append(band_preset_afternoon_time.value)
+            if band_preset_closing_enabled.value:
+                times_list.append(band_preset_closing_time.value)
+            
+            band_preset_result.value = f"📊 총 {enabled_count}건 | 소요 ~{total_time_minutes}분 | 시간: {', '.join(times_list) if times_list else '(선택 없음)'}"
+            page.update()
+        
+        band_preset_morning_enabled.on_change = update_band_count
+        band_preset_afternoon_enabled.on_change = update_band_count
+        band_preset_closing_enabled.on_change = update_band_count
+        
+        # 초기 표시 업데이트
+        update_band_count()
+        
         band_preset_section = ft.Container(
             content=ft.Column([
                 ft.Text("🎵 밴드 예약 프리셋", size=16, weight=ft.FontWeight.BOLD),
-                ft.Text("🎵 플레이리스트에 추가되면 순서대로 실행됩니다", size=11, color=ft.Colors.GREY_600),
-                ft.Row([ft.Text("오전:", width=50), band_preset_morning_time, band_preset_morning_type], spacing=10),
-                ft.Row([ft.Text("오후:", width=50), band_preset_afternoon_time, band_preset_afternoon_type], spacing=10),
-                ft.Row([ft.Text("마감:", width=50), band_preset_closing_time, band_preset_closing_type], spacing=10),
+                ft.Text("🎵 체크된 시간대만 플레이리스트에 추가됩니다", size=11, color=ft.Colors.GREY_600),
+                ft.Row([band_preset_morning_enabled, ft.Text("오전:", width=40), band_preset_morning_time, band_preset_morning_type], spacing=5),
+                ft.Row([band_preset_afternoon_enabled, ft.Text("오후:", width=40), band_preset_afternoon_time, band_preset_afternoon_type], spacing=5),
+                ft.Row([band_preset_closing_enabled, ft.Text("마감:", width=40), band_preset_closing_time, band_preset_closing_type], spacing=5),
                 ft.Row([ft.Text("1건당:", width=50), band_preset_per_post], spacing=10),
                 # 🎵 작동 시간은 플레이리스트 모드에서 불필요하므로 숨김
                 band_preset_result,
@@ -6686,6 +6780,80 @@ class BlogWriterApp:
             ], spacing=8),
             padding=15,
             bgcolor=ft.Colors.GREEN_50,
+            border_radius=10
+        )
+
+        # ========== 🆕 매일 자동 시작 설정 UI ==========
+        daily_start_time = ft.TextField(label="시작 시간", value="07:00", width=100, hint_text="HH:MM")
+        daily_random_range = ft.Dropdown(
+            label="랜덤 범위",
+            options=[
+                ft.dropdown.Option("0", "정각"),
+                ft.dropdown.Option("5", "±5분"),
+                ft.dropdown.Option("10", "±10분"),
+                ft.dropdown.Option("15", "±15분"),
+                ft.dropdown.Option("30", "±30분"),
+            ],
+            value="15",
+            width=100
+        )
+        daily_auto_enabled_checkbox = ft.Checkbox(label="매일 자동 시작", value=False)
+        daily_status_text = ft.Text("🔴 비활성화됨", color=ft.Colors.RED, size=12)
+        
+        def toggle_daily_auto_start(e):
+            """매일 자동 시작 활성화/비활성화"""
+            enabled = daily_auto_enabled_checkbox.value
+            start_time = daily_start_time.value
+            random_range_val = int(daily_random_range.value)
+            
+            # 시간 형식 검증
+            import re
+            if not re.match(r"^\d{1,2}:\d{2}$", start_time):
+                page.snack_bar = ft.SnackBar(content=ft.Text("시간 형식이 올바르지 않습니다 (HH:MM)"))
+                page.snack_bar.open = True
+                daily_auto_enabled_checkbox.value = False
+                page.update()
+                return
+            
+            # 스케줄러에 설정 적용
+            self.scheduler.set_daily_auto_start(enabled, start_time, random_range_val)
+            
+            if enabled:
+                self.scheduler.start_daily_auto_monitor()
+                daily_status_text.value = f"🟢 활성화됨 (매일 {start_time} ±{random_range_val}분)"
+                daily_status_text.color = ft.Colors.GREEN
+                page.snack_bar = ft.SnackBar(content=ft.Text(f"✅ 매일 자동 시작 활성화: {start_time} ±{random_range_val}분"))
+            else:
+                self.scheduler.stop_daily_auto_monitor()
+                daily_status_text.value = "🔴 비활성화됨"
+                daily_status_text.color = ft.Colors.RED
+                page.snack_bar = ft.SnackBar(content=ft.Text("⏹️ 매일 자동 시작 비활성화됨"))
+            
+            page.snack_bar.open = True
+            page.update()
+        
+        daily_auto_enabled_checkbox.on_change = toggle_daily_auto_start
+        
+        daily_auto_section = ft.Container(
+            content=ft.Column([
+                ft.Text("🔄 매일 자동 시작", size=16, weight=ft.FontWeight.BOLD),
+                ft.Text("🎵 매일 설정된 시간에 플레이리스트를 자동으로 초기화하고 시작합니다.", size=11, color=ft.Colors.GREY_600),
+                ft.Row([
+                    ft.Text("시작 시간:", width=80),
+                    daily_start_time,
+                    daily_random_range
+                ], spacing=10),
+                ft.Row([
+                    daily_auto_enabled_checkbox,
+                    daily_status_text
+                ], spacing=10),
+                ft.Text("📋 동작 방식:", size=11, color=ft.Colors.BLUE, weight=ft.FontWeight.BOLD),
+                ft.Text("   1. 자정(0시): 모든 작업 초기화 (완료 → 대기)", size=11, color=ft.Colors.GREY_600),
+                ft.Text("   2. 설정 시간 ± 랜덤: 플레이리스트 자동 시작", size=11, color=ft.Colors.GREY_600),
+                ft.Text("   3. 24시간 연속 운영 가능 (중지 없이 매일 반복)", size=11, color=ft.Colors.GREY_600),
+            ], spacing=8),
+            padding=15,
+            bgcolor=ft.Colors.AMBER_50,
             border_radius=10
         )
 
@@ -6715,7 +6883,12 @@ class BlogWriterApp:
             
             # 콜백 함수 설정 (드라이브 폴더 감지 실행)
             if enabled:
-                self.scheduler.on_special_reservation = lambda: self.drive_auto_system.process_all_pending()
+                # drive_auto_post_system이 있을 경우에만 콜백 설정
+                if self.drive_auto_post_system:
+                    # 🆕 시작 콜백: 폴더 감지 시작
+                    self.scheduler.on_special_reservation = lambda: self._start_drive_auto_post(page)
+                    # 🆕 종료 콜백: 폴더 감지 중지
+                    self.scheduler.on_special_reservation_end = lambda: self._stop_drive_auto_post(page)
                 self.scheduler.start_special_reservation_monitor()
                 special_status_text.value = f"🟢 활성화됨 ({start_time} ~ {end_time})"
                 special_status_text.color = ft.Colors.GREEN
@@ -6780,6 +6953,12 @@ class BlogWriterApp:
                 ft.ExpansionTile(
                     title=ft.Text("🎵 밴드 예약 프리셋 (클릭하여 펼치기)", size=14, weight=ft.FontWeight.BOLD),
                     controls=[band_preset_section],
+                    initially_expanded=False
+                ),
+                # 🆕 매일 자동 시작 설정
+                ft.ExpansionTile(
+                    title=ft.Text("🔄 매일 자동 시작 (클릭하여 펼치기)", size=14, weight=ft.FontWeight.BOLD),
+                    controls=[daily_auto_section],
                     initially_expanded=False
                 ),
                 # 🆕 특별 예약 (폴더 감지) 설정

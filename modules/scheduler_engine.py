@@ -87,10 +87,12 @@ class SmartScheduler:
         self.current_task_lock = threading.Lock()
         self.is_task_running = False
         
-        # 자동 시작 설정
-        self.auto_start_enabled = False
-        self.auto_start_time = "08:00"
-        self.auto_start_thread: Optional[threading.Thread] = None
+        # 🆕 매일 자동 시작 설정
+        self.daily_auto_enabled = False
+        self.daily_start_time = "07:00"  # 기본 시작 시간
+        self.daily_random_range = 15  # ±15분 랜덤
+        self.daily_auto_thread: Optional[threading.Thread] = None
+        self._last_reset_date: Optional[str] = None  # 마지막 초기화 날짜
         
         # 🆕 특별 예약 (폴더 감지) 설정
         self.special_reservation_enabled = False
@@ -98,7 +100,8 @@ class SmartScheduler:
         self.special_reservation_end = "10:00"
         self.special_reservation_running = False
         self.special_reservation_thread: Optional[threading.Thread] = None
-        self.on_special_reservation: Optional[Callable[[], None]] = None  # 콜백 함수
+        self.on_special_reservation: Optional[Callable[[], None]] = None  # 시작 콜백 함수
+        self.on_special_reservation_end: Optional[Callable[[], None]] = None  # 🆕 종료 콜백 함수
         self.paused_by_special = False  # 특별 예약으로 인한 일시정지 여부
         
         self.load_tasks()
@@ -297,6 +300,86 @@ class SmartScheduler:
         return None
 
     # ============================================
+    # 🆕 매일 자동 초기화 및 시작 기능
+    # ============================================
+    
+    def set_daily_auto_start(self, enabled: bool, start_time: str, random_range: int = 15):
+        """매일 자동 시작 설정"""
+        self.daily_auto_enabled = enabled
+        self.daily_start_time = start_time
+        self.daily_random_range = random_range
+        print(f"📅 매일 자동 시작 설정: {'활성화' if enabled else '비활성화'} (시간: {start_time}, 랜덤: ±{random_range}분)")
+    
+    def start_daily_auto_monitor(self):
+        """매일 자동 시작 감시 스레드 시작"""
+        if self.daily_auto_thread and self.daily_auto_thread.is_alive():
+            return
+        
+        self.daily_auto_thread = threading.Thread(
+            target=self._daily_auto_monitor_loop, 
+            daemon=True
+        )
+        self.daily_auto_thread.start()
+        print("🔄 매일 자동 시작 감시 시작됨")
+    
+    def stop_daily_auto_monitor(self):
+        """매일 자동 시작 감시 스레드 중지"""
+        self.daily_auto_enabled = False
+        print("🔄 매일 자동 시작 감시 중지됨")
+    
+    def _daily_auto_monitor_loop(self):
+        """매일 자동 초기화 및 시작 감시 루프"""
+        print("🔍 매일 자동 시작 감시 루프 시작")
+        
+        while self.daily_auto_enabled:
+            now = datetime.now()
+            today_str = now.strftime("%Y-%m-%d")
+            
+            try:
+                # 1️⃣ 자정 초기화 체크 (날짜가 바뀌면)
+                if self._last_reset_date != today_str:
+                    print(f"\n🌅 [일일 초기화] 새로운 날짜 감지: {today_str}")
+                    self._reset_all_tasks()
+                    self._last_reset_date = today_str
+                    self.current_index = 0  # 처음부터 다시
+                    print(f"✅ [일일 초기화] 모든 작업 초기화 완료")
+                
+                # 2️⃣ 설정된 시간에 자동 시작 (아직 실행 중이 아닐 때만)
+                if not self.running:
+                    # 시작 시간 파싱
+                    start_h, start_m = map(int, self.daily_start_time.split(':'))
+                    start_dt = now.replace(hour=start_h, minute=start_m, second=0, microsecond=0)
+                    
+                    # 랜덤 지연 계산 (한 번만)
+                    if not hasattr(self, '_today_random_delay') or self._today_random_delay_date != today_str:
+                        self._today_random_delay = random.randint(-self.daily_random_range, self.daily_random_range)
+                        self._today_random_delay_date = today_str
+                        actual_start = start_dt + timedelta(minutes=self._today_random_delay)
+                        print(f"🎲 [일일 자동] 오늘 시작 시간: {actual_start.strftime('%H:%M')} (기본 {self.daily_start_time} + 랜덤 {self._today_random_delay}분)")
+                    
+                    actual_start = start_dt + timedelta(minutes=self._today_random_delay)
+                    
+                    # 시작 시간이 지났고 오늘 아직 시작 안 했으면 시작
+                    if now >= actual_start:
+                        if not hasattr(self, '_today_started') or self._today_started_date != today_str:
+                            print(f"\n🚀 [일일 자동] 플레이리스트 자동 시작!")
+                            self.start()
+                            self._today_started = True
+                            self._today_started_date = today_str
+            
+            except Exception as e:
+                print(f"⚠️ 일일 자동 시작 감시 오류: {e}")
+            
+            time.sleep(60)  # 1분마다 체크
+    
+    def _reset_all_tasks(self):
+        """모든 작업 상태 초기화"""
+        for task in self.tasks:
+            task.is_completed = False
+            task.last_status = 'pending'
+        self.save_tasks()
+
+    # ============================================
     # 🆕 특별 예약 (폴더 감지) 기능
     # ============================================
     
@@ -408,8 +491,18 @@ class SmartScheduler:
             except:
                 break
         
-        # 특별 예약 종료 → 플레이리스트 재개
-        print("✅ [특별 예약] 종료 - 플레이리스트 자동 재개")
+        # 특별 예약 종료 → 폴더 감지 중지 + 플레이리스트 재개
+        print("✅ [특별 예약] 종료 - 폴더 감지 중지 및 플레이리스트 자동 재개")
+        
+        # 🆕 종료 콜백 호출 (폴더 감지 중지)
+        if self.on_special_reservation_end:
+            try:
+                print("🛑 [특별 예약] 폴더 감지 중지 중...")
+                self.on_special_reservation_end()
+                print("✅ [특별 예약] 폴더 감지 중지 완료")
+            except Exception as e:
+                print(f"⚠️ [특별 예약] 폴더 감지 중지 오류: {e}")
+        
         self.special_reservation_running = False
         if self.paused_by_special:
             self.paused = False

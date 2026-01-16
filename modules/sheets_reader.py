@@ -67,7 +67,7 @@ class GoogleSheetsReader:
         - https://docs.google.com/spreadsheets/d/1ABC123/edit#gid=0
         
         출력:
-        - https://docs.google.com/spreadsheets/d/1ABC123/export?format=csv&gid=0
+        - https://docs.google.com/spreadsheets/d/1ABC123/gviz/tq?tqx=out:csv&gid=0
         """
         # 스프레드시트 ID 추출
         pattern = r'/spreadsheets/d/([a-zA-Z0-9-_]+)'
@@ -86,7 +86,8 @@ class GoogleSheetsReader:
         print(f"   📋 Sheet ID: {sheet_id[:20]}...")
         print(f"   📋 GID 추출됨: {gid}")
         
-        csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
+        # gviz/tq 형식 사용 (export 형식보다 안정적)
+        csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&gid={gid}"
         return csv_url
     
     def fetch_data(self, force_refresh: bool = False) -> bool:
@@ -312,6 +313,119 @@ class GoogleSheetsReader:
                 return None
         
         return self.data.to_dict('records')
+    
+    def get_combined_content_by_period(self, period: str = '오후') -> Optional[str]:
+        """
+        시간대별 수련내용 가져오기 (C열 행사명 + D/E/F열 시간대 결합)
+        
+        Args:
+            period: '오전', '오후', '저녁'
+        
+        Returns:
+            결합된 수련내용 문자열 또는 None
+            - C열 + 시간대열 (둘 다 있으면)
+            - C열만 (시간대열 공란)
+            - 시간대열만 (C열 공란)
+            - 폴백: 다른 시간대 → C열 → None
+        """
+        if self.data is None:
+            if not self.fetch_data():
+                return None
+        
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        print(f"📅 [시간대별] 오늘 날짜: {today_str}, 요청 시간대: {period}")
+        
+        # 컬럼 매핑 (다양한 헤더명 지원)
+        column_mapping = {
+            '오전': ['오전', '오전내용', 'morning', 'D'],
+            '오후': ['오후', '오후내용', 'afternoon', 'E'],
+            '저녁': ['저녁', '저녁내용', 'evening', 'F']
+        }
+        
+        # 날짜 컬럼 찾기
+        date_col = None
+        for col_name in ['날짜', '날짜 (A열)', 'date', 'Date']:
+            if col_name in self.data.columns:
+                date_col = col_name
+                break
+        if date_col is None:
+            date_col = self.data.columns[0]
+        
+        # C열 (행사명/공통내용) 컬럼 찾기
+        event_col = None
+        for col_name in ['수련내용', '수련내용 (C열)', '행사명', 'content']:
+            if col_name in self.data.columns:
+                event_col = col_name
+                break
+        if event_col is None and len(self.data.columns) >= 3:
+            event_col = self.data.columns[2]
+        
+        # 시간대별 컬럼 찾기
+        def find_period_column(period_name: str) -> Optional[str]:
+            for possible_name in column_mapping.get(period_name, []):
+                for col in self.data.columns:
+                    if possible_name.lower() in str(col).lower():
+                        return col
+            return None
+        
+        morning_col = find_period_column('오전')
+        afternoon_col = find_period_column('오후')
+        evening_col = find_period_column('저녁')
+        
+        print(f"   컬럼 발견: 날짜={date_col}, 행사명={event_col}, 오전={morning_col}, 오후={afternoon_col}, 저녁={evening_col}")
+        
+        # 시간대별 우선순위 설정
+        period_priority = {
+            '오전': [morning_col, afternoon_col, evening_col],
+            '오후': [afternoon_col, morning_col, evening_col],
+            '저녁': [evening_col, afternoon_col, morning_col]
+        }
+        
+        # 오늘 날짜 행 찾기
+        today_row = None
+        for idx, row in self.data.iterrows():
+            date_value = row[date_col]
+            parsed_date = self._parse_date(date_value)
+            
+            if parsed_date == today_str:
+                today_row = row
+                break
+        
+        if today_row is None:
+            print(f"ℹ️ 오늘({today_str}) 날짜의 데이터가 없습니다.")
+            return None
+        
+        # C열 (행사명) 가져오기
+        event_name = None
+        if event_col and event_col in today_row.index:
+            val = today_row[event_col]
+            if pd.notna(val) and str(val).strip():
+                event_name = str(val).strip()
+        
+        # 시간대별 컬럼에서 내용 가져오기 (우선순위대로)
+        period_content = None
+        for col in period_priority.get(period, []):
+            if col and col in today_row.index:
+                val = today_row[col]
+                if pd.notna(val) and str(val).strip():
+                    period_content = str(val).strip()
+                    print(f"   ✅ 시간대 내용 발견 ({col}): {period_content[:30]}...")
+                    break
+        
+        # 결합 로직
+        if event_name and period_content:
+            result = f"{event_name} {period_content}"
+            print(f"   ✅ 결합 결과: {result[:50]}...")
+            return result
+        elif event_name:
+            print(f"   ✅ 행사명만 사용: {event_name[:50]}...")
+            return event_name
+        elif period_content:
+            print(f"   ✅ 시간대 내용만 사용: {period_content[:50]}...")
+            return period_content
+        else:
+            print(f"   ℹ️ 시간대별 내용 없음, 기본 C열 폴백")
+            return None
 
 
 # 테스트 코드

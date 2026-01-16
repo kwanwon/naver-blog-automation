@@ -489,15 +489,55 @@ class DriveAutoPostSystem:
                 self.is_processing = False
             print(f"🔓 [{folder_name}] 포스팅 처리 완료, 다음 감지 대기 중...")
     
+    def _folder_to_period(self, folder_name: str) -> str:
+        """
+        폴더명을 시간대로 매핑
+        
+        Returns:
+            '오전', '오후', '저녁' 중 하나
+        """
+        folder_lower = folder_name.lower()
+        
+        # 오전 폴더
+        morning_folders = {'생활체육오전반', '오전반'}
+        
+        # 저녁 폴더 (7시부~9시부, 선수부, 시범부, 합숙훈련)
+        evening_folders = {'7시부', '8시부', '9시부', 
+                           '한체대팀라이온선수부', '선수부',
+                           '한체대팀라이온시범부', '시범부',
+                           '한체대라이온짐합숙훈련', '합숙훈련', '합숙'}
+        
+        # 오후 폴더 (1시부~6시부, 승급심사, 승단심사, 대회 등)
+        afternoon_folders = {'1시부', '2시부', '3시부', '4시부', '5시부', '6시부',
+                             '한체대라이온승급심사', '승급심사',
+                             '합기도승단심사', '승단심사',
+                             '합기도대회', '대회'}
+        
+        # 캠프는 오전 우선 (오전 없으면 오후 폴백)
+        if '캠프' in folder_name:
+            return '오전'  # 오전 우선, 폴백 로직은 sheets_reader에서 처리
+        
+        if folder_name in morning_folders:
+            return '오전'
+        elif folder_name in evening_folders:
+            return '저녁'
+        elif folder_name in afternoon_folders:
+            return '오후'
+        else:
+            # 기본값: 오후
+            return '오후'
+    
     def _get_topic(self, folder_name: str) -> str:
         """
-        주제 결정 (폴더 유형별 분기 처리)
+        주제 결정 (폴더 유형별 + 시간대별 분기 처리)
         
-        [수련계획표 참조 폴더]
-        - 1시부~9시부, 캠프활동, 합숙훈련, 대회
+        [시간대 매핑]
+        - 오전: 생활체육오전반, 캠프활동
+        - 오후: 1시부~6시부, 승급심사, 승단심사
+        - 저녁: 7시부~9시부, 선수부, 시범부, 합숙훈련
         
-        [별도 지침 폴더]
-        - 시범부, 선수부, 승급심사, 승단심사, 오전반
+        [수련내용 결합]
+        - C열(행사명) + D/E/F열(시간대) 결합
         """
         # 1순위: 수동 입력
         if self.get_manual_topic:
@@ -506,19 +546,38 @@ class DriveAutoPostSystem:
                 print(f"📌 수동 입력 주제 사용: {manual[:30]}...")
                 return manual.strip()
         
-        # 폴더 유형 분류
-        time_based_folders = {'1시부', '2시부', '3시부', '4시부', '5시부', 
-                              '6시부', '7시부', '8시부', '9시부'}
-        sheet_based_folders = time_based_folders | {'캠프활동', '합숙훈련', '대회'}
-        special_folders = {'시범부', '선수부', '승급심사', '승단심사', '오전반'}
+        # 스프레드시트 참조 폴더 (시간대별)
+        all_sheet_folders = {
+            '생활체육오전반', '오전반',
+            '1시부', '2시부', '3시부', '4시부', '5시부', '6시부',
+            '7시부', '8시부', '9시부',
+            '캠프활동', '합숙훈련', '대회',
+            '한체대팀라이온선수부', '선수부',
+            '한체대팀라이온시범부', '시범부',
+            '한체대라이온승급심사', '승급심사',
+            '합기도승단심사', '승단심사',
+            '한체대라이온짐합숙훈련', '합숙',
+            '합기도대회'
+        }
         
-        # 수련계획표 참조 폴더
-        if folder_name in sheet_based_folders:
+        # 스프레드시트 참조
+        if folder_name in all_sheet_folders:
             if self.sheets_reader.sheet_url:
                 try:
-                    sheet_content = self.sheets_reader.get_today_content()
+                    # 폴더 → 시간대 매핑
+                    period = self._folder_to_period(folder_name)
+                    print(f"📊 폴더 '{folder_name}' → 시간대: {period}")
+                    
+                    # 시간대별 수련내용 가져오기 (결합 로직 포함)
+                    sheet_content = self.sheets_reader.get_combined_content_by_period(period)
+                    
+                    # 시간대별 열이 없으면 기존 방식 폴백
+                    if not sheet_content:
+                        print(f"   ℹ️ 시간대별 열 없음, 기존 C열 확인...")
+                        sheet_content = self.sheets_reader.get_today_content()
+                    
                     if sheet_content:
-                        # 폴더명(시간대)와 수련내용 결합
+                        # 폴더명과 수련내용 결합
                         topic = f"한국체대 라이온짐 {folder_name} 수련\n수련내용: {sheet_content}"
                         print(f"📊 스프레드시트 주제 사용")
                         return topic
@@ -527,10 +586,6 @@ class DriveAutoPostSystem:
             
             # 스프레드시트 실패 시 기본 템플릿
             return f"한국체대 라이온짐 {folder_name} 수련"
-        
-        # 별도 지침 폴더
-        if folder_name in special_folders:
-            return self._get_special_folder_topic(folder_name)
         
         # 기타 폴더
         return f"한국체대 라이온짐 {folder_name} 활동"
