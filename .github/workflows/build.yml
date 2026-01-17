@@ -26,6 +26,7 @@ jobs:
           pip install openai google-generativeai
           pip install psutil cryptography
           pip install pyperclip httpx
+          pip install pandas watchdog
           
       - name: Build with flet pack
         run: |
@@ -72,6 +73,7 @@ jobs:
           pip install openai google-generativeai
           pip install psutil cryptography
           pip install pyperclip httpx
+          pip install pandas watchdog
           
       - name: Build with flet pack
         run: |
