@@ -15,6 +15,7 @@
   },
   "preserved_files": [
     "modules/serial_config.json",
+    "modules/.developer_mode",
     "naver_cookies.pkl",
     "naver_session.json",
     "user_data.json",
