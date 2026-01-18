@@ -28,47 +28,46 @@ jobs:
           pip install pyperclip httpx
           pip install pandas watchdog
           
-      - name: Build with flet pack
+      - name: Build with PyInstaller (Onedir mode)
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.ico
+          # Flet 경로 찾기
+          $fletPath = (python -c "import flet, os; print(os.path.dirname(flet.__file__))").Trim()
+          $fletBin = Join-Path $fletPath "bin"
+          Write-Host "Flet Path: $fletPath"
           
-      - name: Show build output structure
+          # PyInstaller 실행 (폴더 모드)
+          pyinstaller blog_writer_app.py `
+            --name BlogAutomation_Windows `
+            --noconsole `
+            --onedir `
+            --clean `
+            --icon assets/icon.ico `
+            --add-data "$fletBin;flet/bin" `
+            --hidden-import requests `
+            --hidden-import pandas `
+            --hidden-import watchdog `
+            --collect-all requests `
+            --collect-all certifi
+        shell: powershell
+          
+      - name: Organize output folder
         run: |
-          echo "=== dist folder structure BEFORE copy ==="
-          dir dist /s /b
-        shell: cmd
-        
-      - name: Create app folder and move exe
-        run: |
+          # pyinstaller --onedir는 dist/BlogAutomation_Windows 폴더를 생성합니다.
+          # 이 폴더를 우리가 원하는 App 폴더로 사용합니다.
+          
           $dist = "dist"
+          $buildDir = Join-Path $dist "BlogAutomation_Windows"
           $targetDir = Join-Path $dist "BlogAutomation_Windows_App"
           
-          # Create target directory
-          New-Item -ItemType Directory -Force -Path $targetDir
-          
-          # Find any .exe file in dist (recursive)
-          $exeFiles = Get-ChildItem -Path $dist -Filter "*.exe" -Recurse -File
-          
-          if ($exeFiles.Count -eq 0) {
-            Write-Warning "No .exe file found in dist. Listing all files:"
-            Get-ChildItem -Path $dist -Recurse | Select-Object FullName
-            Write-Error "Build failed: No executable found."
-            exit 1
+          if (-not (Test-Path $buildDir)) {
+             Write-Error "Build failed: Directory $buildDir not found!"
+             exit 1
           }
           
-          $exe = $exeFiles[0]
-          Write-Host "Found executable: $($exe.FullName)"
+          # 명확성을 위해 폴더 이름 변경
+          Move-Item -Path $buildDir -Destination $targetDir
           
-          # Move exe to target directory
-          Move-Item -Path $exe.FullName -Destination (Join-Path $targetDir $exe.Name)
-          
-          # Check for _internal folder (used by onedir mode) and move if exists
-          $internalDirs = Get-ChildItem -Path $dist -Filter "_internal" -Recurse -Directory
-          foreach ($dir in $internalDirs) {
-            if ($dir.FullName -notlike "*$targetDir*") {
-              Move-Item -Path $dir.FullName -Destination $targetDir
-            }
-          }
+          Write-Host "Build artifact located at: $targetDir"
         shell: powershell
           
       - name: Copy additional data files
