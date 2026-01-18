@@ -32,6 +32,12 @@ jobs:
         run: |
           flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.ico
           
+      - name: Show build output structure
+        run: |
+          echo "=== dist folder structure BEFORE copy ==="
+          dir dist /s /b
+        shell: cmd
+          
       - name: Copy additional data files
         run: |
           xcopy /E /I modules dist\BlogAutomation_Windows\modules
@@ -40,6 +46,14 @@ jobs:
           xcopy /E /I assets dist\BlogAutomation_Windows\assets
           copy version.json dist\BlogAutomation_Windows\
           del /F dist\BlogAutomation_Windows\modules\.developer_mode 2>nul
+        shell: cmd
+      
+      - name: Show final folder structure
+        run: |
+          echo "=== dist folder structure AFTER copy ==="
+          dir dist /s /b
+          echo "=== BlogAutomation_Windows folder ==="
+          dir dist\BlogAutomation_Windows /s /b
         shell: cmd
       
       # Inno Setup 설치 및 인스톨러 빌드
@@ -56,19 +70,14 @@ jobs:
           echo "App version: $version"
         shell: powershell
         
-      - name: List dist folder structure
-        run: |
-          echo "=== dist folder structure ==="
-          dir dist /s /b
-        shell: cmd
-        
       - name: Create output directory
         run: New-Item -ItemType Directory -Force -Path "output"
         shell: powershell
         
       - name: Build Inno Setup installer
+        env:
+          APP_VERSION: ${{ steps.get_version.outputs.VERSION }}
         run: |
-          set APP_VERSION=${{ steps.get_version.outputs.VERSION }}
           "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\installer.iss"
         shell: cmd
           
@@ -189,7 +198,7 @@ jobs:
             ### 📥 다운로드
             
             #### 🪟 Windows 사용자
-            - **설치 프로그램 (권장)**: `BlogAutomation_Setup_${{ steps.get_version.outputs.VERSION }}.exe`
+            - **설치 프로그램 (권장)**: `BlogAutomation_Setup_*.exe`
               - 더블클릭으로 간편 설치
               - 바탕화면 바로가기 생성
               - 시작 메뉴 등록
