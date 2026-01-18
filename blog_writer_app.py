@@ -8608,11 +8608,28 @@ class BlogWriterApp:
     def get_current_version(self):
         """현재 버전 가져오기"""
         try:
-            version_file = os.path.join(self.base_dir, 'version.json')
-            if os.path.exists(version_file):
-                with open(version_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    return data.get('version', '1.0.0')
+            # 여러 경로에서 version.json 찾기
+            possible_paths = [
+                os.path.join(self.base_dir, 'version.json'),
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), 'version.json'),
+            ]
+            
+            # PyInstaller frozen 모드에서 추가 경로
+            if getattr(sys, 'frozen', False):
+                exe_dir = os.path.dirname(sys.executable)
+                possible_paths.extend([
+                    os.path.join(exe_dir, 'version.json'),
+                    os.path.join(exe_dir, '..', 'Frameworks', 'version.json'),  # macOS app bundle
+                    os.path.join(exe_dir, '..', 'Resources', 'version.json'),
+                ])
+            
+            for version_file in possible_paths:
+                if os.path.exists(version_file):
+                    with open(version_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        version = data.get('version', '1.0.0')
+                        if version != '1.0.0':  # 실제 버전 찾음
+                            return version
             return '1.0.0'
         except:
             return '1.0.0'
