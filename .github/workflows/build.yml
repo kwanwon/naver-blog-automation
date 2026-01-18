@@ -30,12 +30,18 @@ jobs:
           
       - name: Build with PyInstaller (Onedir mode)
         run: |
-          # Flet 경로 찾기
-          $fletPath = (python -c "import flet, os; print(os.path.dirname(flet.__file__))").Trim()
+          # Flet 경로 찾기 (더 안정적인 방법)
+          $fletPath = python -c "import flet; print(flet.__path__[0])"
           $fletBin = Join-Path $fletPath "bin"
           Write-Host "Flet Path: $fletPath"
+          Write-Host "Flet Bin Path: $fletBin"
           
-          # PyInstaller 실행 (폴더 모드)
+          # certifi 경로 찾기
+          $certifiPath = python -c "import certifi; print(certifi.where())"
+          Write-Host "Certifi Path: $certifiPath"
+
+          # PyInstaller 실행
+          # --collect-all 옵션은 flet과 관련된 모든 데이터를 수집합니다.
           pyinstaller blog_writer_app.py `
             --name BlogAutomation_Windows `
             --noconsole `
@@ -43,31 +49,33 @@ jobs:
             --clean `
             --icon assets/icon.ico `
             --add-data "$fletBin;flet/bin" `
-            --hidden-import requests `
-            --hidden-import pandas `
-            --hidden-import watchdog `
+            --collect-all flet `
             --collect-all requests `
-            --collect-all certifi
+            --collect-all certifi `
+            --hidden-import flet.security `
+            --hidden-import flet.utils `
+            --hidden-import pandas `
+            --hidden-import watchdog
         shell: powershell
           
       - name: Organize output folder
         run: |
-          # pyinstaller --onedir는 dist/BlogAutomation_Windows 폴더를 생성합니다.
-          # 이 폴더를 우리가 원하는 App 폴더로 사용합니다.
-          
           $dist = "dist"
           $buildDir = Join-Path $dist "BlogAutomation_Windows"
           $targetDir = Join-Path $dist "BlogAutomation_Windows_App"
           
+          # 빌드 결과 확인
           if (-not (Test-Path $buildDir)) {
              Write-Error "Build failed: Directory $buildDir not found!"
+             Get-ChildItem $dist
              exit 1
           }
           
-          # 명확성을 위해 폴더 이름 변경
+          # 폴더 이름 변경 (App 접미사 추가)
           Move-Item -Path $buildDir -Destination $targetDir
           
-          Write-Host "Build artifact located at: $targetDir"
+          Write-Host "Build artifact moved to: $targetDir"
+          Get-ChildItem $targetDir
         shell: powershell
           
       - name: Copy additional data files
