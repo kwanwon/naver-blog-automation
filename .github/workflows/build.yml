@@ -48,19 +48,27 @@ jobs:
           choco install innosetup -y
         shell: cmd
         
-      - name: Create installer icon
+      - name: Get version from version.json
+        id: get_version
         run: |
-          if (Test-Path "assets/icon.ico") {
-            Copy-Item "assets/icon.ico" "installer/icon.ico"
-          } elseif (Test-Path "assets/icon.png") {
-            # PNG to ICO 변환이 필요한 경우 기본 아이콘 사용
-            Copy-Item "assets/icon.png" "installer/icon.ico"
-          }
-          New-Item -ItemType Directory -Force -Path "output"
+          $version = (Get-Content version.json | ConvertFrom-Json).version
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "App version: $version"
+        shell: powershell
+        
+      - name: List dist folder structure
+        run: |
+          echo "=== dist folder structure ==="
+          dir dist /s /b
+        shell: cmd
+        
+      - name: Create output directory
+        run: New-Item -ItemType Directory -Force -Path "output"
         shell: powershell
         
       - name: Build Inno Setup installer
         run: |
+          set APP_VERSION=${{ steps.get_version.outputs.VERSION }}
           "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\installer.iss"
         shell: cmd
           

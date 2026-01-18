@@ -2,7 +2,10 @@
 ; Inno Setup 스크립트 - GitHub Actions 빌드용
 
 #define MyAppName "블로그 자동화"
-#define MyAppVersion "1.1.9"
+#define MyAppVersion GetEnv('APP_VERSION')
+#if MyAppVersion == ""
+#define MyAppVersion "1.2.0"
+#endif
 #define MyAppPublisher "라이온개발자"
 #define MyAppURL "https://github.com/kwanwon/naver-blog-automation"
 #define MyAppExeName "BlogAutomation_Windows.exe"
@@ -25,8 +28,7 @@ AllowNoIcons=yes
 
 ; 출력 파일 설정
 OutputDir=..\output
-OutputBaseFilename=BlogAutomation_Setup_v{#MyAppVersion}
-; SetupIconFile=icon.ico  ; 아이콘 파일이 없으면 기본 아이콘 사용
+OutputBaseFilename=BlogAutomation_Setup_{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -47,7 +49,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 6.1
 
 [Files]
-; 메인 실행 파일 및 모든 파일
+; flet pack 빌드 결과물 - BlogAutomation_Windows 폴더 전체
 Source: "..\dist\BlogAutomation_Windows\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "manual_chrome_profile_*;*.log;__pycache__"
 
 [Icons]
@@ -94,7 +96,7 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    MsgBox('블로그 자동화 v{#MyAppVersion} 설치가 완료되었습니다!' + #13#10 + #13#10 +
+    MsgBox('블로그 자동화 설치가 완료되었습니다!' + #13#10 + #13#10 +
            '※ 프로그램 사용을 위해 다음 사항을 확인해주세요:' + #13#10 +
            '  1. Chrome 브라우저 설치' + #13#10 +
            '  2. 시리얼 번호 준비', 
