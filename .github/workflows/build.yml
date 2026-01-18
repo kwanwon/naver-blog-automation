@@ -30,7 +30,7 @@ jobs:
           
       - name: Build with flet pack
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.png
+          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.ico
           
       - name: Copy additional data files
         run: |
