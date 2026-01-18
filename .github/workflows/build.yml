@@ -28,9 +28,34 @@ jobs:
           pip install pyperclip httpx
           pip install pandas watchdog
           
-      - name: Build with Python Script
+      - name: Build with flet pack
         run: |
-          python utils/build_windows.py
+          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.ico --copyright LionDeveloper
+        shell: cmd
+
+      - name: Locate and Move Executable
+        run: |
+          echo "=== Debug: Root Directory Content ==="
+          dir
+          echo "=== Debug: Dist Directory Content ==="
+          if exist dist dir dist
+          
+          mkdir dist\BlogAutomation_Windows_App
+          
+          REM Try to find exe in dist root
+          if exist "dist\BlogAutomation_Windows.exe" (
+              echo "Found exe in dist root, moving..."
+              move "dist\BlogAutomation_Windows.exe" "dist\BlogAutomation_Windows_App\"
+          ) else (
+              REM Try to find exe in subfolder
+              if exist "dist\BlogAutomation_Windows\BlogAutomation_Windows.exe" (
+                  echo "Found exe in subfolder, moving..."
+                  move "dist\BlogAutomation_Windows\BlogAutomation_Windows.exe" "dist\BlogAutomation_Windows_App\"
+              ) else (
+                  echo "❌ Error: Could not find executable!"
+                  exit 1
+              )
+          )
         shell: cmd
           
       - name: Copy additional data files
