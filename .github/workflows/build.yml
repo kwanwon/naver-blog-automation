@@ -37,23 +37,56 @@ jobs:
           echo "=== dist folder structure BEFORE copy ==="
           dir dist /s /b
         shell: cmd
+        
+      - name: Create app folder and move exe
+        run: |
+          $dist = "dist"
+          $targetDir = Join-Path $dist "BlogAutomation_Windows_App"
+          
+          # Create target directory
+          New-Item -ItemType Directory -Force -Path $targetDir
+          
+          # Find any .exe file in dist (recursive)
+          $exeFiles = Get-ChildItem -Path $dist -Filter "*.exe" -Recurse -File
+          
+          if ($exeFiles.Count -eq 0) {
+            Write-Warning "No .exe file found in dist. Listing all files:"
+            Get-ChildItem -Path $dist -Recurse | Select-Object FullName
+            Write-Error "Build failed: No executable found."
+            exit 1
+          }
+          
+          $exe = $exeFiles[0]
+          Write-Host "Found executable: $($exe.FullName)"
+          
+          # Move exe to target directory
+          Move-Item -Path $exe.FullName -Destination (Join-Path $targetDir $exe.Name)
+          
+          # Check for _internal folder (used by onedir mode) and move if exists
+          $internalDirs = Get-ChildItem -Path $dist -Filter "_internal" -Recurse -Directory
+          foreach ($dir in $internalDirs) {
+            if ($dir.FullName -notlike "*$targetDir*") {
+              Move-Item -Path $dir.FullName -Destination $targetDir
+            }
+          }
+        shell: powershell
           
       - name: Copy additional data files
         run: |
-          xcopy /E /I modules dist\BlogAutomation_Windows\modules
-          xcopy /E /I config dist\BlogAutomation_Windows\config
-          xcopy /E /I utils dist\BlogAutomation_Windows\utils
-          xcopy /E /I assets dist\BlogAutomation_Windows\assets
-          copy version.json dist\BlogAutomation_Windows\
-          del /F dist\BlogAutomation_Windows\modules\.developer_mode 2>nul
+          xcopy /E /I modules dist\BlogAutomation_Windows_App\modules
+          xcopy /E /I config dist\BlogAutomation_Windows_App\config
+          xcopy /E /I utils dist\BlogAutomation_Windows_App\utils
+          xcopy /E /I assets dist\BlogAutomation_Windows_App\assets
+          copy version.json dist\BlogAutomation_Windows_App\
+          del /F dist\BlogAutomation_Windows_App\modules\.developer_mode 2>nul
         shell: cmd
       
       - name: Show final folder structure
         run: |
           echo "=== dist folder structure AFTER copy ==="
           dir dist /s /b
-          echo "=== BlogAutomation_Windows folder ==="
-          dir dist\BlogAutomation_Windows /s /b
+          echo "=== BlogAutomation_Windows_App folder ==="
+          dir dist\BlogAutomation_Windows_App /s /b
         shell: cmd
       
       # Inno Setup 설치 및 인스톨러 빌드
@@ -84,7 +117,7 @@ jobs:
       - name: Create Windows ZIP
         run: |
           cd dist
-          Compress-Archive -Path "BlogAutomation_Windows" -DestinationPath "BlogAutomation-Windows.zip"
+          Compress-Archive -Path "BlogAutomation_Windows_App" -DestinationPath "BlogAutomation-Windows.zip"
         shell: powershell
         
       - name: List output files
