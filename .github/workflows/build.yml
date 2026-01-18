@@ -41,18 +41,54 @@ jobs:
           copy version.json dist\BlogAutomation_Windows\
           del /F dist\BlogAutomation_Windows\modules\.developer_mode 2>nul
         shell: cmd
+      
+      # Inno Setup 설치 및 인스톨러 빌드
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup -y
+        shell: cmd
+        
+      - name: Create installer icon
+        run: |
+          if (Test-Path "assets/icon.ico") {
+            Copy-Item "assets/icon.ico" "installer/icon.ico"
+          } elseif (Test-Path "assets/icon.png") {
+            # PNG to ICO 변환이 필요한 경우 기본 아이콘 사용
+            Copy-Item "assets/icon.png" "installer/icon.ico"
+          }
+          New-Item -ItemType Directory -Force -Path "output"
+        shell: powershell
+        
+      - name: Build Inno Setup installer
+        run: |
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\installer.iss"
+        shell: cmd
           
       - name: Create Windows ZIP
         run: |
           cd dist
           Compress-Archive -Path "BlogAutomation_Windows" -DestinationPath "BlogAutomation-Windows.zip"
         shell: powershell
+        
+      - name: List output files
+        run: |
+          echo "=== dist folder ==="
+          dir dist
+          echo "=== output folder ==="
+          dir output
+        shell: cmd
           
-      - name: Upload Windows artifact
+      - name: Upload Windows ZIP artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BlogAutomation-Windows
+          name: BlogAutomation-Windows-ZIP
           path: dist/BlogAutomation-Windows.zip
+          
+      - name: Upload Windows Installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlogAutomation-Windows-Setup
+          path: output/BlogAutomation_Setup_*.exe
 
   build-macos:
     runs-on: macos-latest
@@ -110,10 +146,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Download Windows artifact
+      - name: Download Windows ZIP artifact
         uses: actions/download-artifact@v4
         with:
-          name: BlogAutomation-Windows
+          name: BlogAutomation-Windows-ZIP
+          path: ./release-files/
+          
+      - name: Download Windows Installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BlogAutomation-Windows-Setup
           path: ./release-files/
           
       - name: Download macOS artifact
@@ -121,6 +163,9 @@ jobs:
         with:
           name: BlogAutomation-Mac
           path: ./release-files/
+      
+      - name: List release files
+        run: ls -la ./release-files/
       
       - name: Get version from tag
         id: get_version
@@ -134,17 +179,29 @@ jobs:
             ## 🎉 블로그자동화 ${{ steps.get_version.outputs.VERSION }} 릴리스
             
             ### 📥 다운로드
-            - **Mac 사용자**: `BlogAutomation-Mac.zip` 다운로드
-            - **Windows 사용자**: `BlogAutomation-Windows.zip` 다운로드
             
-            ### 📌 설치 방법
-            1. ZIP 파일 다운로드
-            2. 압축 해제
-            3. 앱 실행
+            #### 🪟 Windows 사용자
+            - **설치 프로그램 (권장)**: `BlogAutomation_Setup_${{ steps.get_version.outputs.VERSION }}.exe`
+              - 더블클릭으로 간편 설치
+              - 바탕화면 바로가기 생성
+              - 시작 메뉴 등록
+            - **ZIP 파일**: `BlogAutomation-Windows.zip`
+              - 압축 해제 후 바로 사용
             
-            Mac 사용자: 첫 실행 시 앱 우클릭 → "열기" 선택
+            #### 🍎 Mac 사용자
+            - **ZIP 파일**: `BlogAutomation-Mac.zip`
+              - 압축 해제 후 앱 실행
+              - 첫 실행 시 우클릭 → "열기" 선택
+            
+            ### 📌 설치 후 필요사항
+            - Chrome 브라우저 설치
+            - 시리얼 번호 입력
+            
+            ### 📋 변경사항
+            변경사항은 version.json 파일을 참조해주세요.
           files: |
             ./release-files/BlogAutomation-Windows.zip
+            ./release-files/BlogAutomation_Setup_*.exe
             ./release-files/BlogAutomation-Mac.zip
           draft: false
           prerelease: false

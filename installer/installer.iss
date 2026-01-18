@@ -1,18 +1,18 @@
 ; 블로그 자동화 프로그램 Windows 설치 프로그램
-; Inno Setup 스크립트
+; Inno Setup 스크립트 - GitHub Actions 빌드용
 
 #define MyAppName "블로그 자동화"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.9"
 #define MyAppPublisher "라이온개발자"
 #define MyAppURL "https://github.com/kwanwon/naver-blog-automation"
-#define MyAppExeName "블로그자동화.exe"
+#define MyAppExeName "BlogAutomation_Windows.exe"
 
 [Setup]
 ; 기본 설정
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-AppVerName={#MyAppName} {#MyAppVersion}
+AppVerName={#MyAppName} v{#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -24,9 +24,9 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 
 ; 출력 파일 설정
-OutputDir=dist
-OutputBaseFilename=블로그자동화_설치프로그램_v{#MyAppVersion}
-SetupIconFile=..\app_icon.ico
+OutputDir=..\output
+OutputBaseFilename=BlogAutomation_Setup_v{#MyAppVersion}
+; SetupIconFile=icon.ico  ; 아이콘 파일이 없으면 기본 아이콘 사용
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -36,43 +36,33 @@ MinVersion=6.1sp1
 PrivilegesRequired=admin
 
 ; 언어 설정
-Language=Korean
+ShowLanguageDialog=yes
 
 [Languages]
 Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 6.1
 
 [Files]
-; 메인 실행 파일 (캐시 프로필 제외)
-Source: "..\dist\블로그자동화\블로그자동화.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\dist\블로그자동화\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "manual_chrome_profile_*;manual_chrome_profile_*\\*"
-
-; 필수 라이브러리들
-Source: "..\dist\블로그자동화\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-; 설정 파일들
-Source: "..\dist\블로그자동화\config\*"; DestDir: "{app}\config"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\dist\블로그자동화\modules\*"; DestDir: "{app}\modules"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-; 이미지 파일들
-Source: "..\dist\블로그자동화\default_images*\*"; DestDir: "{app}\default_images"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-; 기타 필수 파일들
-Source: "..\dist\블로그자동화\requirements.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\dist\블로그자동화\version.json"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\dist\블로그자동화\배포_정보.txt"; DestDir: "{app}"; Flags: ignoreversion
+; 메인 실행 파일 및 모든 파일
+Source: "..\dist\BlogAutomation_Windows\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "manual_chrome_profile_*;*.log;__pycache__"
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\app_icon.ico"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "{app}\app_icon.ico"
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: quicklaunchicon; IconFilename: "{app}\app_icon.ico"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: quicklaunchicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{app}\logs"
+Type: filesandordirs; Name: "{app}\*.log"
+Type: filesandordirs; Name: "{app}\__pycache__"
 
 [Code]
 // 설치 후 Chrome 설치 확인 및 안내
@@ -104,8 +94,10 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    MsgBox('설치가 완료되었습니다!' + #13#10 + 
-           '프로그램을 사용하기 전에 Chrome 브라우저가 설치되어 있는지 확인해주세요.', 
+    MsgBox('블로그 자동화 v{#MyAppVersion} 설치가 완료되었습니다!' + #13#10 + #13#10 +
+           '※ 프로그램 사용을 위해 다음 사항을 확인해주세요:' + #13#10 +
+           '  1. Chrome 브라우저 설치' + #13#10 +
+           '  2. 시리얼 번호 준비', 
            mbInformation, MB_OK);
   end;
 end;

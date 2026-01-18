@@ -555,9 +555,15 @@ class BlogSerialAuth:
     
     def is_serial_required(self) -> bool:
         """시리얼 입력이 필요한지 확인 (실제 유효성 검증 포함)"""
-        # 개발자 모드에서는 시리얼 불필요
+        # 개발자 모드에서도 활성화 횟수는 기록함
         if self.developer_mode:
-            return False
+            config = self.load_config()
+            serial_number = config.get("serial_number")
+            if serial_number:
+                # 개발자 모드에서도 활성화 횟수 업데이트
+                self.logger.info(f"개발자 모드 - 활성화 횟수 업데이트: {serial_number}")
+                self.update_device_info_and_usage(serial_number)
+            return False  # 개발자 모드에서는 시리얼 불필요
         
         config = self.load_config()
         
@@ -574,9 +580,12 @@ class BlogSerialAuth:
                 self.logger.info(f"시리얼이 무효하므로 재입력 필요: {message}")
                 return True
             
-            # 검증 성공 시 마지막 검증일 업데이트
+            # 검증 성공 시 마지막 검증일 업데이트 및 활성화 횟수 증가
             config["last_validation"] = datetime.now().isoformat()
             self.save_config(config)
+            
+            # 일반 모드에서도 활성화 횟수 업데이트 (앱 실행 시마다)
+            self.update_device_info_and_usage(serial_number)
             
         except Exception as e:
             self.logger.error(f"시리얼 검증 중 오류: {e}")
