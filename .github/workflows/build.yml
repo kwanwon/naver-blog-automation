@@ -28,34 +28,31 @@ jobs:
           pip install pyperclip httpx
           pip install pandas watchdog
           
-      - name: Build with flet pack
+      - name: Build with PyInstaller (Onedir mode)
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Windows --icon assets/icon.ico --copyright LionDeveloper
+          # PyInstaller 직접 실행 (Onedir 모드)
+          # requests, flet, certifi 등 문제 발생 가능한 모듈 전체 수집
+          pyinstaller blog_writer_app.py --name BlogAutomation_Windows --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all certifi --hidden-import pandas --hidden-import watchdog --noconfirm
         shell: cmd
 
-      - name: Locate and Move Executable
+      - name: Organize output folder
         run: |
-          echo "=== Debug: Root Directory Content ==="
-          dir
-          echo "=== Debug: Dist Directory Content ==="
-          if exist dist dir dist
+          echo "=== Debug: Checking dist folder ==="
+          dir dist
           
-          mkdir dist\BlogAutomation_Windows_App
+          # 기존 폴더명: dist\BlogAutomation_Windows (PyInstaller가 생성함)
+          # 목표 폴더명: dist\BlogAutomation_Windows_App (Installer가 참조함)
           
-          REM Try to find exe in dist root
-          if exist "dist\BlogAutomation_Windows.exe" (
-              echo "Found exe in dist root, moving..."
-              move "dist\BlogAutomation_Windows.exe" "dist\BlogAutomation_Windows_App\"
+          if exist "dist\BlogAutomation_Windows" (
+              echo "✅ Found build folder. Renaming to App folder..."
+              move "dist\BlogAutomation_Windows" "dist\BlogAutomation_Windows_App"
           ) else (
-              REM Try to find exe in subfolder
-              if exist "dist\BlogAutomation_Windows\BlogAutomation_Windows.exe" (
-                  echo "Found exe in subfolder, moving..."
-                  move "dist\BlogAutomation_Windows\BlogAutomation_Windows.exe" "dist\BlogAutomation_Windows_App\"
-              ) else (
-                  echo "❌ Error: Could not find executable!"
-                  exit 1
-              )
+              echo "❌ Error: Build folder 'dist\BlogAutomation_Windows' not found!"
+              exit 1
           )
+          
+          echo "=== Debug: App folder content ==="
+          dir dist\BlogAutomation_Windows_App
         shell: cmd
           
       - name: Copy additional data files
