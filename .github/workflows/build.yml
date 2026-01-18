@@ -28,55 +28,10 @@ jobs:
           pip install pyperclip httpx
           pip install pandas watchdog
           
-      - name: Build with PyInstaller (Onedir mode)
+      - name: Build with Python Script
         run: |
-          # Flet 경로 찾기 (더 안정적인 방법)
-          $fletPath = python -c "import flet; print(flet.__path__[0])"
-          $fletBin = Join-Path $fletPath "bin"
-          Write-Host "Flet Path: $fletPath"
-          Write-Host "Flet Bin Path: $fletBin"
-          
-          # certifi 경로 찾기
-          $certifiPath = python -c "import certifi; print(certifi.where())"
-          Write-Host "Certifi Path: $certifiPath"
-
-          # PyInstaller 실행
-          # --collect-all 옵션은 flet과 관련된 모든 데이터를 수집합니다.
-          pyinstaller blog_writer_app.py `
-            --name BlogAutomation_Windows `
-            --noconsole `
-            --onedir `
-            --clean `
-            --icon assets/icon.ico `
-            --add-data "$fletBin;flet/bin" `
-            --collect-all flet `
-            --collect-all requests `
-            --collect-all certifi `
-            --hidden-import flet.security `
-            --hidden-import flet.utils `
-            --hidden-import pandas `
-            --hidden-import watchdog
-        shell: powershell
-          
-      - name: Organize output folder
-        run: |
-          $dist = "dist"
-          $buildDir = Join-Path $dist "BlogAutomation_Windows"
-          $targetDir = Join-Path $dist "BlogAutomation_Windows_App"
-          
-          # 빌드 결과 확인
-          if (-not (Test-Path $buildDir)) {
-             Write-Error "Build failed: Directory $buildDir not found!"
-             Get-ChildItem $dist
-             exit 1
-          }
-          
-          # 폴더 이름 변경 (App 접미사 추가)
-          Move-Item -Path $buildDir -Destination $targetDir
-          
-          Write-Host "Build artifact moved to: $targetDir"
-          Get-ChildItem $targetDir
-        shell: powershell
+          python utils/build_windows.py
+        shell: cmd
           
       - name: Copy additional data files
         run: |
