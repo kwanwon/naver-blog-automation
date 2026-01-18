@@ -10,18 +10,20 @@ def build():
 
     # 1. 경로 설정
     base_dir = os.getcwd()
-    flet_path = os.path.dirname(flet.__file__)
-    flet_bin = os.path.join(flet_path, "bin")
+    try:
+        flet_path = os.path.dirname(flet.__file__)
+        flet_bin = os.path.join(flet_path, "bin")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not find flet path: {e}")
+        flet_path = None
+        flet_bin = None
     
     print(f"📍 Base Directory: {base_dir}")
     print(f"📍 Flet Path: {flet_path}")
-    print(f"📍 Flet Binaries: {flet_bin}")
 
     # 2. PyInstaller 인자 설정
-    # --add-data 형식: "소스경로;목적지경로" (Windows separator is ;)
     path_sep = ";" if os.name == 'nt' else ":"
-    add_data_flet = f"{flet_bin}{path_sep}flet/bin"
-
+    
     pyinstaller_args = [
         'blog_writer_app.py',
         '--name=BlogAutomation_Windows',
@@ -29,7 +31,7 @@ def build():
         '--onedir',
         '--clean',
         '--icon=assets/icon.ico',
-        f'--add-data={add_data_flet}',
+        # --add-data는 경로가 확실할 때만 추가
         '--collect-all=requests',
         '--collect-all=certifi',
         '--collect-all=flet',
@@ -39,6 +41,12 @@ def build():
         '--hidden-import=watchdog',
         '--noconfirm',
     ]
+
+    if flet_bin and os.path.exists(flet_bin):
+        print(f"✅ Adding flet binaries from: {flet_bin}")
+        pyinstaller_args.append(f'--add-data={flet_bin}{path_sep}flet/bin')
+    else:
+        print(f"⚠️ Warning: Flet binaries not found at {flet_bin}. Skipping --add-data for flet bin.")
 
     print("🔧 Running PyInstaller with arguments:", pyinstaller_args)
 
