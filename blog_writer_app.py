@@ -351,6 +351,43 @@ class BlogWriterApp:
         page.snack_bar.open = True
         page.update()
     
+    def _on_drive_folder_selected(self, e: ft.FilePickerResultEvent, text_field: ft.TextField):
+        if e.path:
+            # 선택된 경로를 정규화(NFC)하여 한글 깨짐 방지
+            import unicodedata
+            normalized_path = unicodedata.normalize('NFC', e.path)
+            
+            text_field.value = normalized_path
+            self._save_setting('drive_parent_folder', normalized_path)
+            text_field.update()
+            
+            # 안내 메시지
+            if text_field.page:
+                text_field.page.snack_bar = ft.SnackBar(content=ft.Text(f"✅ 폴더가 선택되었습니다: {os.path.basename(normalized_path)}"))
+                text_field.page.snack_bar.open = True
+                text_field.page.update()
+
+    def _open_folder_picker(self, e):
+        """폴더 선택기를 동적으로 열기"""
+        try:
+            page = e.control.page
+            if not page: return
+            
+            # 형제 컨트롤(TextField) 찾기
+            # IconButton의 부모는 Row, Row의 첫 번째 자식이 TextField
+            row = e.control.parent
+            text_field = row.controls[0]
+            
+            picker = ft.FilePicker(
+                on_result=lambda res: self._on_drive_folder_selected(res, text_field)
+            )
+            page.overlay.append(picker)
+            page.update()
+            picker.get_directory_path()
+            
+        except Exception as ex:
+            print(f"폴더 선택기 열기 실패: {ex}")
+
     def _scan_drive_folders(self, page):
         """상위 폴더 스캔하여 하위 폴더 목록 표시"""
         parent_folder = self.settings.get('drive_parent_folder', '')
@@ -7934,12 +7971,22 @@ class BlogWriterApp:
                         
                         # 상위 감시 폴더 (하위 폴더 자동 스캔)
                         ft.Text("📁 감시 폴더 설정:", size=14, weight=ft.FontWeight.BOLD),
-                        ft.TextField(
-                            label="상위 폴더 경로 (하위 폴더들을 자동 감지)",
-                            hint_text="/Users/.../Google Drive/수련사진및영상",
-                            value=self.settings.get('drive_parent_folder', ''),
-                            on_blur=lambda e: self._save_setting('drive_parent_folder', e.control.value)
-                        ),
+                        ft.Row([
+                            ft.TextField(
+                                label="상위 폴더 경로 (하위 폴더들을 자동 감지)",
+                                hint_text="/Users/.../Google Drive/수련사진및영상",
+                                value=self.settings.get('drive_parent_folder', ''),
+                                on_blur=lambda e: self._save_setting('drive_parent_folder', e.control.value),
+                                expand=True
+                            ),
+                            ft.IconButton(
+                                icon=ft.Icons.FOLDER_OPEN,
+                                tooltip="폴더 선택",
+                                icon_size=30,
+                                icon_color=ft.Colors.BLUE_400,
+                                on_click=lambda e: self._open_folder_picker(e)
+                            )
+                        ]),
                         ft.Text("💡 상위 폴더를 입력하면 그 안의 모든 하위 폴더(1시부, 2시부, 선수부 등)를 자동으로 감시합니다.", size=11, color=ft.Colors.GREY_600),
                         
                         # 스캔된 폴더 목록 표시
