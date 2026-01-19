@@ -8926,9 +8926,6 @@ if __name__ == "__main__":
         print(f"⚠️ 업데이트 확인 중 오류: {e}")
     """
             
-    except Exception as e:
-        print(f"⚠️ 업데이트 확인 중 오류: {e}")
-        print("🔄 기존 프로그램을 시작합니다...")
     
     # 메인 앱 실행
     app = BlogWriterApp()
