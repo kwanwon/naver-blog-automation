@@ -8897,8 +8897,7 @@ class BlogWriterApp:
             print("수동으로 프로그램을 재시작해주세요.")
 
 if __name__ == "__main__":
-    # 프로그램 시작 전 업데이트 확인 (Windows 무한 재시작 방지를 위해 비활성화)
-    """
+    # 프로그램 시작 전 업데이트 확인 (안전 모드: 확인만 하고 자동설치 안 함)
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         version_file = os.path.join(current_dir, 'version.json')
@@ -8911,20 +8910,17 @@ if __name__ == "__main__":
                 
         updater = AutoUpdater(current_version)
         
-        # 업데이트 확인 및 적용
-        print("🚀 블로그 자동화 프로그램 시작...")
-        success, message = updater.check_and_update()
+        # 업데이트 가능 여부만 확인
+        is_available, new_ver = updater.check_update_available()
         
-        if success:
-            print(f"✅ {message}")
-            print("🔄 업데이트된 프로그램을 시작합니다...")
-            time.sleep(2)  # 잠깐 대기
-            
-            # 여기서 재시작 로직이 필요하지만, exe 환경에서는 복잡함
+        if is_available:
+            print(f"✨ 새 버전(v{new_ver})이 있습니다!")
+            print("   (설정 탭에서 업데이트를 진행해주세요)")
+        else:
+            print(f"✅ 현재 최신 버전(v{current_version})입니다.")
             
     except Exception as e:
-        print(f"⚠️ 업데이트 확인 중 오류: {e}")
-    """
+        print(f"⚠️ 업데이트 확인 중 오류 (무시됨): {e}")
             
     
     # 메인 앱 실행

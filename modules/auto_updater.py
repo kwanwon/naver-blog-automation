@@ -328,6 +328,25 @@ class AutoUpdater:
         except Exception as e:
             self.logger.error(f"임시 파일 정리 실패: {e}")
             
+    def check_update_available(self):
+        """업데이트 가능 여부만 확인 (설치 진행 안 함)"""
+        try:
+            # 원격 버전 확인
+            remote_version, changelog = self.get_remote_version()
+            
+            if not remote_version:
+                return False, None
+                
+            # 버전 비교
+            if self.compare_versions(remote_version):
+                return True, remote_version
+            else:
+                return False, None
+                
+        except Exception as e:
+            self.logger.error(f"버전 확인 중 오류: {e}")
+            return False, None
+
     def check_and_update(self):
         """업데이트 확인 및 실행"""
         try:
