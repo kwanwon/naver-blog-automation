@@ -12,6 +12,16 @@ from modules.idle_activity import IdleActivity
 import subprocess
 import os
 import sys  # sys 모듈 추가
+import io
+
+# 🆕 Windows 콘솔 인코딩 문제 해결 (이모지 출력 시 UnicodeEncodeError 방지)
+if sys.platform == 'win32':
+    try:
+        # stdout/stderr를 UTF-8로 설정하고, 인코딩 불가능한 문자는 ?로 대체
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass  # 콘솔이 없는 경우 (noconsole 모드) 무시
 import platform  # 플랫폼 감지 추가
 from datetime import datetime, timedelta
 import json
