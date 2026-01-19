@@ -367,26 +367,42 @@ class BlogWriterApp:
                 text_field.page.snack_bar.open = True
                 text_field.page.update()
 
+    def _on_global_folder_picker_result(self, e: ft.FilePickerResultEvent):
+        """전역 폴더 선택기 결과 처리"""
+        if getattr(self, 'current_folder_picker_target', None):
+            self._on_drive_folder_selected(e, self.current_folder_picker_target)
+            self.current_folder_picker_target = None
+
     def _open_folder_picker(self, e):
-        """폴더 선택기를 동적으로 열기"""
+        """폴더 선택기를 안전하게 열기 (전역 객체 사용)"""
         try:
-            page = e.control.page
-            if not page: return
+            print("📂 폴더 선택 버튼 클릭됨")
             
             # 형제 컨트롤(TextField) 찾기
-            # IconButton의 부모는 Row, Row의 첫 번째 자식이 TextField
             row = e.control.parent
             text_field = row.controls[0]
             
-            picker = ft.FilePicker(
-                on_result=lambda res: self._on_drive_folder_selected(res, text_field)
-            )
-            page.overlay.append(picker)
-            page.update()
-            picker.get_directory_path()
+            # 타겟 설정
+            self.current_folder_picker_target = text_field
+            
+            # 폴더 선택기 열기
+            if hasattr(self, 'folder_picker'):
+                self.folder_picker.get_directory_path()
+                print("✅ 파일 선택 창 호출됨")
+            else:
+                print("❌ folder_picker가 초기화되지 않음 (비상용 동적 생성 시도)")
+                # 비상용: 동적 생성
+                page = e.control.page
+                if page:
+                    picker = ft.FilePicker(
+                        on_result=lambda res: self._on_drive_folder_selected(res, text_field)
+                    )
+                    page.overlay.append(picker)
+                    page.update()
+                    picker.get_directory_path()
             
         except Exception as ex:
-            print(f"폴더 선택기 열기 실패: {ex}")
+            print(f"❌ 폴더 선택기 열기 실패: {ex}")
 
     def _scan_drive_folders(self, page):
         """상위 폴더 스캔하여 하위 폴더 목록 표시"""
@@ -3723,6 +3739,13 @@ class BlogWriterApp:
                 return
         
         # 페이지 설정
+        self.page = page  # 페이지 객체 저장 (중요)
+        
+        # 전역 폴더 선택기 초기화
+        self.current_folder_picker_target = None
+        self.folder_picker = ft.FilePicker(on_result=self._on_global_folder_picker_result)
+        page.overlay.append(self.folder_picker)
+        
         page.title = "블로그 글쓰기 도우미"
         page.theme_mode = ft.ThemeMode.LIGHT
         page.padding = 20
