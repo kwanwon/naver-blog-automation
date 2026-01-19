@@ -32,7 +32,8 @@ jobs:
         run: |
           # PyInstaller 직접 실행 (Onedir 모드)
           # requests, flet, certifi 등 문제 발생 가능한 모듈 전체 수집
-          pyinstaller blog_writer_app.py --name BlogAutomation_Windows --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all certifi --hidden-import pandas --hidden-import watchdog --noconfirm
+          # 중요: flet_desktop 모듈 누락 방지를 위해 collect-all 추가
+          pyinstaller blog_writer_app.py --name BlogAutomation_Windows --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all flet_desktop --collect-all certifi --hidden-import pandas --hidden-import watchdog --noconfirm
         shell: cmd
 
       - name: Organize output folder
