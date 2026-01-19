@@ -75,7 +75,10 @@ class AutoUpdater:
         
     def setup_logging(self):
         """로깅 설정"""
-        log_file = os.path.join(self.app_dir, 'auto_update.log')
+        # 로그 디렉토리 생성 (backup_dir이 AppData 등을 가리키므로 여기 사용)
+        log_dir = os.path.join(self.backup_dir, 'logs')
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, 'auto_update.log')
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
