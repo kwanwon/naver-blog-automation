@@ -8897,7 +8897,8 @@ class BlogWriterApp:
             print("수동으로 프로그램을 재시작해주세요.")
 
 if __name__ == "__main__":
-    # 프로그램 시작 전 업데이트 확인
+    # 프로그램 시작 전 업데이트 확인 (Windows 무한 재시작 방지를 위해 비활성화)
+    """
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         version_file = os.path.join(current_dir, 'version.json')
@@ -8918,6 +8919,12 @@ if __name__ == "__main__":
             print(f"✅ {message}")
             print("🔄 업데이트된 프로그램을 시작합니다...")
             time.sleep(2)  # 잠깐 대기
+            
+            # 여기서 재시작 로직이 필요하지만, exe 환경에서는 복잡함
+            
+    except Exception as e:
+        print(f"⚠️ 업데이트 확인 중 오류: {e}")
+    """
             
     except Exception as e:
         print(f"⚠️ 업데이트 확인 중 오류: {e}")
