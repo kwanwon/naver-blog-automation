@@ -71,7 +71,11 @@ class BlogWriterApp:
         self.is_browser_busy = False  # 현재 브라우저 사용 중인지
         # AI 모델 사용 로그 저장
         self.model_usage_logs = []  # [{time, topic, model, status, reason, target, duration}]
-        self.model_usage_log_path = os.path.join(self.base_dir, 'config', 'model_usage_logs.json')
+        # 🆕 크로스 플랫폼: 사용자 데이터 폴더 사용
+        app_data_dir = self._get_app_data_dir()
+        self.model_usage_log_path = os.path.join(app_data_dir, 'config', 'model_usage_logs.json')
+        os.makedirs(os.path.dirname(self.model_usage_log_path), exist_ok=True)
+        
         self._load_model_usage_logs()
         self.model_usage_cost_text = None  # 비용 요약 텍스트
         self.model_usage_cost_detail = None  # 비용 상세 텍스트
@@ -106,7 +110,9 @@ class BlogWriterApp:
         self.blog_reply_limit = "10"
         
         # 스마트 스케줄러 초기화
-        self.scheduler = SmartScheduler(os.path.join(self.base_dir, 'config/smart_scheduler.json'))
+        # 🆕 크로스 플랫폼: 사용자 데이터 폴더 사용
+        scheduler_path = os.path.join(app_data_dir, 'config', 'smart_scheduler.json')
+        self.scheduler = SmartScheduler(scheduler_path)
         self.scheduler.on_task_executed = self.handle_scheduled_task
         
         self.scheduler.on_task_executed = self.handle_scheduled_task
@@ -132,9 +138,35 @@ class BlogWriterApp:
             self._start_caffeinate()
 
 
+    def _get_app_data_dir(self):
+        """사용자 데이터 디렉토리 반환 (~/.blog_automation)"""
+        try:
+            home = os.path.expanduser("~")
+            # Windows: AppData/Local/BlogAutomation, Mac: ~/.blog_automation
+            if self.is_windows:
+                app_data = os.getenv('LOCALAPPDATA', os.path.join(home, 'AppData', 'Local'))
+                base = os.path.join(app_data, 'BlogAutomation')
+            else:
+                base = os.path.join(home, '.blog_automation')
+            
+            os.makedirs(base, exist_ok=True)
+            return base
+        except Exception as e:
+            print(f"❌ 데이터 디렉토리 생성 실패: {e}")
+            return os.path.join(os.getcwd(), 'data')
+
     def load_settings(self):
         """앱 설정 파일 로드"""
-        settings_path = os.path.join(self.base_dir, 'config/app_settings.json')
+        # 1. 사용자 데이터 폴더에서 먼저 시도
+        app_data_dir = self._get_app_data_dir()
+        settings_path = os.path.join(app_data_dir, 'config', 'app_settings.json')
+        
+        # 2. 없으면 기본 설치 경로에서 시도 (초기값)
+        if not os.path.exists(settings_path):
+            legacy_path = os.path.join(self.base_dir, 'config', 'app_settings.json')
+            if os.path.exists(legacy_path):
+                settings_path = legacy_path
+
         try:
             if os.path.exists(settings_path):
                 with open(settings_path, 'r', encoding='utf-8') as f:
@@ -145,7 +177,10 @@ class BlogWriterApp:
 
     def save_settings(self):
         """앱 설정 파일 저장"""
-        settings_path = os.path.join(self.base_dir, 'config/app_settings.json')
+        # 무조건 사용자 데이터 폴더에 저장
+        app_data_dir = self._get_app_data_dir()
+        settings_path = os.path.join(app_data_dir, 'config', 'app_settings.json')
+        
         try:
             os.makedirs(os.path.dirname(settings_path), exist_ok=True)
             with open(settings_path, 'w', encoding='utf-8') as f:
@@ -162,6 +197,7 @@ class BlogWriterApp:
         self.settings[key] = value
         self.save_settings()
         print(f"✅ 설정 저장됨: {key}")
+
     
     def _init_drive_auto_post(self):
         """드라이브 자동 포스팅 시스템 초기화"""
@@ -374,8 +410,9 @@ class BlogWriterApp:
                 "timestamp": int(time.time() * 1000),
             }
             # #region agent log
-            # 🆕 크로스 플랫폼: 상대 경로 사용
-            debug_log_path = os.path.join(self.base_dir, 'logs', 'debug.log')
+            # 🆕 크로스 플랫폼: 사용자 데이터 폴더 사용
+            app_data_dir = self._get_app_data_dir()
+            debug_log_path = os.path.join(app_data_dir, 'logs', 'debug.log')
             os.makedirs(os.path.dirname(debug_log_path), exist_ok=True)
             with open(debug_log_path, "a", encoding="utf-8") as lf:
                 lf.write(json.dumps(payload, ensure_ascii=False) + "\n")
@@ -1405,8 +1442,18 @@ class BlogWriterApp:
     def load_topic_index(self):
         """저장된 주제 인덱스 로드 (플랫폼별)"""
         try:
-            if os.path.exists(os.path.join(self.base_dir, 'config/topic_index.json')):
-                with open(os.path.join(self.base_dir, 'config/topic_index.json'), 'r', encoding='utf-8') as f:
+            # 🆕 크로스 플랫폼: 사용자 데이터 폴더 사용
+            app_data_dir = self._get_app_data_dir()
+            index_path = os.path.join(app_data_dir, 'config', 'topic_index.json')
+            
+            # 파일이 없으면 레거시 경로 시도
+            if not os.path.exists(index_path):
+                legacy_path = os.path.join(self.base_dir, 'config', 'topic_index.json')
+                if os.path.exists(legacy_path):
+                    index_path = legacy_path
+            
+            if os.path.exists(index_path):
+                with open(index_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     # 하위 호환성 유지: 기존 'current_index'가 있으면 'blog'에 할당
                     if 'current_index' in data:
@@ -1422,7 +1469,12 @@ class BlogWriterApp:
     def save_topic_index(self):
         """현재 주제 인덱스 저장 (플랫폼별)"""
         try:
-            with open(os.path.join(self.base_dir, 'config/topic_index.json'), 'w', encoding='utf-8') as f:
+            # 🆕 크로스 플랫폼: 사용자 데이터 폴더 사용
+            app_data_dir = self._get_app_data_dir()
+            index_path = os.path.join(app_data_dir, 'config', 'topic_index.json')
+            os.makedirs(os.path.dirname(index_path), exist_ok=True)
+            
+            with open(index_path, 'w', encoding='utf-8') as f:
                 json.dump(self.topic_indices, f)
             self._debug_log("H1", "blog_writer_app.save_topic_index", "saved topic indices", self.topic_indices)
         except Exception as e:

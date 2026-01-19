@@ -40,10 +40,17 @@ class GPTHandler:
         self.use_dummy = use_dummy
         self.settings = self._load_settings()
         
-        # 🆕 크로스 플랫폼: 상대 경로 사용
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(script_dir)
-        self._log_path = os.path.join(parent_dir, 'logs', 'debug.log')
+        # 🆕 크로스 플랫폼: 사용자 홈 디렉토리 사용 (권한 문제 해결)
+        try:
+            # ~/.blog_automation/logs/debug.log
+            user_home = os.path.expanduser("~")
+            app_data_dir = os.path.join(user_home, ".blog_automation")
+            self._log_path = os.path.join(app_data_dir, 'logs', 'debug.log')
+        except Exception:
+            # fallback: temp directory
+            import tempfile
+            self._log_path = os.path.join(tempfile.gettempdir(), 'blog_automation_debug.log')
+
         os.makedirs(os.path.dirname(self._log_path), exist_ok=True)
         
         self._session_id = "debug-session"
