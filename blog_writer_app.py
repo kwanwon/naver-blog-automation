@@ -374,32 +374,32 @@ class BlogWriterApp:
             self.current_folder_picker_target = None
 
     def _open_folder_picker(self, e):
-        """폴더 선택기를 안전하게 열기 (전역 객체 사용)"""
+        """폴더 선택기를 동적으로 안전하게 열기 (항상 새로 생성)"""
         try:
             print("📂 폴더 선택 버튼 클릭됨")
             
+            # 페이지 객체 확보
+            page = e.control.page or self.page
+            if not page:
+                print("❌ page 객체를 찾을 수 없음")
+                return
+
             # 형제 컨트롤(TextField) 찾기
             row = e.control.parent
             text_field = row.controls[0]
             
-            # 타겟 설정
-            self.current_folder_picker_target = text_field
+            # 새 FilePicker 생성 (일회용)
+            picker = ft.FilePicker(
+                on_result=lambda res: self._on_drive_folder_selected(res, text_field)
+            )
             
-            # 폴더 선택기 열기
-            if hasattr(self, 'folder_picker'):
-                self.folder_picker.get_directory_path()
-                print("✅ 파일 선택 창 호출됨")
-            else:
-                print("❌ folder_picker가 초기화되지 않음 (비상용 동적 생성 시도)")
-                # 비상용: 동적 생성
-                page = e.control.page
-                if page:
-                    picker = ft.FilePicker(
-                        on_result=lambda res: self._on_drive_folder_selected(res, text_field)
-                    )
-                    page.overlay.append(picker)
-                    page.update()
-                    picker.get_directory_path()
+            # 페이지에 추가 및 갱신 (핵심: 순서 중요)
+            page.overlay.append(picker)
+            page.update()
+            
+            # 선택 창 열기
+            picker.get_directory_path()
+            print("✅ 파일 선택 창 호출 명령 보냄")
             
         except Exception as ex:
             print(f"❌ 폴더 선택기 열기 실패: {ex}")
