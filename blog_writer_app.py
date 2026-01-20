@@ -374,32 +374,83 @@ class BlogWriterApp:
             self.current_folder_picker_target = None
 
     def _open_folder_picker(self, e):
-        """폴더 선택기를 동적으로 안전하게 열기 (항상 새로 생성)"""
+        """폴더 선택기 열기 (macOS: osascript 사용, 크로스 플랫폼 지원)"""
         try:
             print("📂 폴더 선택 버튼 클릭됨")
             
-            # 페이지 객체 확보
-            page = e.control.page or self.page
-            if not page:
-                print("❌ page 객체를 찾을 수 없음")
-                return
-
             # 형제 컨트롤(TextField) 찾기
             row = e.control.parent
             text_field = row.controls[0]
             
-            # 새 FilePicker 생성 (일회용)
-            picker = ft.FilePicker(
-                on_result=lambda res: self._on_drive_folder_selected(res, text_field)
-            )
+            import threading
+            import subprocess
+            import unicodedata
             
-            # 페이지에 추가 및 갱신 (핵심: 순서 중요)
-            page.overlay.append(picker)
-            page.update()
+            def run_folder_picker():
+                try:
+                    folder_path = None
+                    
+                    if sys.platform == 'darwin':  # macOS
+                        # AppleScript를 통해 네이티브 폴더 선택 다이얼로그 실행
+                        script = '''
+                        tell application "System Events"
+                            activate
+                        end tell
+                        set folderPath to POSIX path of (choose folder with prompt "📁 감시할 폴더를 선택하세요")
+                        return folderPath
+                        '''
+                        result = subprocess.run(
+                            ['osascript', '-e', script],
+                            capture_output=True,
+                            text=True,
+                            timeout=60
+                        )
+                        
+                        if result.returncode == 0 and result.stdout.strip():
+                            folder_path = result.stdout.strip()
+                            # 경로 끝의 / 제거
+                            if folder_path.endswith('/'):
+                                folder_path = folder_path[:-1]
+                        else:
+                            print("⚠️ 폴더 선택이 취소됨")
+                            return
+                            
+                    else:  # Windows/Linux
+                        from tkinter import Tk, filedialog
+                        root = Tk()
+                        root.withdraw()
+                        folder_path = filedialog.askdirectory(title="감시할 폴더를 선택하세요")
+                        root.destroy()
+                        
+                        if not folder_path:
+                            print("⚠️ 폴더 선택이 취소됨")
+                            return
+                    
+                    if folder_path:
+                        # 한글 경로 정규화 (NFD → NFC)
+                        normalized_path = unicodedata.normalize('NFC', folder_path)
+                        print(f"✅ 선택된 폴더: {normalized_path}")
+                        
+                        # UI 업데이트
+                        text_field.value = normalized_path
+                        self._save_setting('drive_parent_folder', normalized_path)
+                        text_field.update()
+                        
+                        # 안내 메시지
+                        if text_field.page:
+                            text_field.page.snack_bar = ft.SnackBar(
+                                content=ft.Text(f"✅ 폴더가 선택되었습니다: {os.path.basename(normalized_path)}")
+                            )
+                            text_field.page.snack_bar.open = True
+                            text_field.page.update()
+                            
+                except subprocess.TimeoutExpired:
+                    print("⚠️ 폴더 선택 시간 초과")
+                except Exception as inner_ex:
+                    print(f"❌ 폴더 선택 오류: {inner_ex}")
             
-            # 선택 창 열기
-            picker.get_directory_path()
-            print("✅ 파일 선택 창 호출 명령 보냄")
+            # 별도 스레드에서 실행 (UI 블로킹 방지)
+            threading.Thread(target=run_folder_picker, daemon=True).start()
             
         except Exception as ex:
             print(f"❌ 폴더 선택기 열기 실패: {ex}")
@@ -8967,6 +9018,10 @@ class BlogWriterApp:
             print("수동으로 프로그램을 재시작해주세요.")
 
 if __name__ == "__main__":
+    # Windows PyInstaller 빌드 필수! (무한 재귀 방지)
+    import multiprocessing
+    multiprocessing.freeze_support()
+    
     # 프로그램 시작 전 업데이트 확인 (안전 모드: 확인만 하고 자동설치 안 함)
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
