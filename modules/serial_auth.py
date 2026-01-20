@@ -524,17 +524,37 @@ class BlogSerialAuth:
         
         # 서버에 업데이트 (로컬 DB 유무와 관계없이 항상 시도)
         try:
+            # 로컬 DB에서 만료일을 못 가져온 경우, 서버에서 조회
+            if not expiry_date:
+                try:
+                    response = requests.get(
+                        f"{self.server_url}/api/serials/{serial_number}",
+                        timeout=10
+                    )
+                    if response.status_code == 200:
+                        data = response.json()
+                        expiry_date = data.get('expiry_date', '')
+                        # 기존 activation_count 가져오기
+                        server_count = data.get('activation_count', 0)
+                        new_count = server_count + 1
+                        self.logger.info(f"서버에서 만료일 조회: {expiry_date}, 사용횟수: {new_count}")
+                except Exception as fetch_e:
+                    self.logger.warning(f"서버 정보 조회 실패: {fetch_e}")
+            
             update_data = {
                 "device_info": device_info,
                 "activation_count": new_count,
                 "status": "사용중"
             }
             
-            # 만료일이 있으면 추가
+            # 만료일 필수 - 서버 API 요구사항
             if expiry_date:
                 update_data["expiry_date"] = expiry_date
+            else:
+                self.logger.warning("만료일 정보 없음 - 서버 업데이트 건너뜀")
+                return False
             
-            self.logger.info(f"서버 업데이트 시도: {serial_number}")
+            self.logger.info(f"서버 업데이트 시도: {serial_number}, 데이터: {update_data}")
             
             response = requests.patch(
                 f"{self.server_url}/api/serials/{serial_number}",
@@ -546,7 +566,7 @@ class BlogSerialAuth:
                 self.logger.info("서버 업데이트 성공")
                 return True
             else:
-                self.logger.warning(f"서버 업데이트 실패: {response.status_code}")
+                self.logger.warning(f"서버 업데이트 실패: {response.status_code}, {response.text}")
                 
         except Exception as server_e:
             self.logger.warning(f"서버 업데이트 실패: {server_e}")

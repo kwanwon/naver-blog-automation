@@ -9159,8 +9159,27 @@ class BlogWriterApp:
         """애플리케이션 재시작"""
         try:
             print("🔄 프로그램을 재시작합니다...")
-            python = sys.executable
-            os.execl(python, python, *sys.argv)
+            
+            # 1. 현재 창 닫기 시도
+            if hasattr(self, 'page') and self.page:
+                try:
+                    self.page.window_close()
+                except:
+                    pass
+            
+            # 2. 운영체제별 재시작
+            if sys.platform == 'win32':
+                # Windows: 새 프로세스 시작 후 현재 프로세스 종료
+                import subprocess
+                python = sys.executable
+                subprocess.Popen([python] + sys.argv, 
+                               creationflags=subprocess.CREATE_NEW_CONSOLE)
+                sys.exit(0)
+            else:
+                # macOS/Linux: execl 사용
+                python = sys.executable
+                os.execl(python, python, *sys.argv)
+                
         except Exception as e:
             print(f"❌ 재시작 실패: {e}")
             print("수동으로 프로그램을 재시작해주세요.")
