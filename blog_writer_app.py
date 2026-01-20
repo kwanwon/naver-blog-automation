@@ -3765,44 +3765,192 @@ class BlogWriterApp:
             print(f"본문 변경 처리 중 오류 발생: {str(e)}")
 
     def main(self, page: ft.Page):
-        # 시리얼 인증 확인 (필수)
-        if self.serial_auth.is_serial_required():
-            print("🔐 시리얼 인증이 필요합니다. 시리얼 인증 창을 실행합니다...")
-            try:
-                # 시리얼 인증 창 실행
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                serial_auth_path = os.path.join(current_dir, "start_with_serial_auth.py")
-                python_executable = sys.executable
-                
-                subprocess.Popen([python_executable, serial_auth_path], 
-                               cwd=current_dir,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
-                               text=True)
-                
-                # 현재 프로그램 종료
-                sys.exit(0)
-                return
-            except Exception as e:
-                print(f"❌ 시리얼 인증 창 실행 중 오류: {e}")
-                # 시리얼 인증 실패 시 프로그램 종료
-                sys.exit(1)
-                return
+        # 페이지 객체 저장 (먼저 설정)
+        self.page = page
         
-        # 페이지 설정
-        self.page = page  # 페이지 객체 저장 (중요)
-        
-        # 전역 폴더 선택기 초기화
-        self.current_folder_picker_target = None
-        self.folder_picker = ft.FilePicker(on_result=self._on_global_folder_picker_result)
-        page.overlay.append(self.folder_picker)
-        
+        # 페이지 기본 설정
         page.title = "블로그 글쓰기 도우미"
         page.theme_mode = ft.ThemeMode.LIGHT
         page.padding = 20
         page.window_width = 1200
         page.window_height = 800
         page.window_resizable = True
+        
+        # 전역 폴더 선택기 초기화
+        self.current_folder_picker_target = None
+        self.folder_picker = ft.FilePicker(on_result=self._on_global_folder_picker_result)
+        page.overlay.append(self.folder_picker)
+        
+        # 시리얼 인증 확인 (필수) - 앱 내부에서 처리
+        if self.serial_auth.is_serial_required():
+            print("🔐 시리얼 인증이 필요합니다. 인증 화면을 표시합니다...")
+            self._show_serial_auth_dialog(page)
+            return  # 인증 다이얼로그만 표시하고 리턴 (메인 UI는 인증 성공 후 로드)
+        
+        # 시리얼 인증 완료 - 메인 UI 로드
+        self._load_main_ui(page)
+    
+    def _show_serial_auth_dialog(self, page: ft.Page):
+        """앱 내부에서 시리얼 인증 다이얼로그 표시"""
+        import threading
+        import time
+        
+        # UI 컴포넌트들
+        serial_input = ft.TextField(
+            label="시리얼 번호",
+            hint_text="시리얼 번호를 입력하세요",
+            width=350,
+            autofocus=True
+        )
+        
+        status_text = ft.Text(
+            "",
+            size=14,
+            text_align=ft.TextAlign.CENTER,
+            color=ft.Colors.RED
+        )
+        
+        loading_ring = ft.ProgressRing(visible=False, width=30, height=30)
+        
+        # 기존 시리얼이 유효하지 않은 경우 메시지 표시
+        config = self.serial_auth.load_config()
+        existing_serial = config.get("serial_number", "")
+        if existing_serial:
+            status_text.value = "❌ 기존 시리얼이 만료되었거나 유효하지 않습니다.\n🔐 새로운 시리얼 번호를 입력해주세요."
+            # 무효한 시리얼 삭제
+            config["serial_number"] = ""
+            config["last_validation"] = ""
+            self.serial_auth.save_config(config)
+        
+        submit_button = ft.ElevatedButton(
+            "인증",
+            width=150,
+            style=ft.ButtonStyle(
+                bgcolor=ft.Colors.BLUE,
+                color=ft.Colors.WHITE
+            )
+        )
+        
+        cancel_button = ft.TextButton(
+            "취소 (프로그램 종료)",
+            width=150
+        )
+        
+        def on_serial_submit(e):
+            serial_number = serial_input.value.strip()
+            
+            if not serial_number:
+                status_text.value = "❌ 시리얼 번호를 입력해주세요."
+                status_text.color = ft.Colors.RED
+                page.update()
+                return
+            
+            # 로딩 표시
+            submit_button.disabled = True
+            cancel_button.disabled = True
+            serial_input.disabled = True
+            loading_ring.visible = True
+            status_text.value = "🔄 인증 중..."
+            status_text.color = ft.Colors.BLUE
+            page.update()
+            
+            def validate_serial():
+                try:
+                    valid, message, expiry_date = self.serial_auth.check_serial(serial_number)
+                    
+                    if valid:
+                        # 성공 - 시리얼 저장
+                        self.serial_auth.save_validation(serial_number, expiry_date)
+                        
+                        # UI 업데이트
+                        loading_ring.visible = False
+                        status_text.value = "✅ 인증 성공! 프로그램을 시작합니다..."
+                        status_text.color = ft.Colors.GREEN
+                        page.update()
+                        
+                        time.sleep(1)
+                        
+                        # 인증 다이얼로그 닫고 메인 UI 로드
+                        page.controls.clear()
+                        page.update()
+                        self._load_main_ui(page)
+                        
+                    else:
+                        # 실패
+                        loading_ring.visible = False
+                        status_text.value = f"❌ {message}"
+                        status_text.color = ft.Colors.RED
+                        submit_button.disabled = False
+                        cancel_button.disabled = False
+                        serial_input.disabled = False
+                        page.update()
+                        
+                except Exception as ex:
+                    loading_ring.visible = False
+                    status_text.value = f"❌ 인증 중 오류: {str(ex)}"
+                    status_text.color = ft.Colors.RED
+                    submit_button.disabled = False
+                    cancel_button.disabled = False
+                    serial_input.disabled = False
+                    page.update()
+            
+            # 백그라운드에서 검증 실행
+            threading.Thread(target=validate_serial, daemon=True).start()
+        
+        def on_cancel(e):
+            print("❌ 사용자가 시리얼 인증을 취소했습니다.")
+            page.window_destroy()
+        
+        # 이벤트 핸들러 연결
+        submit_button.on_click = on_serial_submit
+        cancel_button.on_click = on_cancel
+        serial_input.on_submit = on_serial_submit
+        
+        # 인증 화면 레이아웃
+        auth_content = ft.Column([
+            ft.Container(height=50),
+            ft.Icon(ft.Icons.LOCK, size=60, color=ft.Colors.BLUE_600),
+            ft.Container(height=20),
+            ft.Text(
+                "🔐 시리얼 번호 인증",
+                size=28,
+                weight=ft.FontWeight.BOLD,
+                text_align=ft.TextAlign.CENTER,
+                color=ft.Colors.BLUE_700
+            ),
+            ft.Container(height=10),
+            ft.Text(
+                "블로그자동화 프로그램 사용을 위해\n시리얼 번호 인증이 필요합니다.",
+                size=16,
+                text_align=ft.TextAlign.CENTER,
+                color=ft.Colors.GREY_700
+            ),
+            ft.Container(height=40),
+            serial_input,
+            ft.Container(height=15),
+            ft.Row([loading_ring], alignment=ft.MainAxisAlignment.CENTER),
+            status_text,
+            ft.Container(height=30),
+            ft.Row([
+                cancel_button,
+                submit_button
+            ], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
+        ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+        
+        # 페이지에 인증 화면 추가
+        page.add(ft.Container(
+            content=auth_content,
+            alignment=ft.alignment.center,
+            expand=True
+        ))
+        
+        # 포커스 설정
+        try:
+            serial_input.focus()
+        except:
+            pass
+    
+    def _load_main_ui(self, page: ft.Page):
         
         # ========== 시작 안내 다이얼로그 ==========
         def close_startup_guide(e):
