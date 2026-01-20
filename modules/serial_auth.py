@@ -24,7 +24,13 @@ class BlogSerialAuth:
     
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.config_file = os.path.join(self.base_dir, "serial_config.json")
+        
+        # 설정 파일은 사용자 홈 디렉토리에 저장 (빌드된 앱에서도 영구 보존)
+        self.config_dir = os.path.join(os.path.expanduser("~"), ".blog_automation")
+        if not os.path.exists(self.config_dir):
+            os.makedirs(self.config_dir, exist_ok=True)
+        self.config_file = os.path.join(self.config_dir, "serial_config.json")
+        
         self.server_url = "https://aimaster-serial.onrender.com"
         
         # 로깅 설정
