@@ -466,98 +466,96 @@ class BlogSerialAuth:
     
     def update_device_info_and_usage(self, serial_number: str) -> bool:
         """시리얼에 디바이스 정보 등록 및 사용횟수 증가"""
-        if not self.serial_db_path or not os.path.exists(self.serial_db_path):
-            self.logger.error("시리얼 DB를 찾을 수 없습니다.")
-            return False
+        # 디바이스 정보 수집
+        device_info = self.get_device_info()
+        device_info['app_name'] = '블로그자동화'  # 앱 이름 추가
         
-        try:
-            # 디바이스 정보 수집
-            device_info = self.get_device_info()
-            device_info_json = json.dumps(device_info, ensure_ascii=False)
-            
-            # 로컬 DB 업데이트
-            conn = sqlite3.connect(self.serial_db_path)
-            cursor = conn.cursor()
-            
-            # 같은 디바이스의 다른 시리얼들 정리 (같은 앱에서 사용된 것들만)
-            self._cleanup_same_device_serials(cursor, serial_number, device_info)
-            
-            # 현재 사용횟수 가져오기
-            cursor.execute("""
-                SELECT activation_count 
-                FROM serials 
-                WHERE serial_number = ?
-            """, (serial_number,))
-            
-            result = cursor.fetchone()
-            current_count = result[0] if result else 0
-            new_count = current_count + 1
-            
-            # 디바이스 정보와 사용횟수, 상태 업데이트
-            self.logger.info(f"업데이트 시도: {serial_number}, 디바이스 정보 길이: {len(device_info_json)}")
-            cursor.execute("""
-                UPDATE serials 
-                SET device_info = ?, 
-                    activation_count = ?,
-                    status = '사용중',
-                    last_check_date = ?
-                WHERE serial_number = ?
-            """, (device_info_json, new_count, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), serial_number))
-            
-            # 업데이트된 행 수 확인
-            updated_rows = cursor.rowcount
-            self.logger.info(f"업데이트된 행 수: {updated_rows}")
-            
-            conn.commit()
-            
-            # 업데이트 후 확인 및 만료일 조회
-            cursor.execute("SELECT device_info, activation_count, expiry_date FROM serials WHERE serial_number = ?", (serial_number,))
-            result = cursor.fetchone()
-            if result:
-                self.logger.info(f"업데이트 후 확인 - 디바이스 정보 길이: {len(result[0])}, 사용횟수: {result[1]}")
-                expiry_date = result[2]  # 만료일 저장
-            else:
-                self.logger.error(f"업데이트 후 시리얼을 찾을 수 없음: {serial_number}")
-                expiry_date = None
-            
-            conn.close()
-            
-            self.logger.info(f"디바이스 정보 및 사용횟수 업데이트 완료: {serial_number} (사용횟수: {new_count})")
-            
-            # 서버에도 업데이트 시도
+        new_count = 1  # 기본값
+        expiry_date = None
+        
+        # 로컬 DB가 있으면 로컬 업데이트도 수행
+        if self.serial_db_path and os.path.exists(self.serial_db_path):
             try:
+                device_info_json = json.dumps(device_info, ensure_ascii=False)
                 
-                update_data = {
-                    "device_info": device_info,
-                    "activation_count": new_count,
-                    "status": "사용중"
-                }
+                conn = sqlite3.connect(self.serial_db_path)
+                cursor = conn.cursor()
                 
-                # 만료일이 있으면 추가
-                if expiry_date:
-                    update_data["expiry_date"] = expiry_date
+                # 같은 디바이스의 다른 시리얼들 정리 (같은 앱에서 사용된 것들만)
+                self._cleanup_same_device_serials(cursor, serial_number, device_info)
                 
-                self.logger.info(f"서버 업데이트 데이터: {update_data}")
+                # 현재 사용횟수 가져오기
+                cursor.execute("""
+                    SELECT activation_count 
+                    FROM serials 
+                    WHERE serial_number = ?
+                """, (serial_number,))
                 
-                response = requests.patch(
-                    f"{self.server_url}/api/serials/{serial_number}",
-                    json=update_data,
-                    timeout=10
-                )
+                result = cursor.fetchone()
+                current_count = result[0] if result else 0
+                new_count = current_count + 1
                 
-                if response.status_code == 200:
-                    self.logger.info("서버 업데이트 성공")
-                else:
-                    self.logger.warning(f"서버 업데이트 실패: {response.status_code}")
-                    
-            except Exception as server_e:
-                self.logger.warning(f"서버 업데이트 실패: {server_e}")
+                # 디바이스 정보와 사용횟수, 상태 업데이트
+                self.logger.info(f"로컬 DB 업데이트 시도: {serial_number}")
+                cursor.execute("""
+                    UPDATE serials 
+                    SET device_info = ?, 
+                        activation_count = ?,
+                        status = '사용중',
+                        last_check_date = ?
+                    WHERE serial_number = ?
+                """, (device_info_json, new_count, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), serial_number))
+                
+                conn.commit()
+                
+                # 만료일 조회
+                cursor.execute("SELECT expiry_date FROM serials WHERE serial_number = ?", (serial_number,))
+                result = cursor.fetchone()
+                if result:
+                    expiry_date = result[0]
+                
+                conn.close()
+                self.logger.info(f"로컬 DB 업데이트 완료: {serial_number} (사용횟수: {new_count})")
+                
+            except Exception as e:
+                self.logger.warning(f"로컬 DB 업데이트 실패 (무시됨): {e}")
+        else:
+            self.logger.info("로컬 DB 없음 - 서버 업데이트만 수행")
+        
+        # 서버에 업데이트 (로컬 DB 유무와 관계없이 항상 시도)
+        try:
+            update_data = {
+                "device_info": device_info,
+                "activation_count": new_count,
+                "status": "사용중"
+            }
             
+            # 만료일이 있으면 추가
+            if expiry_date:
+                update_data["expiry_date"] = expiry_date
+            
+            self.logger.info(f"서버 업데이트 시도: {serial_number}")
+            
+            response = requests.patch(
+                f"{self.server_url}/api/serials/{serial_number}",
+                json=update_data,
+                timeout=15
+            )
+            
+            if response.status_code == 200:
+                self.logger.info("서버 업데이트 성공")
+                return True
+            else:
+                self.logger.warning(f"서버 업데이트 실패: {response.status_code}")
+                
+        except Exception as server_e:
+            self.logger.warning(f"서버 업데이트 실패: {server_e}")
+        
+        # 로컬 DB 업데이트가 성공했으면 True 반환
+        if self.serial_db_path and os.path.exists(self.serial_db_path):
             return True
-            
-        except Exception as e:
-            self.logger.error(f"디바이스 정보 업데이트 오류: {e}")
-            return False
+        
+        return False
     
     def is_serial_required(self) -> bool:
         """시리얼 입력이 필요한지 확인 (실제 유효성 검증 포함)"""
