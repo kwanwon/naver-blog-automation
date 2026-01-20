@@ -320,7 +320,7 @@ class BlogSerialAuth:
                 self.logger.info(f"서버 검증 시도 {attempt + 1}/3 (타임아웃: {current_timeout}초)")
                 
                 response = requests.get(
-                    f"{self.server_url}/api/serial/{serial_number}", 
+                    f"{self.server_url}/api/serials/{serial_number}", 
                     timeout=current_timeout
                 )
                 
