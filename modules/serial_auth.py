@@ -466,9 +466,13 @@ class BlogSerialAuth:
     
     def update_device_info_and_usage(self, serial_number: str) -> bool:
         """시리얼에 디바이스 정보 등록 및 사용횟수 증가"""
+        print(f"📡 디바이스 정보 업데이트 시작: {serial_number[:8]}...")
+        self.logger.info(f"update_device_info_and_usage 호출: {serial_number}")
+        
         # 디바이스 정보 수집
         device_info = self.get_device_info()
         device_info['app_name'] = '블로그자동화'  # 앱 이름 추가
+        print(f"   디바이스 정보: {device_info.get('hostname', 'unknown')}, {device_info.get('platform', 'unknown')}")
         
         new_count = 1  # 기본값
         expiry_date = None
@@ -520,12 +524,14 @@ class BlogSerialAuth:
             except Exception as e:
                 self.logger.warning(f"로컬 DB 업데이트 실패 (무시됨): {e}")
         else:
+            print("   로컬 DB 없음 - 서버 업데이트만 수행")
             self.logger.info("로컬 DB 없음 - 서버 업데이트만 수행")
         
         # 서버에 업데이트 (로컬 DB 유무와 관계없이 항상 시도)
         try:
             # 로컬 DB에서 만료일을 못 가져온 경우, 서버에서 조회
             if not expiry_date:
+                print("   서버에서 시리얼 정보 조회 중...")
                 try:
                     response = requests.get(
                         f"{self.server_url}/api/serials/{serial_number}",
@@ -537,8 +543,12 @@ class BlogSerialAuth:
                         # 기존 activation_count 가져오기
                         server_count = data.get('activation_count', 0)
                         new_count = server_count + 1
+                        print(f"   만료일: {expiry_date}, 사용횟수: {server_count} → {new_count}")
                         self.logger.info(f"서버에서 만료일 조회: {expiry_date}, 사용횟수: {new_count}")
+                    else:
+                        print(f"   ❌ 서버 조회 실패: {response.status_code}")
                 except Exception as fetch_e:
+                    print(f"   ❌ 서버 정보 조회 실패: {fetch_e}")
                     self.logger.warning(f"서버 정보 조회 실패: {fetch_e}")
             
             update_data = {
@@ -551,6 +561,7 @@ class BlogSerialAuth:
             if expiry_date:
                 update_data["expiry_date"] = expiry_date
             else:
+                print("   ⚠️ 만료일 정보 없음 - 서버 업데이트 건너뜀")
                 self.logger.warning("만료일 정보 없음 - 서버 업데이트 건너뜀")
                 return False
             
@@ -563,12 +574,15 @@ class BlogSerialAuth:
             )
             
             if response.status_code == 200:
+                print(f"   ✅ 서버 업데이트 성공!")
                 self.logger.info("서버 업데이트 성공")
                 return True
             else:
+                print(f"   ❌ 서버 업데이트 실패: {response.status_code}")
                 self.logger.warning(f"서버 업데이트 실패: {response.status_code}, {response.text}")
                 
         except Exception as server_e:
+            print(f"   ❌ 서버 업데이트 오류: {server_e}")
             self.logger.warning(f"서버 업데이트 실패: {server_e}")
         
         # 로컬 DB 업데이트가 성공했으면 True 반환
