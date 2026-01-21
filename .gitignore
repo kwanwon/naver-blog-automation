@@ -1,80 +1,145 @@
 # 민감한 정보가 포함된 파일
 .env
+config/user_settings.txt
 *.pem
 *.key
 
-# 사용자 설정 (개인정보 포함)
-config/user_settings.txt
-config/gpt_settings.txt
-config/*.json
-
 # 가상환경
 venv/
-blog_venv/
 __pycache__/
 *.pyc
 *.pyo
+
+# 빌드 파일
+dist/
+build/
+*.spec
+
+# Chrome 브라우저 프로필 및 세션 데이터
+chrome_profile/
+manual_chrome_profile_*/
+chromedriver*
+*.crx
+
+# 날짜별 생성된 폴더들 (로그, 임시 파일)
+20??-??-??/
+
+# 기타 파일
+.DS_Store
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
 *.py[cod]
 *$py.class
 
 # C extensions
 *.so
 
-# 빌드 파일
+# Distribution / packaging
 dist/
 build/
-*.spec
 *.egg-info/
 
-# IDE 파일
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE specific files
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# 시스템 파일
+# Local config
+.env
+config/local_settings.py
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+venv_*/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# 로그 파일
-*.log
-logs/
-
-# Chrome 프로필 (캐시)
+# Chrome profiles and cache
 chrome_profile/
-chrome_profile_*/
-manual_chrome_profile/
-manual_chrome_profile_*/
+manual_chrome_profile*/
+upload_chrome_profile*/
+**/Default/
+**/GPUCache/
+**/ShaderCache/
+**/GraphiteDawnCache/
+**/DawnWebGPUCache/
+chrome_debug.log
+DevToolsActivePort
 
-# 세션 및 쿠키
-naver_session.json
-naver_session.pkl
-naver_cookies.json
-naver_cookies.pkl
+# Logs
+logs/
+*.log
+debug_log.txt
 
-# 디버그 파일
-debug_*.txt
-debug_*.py
+# Build
+dist/
+build/
+*.app
+*.exe
+*.dmg
+
+# Sensitive data
+config/*api_key*.json
+**/naver_cookies.json
+**/*_cookies.json
+
+# Temporary files
+temp/
+tmp/
+drafts/auto_save.json
 test_*.py
 
-# 날짜별 폴더
-2026-*/
+# Backup files
+*_backup_*
+*_old_*
+chromedriver_old*
+
+# Generated content directories
 2025-*/
+generated_*/
+**/images/
 
-# 임시/백업 파일
-*.backup_*
-*.bak
-~
-C:
+# Virtual environments
+.venv*/
+venv*/
+env*/
 
-# 수동업로드 폴더
-수동업로드/
-수동업로드_백업/
-수동업로드_실패/
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# 이미지 폴더 (대용량)
-default_images/
-default_images_*/
-band_images_*/
-cafe_images_*/
-bundle_images/
+# MCP setup
+mcp-setup/
+*.command
+
+# Misc
+~/
+~/.cursor/

@@ -1,0 +1,9 @@
+2025-04-07 19:25:44,433 - INFO - ===== 앱 시작: 2025-04-07 19:25:44.433768 =====
+2025-04-07 19:25:44,433 - INFO - 실행 파일: /Users/gm2hapkido/Desktop/시리얼관리/dist/시리얼관리.app/Contents/Frameworks/mac_app_wrapper.py
+2025-04-07 19:25:44,433 - INFO - 리소스 디렉토리: /Users/gm2hapkido/Desktop/시리얼관리/dist/시리얼관리.app/Contents/Frameworks
+2025-04-07 19:25:44,433 - INFO - 시리얼 관리자 경로: /Users/gm2hapkido/Desktop/시리얼관리/dist/시리얼관리.app/Contents/Frameworks/serial_validator.py
+2025-04-07 19:25:44,433 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/시리얼관리/dist/시리얼관리.app/Contents/Frameworks/serials.db
+2025-04-07 19:25:44,433 - INFO - 작업 디렉토리 변경: /Users/gm2hapkido/Desktop/시리얼관리/dist/시리얼관리.app/Contents/Frameworks
+2025-04-07 19:25:48,552 - INFO - 앱을 포그라운드로 설정했습니다
+2025-04-07 19:25:48,553 - INFO - 시리얼 관리자 모듈 임포트 시도...
+2025-04-07 19:25:49,072 - INFO - 앱 시작...

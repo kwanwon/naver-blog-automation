@@ -1,0 +1,16 @@
+2025-04-30 17:34:39,426 - INFO - ===== 앱 시작: 2025-04-30 17:34:39.426755 =====
+2025-04-30 17:34:39,426 - INFO - 실행 파일: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/mac_app_wrapper.py
+2025-04-30 17:34:39,426 - INFO - 리소스 디렉토리: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리
+2025-04-30 17:34:39,426 - INFO - 시리얼 관리자 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_validator.py
+2025-04-30 17:34:39,426 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serials.db
+2025-04-30 17:34:39,426 - INFO - 작업 디렉토리 변경: /Users/gm2hapkido/Desktop/블로그자동화/시리얼관리
+2025-04-30 17:34:47,538 - INFO - 앱을 포그라운드로 설정했습니다
+2025-04-30 17:34:47,539 - INFO - 시리얼 관리자 모듈 임포트 시도...
+2025-04-30 17:34:47,669 - ERROR - 오류 발생: No module named 'pandas'
+Traceback (most recent call last):
+  File "/Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/mac_app_wrapper.py", line 66, in <module>
+    from serial_validator import SerialManager
+  File "/Users/gm2hapkido/Desktop/블로그자동화/시리얼관리/serial_validator.py", line 21, in <module>
+    import pandas as pd # type: ignore
+    ^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'pandas'

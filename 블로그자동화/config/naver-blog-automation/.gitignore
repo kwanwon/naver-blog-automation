@@ -1,0 +1,80 @@
+# 민감한 정보가 포함된 파일
+.env
+*.pem
+*.key
+
+# 사용자 설정 (개인정보 포함)
+config/user_settings.txt
+config/gpt_settings.txt
+config/*.json
+
+# 가상환경
+venv/
+blog_venv/
+__pycache__/
+*.pyc
+*.pyo
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# 빌드 파일
+dist/
+build/
+*.spec
+*.egg-info/
+
+# IDE 파일
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 시스템 파일
+.DS_Store
+Thumbs.db
+
+# 로그 파일
+*.log
+logs/
+
+# Chrome 프로필 (캐시)
+chrome_profile/
+chrome_profile_*/
+manual_chrome_profile/
+manual_chrome_profile_*/
+
+# 세션 및 쿠키
+naver_session.json
+naver_session.pkl
+naver_cookies.json
+naver_cookies.pkl
+
+# 디버그 파일
+debug_*.txt
+debug_*.py
+test_*.py
+
+# 날짜별 폴더
+2026-*/
+2025-*/
+
+# 임시/백업 파일
+*.backup_*
+*.bak
+~
+C:
+
+# 수동업로드 폴더
+수동업로드/
+수동업로드_백업/
+수동업로드_실패/
+
+# 이미지 폴더 (대용량)
+default_images/
+default_images_*/
+band_images_*/
+cafe_images_*/
+bundle_images/

@@ -3,13 +3,6 @@
   "auto_upload": true,
   "auto_image": true,
   "auto_topic": true,
-  "auto_final_publish": true,
   "image_insert_mode": "random",
-  "band_url": "https://www.band.us/band/6194797/post",
-  "cafe_url": "https://cafe.naver.com/lionjiujitsu",
-  "cafe_menu_id": "1",
-  "idle_visit_count": 20,
-  "idle_use_ai_comment": true,
-  "idle_do_like": true,
-  "last_updated": "2026-01-15 13:27:39"
+  "last_updated": "2025-05-11 10:38:43"
 }
