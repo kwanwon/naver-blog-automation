@@ -3776,6 +3776,12 @@ class BlogWriterApp:
         page.window_height = 800
         page.window_resizable = True
         
+        # Windows 호환성: 초기화 시 명시적 업데이트
+        try:
+            page.update()
+        except Exception as e:
+            print(f"⚠️ 초기 페이지 업데이트 실패 (무시됨): {e}")
+        
         # 전역 폴더 선택기 초기화
         self.current_folder_picker_target = None
         self.folder_picker = ft.FilePicker(on_result=self._on_global_folder_picker_result)
@@ -3871,9 +3877,21 @@ class BlogWriterApp:
                         time.sleep(1)
                         
                         # 인증 다이얼로그 닫고 메인 UI 로드
-                        page.controls.clear()
-                        page.update()
-                        self._load_main_ui(page)
+                        try:
+                            page.controls.clear()
+                            page.update()
+                            self._load_main_ui(page)
+                        except Exception as ui_error:
+                            print(f"❌ 메인 UI 로드 오류: {ui_error}")
+                            import traceback
+                            traceback.print_exc()
+                            # 오류 발생 시에도 재시도
+                            try:
+                                time.sleep(0.5)
+                                page.update()
+                                self._load_main_ui(page)
+                            except:
+                                pass
                         
                     else:
                         # 실패
@@ -9075,14 +9093,33 @@ class BlogWriterApp:
                     page.update()
                     
                     if success:
+                        # 빌드된 앱인지 확인
+                        is_built_app = getattr(sys, 'frozen', False)
+                        
                         # 성공 다이얼로그
+                        dialog_content = [
+                            ft.Text(message),
+                            ft.Text("모든 설정과 시리얼 정보는 안전하게 보존되었습니다.", color=ft.Colors.GREEN_600),
+                        ]
+                        
+                        if is_built_app:
+                            # 빌드된 앱은 새 버전 다운로드 필요
+                            dialog_content.extend([
+                                ft.Divider(),
+                                ft.Text("⚠️ 빌드된 앱을 사용 중입니다.", weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE_600),
+                                ft.Text("완전한 업데이트를 위해 새 버전을 다운로드해주세요:", size=12),
+                                ft.TextButton(
+                                    "📥 다운로드 페이지 열기",
+                                    url="https://github.com/kwanwon/naver-blog-automation/releases"
+                                ),
+                                ft.Text("다운로드 후 현재 앱을 종료하고 새 앱을 실행하세요.", size=12, color=ft.Colors.GREY_600)
+                            ])
+                        else:
+                            dialog_content.append(ft.Text("프로그램을 재시작해주세요.", weight=ft.FontWeight.BOLD))
+                        
                         success_dialog = ft.AlertDialog(
                             title=ft.Text("🎉 업데이트 완료!"),
-                            content=ft.Column([
-                                ft.Text(message),
-                                ft.Text("모든 설정과 시리얼 정보는 안전하게 보존되었습니다.", color=ft.Colors.GREEN_600),
-                                ft.Text("프로그램을 재시작해주세요.", weight=ft.FontWeight.BOLD)
-                            ]),
+                            content=ft.Column(dialog_content),
                             actions=[
                                 ft.TextButton("재시작", on_click=lambda _: self.restart_application()),
                                 ft.TextButton("나중에", on_click=lambda _: self.close_dialog(page, success_dialog))
