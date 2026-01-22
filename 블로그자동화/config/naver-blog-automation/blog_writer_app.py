@@ -7837,28 +7837,14 @@ class BlogWriterApp:
         # 수동 업로드 전용 폴더 (자동 감지 폴더와 완전 분리)
         def get_manual_upload_folder():
             """수동 업로드 전용 폴더 경로 반환"""
-            # 기본값 변경: 앱 폴더(Program Files) 대신 사용자 문서 폴더 사용
-            if self.is_windows:
-                # Windows: 문서\BlogAutomation\ManualUploads
-                docs_dir = os.path.join(os.path.expanduser('~'), 'Documents')
-                default_path = os.path.join(docs_dir, '블로그자동화', '수동업로드')
-            else:
-                # macOS/Linux: ~/Documents/BlogAutomation/ManualUploads
-                docs_dir = os.path.expanduser('~/Documents')
-                default_path = os.path.join(docs_dir, '블로그자동화', '수동업로드')
-                
+            # 기본값: 앱 폴더 내 '수동업로드'
+            default_path = os.path.join(self.base_dir, '수동업로드')
             folder_path = self.settings.get('manual_upload_folder', default_path)
             
             # 폴더 자동 생성
-            try:
-                if not os.path.exists(folder_path):
-                    os.makedirs(folder_path, exist_ok=True)
-                    print(f"📁 수동 업로드 폴더 생성: {folder_path}")
-            except Exception as e:
-                print(f"⚠️ 폴더 생성 실패 (권한 부족 가능성): {e}")
-                # 실패 시 임시 폴더 사용
-                folder_path = os.path.join(tempfile.gettempdir(), '블로그자동화_수동업로드')
+            if not os.path.exists(folder_path):
                 os.makedirs(folder_path, exist_ok=True)
+                print(f"📁 수동 업로드 폴더 생성: {folder_path}")
             
             return folder_path
         

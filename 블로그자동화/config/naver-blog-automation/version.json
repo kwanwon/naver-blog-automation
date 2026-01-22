@@ -1,17 +1,13 @@
 {
-  "version": "1.2.30",
-  "release_date": "2026-01-18",
+  "version": "1.2.31",
+  "release_date": "2026-01-22",
   "changelog": [
-    "🔧 Windows 설치 프로그램 개선",
-    "🔧 빌드된 앱 버전 인식 개선",
-    "🐛 빌드에 pandas, watchdog 라이브러리 추가",
-    "🆕 블로그 예약 간격 1~12시간 확장",
-    "🆕 밴드 예약 오전/오후/저녁 선택적 활성화",
-    "🆕 플레이리스트 예상 실행 시간 표시",
-    "🆕 매일 자동 초기화 및 시작 기능 (24시간 운영)"
+    "🚀 OTA 자동 업데이트 시스템 개선 (GitHub Releases 연동)",
+    "🔧 디바이스 정보 미등록 문제 해결",
+    "⏰ 24시간 주기 시리얼 자동 재검증 기능 추가"
   ],
   "min_requirements": {
-    "python": "3.7+",
+    "python": "3.8+",
     "os": ["Windows", "macOS", "Linux"]
   },
   "preserved_files": [

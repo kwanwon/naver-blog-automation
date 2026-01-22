@@ -1,7 +1,7 @@
 {
   "use_dummy": false,
   "auto_upload": true,
-  "auto_image": false,
+  "auto_image": true,
   "auto_topic": true,
   "auto_final_publish": true,
   "image_insert_mode": "random",
@@ -11,10 +11,5 @@
   "idle_visit_count": 20,
   "idle_use_ai_comment": true,
   "idle_do_like": true,
-  "last_updated": "2026-01-15 18:40:27",
-  "manual_upload_folder": "/Users/gm2hapkido/내 드라이브(gm2hapkido@gmail.com)/수련사진및영상",
-  "google_sheet_url": "https://docs.google.com/spreadsheets/d/1kj6z3JQYwde4Ra4Lswr6LWQYak0q_NNoep1qi-Napuo/edit?usp=sharing",
-  "drive_parent_folder": "/Users/gm2hapkido/내 드라이브(gm2hapkido@gmail.com)/수련사진및영상",
-  "band_footer_notice": "수련의 생생한 현장을 담았습니다. 사진 및 영상 화질이 다소 아쉬울 수 있으나, 열심히 수련하는 모습을 함께 나눕니다! 🙏",
-  "band_hashtags": "#한국체대 #라이온체육관 #합기도 #태권도 #줄넘기 #전문체육 #생활체육 #어린이건강 #청소년건강 #성인건강 #어린이운동 #청소년운동 #성인운동 #건강다이어트 #체력단련 #무도교육 #인성교육 #자기방어 #호신술 #운동습관"
+  "last_updated": "2026-01-15 13:27:39"
 }
