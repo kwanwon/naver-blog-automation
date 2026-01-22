@@ -8972,7 +8972,7 @@ class BlogWriterApp:
                 updater = AutoUpdater(current_version)
                 
                 # 원격 버전 확인
-                remote_version, changelog = updater.get_remote_version()
+                remote_version, changelog, assets, release_info = updater.get_remote_version()
                 
                 if remote_version and updater.compare_versions(remote_version):
                     print(f"🎉 새 버전 발견: v{remote_version}")
@@ -9066,7 +9066,7 @@ class BlogWriterApp:
                 updater = AutoUpdater(current_version)
                 
                 # 원격 버전 확인
-                remote_version, changelog = updater.get_remote_version()
+                remote_version, changelog, assets, release_info = updater.get_remote_version()
                 
                 # 로딩 다이얼로그 닫기
                 loading_dialog.open = False

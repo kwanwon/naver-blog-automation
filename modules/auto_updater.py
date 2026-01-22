@@ -361,6 +361,25 @@ class AutoUpdater:
         except:
             pass
 
+    def check_update_available(self):
+        """업데이트 가능 여부만 확인 (설치 진행 안 함)"""
+        try:
+            # 원격 버전 확인
+            tag_name, body, assets, release_info = self.get_remote_version()
+            
+            if not tag_name:
+                return False, None
+                
+            # 버전 비교
+            if self.compare_versions(tag_name):
+                return True, tag_name
+            else:
+                return False, None
+                
+        except Exception as e:
+            self.logger.error(f"버전 확인 중 오류: {e}")
+            return False, None
+
     def check_and_update(self):
         """전체 업데이트 프로세스 실행"""
         try:
