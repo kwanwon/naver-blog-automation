@@ -1,0 +1,244 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flet==0.28.3 flet-desktop pyinstaller
+          pip install selenium webdriver-manager
+          pip install Pillow requests tkcalendar
+          pip install openai google-generativeai
+          pip install psutil cryptography
+          pip install pyperclip httpx
+          pip install pandas watchdog
+          
+      - name: Build with PyInstaller (Onedir mode)
+        run: |
+          # PyInstaller 직접 실행 (Onedir 모드)
+          # requests, flet, certifi 등 문제 발생 가능한 모듈 전체 수집
+          # 중요: flet_desktop 모듈 누락 방지를 위해 collect-all 추가
+          pyinstaller blog_writer_app.py --name BlogAutomation_Windows --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all flet_desktop --collect-all certifi --hidden-import pandas --hidden-import watchdog --noconfirm
+        shell: cmd
+
+      - name: Organize output folder
+        run: |
+          echo "=== Debug: Checking dist folder ==="
+          dir dist
+          
+          # 기존 폴더명: dist\BlogAutomation_Windows (PyInstaller가 생성함)
+          # 목표 폴더명: dist\BlogAutomation_Windows_App (Installer가 참조함)
+          
+          if exist "dist\BlogAutomation_Windows" (
+              echo "✅ Found build folder. Renaming to App folder..."
+              move "dist\BlogAutomation_Windows" "dist\BlogAutomation_Windows_App"
+          ) else (
+              echo "❌ Error: Build folder 'dist\BlogAutomation_Windows' not found!"
+              exit 1
+          )
+          
+          echo "=== Debug: App folder content ==="
+          dir dist\BlogAutomation_Windows_App
+        shell: cmd
+          
+      - name: Copy additional data files
+        run: |
+          xcopy /E /I modules dist\BlogAutomation_Windows_App\modules
+          xcopy /E /I config dist\BlogAutomation_Windows_App\config
+          xcopy /E /I utils dist\BlogAutomation_Windows_App\utils
+          xcopy /E /I assets dist\BlogAutomation_Windows_App\assets
+          copy version.json dist\BlogAutomation_Windows_App\
+          del /F dist\BlogAutomation_Windows_App\modules\.developer_mode 2>nul
+        shell: cmd
+      
+      - name: Show final folder structure
+        run: |
+          echo "=== dist folder structure AFTER copy ==="
+          dir dist /s /b
+          echo "=== BlogAutomation_Windows_App folder ==="
+          dir dist\BlogAutomation_Windows_App /s /b
+        shell: cmd
+      
+      # Inno Setup 설치 및 인스톨러 빌드
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup -y
+        shell: cmd
+        
+      - name: Get version from version.json
+        id: get_version
+        run: |
+          $version = (Get-Content version.json | ConvertFrom-Json).version
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "App version: $version"
+        shell: powershell
+        
+      - name: Create output directory
+        run: New-Item -ItemType Directory -Force -Path "output"
+        shell: powershell
+        
+      - name: Build Inno Setup installer
+        env:
+          APP_VERSION: ${{ steps.get_version.outputs.VERSION }}
+        run: |
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\installer.iss"
+        shell: cmd
+          
+      - name: Create Windows ZIP
+        run: |
+          cd dist
+          Compress-Archive -Path "BlogAutomation_Windows_App" -DestinationPath "BlogAutomation-Windows.zip"
+        shell: powershell
+        
+      - name: List output files
+        run: |
+          echo "=== dist folder ==="
+          dir dist
+          echo "=== output folder ==="
+          dir output
+        shell: cmd
+          
+      - name: Upload Windows ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlogAutomation-Windows-ZIP
+          path: dist/BlogAutomation-Windows.zip
+          
+      - name: Upload Windows Installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlogAutomation-Windows-Setup
+          path: output/BlogAutomation_Setup_*.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flet==0.28.3 pyinstaller
+          pip install selenium webdriver-manager
+          pip install Pillow requests tkcalendar
+          pip install openai google-generativeai
+          pip install psutil cryptography
+          pip install pyperclip httpx
+          pip install pandas watchdog
+          
+      - name: Build with flet pack
+        run: |
+          flet pack blog_writer_app.py --name BlogAutomation_Mac --icon assets/icon.png
+          
+      - name: Copy additional data files to app bundle
+        run: |
+          APP_FRAMEWORKS="dist/BlogAutomation_Mac.app/Contents/Frameworks"
+          cp -R modules "$APP_FRAMEWORKS/"
+          cp -R config "$APP_FRAMEWORKS/"
+          cp -R utils "$APP_FRAMEWORKS/"
+          cp -R assets "$APP_FRAMEWORKS/"
+          cp version.json "$APP_FRAMEWORKS/"
+          # 개발자 모드 파일 삭제 (일반 사용자는 시리얼 인증 필요)
+          rm -f "$APP_FRAMEWORKS/modules/.developer_mode"
+          
+      - name: Create macOS ZIP
+        run: |
+          cd dist
+          zip -r "BlogAutomation-Mac.zip" "BlogAutomation_Mac.app"
+          
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlogAutomation-Mac
+          path: dist/BlogAutomation-Mac.zip
+
+  create-release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download Windows ZIP artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BlogAutomation-Windows-ZIP
+          path: ./release-files/
+          
+      - name: Download Windows Installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BlogAutomation-Windows-Setup
+          path: ./release-files/
+          
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BlogAutomation-Mac
+          path: ./release-files/
+      
+      - name: List release files
+        run: ls -la ./release-files/
+      
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "블로그자동화 ${{ steps.get_version.outputs.VERSION }}"
+          body: |
+            ## 🎉 블로그자동화 ${{ steps.get_version.outputs.VERSION }} 릴리스
+            
+            ### 📥 다운로드
+            
+            #### 🪟 Windows 사용자
+            - **설치 프로그램 (권장)**: `BlogAutomation_Setup_*.exe`
+              - 더블클릭으로 간편 설치
+              - 바탕화면 바로가기 생성
+              - 시작 메뉴 등록
+            - **ZIP 파일**: `BlogAutomation-Windows.zip`
+              - 압축 해제 후 바로 사용
+            
+            #### 🍎 Mac 사용자
+            - **ZIP 파일**: `BlogAutomation-Mac.zip`
+              - 압축 해제 후 앱 실행
+              - 첫 실행 시 우클릭 → "열기" 선택
+            
+            ### 📌 설치 후 필요사항
+            - Chrome 브라우저 설치
+            - 시리얼 번호 입력
+            
+            ### 📋 변경사항
+            변경사항은 version.json 파일을 참조해주세요.
+          files: |
+            ./release-files/BlogAutomation-Windows.zip
+            ./release-files/BlogAutomation_Setup_*.exe
+            ./release-files/BlogAutomation-Mac.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

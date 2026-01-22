@@ -1,0 +1,39 @@
+# 블로그자동화 프로젝트 - Windows 빌드 환경
+
+## 프로젝트 구조
+- blog_writer_app.py: 메인 애플리케이션
+- modules/: 핵심 모듈들
+  - auto_updater.py: 자동 업데이트 시스템
+  - gpt_handler.py: GPT API 처리
+  - serial_auth.py: 시리얼 인증
+- config/: 설정 파일들
+
+## 개발 환경
+- Python 3.11+
+- 가상환경: venv/
+- 개발자 모드: modules/.developer_mode 파일로 활성화
+
+## 빌드 프로세스
+1. 개발자용: build_developer_windows.bat
+2. 배포용: build_distribution_windows.bat
+3. 설치 프로그램: installer_script.iss (Inno Setup)
+
+## 주요 기능
+- 시리얼 인증 시스템
+- GPT 기반 블로그 포스팅 자동화
+- 자동 업데이트 (GitHub 기반)
+- 크로스 플랫폼 지원 (Windows/Mac)
+
+## 배포 모드 특징
+- 개발자 API 키 하드코딩 (자동 마스킹 처리)
+- 시리얼 인증 필수
+- 빈 이미지 폴더 제공 (사용자 커스터마이징)
+
+## 개발자 모드 특징
+- 시리얼 인증 건너뜀
+- 자동 업데이트 확인 건너뜀
+- 모든 기능 사용 가능
+
+## API 키 보안
+- 이미 password=True로 마스킹 처리됨 (1810-1813행)
+- 추가 코드 수정 불필요

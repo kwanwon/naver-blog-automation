@@ -1,7 +1,8 @@
 {
-  "version": "1.2.31",
+  "version": "1.2.32",
   "release_date": "2026-01-22",
   "changelog": [
+    "🔧 Github Actions 빌드 시스템 복구 (v1.2.31 빌드 누락 수정)",
     "🚀 OTA 자동 업데이트 시스템 개선 (GitHub Releases 연동)",
     "🔧 디바이스 정보 미등록 문제 해결",
     "⏰ 24시간 주기 시리얼 자동 재검증 기능 추가"
