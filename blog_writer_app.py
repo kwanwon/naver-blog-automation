@@ -3764,6 +3764,38 @@ class BlogWriterApp:
         except Exception as e:
             print(f"본문 변경 처리 중 오류 발생: {str(e)}")
 
+    def start_periodic_validation(self):
+        """24시간 주기 시리얼 재검증 및 사용 정보 업데이트"""
+        def periodic_task():
+            while True:
+                try:
+                    # 24시간 대기 (86400초)
+                    time.sleep(86400)
+                    
+                    print("⏰ 주기적 시리얼 검증 시작 (24시간 경과)")
+                    
+                    config = self.serial_auth.load_config()
+                    serial_number = config.get("serial_number")
+                    
+                    if serial_number:
+                        # 정보 업데이트 및 검증
+                        self.serial_auth.update_device_info_and_usage(serial_number)
+                        
+                        valid, message, _ = self.serial_auth.check_serial(serial_number)
+                        if not valid:
+                            print(f"🚨 시리얼 만료됨: {message}")
+                            # 만료 알림 (스레드 안전하게 호출 필요 - 여기서는 로그만 남김)
+                            # 실제 차단은 다음 앱 실행 시 is_serial_required()에서 처리됨
+                        else:
+                            print("✅ 주기적 시리얼 검증 성공")
+                    
+                except Exception as e:
+                    print(f"❌ 주기적 검증 오류: {e}")
+                    time.sleep(60) # 오류 발생 시 1분 후 재시도
+        
+        # 데몬 스레드로 실행
+        threading.Thread(target=periodic_task, daemon=True).start()
+
     def main(self, page: ft.Page):
         # 페이지 객체 저장 (먼저 설정)
         self.page = page
@@ -3792,6 +3824,9 @@ class BlogWriterApp:
             print("🔐 시리얼 인증이 필요합니다. 인증 화면을 표시합니다...")
             self._show_serial_auth_dialog(page)
             return  # 인증 다이얼로그만 표시하고 리턴 (메인 UI는 인증 성공 후 로드)
+        
+        # 주기적 검증 시작
+        self.start_periodic_validation()
         
         # 시리얼 인증 완료 - 메인 UI 로드
         self._load_main_ui(page)
