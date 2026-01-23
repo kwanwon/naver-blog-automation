@@ -420,20 +420,79 @@ class AutoUpdater:
             if not update_path:
                 return False, "압축 해제 또는 유효한 파일 구조를 찾을 수 없습니다."
             
-            # 8. 적용
-            if not self.apply_update(update_path, preserved_data):
-                # 롤백 로직이 필요하다면 여기에 추가
-                return False, "업데이트 적용에 실패했습니다."
-            
-            # 9. 버전 파일 갱신 & 정리
-            self.update_version_file(tag_name)
-            self.cleanup_temp_files()
-            
-            return True, f"업데이트가 완료되었습니다. (v{tag_name})"
+            # 8. 적용 (OS별 분기)
+            if sys.platform == 'win32':
+                # Windows: 배치 파일을 이용한 재시작 업데이트
+                self.logger.info("Windows 환경: 재시작 업데이트 프로세스 진입")
+                if self._update_on_windows(update_path):
+                    # Windows 업데이트 스크립트가 앱을 재시작하므로, 현재 앱은 종료해야 함
+                    # True를 반환하여 메인 루프에서 종료하도록 유도
+                    return True, "업데이트를 위해 앱을 재시작합니다..."
+                else:
+                    return False, "Windows 업데이트 스크립트 실행 실패"
+            else:
+                # macOS/Linux: 즉시 적용
+                if not self.apply_update(update_path, preserved_data):
+                    # 롤백 로직이 필요하다면 여기에 추가
+                    return False, "업데이트 적용에 실패했습니다."
+                
+                # 9. 버전 파일 갱신 & 정리
+                self.update_version_file(tag_name)
+                self.cleanup_temp_files()
+                
+                return True, f"업데이트가 완료되었습니다. (v{tag_name})\n앱을 재시작해주세요."
             
         except Exception as e:
             self.logger.error(f"치명적 오류: {e}")
             return False, f"오류 발생: {e}"
+
+    def _update_on_windows(self, update_source_dir):
+        """
+        Windows 전용: 앱 종료 -> 파일 교체 -> 앱 재시작을 수행하는 배치 파일 생성 및 실행
+        """
+        try:
+            # 1. 현재 실행 중인 exe 경로 확인 (PyInstaller 환경 가정)
+            exe_path = sys.executable
+            exe_dir = os.path.dirname(exe_path)
+            
+            # 2. 배치 파일 경로
+            bat_path = os.path.join(tempfile.gettempdir(), "blog_update.bat")
+            
+            # 3. 배치 파일 내용 작성
+            # ping 127.0.0.1 -n 3: 3초 대기 (앱 종료 시간 확보)
+            # xcopy: 파일 복사 (/s: 하위폴더, /e: 비어있는폴더포함, /y: 덮어쓰기수락, /q: 조용히)
+            # start: 앱 재실행
+            bat_content = f"""
+@echo off
+title Updating Blog Automation...
+echo Waiting for application to exit...
+ping 127.0.0.1 -n 3 > nul
+
+echo Copying new files...
+xcopy "{update_source_dir}\*" "{exe_dir}\" /s /e /y /q
+
+echo Restarting application...
+start "" "{exe_path}"
+
+echo Cleaning up...
+del "%~f0"
+"""
+            with open(bat_path, "w", encoding="cp949") as f:
+                f.write(bat_content)
+                
+            self.logger.info(f"업데이트 배치 파일 생성됨: {bat_path}")
+            
+            # 4. 배치 파일 실행 및 앱 종료
+            subprocess.Popen(bat_path, shell=True)
+            self.logger.info("배치 파일 실행 됨. 앱을 종료합니다.")
+            
+            # 즉시 종료 (메인 스레드에서 처리되도록 유도하거나 여기서 강제 종료)
+            # 여기서는 True를 반환하고 메인 루프에서 종료하도록 함
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Windows 업데이트 준비 실패: {e}")
+            return False
 
 def main():
     updater = AutoUpdater("1.0.0") # 테스트용 버전
