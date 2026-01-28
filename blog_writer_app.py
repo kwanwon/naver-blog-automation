@@ -8,11 +8,19 @@ from naver_band_auto import NaverBandAutomation
 from naver_band_comment_reply import NaverBandCommentReply  # 밴드 댓글 답글
 from naver_cafe_auto import NaverCafeAutomation
 from modules.idle_activity import IdleActivity
+from modules.marketing.persona_manager import PersonaManager
+from modules.marketing.target_finder import TargetFinder
+from modules.marketing.smart_reply import SmartReply
+from modules.marketing.history_manager import HistoryManager
+from modules.marketing.comment_poster import CommentPoster
+from modules.marketing.reply_crawler import ReplyCrawler
+from selenium.webdriver.common.by import By
 
 import subprocess
 import os
 import sys  # sys 모듈 추가
 import io
+import pyperclip
 
 # 🆕 Windows 콘솔 인코딩 문제 해결 (이모지 출력 시 UnicodeEncodeError 방지)
 if sys.platform == 'win32':
@@ -146,6 +154,14 @@ class BlogWriterApp:
         
         if self.is_macos:
             self._start_caffeinate()
+
+        # 지역 마케팅 매니저
+        self.persona_manager = PersonaManager(self.base_dir)
+        self.target_finder = TargetFinder()
+        self.smart_reply = SmartReply(self.gpt_handler, self.persona_manager)
+        self.history_manager = HistoryManager(os.path.join(self.base_dir, 'data', 'marketing_history.json'))
+        self.comment_poster = None # will be init in main or when driver is ready, but logic uses self.driver directly usually or passthrough
+        # Actually CommentPoster needs driver, which changes. We can init it on demand.
 
 
     def _get_app_data_dir(self):
@@ -970,7 +986,7 @@ class BlogWriterApp:
                         print(f"⚠️ 자식 프로세스 종료 실패: {e}")
                         
                 # 강제 종료가 필요한 경우
-                gone, still_alive = psutil.wait_procs(children, timeout=3)
+                gone, still_alive = psutil.wait_procs(children, timeout=10)
                 for p in still_alive:
                     try:
                         p.kill()
@@ -1629,7 +1645,7 @@ class BlogWriterApp:
                 self.show_dialog(
                     page,
                     "⏰ 운영 시간 아님",
-                    f"현재는 운영 시간이 아닙니다.\n\n현재 시간: {current_time}\n운영 시간: {start_time} ~ {end_time}\n\n운영 시간 내에 다시 시도하거나 '시간 설정' 탭에서 운영 시간을 조정하세요.",
+                    f"현재 시간: {current_time}\n운영 시간: {start_time} ~ {end_time}\n\n운영 시간 내에 다시 시도하거나 '시간 설정' 탭에서 운영 시간을 조정하세요.",
                     ft.Colors.ORANGE
                 )
                 return
@@ -2428,7 +2444,7 @@ class BlogWriterApp:
                             pass
                         tags = list(set(gpt_tags + user_tags))
                         
-                        # 글 작성 (write_post가 푸터+태그까지 처리)
+                        # 글 작성 (write_post가 푸터+태그 처리)
                         # 예약 모드: 최종 발행 버튼 클릭 스킵 (나중에 예약 설정 후 발행)
                         blog_auto.skip_final_publish = True  # 예약 모드 플래그 설정
                         success = blog_auto.write_post(title, content, tags)
@@ -2869,11 +2885,26 @@ class BlogWriterApp:
         if self.browser_driver and self.is_driver_alive(self.browser_driver):
             return self.browser_driver
         
-        # 새 드라이버 설정 (ChromeManager 사용)
-        from modules.chrome_manager import ChromeManager
-        manager = ChromeManager(self.base_dir)
-        self.browser_driver = manager.setup_driver()
-        return self.browser_driver
+        # 새 드라이버 설정 (Standard WebDriverManager)
+        from selenium import webdriver
+        from selenium.webdriver.chrome.service import Service
+        from webdriver_manager.chrome import ChromeDriverManager
+        from selenium.webdriver.chrome.options import Options
+
+        try:
+            options = Options()
+            if self.is_headless:
+                options.add_argument('--headless=new')
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            
+            # Use ChromeDriverManager to install/manage driver
+            service = Service(ChromeDriverManager().install())
+            self.browser_driver = webdriver.Chrome(service=service, options=options)
+            return self.browser_driver
+        except Exception as e:
+            print(f"Driver Creation Failed: {e}")
+            return None
 
     def is_driver_alive(self, driver):
         try:
@@ -3796,6 +3827,712 @@ class BlogWriterApp:
         # 데몬 스레드로 실행
         threading.Thread(target=periodic_task, daemon=True).start()
 
+    def _create_reply_manager_tab(self):
+        """댓글 답글(상담) 관리 탭 UI 생성"""
+        
+        # UI Elements
+        self.reply_notifications_list = ft.Column(scroll=ft.ScrollMode.AUTO, height=500)
+        
+        fetch_btn = ft.ElevatedButton(
+            "🔔 내 소식(답글) 가져오기",
+            icon=ft.Icons.NOTIFICATIONS,
+            bgcolor=ft.Colors.INDIGO_600,
+            color=ft.Colors.WHITE,
+            on_click=self._on_fetch_notifications_click
+        )
+        
+        info_text = ft.Text(
+            "💡 내 블로그 '내 소식'에서 '답글' 알림을 가져와, 문의성 댓글을 식별하고 대응합니다.",
+            size=12, color=ft.Colors.GREY_700
+        )
+        
+        content = ft.Column([
+            ft.Container(
+                content=ft.Column([
+                    ft.Row([ft.Text("📢 답글/문의 관리", size=20, weight=ft.FontWeight.BOLD)]),
+                    ft.Row([fetch_btn]),
+                    info_text,
+                    ft.Divider(),
+                    ft.Text("📋 알림 목록", weight=ft.FontWeight.BOLD),
+                    self.reply_notifications_list
+                ]),
+                padding=20,
+                bgcolor=ft.Colors.WHITE,
+                border_radius=10,
+                border=ft.border.all(1, ft.Colors.GREY_300)
+            )
+        ], scroll=ft.ScrollMode.AUTO)
+        
+        return content
+
+    def _on_fetch_notifications_click(self, e):
+        """알림 가져오기 클릭 핸들러"""
+        self.page.snack_bar = ft.SnackBar(ft.Text("🔔 알림을 가져오는 중..."), bgcolor=ft.Colors.BLUE)
+        self.page.snack_bar.open = True
+        self.page.update()
+        
+        def fetch_process():
+            try:
+                driver = self.get_or_create_driver()
+                # Handle case where driver might be returned as a tuple (e.g. driver, process)
+                if isinstance(driver, tuple):
+                    driver = driver[0]
+                    
+                crawler = ReplyCrawler(driver)
+                notifications = crawler.fetch_notifications()
+                
+                # Check results
+                if not notifications:
+                    self.page.snack_bar = ft.SnackBar(ft.Text("❌ 새로운 답글 알림이 없습니다."), bgcolor=ft.Colors.ORANGE)
+                else:
+                    self._render_reply_notifications(notifications)
+                    self.page.snack_bar = ft.SnackBar(ft.Text(f"✅ {len(notifications)}개의 알림을 가져왔습니다."), bgcolor=ft.Colors.GREEN)
+            except Exception as e:
+                print(f"Fetch Error: {e}")
+                self.page.snack_bar = ft.SnackBar(ft.Text(f"❌ 오류 발생: {e}"), bgcolor=ft.Colors.RED)
+            
+            try:
+                self.page.snack_bar.open = True
+                self.page.update()
+            except:
+                pass
+            
+        threading.Thread(target=fetch_process, daemon=True).start()
+
+    def _render_reply_notifications(self, notifications):
+        """알림 목록 렌더링"""
+        items = []
+        for idx, note in enumerate(notifications):
+            text = note.get('text', '')
+            link = note.get('link', '')
+            context = note.get('context', 'UNKNOWN')
+            
+            # Handler for AI Reply
+            def on_ai_reply_click(e, txt=text, lnk=link, ctx=context):
+                self._on_reply_auto_engage_click(txt, lnk, ctx)
+
+            # Simple card
+            card = ft.Card(
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Text(text, weight=ft.FontWeight.BOLD),
+                        ft.Row([
+                            ft.TextButton("이동", on_click=lambda e, l=link: [subprocess.run(f"open {l}", shell=True) if sys.platform=='darwin' else subprocess.run(f"start {l}", shell=True)]),
+                            ft.ElevatedButton("🤖 AI 자동 답글 (문의 분석)", on_click=on_ai_reply_click, bgcolor=ft.Colors.PURPLE_600, color=ft.Colors.WHITE) 
+                        ])
+                    ]),
+                    padding=10
+                )
+            )
+            items.append(card)
+        
+        self.reply_notifications_list.controls = items
+        self.reply_notifications_list.update()
+
+    # Handler for AI Reply (Render method uses this)
+    def _on_reply_auto_engage_click(self, text, url, context='UNKNOWN'):
+        """
+        AI 자동 답글 처리 로직 (상담 관리 탭)
+        context: 'MY_POST' (내 글에 달린 댓글) or 'REPLY_TO_ME' (내 댓글에 대한 답글)
+        """
+        # 1. Load Contact Info
+        try:
+            with open(os.path.join(self.base_dir, 'config', 'user_settings.txt'), 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+                phone = settings.get('phone', '')
+                kakao = settings.get('kakao_url', '')
+        except Exception as e:
+            phone = ""
+            kakao = ""
+            print(f"Error loading user settings: {e}")
+
+        contact_info = {'phone': phone, 'kakao': kakao}
+
+        if not phone and not kakao:
+            self.page.snack_bar = ft.SnackBar(ft.Text("⚠️ 연락처/카톡 설정이 없습니다. 사용자 설정 탭에서 입력해주세요."), bgcolor=ft.Colors.ORANGE)
+            self.page.snack_bar.open = True
+            self.page.update()
+            # Continue anyway but with empty info (AI might handle it or fallback)
+
+        self.page.snack_bar = ft.SnackBar(ft.Text(f"🤖 [{context}] 답글 분석 및 대응 중..."), bgcolor=ft.Colors.BLUE)
+        self.page.snack_bar.open = True
+        self.page.update()
+
+        def process_reply():
+            try:
+                # 1. Analyze Intent
+                intent = self.smart_reply.analyze_reply_intent(text)
+                print(f"답글 의도: {intent}, 문맥: {context}")
+                
+                # Logic Branch based on Context
+                should_reply = False
+                reply_type = None # 'GREETING' or 'INQUIRY'
+
+                if context == 'MY_POST' or context == 'UNKNOWN':
+                    # Logic 1: My Blog Comment -> Reply to EVERYTHING
+                    should_reply = True
+                    reply_type = intent # Just follow the intent
+                elif context == 'REPLY_TO_ME':
+                    # Logic 2: Reply to My Comment -> Only Reply if INQUIRY
+                    if intent == 'INQUIRY':
+                        should_reply = True
+                        reply_type = 'INQUIRY'
+                    else:
+                        should_reply = False # Skip Greeting
+                
+                if should_reply:
+                    if reply_type == "GREETING":
+                        # GREETING: Also reply with polite thanks
+                        reply_content = self.smart_reply.generate_greeting_response(text)
+                        
+                        # Post it
+                        driver = self.get_or_create_driver()
+                        if not self.comment_poster or self.comment_poster.driver != driver:
+                            self.comment_poster = CommentPoster(driver)
+                            
+                        success, msg = self.comment_poster.post_comment(url, reply_content, platform='blog')
+                        
+                        if success:
+                            self.page.snack_bar = ft.SnackBar(ft.Text("✅ 감사 인사 답글 등록 완료!"), bgcolor=ft.Colors.GREEN)
+                        else:
+                             self.page.snack_bar = ft.SnackBar(ft.Text(f"❌ 답글 등록 실패: {msg}"), bgcolor=ft.Colors.RED)
+
+                    else:
+                        # INQUIRY
+                        reply_content = self.smart_reply.generate_inquiry_response(text, contact_info)
+                        
+                        # Post it (using CommentPoster)
+                        driver = self.get_or_create_driver()
+                        if not self.comment_poster or self.comment_poster.driver != driver:
+                            self.comment_poster = CommentPoster(driver)
+                            
+                        # Posting
+                        success, msg = self.comment_poster.post_comment(url, reply_content, platform='blog') # Default blog
+                        
+                        if success:
+                            self.page.snack_bar = ft.SnackBar(ft.Text("✅ 문의 답변 등록 완료!"), bgcolor=ft.Colors.GREEN)
+                        else:
+                            self.page.snack_bar = ft.SnackBar(ft.Text(f"❌ 답변 등록 실패: {msg}"), bgcolor=ft.Colors.RED)
+                else:
+                    # Skip Case
+                    msg = "단순 답글(인사)은 건너뜁니다."
+                    self.page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=ft.Colors.GREY_700)
+                    self.page.update()
+
+            except Exception as e:
+                print(f"Reply Auto Engage Error: {e}")
+                self.page.snack_bar = ft.SnackBar(ft.Text(f"❌ 오류: {e}"), bgcolor=ft.Colors.RED)
+            
+            try:
+                self.page.snack_bar.open = True
+                self.page.update()
+            except:
+                pass
+
+        threading.Thread(target=process_reply, daemon=True).start()
+
+
+    def _create_marketing_tab(self):
+        """지역 마케팅 탭 UI 생성"""
+        
+        # 데이터 로드
+        persona_data = self.persona_manager.load_persona()
+        
+        # UI 컴포넌트 생성
+        self.business_name_field = ft.TextField(label="업체명 (상호)", value=persona_data.get('business_name', ''), width=300)
+        self.location_field = ft.TextField(label="지역 (예: 인천 부평구, 서울 강남구, 강원도 양양군)", value=persona_data.get('location', ''), width=300)
+        
+        self.director_profile_field = ft.TextField(
+            label="관장님/대표님 프로필 및 경력",
+            value=persona_data.get('director_profile', ''),
+            multiline=True,
+            min_lines=3,
+            max_lines=10,
+            hint_text="예: 인천 26년 경력, 합기도 7단, 태권도 5단, 전국체전 금메달..."
+        )
+        
+        self.programs_field = ft.TextField(
+            label="주요 프로그램 및 특징",
+            value=persona_data.get('programs', ''),
+            multiline=True,
+            min_lines=3,
+            max_lines=10,
+            hint_text="예: 유아체육, 입시반, 성인 킥복싱, 차량 운행 가능..."
+        )
+
+        self.key_instructions_field = ft.TextField(
+             label="지도 방침 및 철학",
+             value=persona_data.get('key_instructions', ''),
+             multiline=True,
+             min_lines=2,
+             hint_text="예: 인성 교육 중심, 실전 호신술 중시..."
+        )
+        
+        self.marketing_tone_field = ft.Dropdown(
+            label="AI 마케팅 톤 (말투)",
+            value=persona_data.get('marketing_tone', '친절한 전문가 (Polite Expert)'),
+            options=[
+                ft.dropdown.Option("친절한 전문가 (Polite Expert)"),
+                ft.dropdown.Option("에너지 넘치는 코치 (Energetic Coach)"),
+                ft.dropdown.Option("차분하고 진지한 상담사 (Serious Advisor)"),
+                ft.dropdown.Option("친근한 이웃 (Friendly Neighbor)"),
+            ],
+            width=300
+        )
+        
+        def save_persona_click(e):
+            data = {
+                "business_name": self.business_name_field.value,
+                "location": self.location_field.value,
+                "director_profile": self.director_profile_field.value,
+                "programs": self.programs_field.value,
+                "key_instructions": self.key_instructions_field.value,
+                "marketing_tone": self.marketing_tone_field.value
+            }
+            if self.persona_manager.save_persona(data):
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("✅ 마케팅 페르소나 설정이 저장되었습니다!"), bgcolor=ft.Colors.GREEN)
+            else:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 저장 실패"), bgcolor=ft.Colors.RED)
+            self.page.snack_bar.open = True
+            self.page.update()
+
+        save_btn = ft.ElevatedButton("설정 저장", on_click=save_persona_click, icon=ft.Icons.SAVE, bgcolor=ft.Colors.BLUE_600, color=ft.Colors.WHITE)
+
+        # --- Tab 1: 설정 및 타겟 발굴 (기존 UI) ---
+        
+        # Define fields first (to avoid assignment inside list)
+        self.search_keyword_field_mkt = ft.TextField(
+            label="검색 키워드 (예: 양양 맛집)", 
+            width=300,
+            on_submit=self._on_marketing_search_click
+        )
+        self.search_platform_field_mkt = ft.Dropdown(
+            label="플랫폼 (검색 대상)",
+            width=150,
+            options=[
+                ft.dropdown.Option("blog", "네이버 블로그"),
+                ft.dropdown.Option("cafe", "네이버 카페"),
+                ft.dropdown.Option("band", "네이버 밴드"),
+            ],
+            value="blog"
+        )
+        
+        self.marketing_results_list = ft.ListView(
+            expand=True, 
+            spacing=10, 
+            padding=10,
+            height=400 
+        )
+
+        # --- Tab 1: 설정 및 타겟 발굴 (기존 UI) ---
+        target_tab_content = ft.Container(
+            content=ft.Column([
+                ft.Text("📍 지역 기반 마케팅 설정", size=20, weight=ft.FontWeight.BOLD),
+                ft.Text("AI가 이 정보를 바탕으로 지역 주민들과 소통합니다.", size=14, color=ft.Colors.GREY_700),
+                ft.Divider(),
+                
+                self.business_name_field,
+                self.location_field,
+                self.director_profile_field,
+                self.programs_field,
+                self.key_instructions_field,
+                self.marketing_tone_field,
+                
+                ft.Divider(),
+                ft.Row([save_btn], alignment=ft.MainAxisAlignment.END),
+                
+                ft.Container(
+                    content=ft.Text("💡 팁: 프로필을 자세히 적을수록 AI가 더 똑똑하게 상담합니다.", size=12, color=ft.Colors.BLUE_700),
+                    bgcolor=ft.Colors.BLUE_50,
+                    padding=10,
+                    border_radius=5
+                ),
+                
+                ft.Divider(),
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("🎯 타겟 발굴 및 자동 소통", size=20, weight=ft.FontWeight.BOLD),
+                        ft.Text("키워드를 검색하여 최근 게시글을 찾고, AI가 작성한 댓글로 소통합니다.", size=14, color=ft.Colors.GREY_600),
+                    ]),
+                    padding=ft.padding.only(bottom=10)
+                ),
+                
+                ft.Text("🔍 지역 타겟 발굴 및 소통", size=18, weight=ft.FontWeight.BOLD),
+                
+                ft.Row([
+                    self.search_keyword_field_mkt,
+                    self.search_platform_field_mkt,
+                    ft.ElevatedButton("타겟 발굴 시작", on_click=self._on_marketing_search_click, icon=ft.Icons.SEARCH)
+                ]),
+                
+                ft.Text("검색 결과 (최신순)", size=14, weight=ft.FontWeight.BOLD),
+                ft.Container(
+                    content=self.marketing_results_list,
+                    border=ft.border.all(1, ft.Colors.GREY_300),
+                    border_radius=5,
+                    height=400
+                )
+
+            ], scroll=ft.ScrollMode.AUTO),
+            padding=20
+        )
+
+        # --- Tab 2: 활동 내역 및 리뷰 (New UI) ---
+        self.marketing_history_list = ft.ListView(expand=True, spacing=10, padding=10)
+        
+        def refresh_history_click(e):
+             self._render_marketing_history()
+        
+        history_tab_content = ft.Container(
+            content=ft.Column([
+                ft.Row([
+                    ft.Text("📅 활동 내역 (최근 50개)", size=18, weight=ft.FontWeight.BOLD),
+                    ft.IconButton(ft.Icons.REFRESH, on_click=refresh_history_click, tooltip="새로고침")
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                
+                ft.Container(
+                    content=self.marketing_history_list,
+                    border=ft.border.all(1, ft.Colors.GREY_300),
+                    border_radius=5,
+                    expand=True
+                )
+            ]),
+            padding=20
+        )
+        
+        # Initial Render of History
+        # We need to defer this maybe? No, can call safely.
+        # self._render_marketing_history() # -> Logic moved to below
+
+        # Return Tabs
+        return ft.Tabs(
+            animation_duration=300,
+            tabs=[
+                ft.Tab(text="설정 및 타겟 발굴", icon=ft.Icons.SEARCH, content=target_tab_content),
+                ft.Tab(text="활동 내역 (History)", icon=ft.Icons.HISTORY, content=history_tab_content),
+            ],
+            expand=True,
+            on_change=lambda e: self._render_marketing_history() if e.control.selected_index == 1 else None
+        )
+
+    def _render_marketing_history(self):
+        """History List 렌더링"""
+        self.marketing_history_list.controls.clear()
+        history = self.history_manager.load_history()
+        
+        if not history:
+            self.marketing_history_list.controls.append(ft.Text("아직 활동 내역이 없습니다.", color=ft.Colors.GREY_500))
+        else:
+            for i, entry in enumerate(history):
+                # entry: date, title, link, comment, keyword
+                
+                def open_link_click(e, url=entry.get('link')):
+                    import webbrowser
+                    webbrowser.open(url)
+                    
+                def delete_history_click(e, index=i):
+                    if self.history_manager.delete_entry(index):
+                        self._render_marketing_history()
+                        self.page.update()
+
+                card = ft.Card(
+                    content=ft.Container(
+                        content=ft.Column([
+                            ft.Row([
+                                ft.Text(f"[{entry.get('date', '')}] {entry.get('keyword', '')}", size=12, color=ft.Colors.GREY_600),
+                                ft.IconButton(ft.Icons.DELETE_OUTLINE, icon_size=16, on_click=delete_history_click, tooltip="기록 삭제")
+                            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                            ft.Text(entry.get('title', '제목 없음'), weight=ft.FontWeight.BOLD, size=14),
+                            ft.Text(f"💬 {entry.get('comment', '')}", size=13, color=ft.Colors.BLUE_GREY_800),
+                            ft.Row([
+                                ft.TextButton("게시글 보기 (수정)", icon=ft.Icons.OPEN_IN_NEW, on_click=open_link_click)
+                            ], alignment=ft.MainAxisAlignment.END)
+                        ]),
+                        padding=10
+                    )
+                )
+                self.marketing_history_list.controls.append(card)
+        
+        self.marketing_history_list.update()
+
+    def _on_marketing_search_click(self, e):
+        """지역 마케팅 타겟 발굴 버튼 클릭 핸들러"""
+        keyword = self.search_keyword_field_mkt.value
+        platform = self.search_platform_field_mkt.value
+        
+        if not keyword:
+            self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 검색 키워드를 입력해주세요."), bgcolor=ft.Colors.RED)
+            self.page.snack_bar.open = True
+            self.page.update()
+            return
+            
+        driver = self.get_or_create_driver()
+        if not driver:
+            self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 브라우저를 먼저 실행해주세요 (블로그 시작의 '네이버 로그인')."), bgcolor=ft.Colors.RED)
+            self.page.snack_bar.open = True
+            self.page.update()
+            return
+
+        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🔍 [{platform}] '{keyword}' 검색 시작... (약 5초 소요)"), bgcolor=ft.Colors.BLUE)
+        self.page.snack_bar.open = True
+        self.page.update()
+        
+        def search_thread():
+            try:
+                finder = TargetFinder(driver)
+                results = []
+                if platform == 'blog':
+                    results = finder.search_blog_posts(keyword)
+                elif platform == 'cafe':
+                    results = finder.search_cafe_posts(keyword)
+                elif platform == 'band':
+                    results = finder.search_band_posts(keyword)
+                
+                # Store results for batch processing
+                self.current_search_results = results
+                self.current_keyword = keyword
+                self.current_platform = platform # Store platform
+                # Always reset processed state for new search results
+                self.processed_indices = set()
+                
+                self._render_marketing_results(results, keyword)
+                
+            except Exception as e:
+                print(f"검색 중 오류: {e}")
+                self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 검색 오류: {e}"), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+        
+        threading.Thread(target=search_thread, daemon=True).start()
+
+    def _render_marketing_results(self, results, keyword=None):
+        """검색 결과를 UI 리스트에 렌더링"""
+        if not hasattr(self, 'processed_indices'):
+            self.processed_indices = set()
+            
+        items = []
+        
+        # 헤더 & 일괄 실행 버튼
+        header = ft.Container(
+            content=ft.Row([
+                ft.Text(f"🔍 검색 결과: {len(results)}건", weight=ft.FontWeight.BOLD, size=16),
+                ft.ElevatedButton(
+                    "🚀 전체 자동 소통 실행 (Run All)", 
+                    icon=ft.Icons.ROCKET_LAUNCH, 
+                    bgcolor=ft.Colors.PURPLE_700, 
+                    color=ft.Colors.WHITE,
+                    on_click=lambda e: self.run_batch_engage_trigger(e) # We need to trigger the batch logic defined in search_thread or verify access
+                )
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            padding=10,
+            bgcolor=ft.Colors.GREY_100,
+            border_radius=5
+        )
+        items.append(header)
+
+        if not results:
+            items.append(ft.Container(content=ft.Text("검색 결과가 없습니다.", color=ft.Colors.GREY), padding=20))
+        else:
+            for idx, post in enumerate(results):
+                title = post['title']
+                link = post['link']
+                author = post['author']
+                date = post['date']
+                platform = post.get('platform', 'blog')
+                
+                is_processed_session = idx in self.processed_indices
+                is_commented_history = self.history_manager.is_commented(link)
+                is_processed = is_processed_session or is_commented_history
+                
+                # 답글 작성 버튼 핸들러
+                def on_engage_click(e, post_item=post, index=idx):
+                    self._on_marketing_auto_engage_click(post_item, keyword, index=index)
+
+                card_color = ft.Colors.WHITE
+                opacity = 1.0
+                btn_text = "🤖 AI 자동 소통"
+                btn_bg = ft.Colors.PURPLE_600
+                btn_disabled = False
+                
+                if is_processed:
+                    card_color = ft.Colors.GREY_200
+                    opacity = 0.6
+                    if is_commented_history:
+                        btn_text = "이미 완료 (기록) ✅"
+                    else:
+                        btn_text = "완료됨 ✅"
+                    btn_bg = ft.Colors.GREY_500
+                    btn_disabled = True # 선택사항: 다시 하고 싶을 수도 있으니 활성화 유지하거나 비활성화
+                
+                # 아이콘 선택
+                icon = ft.Icons.ARTICLE
+                if platform == 'cafe': icon = ft.Icons.LOCAL_CAFE
+                elif platform == 'band': icon = ft.Icons.GROUP
+
+                card = ft.Card(
+                    color=card_color,
+                    elevation=1 if is_processed else 4,
+                    content=ft.Container(
+                        opacity=opacity,
+                        content=ft.Column([
+                            ft.ListTile(
+                                leading=ft.Icon(ft.Icons.CHECK_CIRCLE if is_processed else icon, color=ft.Colors.GREEN if is_processed else ft.Colors.BLUE),
+                                title=ft.Text(title, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK if not is_processed else ft.Colors.GREY_700),
+                                subtitle=ft.Text(f"{author} | {date} | {platform}", color=ft.Colors.GREY_700),
+                            ),
+                            ft.Row(
+                                [
+                                    ft.ElevatedButton(btn_text, on_click=on_engage_click, icon=ft.Icons.AUTO_AWESOME, bgcolor=btn_bg, color=ft.Colors.WHITE, disabled=btn_disabled),
+                                    ft.TextButton("링크 복사", on_click=lambda e, l=link: [subprocess.run(f"echo {l} | pbcopy", shell=True) if sys.platform=='darwin' else None], icon=ft.Icons.COPY),
+                                ],
+                                alignment=ft.MainAxisAlignment.END,
+                            ),
+                        ]),
+                        padding=10,
+                    )
+                )
+                items.append(card)
+        
+        self.marketing_results_list.controls = items
+        self.marketing_results_list.update()
+        self.page.update()
+
+    def run_batch_engage_trigger(self, e):
+        """일괄 실행 트리거"""
+        if not hasattr(self, 'current_search_results') or not self.current_search_results:
+            return
+
+        self.page.snack_bar = ft.SnackBar(ft.Text("🚀 순차적 자동 소통을 시작합니다..."), bgcolor=ft.Colors.PURPLE_600)
+        self.page.snack_bar.open = True
+        self.page.update()
+        
+        def batch_process():
+            total = len(self.current_search_results)
+            keyword = getattr(self, 'current_keyword', '')
+            
+            for idx, post in enumerate(self.current_search_results):
+                # Check session processed
+                if idx in self.processed_indices:
+                    continue
+                
+                # Check history processed
+                if self.history_manager.is_commented(post['link']):
+                    print(f"⏩ [{idx+1}/{total}] 이미 완료된 항목 스킵: {post['title']}")
+                    continue
+                    
+                print(f"🔄 [{idx+1}/{total}] 일괄 처리 중: {post['title']}")
+                # 개별 실행 (UI 업데이트 포함)
+                self._on_marketing_auto_engage_click(post, keyword, index=idx)
+                
+                # 랜덤 딜레이
+                time.sleep(random.uniform(4, 7))
+                
+            self.page.snack_bar = ft.SnackBar(ft.Text("✅ 모든 작업이 완료되었습니다!"), bgcolor=ft.Colors.GREEN_600)
+            self.page.snack_bar.open = True
+            self.page.update()
+
+        threading.Thread(target=batch_process, daemon=True).start()
+
+    def _on_marketing_auto_engage_click(self, post_item, keyword, index=None):
+        """AI 자동 소통 실행"""
+        from datetime import datetime
+        url = post_item['link']
+        title = post_item['title']
+        platform = post_item.get('platform', 'blog')
+        
+        # 1. Generate Reply
+        if self.page:
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"🤖 '{title}' 분석 및 댓글 작성 중..."), duration=2000)
+            self.page.snack_bar.open = True
+            self.page.update()
+        
+        # Driver check
+        driver = self.get_or_create_driver()
+        if not driver:
+            self.start_browser_click(None) 
+            driver = self.get_or_create_driver()
+            if not driver:
+                return 
+        
+        try:
+            # Init CommentPoster
+            if not self.comment_poster or self.comment_poster.driver != driver:
+                self.comment_poster = CommentPoster(driver)
+            
+            # Go to URL to scrape content for context
+            driver.get(url)
+            time.sleep(2)
+            
+            # Switch to mainFrame (only for blog/cafe)
+            if platform in ['blog', 'cafe']:
+                try:
+                    frame_name = "mainFrame" if platform == 'blog' else "cafe_main"
+                    driver.switch_to.frame(frame_name)
+                except:
+                    pass
+            
+            # Scrape content
+            body_text = ""
+            try:
+                body_text = driver.find_element(By.TAG_NAME, "body").text[:1000]
+            except:
+                body_text = "본문 내용을 가져올 수 없습니다."
+
+            # Generate Reply
+            intent = self.smart_reply.classify_intent(body_text)
+            reply_text = self.smart_reply.generate_reply(target_text=body_text, intent=intent, platform=platform)
+            
+            if not reply_text:
+                self.page.snack_bar = ft.SnackBar(ft.Text("❌ 댓글 생성 실패"), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+
+            # 2. Post Comment
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"📝 댓글 작성 중..."), duration=1000)
+            self.page.snack_bar.open = True
+            self.page.update()
+            
+            success, msg = self.comment_poster.post_comment(url, reply_text, platform=platform)
+            
+            if success:
+                # 3. Log to History
+                self.history_manager.add_entry({
+                    "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "keyword": keyword if keyword else "직접 선택",
+                    "title": title,
+                    "link": url,
+                    "comment": reply_text
+                })
+                
+                # 4. Mark as Processed (UI Update)
+                if index is not None and hasattr(self, 'processed_indices'):
+                    self.processed_indices.add(index)
+                
+                self.page.snack_bar = ft.SnackBar(ft.Text(f"✅ 댓글 작성 완료! (활동 내역에 저장됨)"), bgcolor=ft.Colors.GREEN)
+                
+                # Refresh UI Lists
+                try:
+                    self._render_marketing_history()
+                    # Re-render list to reflect grayed out state (processed)
+                    if hasattr(self, 'current_search_results'):
+                        # Using stored results to re-render without re-fetching
+                        self._render_marketing_results(self.current_search_results, getattr(self, 'current_keyword', None))
+                except:
+                    pass
+            else:
+                self.page.snack_bar = ft.SnackBar(ft.Text(f"❌ 댓글 작성 실패: {msg}"), bgcolor=ft.Colors.RED)
+                
+        except Exception as e:
+            print(f"Auto Engage Error: {e}")
+            self.page.snack_bar = ft.SnackBar(ft.Text(f"오류: {e}"), bgcolor=ft.Colors.RED)
+            
+        try:
+            self.page.snack_bar.open = True
+            self.page.update()
+        except:
+            pass
+
     def main(self, page: ft.Page):
         # 페이지 객체 저장 (먼저 설정)
         self.page = page
@@ -4688,8 +5425,8 @@ class BlogWriterApp:
         )
 
         phone = ft.TextField(
-            label="연락처",
-            hint_text="연락처를 입력하세요..."
+            label="연락처 (네이버 번호/상담 답글용)",
+            hint_text="연락처를 입력하세요 (예: 010-1234-5678)..."
         )
 
         blog_url = ft.TextField(
@@ -4709,7 +5446,7 @@ class BlogWriterApp:
         )
 
         kakao_url = ft.TextField(
-            label="카카오톡 오픈채팅방 주소",
+            label="카카오톡 상담 링크 (상담 답글용)",
             hint_text="카카오톡 오픈채팅방 URL을 입력하세요..."
         )
 
@@ -8254,6 +8991,7 @@ class BlogWriterApp:
                                 on_blur=lambda e: self._save_setting('drive_parent_folder', e.control.value),
                                 expand=True
                             ),
+
                             ft.IconButton(
                                 icon=ft.Icons.FOLDER_OPEN,
                                 tooltip="폴더 선택",
@@ -8799,6 +9537,12 @@ class BlogWriterApp:
             expand=True
         )
 
+        # 지역 마케팅 탭 생성
+        marketing_settings_tab = self._create_marketing_tab()
+        
+        # 답글 관리 탭 생성 (New)
+        reply_manager_tab = self._create_reply_manager_tab()
+
         # 탭 컨트롤
         tabs = ft.Tabs(
             selected_index=0,
@@ -8808,6 +9552,16 @@ class BlogWriterApp:
                     text="블로그 시작",
                     icon=ft.Icons.EDIT_NOTE,
                     content=main_content_tab
+                ),
+                ft.Tab(
+                    text="지역 마케팅",
+                    icon=ft.Icons.STOREFRONT,  # 상점 아이콘 사용
+                    content=marketing_settings_tab
+                ),
+                ft.Tab(
+                    text="상담 관리", # New Tab
+                    icon=ft.Icons.SUPPORT_AGENT,
+                    content=reply_manager_tab
                 ),
                 ft.Tab(
                     text="밴드 포스팅",
