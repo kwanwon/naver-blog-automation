@@ -113,8 +113,8 @@ def validate_serial(serial_number, device_info=None):
             'serial_number': serial_number
         }
         if device_info:
-            # 디바이스 정보 간소화
-            data['device_info'] = {'hostname': device_info.get('hostname', 'unknown')}
+            # 디바이스 정보 전체 전송 (간소화 로직 제거)
+            data['device_info'] = device_info
         
         logging.debug(f"검증 요청 데이터: {json.dumps(data, ensure_ascii=False)}")
         response = requests.post(f"{SERVER_URL}/api/validate", json=data, timeout=30)
@@ -132,9 +132,9 @@ def validate_serial(serial_number, device_info=None):
 def create_serial(serial_data):
     """새 시리얼 생성"""
     try:
-        # 디바이스 정보 간소화
-        if 'device_info' in serial_data and isinstance(serial_data['device_info'], dict):
-            serial_data['device_info'] = {'hostname': serial_data['device_info'].get('hostname', 'auto-generated')}
+        # 디바이스 정보 간소화 로직 제거 (전체 정보 전송)
+        # if 'device_info' in serial_data and isinstance(serial_data['device_info'], dict):
+        #     serial_data['device_info'] = {'hostname': serial_data['device_info'].get('hostname', 'auto-generated')}
         
         logging.debug(f"생성 요청 데이터: {json.dumps(serial_data, ensure_ascii=False)}")
         # /api/serials 대신 /api/register 엔드포인트 사용

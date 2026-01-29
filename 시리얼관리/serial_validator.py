@@ -1257,6 +1257,22 @@ class SerialManager:
                 # 메인 테이블 업데이트
                 self.cursor.execute("UPDATE serials SET memo = ? WHERE serial_number = ?", (memo, serial))
                 self.conn.commit()
+
+                # 서버에 메모 업데이트 요청
+                try:
+                    response = requests.patch(
+                        f"{SERVER_URL}/api/serials/{serial}",
+                        json={"memo": memo},
+                        timeout=30
+                    )
+                    if response.status_code == 200:
+                        logging.info(f"서버 메모 업데이트 성공: {serial}")
+                    else:
+                        logging.warning(f"서버 메모 업데이트 실패: {response.status_code}")
+                        messagebox.showwarning("경고", "로컬에는 저장되었으나 서버 동기화에 실패했습니다.")
+                except Exception as server_error:
+                    logging.error(f"서버 업데이트 오류: {server_error}")
+                    messagebox.showwarning("경고", "로컬에는 저장되었으나 서버 연결에 실패했습니다.")
                 
                 # UI 업데이트
                 new_values = list(current_values)

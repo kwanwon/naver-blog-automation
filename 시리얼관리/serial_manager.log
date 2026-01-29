@@ -1595,3 +1595,27 @@ AttributeError: 'list' object has no attribute 'get'
 2025-09-16 21:54:46,713 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
 2025-09-16 21:54:46,713 - INFO - 데이터베이스 동기화 완료
 2025-09-16 21:55:01,904 - INFO - 컨텍스트 메뉴 이벤트: 4, x=993, y=100
+2026-01-29 11:12:49,655 - INFO - 로깅 시작 (RotatingFileHandler), 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2026-01-29 11:12:50,595 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 11:12:50,598 - INFO - 데이터베이스 초기화 완료
+2026-01-29 11:12:50,901 - INFO - 서버에서 8개의 시리얼 데이터 가져옴
+2026-01-29 11:12:50,905 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 11:12:50,906 - INFO - 데이터베이스 동기화 완료
+2026-01-29 11:12:50,910 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 11:12:50,911 - INFO - 데이터베이스 동기화 완료
+2026-01-29 11:49:40,178 - INFO - 로깅 시작 (RotatingFileHandler), 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2026-01-29 11:49:40,761 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 11:49:40,764 - INFO - 데이터베이스 초기화 완료
+2026-01-29 11:50:24,372 - INFO - 서버에서 8개의 시리얼 데이터 가져옴
+2026-01-29 11:50:24,376 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 11:50:24,378 - INFO - 데이터베이스 동기화 완료
+2026-01-29 11:50:24,390 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 11:50:24,390 - INFO - 데이터베이스 동기화 완료
+2026-01-29 11:52:34,561 - INFO - 로깅 시작 (RotatingFileHandler), 로그 파일: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serial_manager.log
+2026-01-29 11:52:34,939 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 11:52:34,942 - INFO - 데이터베이스 초기화 완료
+2026-01-29 11:52:35,420 - INFO - 서버에서 8개의 시리얼 데이터 가져옴
+2026-01-29 11:52:35,422 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 11:52:35,423 - INFO - 데이터베이스 동기화 완료
+2026-01-29 11:52:35,426 - INFO - 데이터베이스 경로: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 11:52:35,427 - INFO - 데이터베이스 동기화 완료
