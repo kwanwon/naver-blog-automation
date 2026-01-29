@@ -9986,25 +9986,58 @@ class BlogWriterApp:
         try:
             print("🔄 프로그램을 재시작합니다...")
             
-            # 1. 현재 창 닫기 시도
+            # 1. 파일 시스템 이벤트 처리기 중지 (watchdog 등)
+            try:
+                if hasattr(self, 'observer') and self.observer:
+                    self.observer.stop()
+                    self.observer.join(timeout=1.0)
+            except:
+                pass
+
+            # 2. 현재 창 닫기 시도 (UI 스레드 정리)
             if hasattr(self, 'page') and self.page:
                 try:
                     self.page.window_close()
                 except:
                     pass
             
-            # 2. 운영체제별 재시작
-            if sys.platform == 'win32':
-                # Windows: 새 프로세스 시작 후 현재 프로세스 종료
-                import subprocess
-                python = sys.executable
-                subprocess.Popen([python] + sys.argv, 
-                               creationflags=subprocess.CREATE_NEW_CONSOLE)
-                sys.exit(0)
+            import subprocess
+            import sys
+            
+            # 3. 새 프로세스 실행 준비
+            if getattr(sys, 'frozen', False):
+                # PyInstaller 빌드 환경
+                executable = sys.executable
+                
+                # macOS .app 번들 처리
+                if sys.platform == 'darwin' and 'Contents/MacOS' in executable:
+                    # .app 번들 밖의 실제 실행 파일 경로 찾기 또는 open 명령어 사용
+                    # Mac에서는 'run_command' 도구로 open 사용이 권장되지만, 
+                    # 여기서는 subprocess로 직접 실행
+                    
+                    # 런처가 별도로 있는 경우 런처를 실행해야 할 수도 있음
+                    # 현재 구조: BlogAutomation_Mac (메인 실행파일)
+                    
+                    cmd = [executable] + sys.argv[1:]
+                else:
+                    cmd = [executable] + sys.argv[1:]
             else:
-                # macOS/Linux: execl 사용
-                python = sys.executable
-                os.execl(python, python, *sys.argv)
+                # 일반 파이썬 스크립트 실행
+                executable = sys.executable
+                cmd = [executable] + sys.argv
+            
+            print(f"🚀 새 프로세스 실행: {cmd}")
+            
+            # 4. 새 프로세스 실행 (독립된 프로세스로)
+            if sys.platform == 'win32':
+                subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
+            else:
+                # macOS/Linux
+                subprocess.Popen(cmd, start_new_session=True)
+                
+            # 5. 현재 프로세스 강제 종료
+            print("👋 현재 프로세스를 종료합니다.")
+            os._exit(0)
                 
         except Exception as e:
             print(f"❌ 재시작 실패: {e}")
