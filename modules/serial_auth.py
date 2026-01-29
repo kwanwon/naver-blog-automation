@@ -557,13 +557,14 @@ class BlogSerialAuth:
                 "status": "사용중"
             }
             
-            # 만료일 필수 - 서버 API 요구사항
+            # 만료일 필수 - 서버 API 요구사항 (완화: 만료일 없어도 디바이스 정보는 업데이트 시도)
             if expiry_date:
                 update_data["expiry_date"] = expiry_date
             else:
-                print("   ⚠️ 만료일 정보 없음 - 서버 업데이트 건너뜀")
-                self.logger.warning("만료일 정보 없음 - 서버 업데이트 건너뜀")
-                return False
+                print("   ⚠️ 만료일 정보 없음 - 만료일 제외하고 서버 업데이트 진행")
+                self.logger.warning("만료일 정보 없음 - 만료일 제외하고 서버 업데이트 진행")
+                # return False  <-- 기존에는 여기서 중단했으나, 디바이스 정보 업데이트를 위해 진행
+
             
             self.logger.info(f"서버 업데이트 시도: {serial_number}, 데이터: {update_data}")
             
