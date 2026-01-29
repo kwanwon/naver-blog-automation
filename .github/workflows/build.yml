@@ -28,21 +28,9 @@ jobs:
           pip install pyperclip httpx
           pip install pandas watchdog
           
-          # 1. 메인 앱 빌드 (내부 실행용, 이름 변경: BlogApp)
           pyinstaller blog_writer_app.py --name BlogApp --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all flet_desktop --collect-all certifi --hidden-import pandas --hidden-import watchdog --noconfirm
 
-          # 2. 런처 빌드 (사용자 실행용, 이름: BlogAutomation)
-          # 런처는 메인 앱(BlogApp.exe)을 실행하도록 설정되어야 함
-          pyinstaller launcher.py --name BlogAutomation --noconsole --onedir --clean --icon assets/icon.ico --noconfirm
-
-          # 3. 런처 파일을 메인 앱 폴더로 이동/통합
-          # BlogApp 폴더에 BlogAutomation.exe 복사 (의존성 공유 시도 or 독립 실행)
-          # PyInstaller onedir 모드는 폴더가 분리됨. 런처를 OneFile로 빌드하는게 나을 수 있음.
-          # 다시 전략 수정: 런처는 OneFile로 빌드하여 BlogApp 폴더(onedir) 안에 넣음.
-
           pyinstaller launcher.py --name BlogAutomation --noconsole --onefile --clean --icon assets/icon.ico --noconfirm
-          
-          # 이동 로직은 다음 단계(Organize output folder)에서 처리
         shell: cmd
 
       - name: Organize output folder
@@ -50,26 +38,19 @@ jobs:
           echo "=== Debug: Checking dist folder ==="
           dir dist
           
-          # 기존 폴더명: dist\BlogApp (PyInstaller가 생성함)
-          # 목표 폴더명: dist\BlogAutomation_Windows_App (Installer가 참조함)
-          
           if exist "dist\BlogApp" (
-              echo "✅ Found build folder. Renaming to App folder..."
+              echo "Found build folder. Renaming to App folder..."
               move "dist\BlogApp" "dist\BlogAutomation_Windows_App"
           ) else (
-              echo "❌ Error: Build folder 'dist\BlogApp' not found!"
+              echo "Error: Build folder dist\BlogApp not found!"
               exit 1
           )
 
-          # 런처 통합
           if exist "dist\BlogAutomation.exe" (
-              echo "✅ Found Launcher. Moving to App folder..."
+              echo "Found Launcher. Moving to App folder..."
               copy "dist\BlogAutomation.exe" "dist\BlogAutomation_Windows_App\"
-              # 기존 메인 앱 이름 확인 (blog_writer_app.exe ? BlogApp.exe ?)
-              # PyInstaller --name BlogApp 했으므로 BlogApp.exe 일 것임.
-              # Launcher는 BlogApp.exe를 실행하도록 맞춰야 함.
           ) else (
-              echo "❌ Error: Launcher 'dist\BlogAutomation.exe' not found!"
+              echo "Error: Launcher dist\BlogAutomation.exe not found!"
               exit 1
           )
           
