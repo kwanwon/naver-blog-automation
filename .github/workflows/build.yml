@@ -30,10 +30,9 @@ jobs:
           
       - name: Build with PyInstaller (Onedir mode)
         run: |
-          # PyInstaller 직접 실행 (Onedir 모드)
-          # requests, flet, certifi 등 문제 발생 가능한 모듈 전체 수집
-          # 중요: flet_desktop 모듈 누락 방지를 위해 collect-all 추가
-          pyinstaller blog_writer_app.py --name BlogAutomation_Windows --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all flet_desktop --collect-all certifi --hidden-import pandas --hidden-import watchdog --noconfirm
+          pyinstaller blog_writer_app.py --name BlogApp --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all flet_desktop --collect-all certifi --hidden-import pandas --hidden-import watchdog --noconfirm
+
+          pyinstaller launcher.py --name BlogAutomation --noconsole --onefile --clean --icon assets/icon.ico --noconfirm
         shell: cmd
 
       - name: Organize output folder
@@ -41,14 +40,19 @@ jobs:
           echo "=== Debug: Checking dist folder ==="
           dir dist
           
-          # 기존 폴더명: dist\BlogAutomation_Windows (PyInstaller가 생성함)
-          # 목표 폴더명: dist\BlogAutomation_Windows_App (Installer가 참조함)
-          
-          if exist "dist\BlogAutomation_Windows" (
-              echo "✅ Found build folder. Renaming to App folder..."
-              move "dist\BlogAutomation_Windows" "dist\BlogAutomation_Windows_App"
+          if exist "dist\BlogApp" (
+              echo "Found build folder. Renaming to App folder..."
+              move "dist\BlogApp" "dist\BlogAutomation_Windows_App"
           ) else (
-              echo "❌ Error: Build folder 'dist\BlogAutomation_Windows' not found!"
+              echo "Error: Build folder dist\BlogApp not found!"
+              exit 1
+          )
+
+          if exist "dist\BlogAutomation.exe" (
+              echo "Found Launcher. Moving to App folder..."
+              copy "dist\BlogAutomation.exe" "dist\BlogAutomation_Windows_App\"
+          ) else (
+              echo "Error: Launcher dist\BlogAutomation.exe not found!"
               exit 1
           )
           

@@ -239,25 +239,75 @@ class SerialAuthWindow:
             except:
                 pass
             
-            # 메인 프로그램 실행 (별도 프로세스)
-            blog_app_path = os.path.join(self.base_dir, "blog_writer_app.py")
-            
-            # Python 환경 설정
-            if os.path.exists(os.path.join(self.base_dir, "venv")):
-                # 가상환경이 있으면 가상환경 사용
+            # Application Path Setup
+            if getattr(sys, 'frozen', False):
+                # PyInstaller로 빌드된 환경 (Frozen)
+                bundle_dir = os.path.dirname(sys.executable)
+                
                 if sys.platform == "win32":
-                    python_exe = os.path.join(self.base_dir, "venv", "Scripts", "python.exe")
-                else:
-                    python_exe = os.path.join(self.base_dir, "venv", "bin", "python3")
-            else:
-                python_exe = sys.executable
-            
-            # 메인 프로그램 실행
-            subprocess.Popen([python_exe, blog_app_path], 
-                           cwd=self.base_dir,
+                    # Windows: BlogApp.exe가 런처(BlogAutomation.exe)와 같은 폴더에 있다고 가정 (onedir)
+                    # build.yml에서 BlogAutomation.exe를 BlogApp 폴더로 복사하거나 
+                    # BlogApp 폴더를 BlogAutomation 폴더로 변경하는 로직에 따라 상대 경로 결정
+                    
+                    # 1. 런처와 같은 폴더에 있는 경우 (가장 일반적)
+                    main_app_path = os.path.join(bundle_dir, "BlogApp.exe")
+                    
+                    # 2. BlogApp 하위 폴더에 있는 경우 (예비)
+                    if not os.path.exists(main_app_path):
+                        main_app_path = os.path.join(bundle_dir, "BlogApp", "BlogApp.exe")
+
+                    # 3. 개발 중 테스트 (dist/BlogAutomation_Windows_App/BlogApp.exe)
+                    # build.yml 로직:
+                    # BlogApp (PyInstaller output) -> renamed to BlogAutomation_Windows_App
+                    # Launcher (BlogAutomation.exe) copied to BlogAutomation_Windows_App
+                    # So they are in the SAME directory.
+                    
+                elif sys.platform == "darwin":
+                    # macOS: BlogAutomation_Mac.app/Contents/MacOS/BlogAutomation_Mac 이 실행됨
+                    # 같은 폴더에 있음
+                    # 하지만 macOS .app 번들 구조상 다를 수 있음.
+                    # flet pack은 실행파일을 생성함.
+                    # Mac 빌드 스크립트: flet pack blog_writer_app.py --name BlogAutomation_Mac
+                    # Launcher script usage on Mac logic needs verification if we change to Launcher pattern.
+                    # For now, focus on Windows Fix mostly, but try to keep generic.
+                    
+                    # Mac의 경우 런처 없이 단일 앱으로 빌드되었을 수 있음.
+                    # 만약 런처를 쓴다면 로직 추가 필요.
+                    # 현재 Mac 빌드는 런처 없이 바로 blog_writer_app.py를 flet pack 함.
+                    # 따라서 이 코드는 Windows Launcher 로직에 집중.
+                    main_app_path = os.path.join(bundle_dir, "BlogAutomation_Mac") 
+                
+                print(f"📂 실행 경로(Frozen): {main_app_path}")
+                
+                if os.path.exists(main_app_path):
+                     subprocess.Popen([main_app_path], 
+                           cwd=os.path.dirname(main_app_path),
                            env=os.environ.copy())
+                else:
+                    print(f"❌ 메인 실행 파일을 찾을 수 없습니다: {main_app_path}")
+                    # 개발자 디버그용 메시지
+                    print(f"참고: bundle_dir={bundle_dir}")
+                    
+            else:
+                # 일반 Python 스크립트 환경 (Dev)
+                blog_app_path = os.path.join(self.base_dir, "blog_writer_app.py")
+                
+                # Python 환경 설정
+                if os.path.exists(os.path.join(self.base_dir, "venv")):
+                    # 가상환경이 있으면 가상환경 사용
+                    if sys.platform == "win32":
+                        python_exe = os.path.join(self.base_dir, "venv", "Scripts", "python.exe")
+                    else:
+                        python_exe = os.path.join(self.base_dir, "venv", "bin", "python3")
+                else:
+                    python_exe = sys.executable
+                
+                # 메인 프로그램 실행
+                subprocess.Popen([python_exe, blog_app_path], 
+                               cwd=self.base_dir,
+                               env=os.environ.copy())
             
-            print("✅ 메인 프로그램 실행 완료!")
+            print("✅ 메인 프로그램 실행 요청 완료!")
             
         except Exception as e:
             print(f"❌ 메인 프로그램 실행 중 오류: {e}")
