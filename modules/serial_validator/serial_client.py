@@ -175,15 +175,26 @@ class SerialClient:
             system = platform.system()
             processor = platform.processor()
             
-            # 호스트명 및 IP 주소 (오류에 강건하게 수정)
+            # 호스트명 및 IP 주소 (개선된 로직)
+            hostname = None
             try:
                 hostname = socket.gethostname()
-                try:
-                    ip_address = socket.gethostbyname(hostname)
-                except:
-                    ip_address = "127.0.0.1"  # 기본 로컬호스트 IP로 설정
             except:
-                hostname = "unknown-host"
+                pass
+                
+            if not hostname or hostname == 'localhost':
+                try:
+                    hostname = platform.node()
+                except:
+                    hostname = "unknown-host"
+            
+            # Mac에서 .local이 붙은 경우 처리 (선택적)
+            # if hostname and hostname.endswith('.local'):
+            #     hostname = hostname[:-6]
+
+            try:
+                ip_address = socket.gethostbyname(hostname)
+            except:
                 ip_address = "127.0.0.1"
             
             # 메모리 정보
@@ -979,130 +990,8 @@ class SerialClient:
         except Exception as e:
             logging.error(f"검증 시간 확인 중 오류: {e}")
             # 오류 발생 시 안전을 위해 로컬 검증만 수행
-            self.validate_local() 
+            self.validate_local()
     
-    def save_device_info(self):
-        """디바이스 정보를 별도 저장"""
-        try:
-            if not self.device_info or not self.is_valid:
-                logging.info("디바이스 정보가 없거나 유효하지 않은 시리얼이므로 디바이스 정보를 저장하지 않습니다.")
-                return
-                
-            # 디바이스 정보를 로컬 파일에 저장
-            config_dir = os.path.join(self.app_dir, 'config')
-            os.makedirs(config_dir, exist_ok=True)
-            
-            device_file = os.path.join(config_dir, 'device_info.json')
-            
-            # 시리얼 번호와 함께 저장
-            save_data = {
-                "serial_number": self.serial_number,
-                "device_info": self.device_info,
-                "is_valid": self.is_valid,
-                "status": self.status,
-                "app_name": self.app_name,  # 앱 이름도 별도로 저장
-                "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
-            
-            with open(device_file, 'w', encoding='utf-8') as f:
-                json.dump(save_data, f, ensure_ascii=False, indent=2)
-                
-            logging.info(f"디바이스 정보 저장됨: {device_file}")
-            
-            # 데이터베이스에도 디바이스 해시 업데이트
-            try:
-                device_hash = self.device_info.get('device_hash', '')
-                if device_hash:
-                    self.cursor.execute(
-                        "UPDATE serial_data SET device_hash = ?, app_name = ? WHERE serial_number = ?",
-                        (device_hash, self.app_name, self.serial_number)
-                    )
-                    self.conn.commit()
-                    logging.info(f"데이터베이스에 디바이스 해시와 앱 이름 업데이트됨: {device_hash[:10]}..., 앱: {self.app_name}")
-            except Exception as db_error:
-                logging.error(f"데이터베이스 디바이스 해시 업데이트 오류: {str(db_error)}")
-            
-            # 상위 디렉토리에도 디바이스 정보 저장 (블로그자동화 앱에서 사용)
-            try:
-                # 상위 디렉토리 구조 확인 (../config)
-                parent_config = os.path.join(os.path.dirname(os.path.dirname(self.app_dir)), 'config')
-                os.makedirs(parent_config, exist_ok=True)
-                parent_device_file = os.path.join(parent_config, 'device_info.json')
-                
-                with open(parent_device_file, 'w', encoding='utf-8') as f:
-                    json.dump(save_data, f, ensure_ascii=False, indent=2)
-                    
-                logging.info(f"상위 디렉토리에 디바이스 정보 저장됨: {parent_device_file}")
-            except Exception as e:
-                logging.warning(f"상위 디렉토리에 디바이스 정보 저장 실패: {str(e)}")
-                
-        except Exception as e:
-            logging.error(f"디바이스 정보 저장 중 오류: {str(e)}")
-            
-    def load_device_info(self):
-        """저장된 디바이스 정보 로드"""
-        try:
-            device_file = os.path.join(self.app_dir, 'config', 'device_info.json')
-            
-            if os.path.exists(device_file):
-                with open(device_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    
-                if data.get('serial_number') == self.serial_number:
-                    self.device_info = data.get('device_info', {})
-                    # 추가로 디바이스 정보가 유효한지 확인
-                    if data.get('is_valid') == False:
-                        logging.warning(f"저장된 디바이스 정보가 유효하지 않은 상태입니다: {data.get('status')}")
-                        return False
-                    logging.info(f"디바이스 정보 로드됨: {device_file}")
-                    return True
-                else:
-                    logging.warning(f"저장된 시리얼과 일치하지 않음: {data.get('serial_number')} != {self.serial_number}")
-                    
-            return False
-        except Exception as e:
-            logging.error(f"디바이스 정보 로드 중 오류: {str(e)}")
-            return False
-            
-    def is_valid_with_server_check(self):
-        """앱 시작 시 서버에 강제로 재검증 요청을 보내는 메서드"""
-        logging.info("앱 시작 시 서버 강제 검증 수행")
-        result = False
-        if self.serial_number:
-            # 마지막 검증 시간 확인
-            try:
-                self.cursor.execute(
-                    "SELECT last_check_date FROM serial_data WHERE serial_number = ?", 
-                    (self.serial_number,)
-                )
-                result = self.cursor.fetchone()
-                
-                if result and result[0]:
-                    last_check = result[0]
-                    last_datetime = datetime.strptime(last_check, "%Y-%m-%d %H:%M:%S")
-                    hours_since_check = (datetime.now() - last_datetime).total_seconds() / 3600
-                    
-                    if hours_since_check < 1:  # 1시간 이내에 검증했으면 로컬 검증으로 대체 (24시간에서 변경)
-                        logging.info(f"최근에 검증됨 (경과: {hours_since_check:.1f}시간, 1시간 이내) - 로컬 검증으로 대체")
-                        # 로컬 검증 수행 - 다른 앱 사용 여부도 확인
-                        self.validate_local()
-                        
-                        # 다른 앱에서 사용 중인지 확인
-                        if "다른 앱" in self.status:
-                            logging.warning(f"로컬 검증 결과 다른 앱에서 사용 중: {self.status}")
-                            print(f"시리얼 인증 실패: {self.status}")
-                            self.is_valid = False
-                            return False
-                            
-                        return self.is_valid
-            except Exception as e:
-                logging.error(f"마지막 검증 시간 확인 중 오류: {e}")
-            
-            # 서버에 강제로 재검증 요청
-            result = self.validate_serial(self.serial_number, update_device=True)
-            logging.info(f"서버 강제 검증 결과: {result}, 상태: {self.status}")
-        return result
-
     def get_stored_device_hash(self, serial_number):
         """저장된 디바이스 해시 정보를 가져옵니다."""
         try:
@@ -1181,4 +1070,4 @@ class SerialClient:
             return None
         except Exception as e:
             logging.error(f"저장된 앱 이름 검색 중 오류: {str(e)}")
-            return None 
+            return None
