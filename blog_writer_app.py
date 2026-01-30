@@ -3839,9 +3839,35 @@ class BlogWriterApp:
                         
                         valid, message, _ = self.serial_auth.check_serial(serial_number)
                         if not valid:
-                            print(f"🚨 시리얼 만료됨: {message}")
-                            # 만료 알림 (스레드 안전하게 호출 필요 - 여기서는 로그만 남김)
-                            # 실제 차단은 다음 앱 실행 시 is_serial_required()에서 처리됨
+                            print(f"🚨 시리얼 검증 실패 (만료/블랙리스트): {message}")
+                            print("⛔ 보안 정책에 의해 프로그램을 종료합니다.")
+                            
+                            # 시리얼 정보 삭제 (재실행 시 재인증 유도)
+                            try:
+                                config["serial_number"] = ""
+                                config["last_validation"] = ""
+                                self.serial_auth.save_config(config)
+                                print("🗑️ 시리얼 정보가 초기화되었습니다.")
+                            except Exception as e:
+                                print(f"⚠️ 설정 초기화 중 오류 (무시됨): {e}")
+                            
+                            # 알림 시도 (UI 스레드가 아닐 수 있어 안전장치 필요)
+                            try:
+                                if self.page:
+                                    self.page.snack_bar = ft.SnackBar(
+                                        content=ft.Text(f"⛔ 인증 만료/취소됨: 프로그램을 종료합니다."),
+                                        bgcolor=ft.Colors.RED_900,
+                                        duration=3000
+                                    )
+                                    self.page.snack_bar.open = True
+                                    self.page.update()
+                                    time.sleep(3) # 메시지 볼 시간 제공
+                            except:
+                                pass
+                                
+                            # 강제 종료
+                            print("👋 프로그램 종료...")
+                            os._exit(1)
                         else:
                             print("✅ 주기적 시리얼 검증 성공")
                     
