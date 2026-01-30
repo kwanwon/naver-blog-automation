@@ -307,7 +307,16 @@ class NaverBlogPostFinisher:
             try:
                 print("\n==== 카카오톡 링크 추가 시작 ====")
                 kakao_url = self.settings.get('kakao_url')
-                print(f"사용할 카카오 URL: {kakao_url}")
+                print(f"사용할 카카오 URL: '{kakao_url}'")
+                
+                if not kakao_url:
+                    print("⚠️ 카카오 URL이 설정되지 않았습니다. 링크 추가를 건너뜁니다.")
+                    return False
+                
+                # URL 형식이 올바른지 간단히 확인
+                if not kakao_url.startswith('http'):
+                    print(f"⚠️ 카카오 URL 형식이 올바르지 않습니다 (http로 시작해야 함): {kakao_url}")
+                    # 계속 진행은 함 (사용자가 의도했을 수 있으므로)
                 
                 # 먼저 텍스트를 명확히 입력
                 actions = ActionChains(self.driver)
@@ -369,7 +378,25 @@ class NaverBlogPostFinisher:
                         continue
                 
                 if not link_button_found:
-                    print("❌ 링크 버튼을 찾을 수 없습니다")
+                    print("⚠️ CSS 선택자로 링크 버튼을 못 찾음. JavaScript로 재시도...")
+                    link_button_found = self.driver.execute_script("""
+                    const buttons = document.querySelectorAll('button');
+                    for (const btn of buttons) {
+                        const text = btn.innerText ? btn.innerText.trim() : '';
+                        const title = btn.getAttribute('title') || '';
+                        const dataLog = btn.getAttribute('data-log') || '';
+                        
+                        if (text === '링크' || title === '링크' || dataLog === 'dot.link') {
+                            console.log('JS로 링크 버튼 발견:', btn);
+                            btn.click();
+                            return true;
+                        }
+                    }
+                    return false;
+                    """)
+                    
+                if not link_button_found:
+                    print("❌ 링크 버튼을 찾을 수 없습니다 (JS 검색 실패)")
                     return False
                 
                 # 링크 버튼 클릭 후 처리
@@ -631,13 +658,34 @@ class NaverBlogPostFinisher:
                 
                 # 장소 버튼 클릭
                 print("장소 버튼 찾기 및 클릭 시도...")
-                location_button = WebDriverWait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, "button.se-map-toolbar-button.se-document-toolbar-basic-button.se-text-icon-toolbar-button"))
-                )
-                print("장소 버튼 발견, 클릭 시도...")
-                location_button.click()
+                location_button_selectors = [
+                    "button.se-map-toolbar-button", 
+                    "button[data-log='dot.map']",
+                    "button.se-document-toolbar-basic-button.se-text-icon-toolbar-button[title='장소']",
+                    "button[data-role='button-container'][data-log='dot.map']"
+                ]
+                
+                location_btn_clicked = False
+                for selector in location_button_selectors:
+                    try:
+                        print(f"장소 버튼 선택자 시도: {selector}")
+                        btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                        for btn in btns:
+                            if btn.is_displayed() and btn.is_enabled():
+                                btn.click()
+                                location_btn_clicked = True
+                                print(f"✅ 장소 버튼 클릭 성공: {selector}")
+                                break
+                        if location_btn_clicked:
+                            break
+                    except Exception as e:
+                        print(f"장소 버튼 선택자 {selector} 오류: {e}")
+                
+                if not location_btn_clicked:
+                    print("❌ 장소 버튼을 찾을 수 없습니다.")
+                    
                 time.sleep(1)
-                print("장소 버튼 클릭 성공, 1초 대기 완료")
+                print("장소 버튼 클릭 후 1초 대기 완료")
 
                 # 장소 검색창에 주소 및 상호 입력
                 print("장소 검색창 찾기...")
@@ -645,9 +693,10 @@ class NaverBlogPostFinisher:
                     EC.presence_of_element_located((By.CSS_SELECTOR, "input.react-autosuggest__input"))
                 )
                 # 검색어를 사용자 설정에서 정확히 가져오기
-                address = self.settings.get('address', '')
                 dojang_name = self.settings.get('dojang_name', '')
-                search_text = f"{address} {dojang_name}"
+                
+                # [수정] 사용자 요청에 따라 주소는 제외하고 '상호명'만으로 검색
+                search_text = dojang_name
                 
                 print(f"장소 검색창 발견, 검색어 입력: {search_text}")
                 # 기존 입력 내용 삭제 후 새로 입력
