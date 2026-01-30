@@ -57,6 +57,9 @@ class BlogWriterApp:
         # 시리얼 인증 초기화
         self.serial_auth = BlogSerialAuth()
         
+        # 🚀 [Fix] 앱 시작 시 디바이스 정보 및 사용 횟수 즉시 업데이트
+        self._initial_device_info_update()
+        
         print(f"📁 최종 기본 디렉토리: {self.base_dir}")
         print(f"🔄 현재 작업 디렉토리: {os.getcwd()}")
         
@@ -163,6 +166,28 @@ class BlogWriterApp:
         self.comment_poster = None # will be init in main or when driver is ready, but logic uses self.driver directly usually or passthrough
         # Actually CommentPoster needs driver, which changes. We can init it on demand.
 
+
+    def _initial_device_info_update(self):
+        """앱 시작 시 백그라운드에서 디바이스 정보 및 사용 횟수 업데이트"""
+        def update_task():
+            try:
+                # 설정 로드하여 시리얼 번호 확인
+                config = self.serial_auth.load_config()
+                serial_number = config.get("serial_number")
+                
+                if serial_number:
+                    time.sleep(2) # 앱 초기화 안정화를 위해 잠시 대기
+                    print(f"📡 [Startup] 디바이스 정보 업데이트 시도: {serial_number}")
+                    success = self.serial_auth.update_device_info_and_usage(serial_number)
+                    if success:
+                        print("✅ [Startup] 디바이스 정보 서버 업데이트 완료")
+                    else:
+                        print("⚠️ [Startup] 디바이스 정보 업데이트 실패 (또는 불필요)")
+            except Exception as e:
+                print(f"❌ [Startup] 디바이스 정보 업데이트 중 오류: {e}")
+
+        # UI 블로킹 방지를 위해 스레드로 실행
+        threading.Thread(target=update_task, daemon=True).start()
 
     def _get_app_data_dir(self):
         """사용자 데이터 디렉토리 반환 (~/.blog_automation)"""
