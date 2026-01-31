@@ -73,6 +73,14 @@ class NaverBlogImageInserter:
         # 대체 이미지 폴더 설정
         # custom_images_folder가 넘어오면 해당 폴더만 사용 (폴더 순환 비활성화)
         self.fallback_folder = fallback_folder if fallback_folder else 'default_images'
+        
+        # fallback_folder가 상대 경로이고 존재하지 않으면 resource_path로 시도
+        if not os.path.isabs(self.fallback_folder) and not os.path.exists(self.fallback_folder):
+             res_path = resource_path(self.fallback_folder)
+             if os.path.exists(res_path):
+                 print(f"내장 리소스 이미지 폴더 사용: {res_path}")
+                 self.fallback_folder = res_path
+        
         self.use_single_folder = bool(fallback_folder)  # True면 폴더 순환을 건너뛰고 지정 폴더만 사용
             
         self.used_images = []
@@ -144,12 +152,18 @@ class NaverBlogImageInserter:
     def load_image_positions(self):
         """저장된 이미지 위치 정보 로드"""
         try:
-            config_paths = [
-                'config/image_positions.json',  # 기본 경로
-                resource_path('config/image_positions.json')  # 빌드된 앱 경로
-            ]
+            # 1. 사용자 데이터 폴더 (최우선)
+            user_config_path = os.path.join(os.path.expanduser('~'), '.blog_automation', 'config', 'image_positions.json')
             
-            for config_path in config_paths:
+            # 2. 실행 위치 Config
+            local_config_path = 'config/image_positions.json'
+            
+            # 3. 앱 내장 리소스 (마지막)
+            bundled_config_path = resource_path('config/image_positions.json')
+            
+            check_paths = [user_config_path, local_config_path, bundled_config_path]
+            
+            for config_path in check_paths:
                 if os.path.exists(config_path):
                     print(f"이미지 위치 설정 파일 발견: {config_path}")
                     with open(config_path, 'r', encoding='utf-8') as f:

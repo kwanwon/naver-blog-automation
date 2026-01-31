@@ -79,10 +79,25 @@ class NaverCafeAutomation:
                 ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('a').key_up(Keys.COMMAND).send_keys(Keys.BACKSPACE).perform()
                 time.sleep(0.5)
                 
-                # 클립보드로 복사 후 붙여넣기
-                pyperclip.copy(content)
-                ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
-                time.sleep(1)
+                # 클립보드 복사 시도
+                clipboard_success = False
+                try:
+                    pyperclip.copy(content)
+                    time.sleep(0.5)
+                    # 검증
+                    if pyperclip.paste().strip() == content.strip():
+                        clipboard_success = True
+                    else:
+                        print("⚠️ 클립보드 복사 내용 불일치, JS 사용 전환")
+                except Exception as e:
+                    print(f"⚠️ 클립보드 오류: {e}")
+                
+                if clipboard_success:
+                    ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
+                    time.sleep(1)
+                else:
+                    # fallback: JS로 직접 삽입
+                    raise Exception("Clipboard failed, forcing JS injection")
                 
                 # 🚀 중요: 에디터 상태 강제 업데이트 (Enter -> Backspace -> Space)
                 # 이렇게 키를 직접 입력해야 에디터 내부의 '내용 있음' 상태가 갱신됩니다.
@@ -107,14 +122,27 @@ class NaverCafeAutomation:
                 print("✅ 내용 입력 및 스타일 적용 완료")
                 
             except Exception as se_err:
-                print(f"⚠️ 에디터 입력 프로세스 실패, JS 시도: {se_err}")
+                print(f"⚠️ 에디터 입력 프로세스 실패 (또는 클립보드 실패), JS 직접 주입 시도: {se_err}")
                 self.driver.execute_script("""
                     const editor = document.querySelector('.se-content') || document.querySelector('.Editor_content__container') || document.querySelector('.se-viewer') || document.querySelector('[contenteditable="true"]');
                     if(editor) {
+                        // 내용 주입
                         editor.innerHTML = arguments[0].split('\\n').map(line => `<p style="font-size:19px !important;">${line || '&nbsp;'}</p>`).join('');
+                        
+                        // 포커스 및 이벤트 강제 발생
+                        editor.focus();
                         editor.dispatchEvent(new Event('input', { bubbles: true }));
+                        editor.dispatchEvent(new Event('change', { bubbles: true }));
+                        editor.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+                        editor.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
                     }
                 """, content)
+                time.sleep(1)
+                # JS 주입 후에도 키 이벤트 한 번 더 발생시켜 상태 갱신 유도
+                try:
+                    editor_area.send_keys(Keys.SPACE)
+                    editor_area.send_keys(Keys.BACKSPACE)
+                except: pass
             
             time.sleep(2)
             

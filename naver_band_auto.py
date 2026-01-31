@@ -220,28 +220,50 @@ class NaverBandAutomation:
                 import pyperclip
                 
                 # 🔧 클립보드 복사 및 검증
-                pyperclip.copy(content)
-                time.sleep(0.5)  # 클립보드 안정화 대기
-                
-                # 클립보드 내용 검증
-                clipboard_content = pyperclip.paste()
-                if len(clipboard_content) < len(content) * 0.9:  # 90% 미만이면 재시도
-                    print(f"⚠️ 클립보드 복사 불완전, 재시도 중... (원본: {len(content)}자, 복사됨: {len(clipboard_content)}자)")
+                clipboard_success = False
+                try:
                     pyperclip.copy(content)
-                    time.sleep(0.5)
-                
-                editor.click()
-                time.sleep(0.3)  # 클릭 후 대기
-                
-                if os.name == 'nt':  # Windows
-                    ActionChains(self.driver).key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
-                else:  # macOS
-                    ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
-                
-                time.sleep(0.5)  # 붙여넣기 후 대기
+                    time.sleep(0.5)  # 클립보드 안정화 대기
+                    
+                    # 클립보드 내용 검증
+                    clipboard_content = pyperclip.paste()
+                    if len(clipboard_content) >= len(content) * 0.9:  # 90% 이상 일치하면 성공으로 간주
+                        clipboard_success = True
+                    else:
+                        print(f"⚠️ 클립보드 복사 불완전 (원본: {len(content)}자, 복사됨: {len(clipboard_content)}자)")
+                except:
+                    clipboard_success = False
+
+                if clipboard_success:
+                    editor.click()
+                    time.sleep(0.3)
+                    
+                    if os.name == 'nt':  # Windows
+                        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
+                    else:  # macOS
+                        ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
+                    
+                    time.sleep(0.5)  # 붙여넣기 후 대기
+                    
+                    # 붙여넣기 후 내용 확인 (선택적)
+                    # editor_text = editor.text
+                    # if len(editor_text) < len(content) * 0.5: raise Exception("Paste failed")
+                else:
+                    raise Exception("Clipboard verification failed")
+                    
             except Exception as e:
-                print(f"⚠️ 클립보드 입력 실패, send_keys 사용: {e}")
-                editor.send_keys(content)
+                print(f"⚠️ 클립보드 입력 실패, JS/send_keys 사용: {e}")
+                # JS로 직접 주입 시도
+                try:
+                    self.driver.execute_script("""
+                        arguments[0].innerText = arguments[1];
+                        arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                        arguments[0].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+                        arguments[0].dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                    """, editor, content)
+                    print("✅ JS로 내용 주입 완료")
+                except:
+                    editor.send_keys(content)
             
             time.sleep(1)
             
