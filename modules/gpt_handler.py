@@ -390,7 +390,7 @@ class GPTHandler:
                     )
                     content = resp.choices[0].message.content.strip()
                 elif provider == "gemini":
-                    content = self._generate_with_gemini(model_name, system_message, user_prompt)
+                    content = self._generate_with_gemini(model_name, system_message, user_prompt, api_key=gemini_api_key)
                 else:
                     logger.warning(f"{model_name} 공급자 {provider}는 지원되지 않습니다. 건너뜀.")
                     continue
@@ -714,16 +714,20 @@ class GPTHandler:
         )
         return result
     
-    def _generate_with_gemini(self, model_name: str, system_message: str, user_prompt: str) -> str:
+    def _generate_with_gemini(self, model_name: str, system_message: str, user_prompt: str, api_key: str = None) -> str:
         """Gemini 모델로 콘텐츠 생성"""
-        if not self.gemini_api_key:
+        # 1. 파라미터로 전달된 키 우선
+        # 2. 인스턴스에 저장된 키 (self.gemini_api_key) 차순위
+        target_api_key = api_key if api_key else self.gemini_api_key
+
+        if not target_api_key:
             raise ValueError("Gemini API 키가 설정되지 않았습니다.")
         try:
             import google.generativeai as genai
         except ImportError as e:
             raise ImportError("google-generativeai 패키지가 필요합니다. pip install google-generativeai") from e
         
-        genai.configure(api_key=self.gemini_api_key)
+        genai.configure(api_key=target_api_key)
         model = genai.GenerativeModel(model_name)
         prompt_text = f"{system_message}\n\n{user_prompt}"
         response = model.generate_content(
