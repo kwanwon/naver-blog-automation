@@ -1,7 +1,8 @@
 {
-  "version": "1.2.47",
+  "version": "1.2.48",
   "release_date": "2026-02-01",
   "changelog": [
+    "🐛 [Hotfix] 빌드 스크립트 의존성 누락 수정 (pyperclip, watchdog 추가)",
     "🐛 [Hotfix] 빌드된 앱에서 이미지 삽입 오류 수정 (경로 문제 해결)",
     "🐛 [Hotfix] 카페/밴드 글 내용 누락 문제 수정 (클립보드 방식 대체 및 JS 주입 강화)",
     "🐛 [Hotfix] Gemini API 키 설정이 글 생성 시 적용되지 않던 문제 해결",

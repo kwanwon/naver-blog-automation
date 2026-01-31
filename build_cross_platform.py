@@ -198,6 +198,7 @@ class CrossPlatformBuilder:
             
             # 시스템
             'psutil', 'platform', 'subprocess',
+            'pyperclip', 'watchdog', 'watchdog.observers', 'watchdog.events',
             
             # 데이터 처리  
             'json', 'yaml', 'csv',
