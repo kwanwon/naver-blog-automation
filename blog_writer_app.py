@@ -247,7 +247,7 @@ class BlogWriterApp:
         
         self.settings[key] = value
         self.save_settings()
-        print(f"✅ 설정 저장됨: {key}")
+        print(f"✅ 설정 저장됨 [Key: {key}, Value: {value}] -> app_settings.json")
 
     
     def _init_drive_auto_post(self):
@@ -1838,7 +1838,8 @@ class BlogWriterApp:
     def load_timer_settings_data(self):
         """타이머 설정 데이터 로드"""
         try:
-            timer_file = os.path.join(self.base_dir, 'config/timer_settings.json')
+            # 🆕 글로벌 설정 경로 사용
+            timer_file = os.path.join(self._get_app_data_dir(), 'config', 'timer_settings.json')
             if os.path.exists(timer_file):
                 with open(timer_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
@@ -3658,8 +3659,10 @@ class BlogWriterApp:
     def select_sequential_topic(self, platform='blog'):
         """저장된 주제 목록에서 순차적으로 주제 선택 (플랫폼별)"""
         try:
-            if os.path.exists(os.path.join(self.base_dir, 'config/user_settings.txt')):
-                with open(os.path.join(self.base_dir, 'config/user_settings.txt'), 'r', encoding='utf-8') as f:
+            # 🆕 글로벌 설정 경로 사용
+            user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
+            if os.path.exists(user_settings_path):
+                with open(user_settings_path, 'r', encoding='utf-8') as f:
                     settings = json.load(f)
                     # 플랫폼별 설정 키 결정
                     key = f"{platform}_topics" if platform in ['band', 'cafe'] else "blog_topics"
@@ -3988,7 +3991,9 @@ class BlogWriterApp:
         """
         # 1. Load Contact Info
         try:
-            with open(os.path.join(self.base_dir, 'config', 'user_settings.txt'), 'r', encoding='utf-8') as f:
+            # 🆕 글로벌 설정 경로 사용
+            user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
+            with open(user_settings_path, 'r', encoding='utf-8') as f:
                 settings = json.load(f)
                 phone = settings.get('phone', '')
                 kakao = settings.get('kakao_url', '')
@@ -5289,7 +5294,10 @@ class BlogWriterApp:
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 self.settings = app_settings
-                with open(os.path.join(self.base_dir, 'config/app_settings.json'), 'w', encoding='utf-8') as f:
+                # 🆕 글로벌 설정 경로 사용
+                app_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'app_settings.json')
+                os.makedirs(os.path.dirname(app_settings_path), exist_ok=True)
+                with open(app_settings_path, 'w', encoding='utf-8') as f:
                     json.dump(app_settings, f, ensure_ascii=False, indent=2)
                 
                 if e:  # 직접 호출이 아닌 경우에만 메시지 표시
@@ -5304,8 +5312,10 @@ class BlogWriterApp:
 
         def load_app_settings():
             try:
-                if os.path.exists(os.path.join(self.base_dir, 'config/app_settings.json')):
-                    with open(os.path.join(self.base_dir, 'config/app_settings.json'), 'r', encoding='utf-8') as f:
+                # 🆕 글로벌 설정 경로 사용
+                app_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'app_settings.json')
+                if os.path.exists(app_settings_path):
+                    with open(app_settings_path, 'r', encoding='utf-8') as f:
                         app_settings = json.load(f)
                         use_api_checkbox.value = not app_settings.get('use_dummy', False)
                         api_key_field.visible = use_api_checkbox.value
@@ -5346,7 +5356,10 @@ class BlogWriterApp:
                     "gemini_api_key": gemini_api_key_field.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                with open(os.path.join(self.base_dir, 'config/gpt_settings.txt'), 'w', encoding='utf-8') as f:
+                # 🆕 글로벌 설정 경로 사용
+                gpt_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'gpt_settings.txt')
+                os.makedirs(os.path.dirname(gpt_settings_path), exist_ok=True)
+                with open(gpt_settings_path, 'w', encoding='utf-8') as f:
                     json.dump(settings, f, ensure_ascii=False, indent=2)
                 
                 # API 키 저장 (환경 변수 파일에)
@@ -5363,7 +5376,8 @@ class BlogWriterApp:
                 
                 # 댓글 답글 설정을 user_settings.txt에 저장
                 try:
-                    user_settings_path = os.path.join(self.base_dir, 'config/user_settings.txt')
+                    # 🆕 글로벌 설정 경로 사용
+                    user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
                     if os.path.exists(user_settings_path):
                         with open(user_settings_path, 'r', encoding='utf-8') as f:
                             user_settings = json.load(f)
@@ -5393,8 +5407,10 @@ class BlogWriterApp:
 
         def load_gpt_settings():
             try:
-                if os.path.exists(os.path.join(self.base_dir, 'config/gpt_settings.txt')):
-                    with open(os.path.join(self.base_dir, 'config/gpt_settings.txt'), 'r', encoding='utf-8') as f:
+                # 🆕 글로벌 설정 경로 사용
+                gpt_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'gpt_settings.txt')
+                if os.path.exists(gpt_settings_path):
+                    with open(gpt_settings_path, 'r', encoding='utf-8') as f:
                         settings = json.load(f)
                         gpt_persona.value = settings.get('persona', '')
                         
@@ -5429,8 +5445,10 @@ class BlogWriterApp:
                         gemini_api_key_field.value = settings.get('gemini_api_key', '')
                 
                 # API 사용 여부 설정 로드
-                if os.path.exists(os.path.join(self.base_dir, 'config/app_settings.json')):
-                    with open(os.path.join(self.base_dir, 'config/app_settings.json'), 'r', encoding='utf-8') as f:
+                # 🆕 글로벌 설정 경로 사용
+                app_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'app_settings.json')
+                if os.path.exists(app_settings_path):
+                    with open(app_settings_path, 'r', encoding='utf-8') as f:
                         app_settings = json.load(f)
                         use_api_checkbox.value = not app_settings.get('use_dummy', False)
                         api_key_field.visible = use_api_checkbox.value
@@ -5450,7 +5468,8 @@ class BlogWriterApp:
                 
                 # 댓글 답글 설정 로드 (user_settings.txt에서)
                 try:
-                    user_settings_path = os.path.join(self.base_dir, 'config/user_settings.txt')
+                    # 🆕 글로벌 설정 경로 사용
+                    user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
                     if os.path.exists(user_settings_path):
                         with open(user_settings_path, 'r', encoding='utf-8') as f:
                             user_settings = json.load(f)
@@ -5828,8 +5847,10 @@ class BlogWriterApp:
 
         def load_user_settings():
             try:
-                if os.path.exists(os.path.join(self.base_dir, 'config/user_settings.txt')):
-                    with open(os.path.join(self.base_dir, 'config/user_settings.txt'), 'r', encoding='utf-8') as f:
+                # 🆕 글로벌 설정 경로 사용
+                user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
+                if os.path.exists(user_settings_path):
+                    with open(user_settings_path, 'r', encoding='utf-8') as f:
                         settings = json.load(f)
                         dojang_name.value = settings.get('dojang_name', '')
                         address.value = settings.get('address', '')
@@ -5864,7 +5885,10 @@ class BlogWriterApp:
                     "max_posts": timer_max_posts.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                with open(os.path.join(self.base_dir, 'config/timer_settings.json'), 'w', encoding='utf-8') as f:
+                # 🆕 글로벌 설정 경로 사용
+                timer_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'timer_settings.json')
+                os.makedirs(os.path.dirname(timer_settings_path), exist_ok=True)
+                with open(timer_settings_path, 'w', encoding='utf-8') as f:
                     json.dump(settings, f, ensure_ascii=False, indent=2)
                 
                 # 🎯 실행 중인 타이머에 새 설정 즉시 적용
@@ -5885,8 +5909,10 @@ class BlogWriterApp:
 
         def load_timer_settings():
             try:
-                if os.path.exists(os.path.join(self.base_dir, 'config/timer_settings.json')):
-                    with open(os.path.join(self.base_dir, 'config/timer_settings.json'), 'r', encoding='utf-8') as f:
+                # 🆕 글로벌 설정 경로 사용
+                timer_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'timer_settings.json')
+                if os.path.exists(timer_settings_path):
+                    with open(timer_settings_path, 'r', encoding='utf-8') as f:
                         settings = json.load(f)
                         timer_start_time.value = settings.get('start_time', '09:00')
                         timer_end_time.value = settings.get('end_time', '23:00')
@@ -5900,7 +5926,8 @@ class BlogWriterApp:
         def load_usage_stats():
             """사용 통계 로드"""
             try:
-                usage_file = os.path.join(self.base_dir, 'config/usage_stats.json')
+                # 🆕 글로벌 설정 경로 사용
+                usage_file = os.path.join(self._get_app_data_dir(), 'config', 'usage_stats.json')
                 if os.path.exists(usage_file):
                     with open(usage_file, 'r', encoding='utf-8') as f:
                         stats = json.load(f)
@@ -5931,7 +5958,8 @@ class BlogWriterApp:
         def save_usage_stats():
             """사용 통계 저장"""
             try:
-                usage_file = os.path.join(self.base_dir, 'config/usage_stats.json')
+                # 🆕 글로벌 설정 경로 사용
+                usage_file = os.path.join(self._get_app_data_dir(), 'config', 'usage_stats.json')
                 
                 # 기존 통계 로드
                 if os.path.exists(usage_file):
@@ -6425,8 +6453,8 @@ class BlogWriterApp:
                     
                     # 태그 로드
                     tags = []
-                    if os.path.exists(os.path.join(self.base_dir, 'config/user_settings.txt')):
-                        with open(os.path.join(self.base_dir, 'config/user_settings.txt'), 'r', encoding='utf-8') as f:
+                    if os.path.exists(os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')):
+                        with open(os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt'), 'r', encoding='utf-8') as f:
                             settings = json.load(f)
                             tags = [tag.strip() for tag in settings.get('blog_tags', '').split(',') if tag.strip()]
                     
@@ -9020,6 +9048,8 @@ class BlogWriterApp:
                             ft.Icon(ft.Icons.CLOUD_SYNC, color=ft.Colors.TEAL_700),
                             ft.Text("☁️ 드라이브 자동 포스팅", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.TEAL_700)
                         ]),
+                        # [Fix] UI 생성 전 최신 설정 로드 (설정값 손실 방지)
+                        self.load_settings(),
                         ft.Text("구글 드라이브 폴더에 사진이 들어오면 자동으로 포스팅합니다.", size=12, color=ft.Colors.GREY_700),
                         
                         # 수련계획표 URL
@@ -9027,6 +9057,7 @@ class BlogWriterApp:
                             ref=ft.Ref[ft.TextField](),
                             label="📅 수련계획표 주소 (구글 스프레드시트 공유 링크)",
                             hint_text="https://docs.google.com/spreadsheets/d/.../edit?usp=sharing",
+                            # [Fix] 설정값 강제 로드
                             value=self.settings.get('google_sheet_url', ''),
                             on_blur=lambda e: self._save_setting('google_sheet_url', e.control.value)
                         ),
@@ -9731,8 +9762,10 @@ class BlogWriterApp:
             if auto_topic_checkbox.value:
                 # 주제 목록 수와 현재 인덱스 가져오기
                 try:
-                    if os.path.exists(os.path.join(self.base_dir, 'config/user_settings.txt')):
-                        with open(os.path.join(self.base_dir, 'config/user_settings.txt'), 'r', encoding='utf-8') as f:
+                    # 🆕 글로벌 설정 경로 사용
+                    user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
+                    if os.path.exists(user_settings_path):
+                        with open(user_settings_path, 'r', encoding='utf-8') as f:
                             settings = json.load(f)
                             topics_str = settings.get('blog_topics', '')
                             if topics_str:
