@@ -351,6 +351,33 @@ class DriveAutoPostSystem:
         success = False
         
         try:
+            # 🛡️ [안전장치] 폴더 내의 모든 미디어 파일 다시 확인 (누락 방지)
+            print(f"🔍 [{folder_name}] 폴더 전체 스캔 중...")
+            all_files_in_folder = []
+            valid_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
+                          '.mp4', '.mov', '.avi', '.mkv', '.m4v'}
+            
+            if os.path.exists(folder_path):
+                try:
+                    for f in os.listdir(folder_path):
+                        # 🔧 한글 파일명 NFC 정규화
+                        f_normalized = unicodedata.normalize('NFC', f)
+                        ext = os.path.splitext(f_normalized)[1].lower()
+                        if ext in valid_exts:
+                            full_path = os.path.join(folder_path, f)
+                            all_files_in_folder.append(full_path)
+                except Exception as scan_err:
+                    print(f"⚠️ 폴더 스캔 오류: {scan_err}")
+            
+            # 기존 감지된 파일과 합치기 (중복 제거)
+            # files는 이미 절대경로임
+            combined_files = set(files)
+            for f in all_files_in_folder:
+                combined_files.add(f)
+            
+            files = list(combined_files)
+            print(f"📦 최종 처리 파일: {len(files)}개")
+
             # 🔄 스프레드시트 매번 새로고침 (캐시 무시)
             if self.sheets_reader.sheet_url:
                 print("📊 스프레드시트 새로고침 중...")

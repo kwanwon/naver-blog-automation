@@ -160,8 +160,9 @@ class DriveWatcher:
         Returns:
             성공 여부
         """
+        # watchdog이 없어도 폴링을 위해 등록은 진행함
         if not WATCHDOG_AVAILABLE:
-            return False
+            print("⚠️ watchdog 없음: 폴링 모드로 동작합니다.")
         
         # 경로 정규화 (Windows/macOS 호환)
         folder_path = os.path.normpath(folder_path)
@@ -216,8 +217,8 @@ class DriveWatcher:
     def start(self) -> bool:
         """폴더 감시 시작 (별도 스레드)"""
         if not WATCHDOG_AVAILABLE:
-            print("❌ watchdog 라이브러리가 없어 감시를 시작할 수 없습니다.")
-            return False
+            print("⚠️ watchdog 라이브러리가 없습니다. 폴링 모드로 시작합니다.")
+            # return False  <- 제거: 폴링을 위해 계속 진행
         
         # 이미 실행 중이면 먼저 중지
         if self.is_running:
@@ -228,8 +229,11 @@ class DriveWatcher:
             print("⚠️ 감시할 폴더가 없습니다.")
             return False
         
+        # 각 폴더에 대해 Observer 생성 (watchdog이 있을 때만)
         # 각 폴더에 대해 Observer 생성
         for folder_path, handler in self.handlers.items():
+            if not WATCHDOG_AVAILABLE:
+                continue
             try:
                 observer = Observer()
                 observer.schedule(handler, folder_path, recursive=False)

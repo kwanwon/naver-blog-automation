@@ -89,3 +89,40 @@ AttributeError: 'Page' object has no attribute 'window_destroy'
 2025-12-08 12:00:39,811 - INFO - 디바이스 정보 및 사용횟수 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 2)
 2025-12-08 12:00:39,811 - INFO - 서버 업데이트 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2025-12-08 12:00:39', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}, 'activation_count': 2, 'status': '사용중', 'expiry_date': '2026-05-30'}
 2025-12-08 12:00:41,488 - INFO - 서버 업데이트 성공
+2026-01-29 20:36:25,241 - INFO - 개발자 모드 감지 - 시리얼 인증을 건너뜁니다.
+2026-01-29 20:36:25,242 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/modules
+2026-01-29 20:36:25,242 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 20:36:25,242 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 20:36:25,782 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2026-01-29 20:36:25', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}
+2026-01-29 20:37:19,175 - INFO - 개발자 모드 감지 - 시리얼 인증을 건너뜁니다.
+2026-01-29 20:37:19,175 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/modules
+2026-01-29 20:37:19,176 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 20:37:19,176 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 20:37:19,176 - INFO - update_device_info_and_usage 호출: ea920794-39ca-458d-b2ad-4681b6a4aaa7
+2026-01-29 20:37:19,193 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2026-01-29 20:37:19', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}
+2026-01-29 20:37:19,195 - INFO - 같은 디바이스 시리얼 정리 시작 - 호스트: lionui-MacBookAir.local, 앱: 블로그자동화
+2026-01-29 20:37:19,195 - INFO - 보호 대상 시리얼: 6270ebfd... (설정 파일)
+2026-01-29 20:37:19,196 - INFO - 정리할 같은 디바이스 시리얼 없음
+2026-01-29 20:37:19,196 - INFO - 로컬 DB 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7
+2026-01-29 20:37:19,197 - INFO - 로컬 DB 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 2)
+2026-01-29 20:37:19,197 - INFO - 서버 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7, 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '127.0.0.1', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2026-01-29 20:37:19', 'system_model': 'Mac14,15', 'total_memory': '8.00GB', 'app_name': '블로그자동화'}, 'activation_count': 2, 'status': '사용중', 'expiry_date': '2026-07-17'}
+2026-01-29 20:37:21,004 - INFO - 서버 업데이트 성공
+2026-01-29 20:37:36,937 - INFO - 개발자 모드 감지 - 시리얼 인증을 건너뜁니다.
+2026-01-29 20:37:36,937 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/modules
+2026-01-29 20:37:36,937 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-29 20:37:36,937 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-30 11:36:07,957 - INFO - 개발자 모드 감지 - 시리얼 인증을 건너뜁니다.
+2026-01-30 11:36:07,958 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/modules
+2026-01-30 11:36:07,958 - INFO - 경로 1 시도: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-30 11:36:07,958 - INFO - ✅ 시리얼 DB 발견: /Users/gm2hapkido/Desktop/라이온개발자/시리얼관리/serials.db
+2026-01-30 11:36:07,958 - INFO - 설정 파일 저장 완료
+2026-01-30 11:36:07,958 - INFO - update_device_info_and_usage 호출: ea920794-39ca-458d-b2ad-4681b6a4aaa7
+2026-01-30 11:36:08,042 - INFO - 디바이스 정보 수집 완료: {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2026-01-30 11:36:08', 'system_model': 'Mac14,15', 'total_memory': '8.00GB'}
+2026-01-30 11:36:08,044 - INFO - 같은 디바이스 시리얼 정리 시작 - 호스트: lionui-MacBookAir.local, 앱: 블로그자동화
+2026-01-30 11:36:08,044 - ERROR - 설정 파일 로드 오류: 'str' object does not support item assignment
+2026-01-30 11:36:08,044 - INFO - 보호 대상 시리얼: ... (설정 파일)
+2026-01-30 11:36:08,045 - INFO - 정리할 같은 디바이스 시리얼 없음
+2026-01-30 11:36:08,045 - INFO - 로컬 DB 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7
+2026-01-30 11:36:08,046 - INFO - 로컬 DB 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 3)
+2026-01-30 11:36:08,046 - INFO - 서버 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7, 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2026-01-30 11:36:08', 'system_model': 'Mac14,15', 'total_memory': '8.00GB', 'app_name': '블로그자동화'}, 'activation_count': 3, 'status': '사용중', 'expiry_date': '2026-07-17'}
+2026-01-30 11:36:09,494 - INFO - 서버 업데이트 성공

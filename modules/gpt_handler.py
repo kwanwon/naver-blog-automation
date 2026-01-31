@@ -169,6 +169,9 @@ class GPTHandler:
             
             # 여러 경로 시도
             possible_paths = [
+                # 1. 🆕 글로벌 설정 경로 (우선순위 1위) - 사용자 홈 디렉토리
+                os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'gpt_settings.txt'),
+                # 2. 로컬 개발 환경/레거시 경로
                 os.path.join(parent_dir, 'config', 'gpt_settings.txt'),
                 os.path.join(os.getcwd(), 'config', 'gpt_settings.txt'),
                 'config/gpt_settings.txt',
@@ -258,6 +261,8 @@ class GPTHandler:
             
             # 다양한 경로 시도 (더 robust하게)
             possible_paths = [
+                # 1. 🆕 글로벌 설정 경로 (우선순위 1위) - 사용자 홈 디렉토리
+                os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'user_settings.txt'),
                 # 상대 경로들
                 os.path.join(parent_dir, 'config', 'user_settings.txt'),
                 os.path.join(os.getcwd(), 'config', 'user_settings.txt'),

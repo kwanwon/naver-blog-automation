@@ -9048,8 +9048,7 @@ class BlogWriterApp:
                             ft.Icon(ft.Icons.CLOUD_SYNC, color=ft.Colors.TEAL_700),
                             ft.Text("☁️ 드라이브 자동 포스팅", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.TEAL_700)
                         ]),
-                        # [Fix] UI 생성 전 최신 설정 로드 (설정값 손실 방지)
-                        self.load_settings(),
+
                         ft.Text("구글 드라이브 폴더에 사진이 들어오면 자동으로 포스팅합니다.", size=12, color=ft.Colors.GREY_700),
                         
                         # 수련계획표 URL

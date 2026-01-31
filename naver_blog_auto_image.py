@@ -13,6 +13,7 @@ import json
 import datetime
 from pathlib import Path
 from folder_manager import ImageFolderManager
+from utils.image_processor import process_image  # Import image processor
 
 # 리소스 경로 처리 함수
 def resource_path(relative_path):
@@ -84,6 +85,10 @@ class NaverBlogImageInserter:
         self.folder_manager = ImageFolderManager(base_dir=current_file_dir)
         
         print(f"이미지 인서터 초기화: 주 폴더={self.images_folder}, 대체 폴더={self.fallback_folder}")
+        
+        # 임시 업로드 폴더 설정
+        self.temp_upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_temp_upload")
+        self.cleanup_temp_images()  # 초기화 시 기존 임시 파일 정리
 
     def get_image_files(self):
         """이미지 폴더에서 사용 가능한 이미지 파일 목록을 가져옵니다. (폴더별 순환 시스템)"""
@@ -294,6 +299,16 @@ class NaverBlogImageInserter:
         try:
             print(f"이미지 삽입 시도: {os.path.basename(image_path)}")
             
+            # 🖼️ 이미지 전처리 (Pillow 적용)
+            processed_image_path = None
+            try:
+                processed_image_path = process_image(image_path, self.temp_upload_dir)
+            except Exception as e:
+                print(f"이미지 전처리 실패 (원본 사용): {e}")
+
+            # 전처리 성공 시 교체, 실패 시 원본 사용
+            final_image_path = processed_image_path if processed_image_path else image_path
+            
             # 먼저 팝업 처리
             self.handle_image_popups()
             
@@ -373,7 +388,7 @@ class NaverBlogImageInserter:
                     return False
                 
                 # 절대 경로 확인
-                abs_image_path = os.path.abspath(image_path)
+                abs_image_path = os.path.abspath(final_image_path)
                 print(f"전송할 파일 경로: {abs_image_path}")
                 
                 # 자바스크립트로 파일 경로 설정 시도
@@ -394,11 +409,11 @@ class NaverBlogImageInserter:
                 file_input.send_keys(abs_image_path)
                 print("파일 경로 전송 완료")
                 
-                # 이미지 업로드 완료 대기 (기본 1초)
-                WebDriverWait(self.driver, 1, poll_frequency=0.05).until(
+                # 이미지 업로드 완료 대기 (1.5초로 변경)
+                WebDriverWait(self.driver, 1.5, poll_frequency=0.05).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div.se-image-container img[src*='http']"))
                 )
-                print("이미지 업로드 확인됨 (1초)")
+                print("이미지 업로드 확인됨")
                 
                 # 이미지 레이아웃 선택 대기 및 처리
                 try:
@@ -506,6 +521,24 @@ class NaverBlogImageInserter:
             print(f"이미지 삽입 중 오류: {str(e)}")
             traceback.print_exc()
             return False
+            
+    def cleanup_temp_images(self):
+        """임시 업로드 폴더의 파일들을 정리합니다."""
+        try:
+            if not os.path.exists(self.temp_upload_dir):
+                return
+                
+            print(f"🧹 임시 이미지 폴더 정리 중: {self.temp_upload_dir}")
+            for filename in os.listdir(self.temp_upload_dir):
+                file_path = os.path.join(self.temp_upload_dir, filename)
+                try:
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
+                except Exception as e:
+                    print(f"임시 파일 삭제 실패 ({filename}): {e}")
+            print("✅ 임시 이미지 정리 완료")
+        except Exception as e:
+            print(f"임시 폴더 정리 중 오류: {e}")
 
     def calculate_image_positions(self, content_lines):
         """본문 내용을 분석하여 이미지 삽입 위치 계산"""
