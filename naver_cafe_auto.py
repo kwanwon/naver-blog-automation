@@ -147,17 +147,65 @@ class NaverCafeAutomation:
                 except Exception as sk_err:
                     print(f"❌ send_keys 실패: {sk_err}")
             
-            # 글자 크기 19px로 조정
+            # 글자 크기 19px로 조정 + 에디터 상태 동기화 (핵심!)
             if insert_success:
+                print("🔄 에디터 상태 동기화 중...")
+                # 카페 에디터 상태 강제 업데이트 (중요!)
                 self.driver.execute_script("""
-                    const editor = document.querySelector('.se-content') || document.querySelector('.Editor_content__container') || document.querySelector('.se-viewer') || document.querySelector('[contenteditable="true"]');
+                    const editor = document.querySelector('.se-content') || 
+                                   document.querySelector('.Editor_content__container') || 
+                                   document.querySelector('.se-viewer') || 
+                                   document.querySelector('[contenteditable="true"]');
                     if(editor) {
+                        // 1. 글자 크기 조정
                         const paragraphs = editor.querySelectorAll('p, span, div');
                         paragraphs.forEach(p => {
                             p.style.setProperty('font-size', '19px', 'important');
                         });
+                        
+                        // 2. 에디터 상태 동기화 (핵심 - 다양한 이벤트 dispatch)
+                        editor.focus();
+                        
+                        // 다양한 이벤트 트리거
+                        ['input', 'change', 'keyup', 'keydown', 'blur', 'focus'].forEach(eventType => {
+                            editor.dispatchEvent(new Event(eventType, { bubbles: true, cancelable: true }));
+                        });
+                        
+                        // InputEvent도 발생시킴
+                        const inputEvent = new InputEvent('input', {
+                            bubbles: true,
+                            cancelable: true,
+                            inputType: 'insertText',
+                            data: editor.innerText.slice(-1) || 'a'
+                        });
+                        editor.dispatchEvent(inputEvent);
+                        
+                        // MutationObserver 트리거
+                        const span = document.createElement('span');
+                        span.textContent = '';
+                        editor.appendChild(span);
+                        setTimeout(() => span.remove(), 100);
+                        
+                        // React/Vue 상태 업데이트 시도
+                        if (window.__reactProps || window.__vue__) {
+                            editor.dispatchEvent(new Event('compositionend', { bubbles: true }));
+                        }
+                        
+                        console.log('[Cafe] Editor state sync completed');
                     }
                 """)
+                time.sleep(1)
+                
+                # 추가: 키보드 이벤트로 에디터 활성화 확인
+                try:
+                    ActionChains(self.driver).send_keys(Keys.END).perform()
+                    time.sleep(0.3)
+                    ActionChains(self.driver).send_keys(' ').perform()
+                    time.sleep(0.2)
+                    ActionChains(self.driver).send_keys(Keys.BACKSPACE).perform()
+                    print("✅ 에디터 상태 동기화 완료")
+                except Exception as sync_err:
+                    print(f"⚠️ 키보드 이벤트 보조 동기화 실패: {sync_err}")
             else:
                 print("❌ 모든 내용 입력 방법 실패")
             

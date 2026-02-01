@@ -1,7 +1,9 @@
 {
-  "version": "1.2.52",
+  "version": "1.2.53",
   "release_date": "2026-02-01",
   "changelog": [
+    "🐛 [Critical] 네이버 카페 글쓰기 시 '내용을 입력하세요' 오류 수정 (에디터 상태 동기화 강화)",
+    "🛠️ [Improve] 카페 에디터 이벤트 트리거 다양화 (input, change, keyup, blur, focus, compositionend)",
     "🐛 [Critical] 빌드된 앱에서 GPT 설정 파일(gpt_settings, user_settings, custom_prompts) 경로 인식 불가 문제 수정",
     "🛠️ [Improve] 앱 번들 경로(macOS .app) 자동 감지 기능 추가 - 모델 선택이 정상 작동",
     "🐛 [Critical] 빌드 앱 utils 모듈 누락 수정 (clipboard_helper, image_processor hidden imports 추가)",
