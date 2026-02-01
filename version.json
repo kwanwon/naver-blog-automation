@@ -1,9 +1,9 @@
 {
-  "version": "1.2.50",
+  "version": "1.2.51",
   "release_date": "2026-02-01",
   "changelog": [
-    "🐛 [Critical] 빌드된 앱 클립보드 문제 해결 (다중 폴백 방식 적용)",
-    "🐛 [Hotfix] 밴드 포스팅 '게시' 버튼 클릭 실패 문제 수정 (대기 로직 및 검증 강화)",
+    "🐛 [Critical] 빌드 앱 utils 모듈 누락 수정 (clipboard_helper, image_processor hidden imports 추가)",
+    "🛠️ [Improve] 내용 입력 다중 폴백 강화 (클립보드→pbcopy→JS→sendkeys 순차 시도)",
     "🐛 [Hotfix] 빌드된 앱에서 이미지 삽입 오류 수정 (경로 문제 해결)",
     "🐛 [Hotfix] 카페/밴드 글 내용 누락 문제 수정 (클립보드 방식 대체 및 JS 주입 강화)",
     "🐛 [Hotfix] Gemini API 키 설정이 글 생성 시 적용되지 않던 문제 해결",

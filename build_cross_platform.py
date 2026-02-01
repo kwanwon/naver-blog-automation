@@ -200,6 +200,9 @@ class CrossPlatformBuilder:
             'psutil', 'platform', 'subprocess',
             'pyperclip', 'watchdog', 'watchdog.observers', 'watchdog.events',
             
+            # 로컬 유틸리티 모듈 (동적 import 지원)
+            'utils', 'utils.clipboard_helper', 'utils.image_processor',
+            
             # 데이터 처리  
             'json', 'yaml', 'csv',
             'pandas', 'numpy',

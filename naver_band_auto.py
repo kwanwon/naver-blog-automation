@@ -209,26 +209,50 @@ class NaverBandAutomation:
             self.driver.execute_script("arguments[0].click();", write_btn)
             time.sleep(2)
             
-            # 2. 내용 입력 (다중 폴백 클립보드 헬퍼 사용)
-            print("⌨️ 내용 입력 중 (다중 폴백 헬퍼 사용)...")
+            # 2. 내용 입력 (다중 폴백)
+            print("⌨️ 내용 입력 중 (다중 폴백)...")
             editor = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div[contenteditable='true'], textarea._postWriteInput"))
             )
+            editor.click()
+            time.sleep(0.5)
             
+            # 방법 1: 클립보드 헬퍼 사용 시도
+            insert_success = False
             try:
                 from utils.clipboard_helper import insert_text_to_editor
-                
                 insert_success = insert_text_to_editor(self.driver, editor, content, platform="band")
-                
                 if insert_success:
                     print("✅ 내용 입력 완료 (클립보드 헬퍼)")
-                else:
-                    print("⚠️ 클립보드 헬퍼 실패, JS 직접 주입 시도...")
-                    raise Exception("Clipboard helper failed")
-                    
+            except ImportError as ie:
+                print(f"⚠️ 클립보드 헬퍼 모듈 import 실패: {ie}")
             except Exception as e:
-                print(f"⚠️ 클립보드 입력 실패, JS/send_keys 사용: {e}")
-                # JS로 직접 주입 시도
+                print(f"⚠️ 클립보드 헬퍼 실행 실패: {e}")
+            
+            # 방법 2: macOS 네이티브 pbcopy + 붙여넣기
+            if not insert_success:
+                print("🔄 [Fallback] macOS pbcopy 시도...")
+                try:
+                    import subprocess
+                    import sys
+                    if sys.platform == 'darwin':
+                        process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
+                        process.communicate(content.encode('utf-8'))
+                        if process.returncode == 0:
+                            time.sleep(0.3)
+                            ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
+                            time.sleep(1)
+                            # 검증
+                            editor_text = editor.text.strip() if editor.text else ""
+                            if len(editor_text) >= len(content) * 0.3:
+                                insert_success = True
+                                print(f"✅ pbcopy 성공 ({len(editor_text)}자)")
+                except Exception as pb_err:
+                    print(f"⚠️ pbcopy 실패: {pb_err}")
+            
+            # 방법 3: JavaScript 직접 주입
+            if not insert_success:
+                print("🔄 [Fallback] JS 직접 주입...")
                 try:
                     self.driver.execute_script("""
                         arguments[0].innerText = arguments[1];
@@ -236,9 +260,29 @@ class NaverBandAutomation:
                         arguments[0].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
                         arguments[0].dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
                     """, editor, content)
-                    print("✅ JS로 내용 주입 완료")
-                except:
-                    editor.send_keys(content)
+                    time.sleep(0.5)
+                    editor_text = editor.text.strip() if editor.text else ""
+                    if len(editor_text) >= len(content) * 0.2:
+                        insert_success = True
+                        print(f"✅ JS 주입 성공 ({len(editor_text)}자)")
+                except Exception as js_err:
+                    print(f"⚠️ JS 주입 실패: {js_err}")
+            
+            # 방법 4: send_keys 직접 입력 (최후의 수단)
+            if not insert_success:
+                print("🔄 [Fallback] send_keys 직접 입력...")
+                try:
+                    text_to_send = content[:2000] if len(content) > 2000 else content
+                    editor.send_keys(text_to_send)
+                    time.sleep(1)
+                    print(f"✅ send_keys 완료 ({len(text_to_send)}자)")
+                    insert_success = True
+                except Exception as sk_err:
+                    print(f"❌ send_keys 실패: {sk_err}")
+            
+            if not insert_success:
+                print("❌ 모든 내용 입력 방법 실패 - 포스팅 불가")
+                return False
             
             time.sleep(1)
             

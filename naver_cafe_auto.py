@@ -65,64 +65,101 @@ class NaverCafeAutomation:
                 title_input.send_keys(title)
             time.sleep(1)
             
-            # 3. 내용 입력 (스마트에디터 ONE 대응 - 클립보드 헬퍼 사용)
-            print("⌨️ 내용 입력 중 (다중 폴백 클립보드 헬퍼 사용)...")
+            # 3. 내용 입력 (스마트에디터 ONE 대응 - 다중 폴백)
+            print("⌨️ 내용 입력 중 (다중 폴백)...")
+            
+            # 먼저 에디터 영역 찾기
+            editor_area = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, ".se-content, .Editor_content__container, .se-viewer, [contenteditable='true']"))
+            )
+            editor_area.click()
+            time.sleep(1)
+            
+            # 기존 내용 삭제 (Cmd+A -> Backspace)
+            ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('a').key_up(Keys.COMMAND).send_keys(Keys.BACKSPACE).perform()
+            time.sleep(0.5)
+            
+            # 방법 1: 클립보드 헬퍼 사용 시도
+            insert_success = False
             try:
                 from utils.clipboard_helper import insert_text_to_editor
-                
-                # 에디터 영역을 찾아 클릭하여 포커스
-                editor_area = WebDriverWait(self.driver, 15).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, ".se-content, .Editor_content__container, .se-viewer, [contenteditable='true']"))
-                )
-                editor_area.click()
-                time.sleep(1)
-                
-                # 기존 내용 삭제 (Cmd+A -> Backspace)
-                ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('a').key_up(Keys.COMMAND).send_keys(Keys.BACKSPACE).perform()
-                time.sleep(0.5)
-                
-                # 새로운 클립보드 헬퍼로 텍스트 삽입
                 insert_success = insert_text_to_editor(self.driver, editor_area, content, platform="cafe")
-                
                 if insert_success:
                     print("✅ 내용 입력 완료 (클립보드 헬퍼)")
-                    
-                    # 글자 크기 19px로 조정
+            except ImportError as ie:
+                print(f"⚠️ 클립보드 헬퍼 모듈 import 실패: {ie}")
+            except Exception as e:
+                print(f"⚠️ 클립보드 헬퍼 실행 실패: {e}")
+            
+            # 방법 2: macOS 네이티브 pbcopy + 붙여넣기
+            if not insert_success:
+                print("🔄 [Fallback] macOS pbcopy 시도...")
+                try:
+                    import subprocess
+                    import sys
+                    if sys.platform == 'darwin':
+                        process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
+                        process.communicate(content.encode('utf-8'))
+                        if process.returncode == 0:
+                            time.sleep(0.3)
+                            ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
+                            time.sleep(1)
+                            # 검증
+                            editor_text = editor_area.text.strip() if editor_area.text else ""
+                            if len(editor_text) >= len(content) * 0.3:
+                                insert_success = True
+                                print(f"✅ pbcopy 성공 ({len(editor_text)}자)")
+                except Exception as pb_err:
+                    print(f"⚠️ pbcopy 실패: {pb_err}")
+            
+            # 방법 3: JavaScript 직접 주입
+            if not insert_success:
+                print("🔄 [Fallback] JS 직접 주입...")
+                try:
                     self.driver.execute_script("""
-                        const editor = document.querySelector('.se-content') || document.querySelector('.Editor_content__container') || document.querySelector('.se-viewer') || document.querySelector('[contenteditable="true"]');
+                        const editor = arguments[0];
+                        const content = arguments[1];
                         if(editor) {
-                            const paragraphs = editor.querySelectorAll('p, span, div');
-                            paragraphs.forEach(p => {
-                                p.style.setProperty('font-size', '19px', 'important');
-                            });
+                            editor.innerHTML = content.split('\\n').map(line => `<p style="font-size:19px !important;">${line || '&nbsp;'}</p>`).join('');
+                            editor.focus();
+                            editor.dispatchEvent(new Event('input', { bubbles: true }));
+                            editor.dispatchEvent(new Event('change', { bubbles: true }));
                         }
-                    """)
-                else:
-                    print("⚠️ 클립보드 헬퍼 실패, 직접 JS 주입 시도...")
-                    raise Exception("Clipboard helper failed")
-                
-            except Exception as se_err:
-                print(f"⚠️ 에디터 입력 프로세스 실패, JS 직접 주입 시도: {se_err}")
+                    """, editor_area, content)
+                    time.sleep(0.5)
+                    editor_text = editor_area.text.strip() if editor_area.text else ""
+                    if len(editor_text) >= len(content) * 0.2:
+                        insert_success = True
+                        print(f"✅ JS 주입 성공 ({len(editor_text)}자)")
+                except Exception as js_err:
+                    print(f"⚠️ JS 주입 실패: {js_err}")
+            
+            # 방법 4: send_keys 직접 입력 (최후의 수단)
+            if not insert_success:
+                print("🔄 [Fallback] send_keys 직접 입력...")
+                try:
+                    # 너무 긴 텍스트는 잘라서 처리
+                    text_to_send = content[:2000] if len(content) > 2000 else content
+                    editor_area.send_keys(text_to_send)
+                    time.sleep(1)
+                    print(f"✅ send_keys 완료 ({len(text_to_send)}자)")
+                    insert_success = True
+                except Exception as sk_err:
+                    print(f"❌ send_keys 실패: {sk_err}")
+            
+            # 글자 크기 19px로 조정
+            if insert_success:
                 self.driver.execute_script("""
                     const editor = document.querySelector('.se-content') || document.querySelector('.Editor_content__container') || document.querySelector('.se-viewer') || document.querySelector('[contenteditable="true"]');
                     if(editor) {
-                        // 내용 주입
-                        editor.innerHTML = arguments[0].split('\\n').map(line => `<p style="font-size:19px !important;">${line || '&nbsp;'}</p>`).join('');
-                        
-                        // 포커스 및 이벤트 강제 발생
-                        editor.focus();
-                        editor.dispatchEvent(new Event('input', { bubbles: true }));
-                        editor.dispatchEvent(new Event('change', { bubbles: true }));
-                        editor.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-                        editor.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                        const paragraphs = editor.querySelectorAll('p, span, div');
+                        paragraphs.forEach(p => {
+                            p.style.setProperty('font-size', '19px', 'important');
+                        });
                     }
-                """, content)
-                time.sleep(1)
-                # JS 주입 후에도 키 이벤트 한 번 더 발생시켜 상태 갱신 유도
-                try:
-                    editor_area.send_keys(Keys.SPACE)
-                    editor_area.send_keys(Keys.BACKSPACE)
-                except: pass
+                """)
+            else:
+                print("❌ 모든 내용 입력 방법 실패")
             
             time.sleep(2)
             
