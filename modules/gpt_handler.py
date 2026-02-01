@@ -34,6 +34,20 @@ def resource_path(relative_path):
     
     return os.path.join(base_path, relative_path)
 
+def get_app_bundle_config_path():
+    """macOS 앱 번들 내 config 경로를 반환합니다."""
+    try:
+        if getattr(sys, 'frozen', False):
+            # 빌드된 앱에서 실행 중
+            exe_path = sys.executable
+            # /Users/.../BlogAutomation_Mac.app/Contents/MacOS/BlogAutomation_Mac
+            macos_dir = os.path.dirname(exe_path)
+            # /Users/.../BlogAutomation_Mac.app/Contents/MacOS
+            return os.path.join(macos_dir, 'config')
+    except Exception:
+        pass
+    return None
+
 class GPTHandler:
     def __init__(self, use_dummy=False):
         """GPT 핸들러를 초기화합니다."""
@@ -167,16 +181,26 @@ class GPTHandler:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             parent_dir = os.path.dirname(script_dir)
             
-            # 여러 경로 시도
+            # 앱 번들 경로 확인
+            app_bundle_config = get_app_bundle_config_path()
+            
+            # 여러 경로 시도 (순서 중요: 글로벌 -> 앱 번들 -> 로컬)
             possible_paths = [
                 # 1. 🆕 글로벌 설정 경로 (우선순위 1위) - 사용자 홈 디렉토리
                 os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'gpt_settings.txt'),
-                # 2. 로컬 개발 환경/레거시 경로
+            ]
+            
+            # 2. 🆕 앱 번들 경로 (macOS 빌드된 앱)
+            if app_bundle_config:
+                possible_paths.append(os.path.join(app_bundle_config, 'gpt_settings.txt'))
+            
+            # 3. 로컬 개발 환경/레거시 경로
+            possible_paths.extend([
                 os.path.join(parent_dir, 'config', 'gpt_settings.txt'),
                 os.path.join(os.getcwd(), 'config', 'gpt_settings.txt'),
                 'config/gpt_settings.txt',
                 resource_path('config/gpt_settings.txt')
-            ]
+            ])
             
             settings_path = None
             for path in possible_paths:
@@ -215,13 +239,26 @@ class GPTHandler:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             parent_dir = os.path.dirname(script_dir)
             
-            # 여러 경로 시도
+            # 앱 번들 경로 확인
+            app_bundle_config = get_app_bundle_config_path()
+            
+            # 여러 경로 시도 (순서 중요: 글로벌 -> 앱 번들 -> 로컬)
             possible_paths = [
+                # 1. 🆕 글로벌 설정 경로 - 사용자 홈 디렉토리
+                os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'custom_prompts.txt'),
+            ]
+            
+            # 2. 🆕 앱 번들 경로 (macOS 빌드된 앱)
+            if app_bundle_config:
+                possible_paths.append(os.path.join(app_bundle_config, 'custom_prompts.txt'))
+            
+            # 3. 로컬 개발 환경/레거시 경로
+            possible_paths.extend([
                 os.path.join(parent_dir, 'config', 'custom_prompts.txt'),
                 os.path.join(os.getcwd(), 'config', 'custom_prompts.txt'),
                 'config/custom_prompts.txt',
                 resource_path('config/custom_prompts.txt')
-            ]
+            ])
             
             prompts_path = None
             for path in possible_paths:
@@ -259,23 +296,30 @@ class GPTHandler:
             script_dir = os.path.dirname(os.path.abspath(__file__))  # modules 디렉토리
             parent_dir = os.path.dirname(script_dir)  # naver-blog-automation 디렉토리
             
-            # 다양한 경로 시도 (더 robust하게)
+            # 앱 번들 경로 확인
+            app_bundle_config = get_app_bundle_config_path()
+            
+            # 다양한 경로 시도 (순서 중요: 글로벌 -> 앱 번들 -> 로컬)
             possible_paths = [
                 # 1. 🆕 글로벌 설정 경로 (우선순위 1위) - 사용자 홈 디렉토리
                 os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'user_settings.txt'),
-                # 상대 경로들
+            ]
+            
+            # 2. 🆕 앱 번들 경로 (macOS 빌드된 앱)
+            if app_bundle_config:
+                possible_paths.append(os.path.join(app_bundle_config, 'user_settings.txt'))
+            
+            # 3. 상대 경로들 및 레거시 경로들
+            possible_paths.extend([
                 os.path.join(parent_dir, 'config', 'user_settings.txt'),
                 os.path.join(os.getcwd(), 'config', 'user_settings.txt'),
                 os.path.join(script_dir, '..', 'config', 'user_settings.txt'),
-                # 레거시 경로들
                 'config/user_settings.txt',
                 './config/user_settings.txt',
                 '../config/user_settings.txt',
-                # 리소스 경로
                 resource_path('config/user_settings.txt'),
-                # 절대 경로 시도
                 os.path.abspath(os.path.join(parent_dir, 'config', 'user_settings.txt'))
-            ]
+            ])
             
             settings_path = None
             current_dir = os.getcwd()
