@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import pyperclip
+# pyperclip은 clipboard_helper에서 관리 (빌드 호환성을 위해 상단 import 제거)
 from selenium.webdriver.common.action_chains import ActionChains
 
 class NaverCafeAutomation:
@@ -65,9 +65,11 @@ class NaverCafeAutomation:
                 title_input.send_keys(title)
             time.sleep(1)
             
-            # 3. 내용 입력 (스마트에디터 ONE 대응)
-            print("⌨️ 내용 입력 중 (클립보드 사용 및 상태 동기화)...")
+            # 3. 내용 입력 (스마트에디터 ONE 대응 - 클립보드 헬퍼 사용)
+            print("⌨️ 내용 입력 중 (다중 폴백 클립보드 헬퍼 사용)...")
             try:
+                from utils.clipboard_helper import insert_text_to_editor
+                
                 # 에디터 영역을 찾아 클릭하여 포커스
                 editor_area = WebDriverWait(self.driver, 15).until(
                     EC.element_to_be_clickable((By.CSS_SELECTOR, ".se-content, .Editor_content__container, .se-viewer, [contenteditable='true']"))
@@ -79,50 +81,28 @@ class NaverCafeAutomation:
                 ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('a').key_up(Keys.COMMAND).send_keys(Keys.BACKSPACE).perform()
                 time.sleep(0.5)
                 
-                # 클립보드 복사 시도
-                clipboard_success = False
-                try:
-                    pyperclip.copy(content)
-                    time.sleep(0.5)
-                    # 검증
-                    if pyperclip.paste().strip() == content.strip():
-                        clipboard_success = True
-                    else:
-                        print("⚠️ 클립보드 복사 내용 불일치, JS 사용 전환")
-                except Exception as e:
-                    print(f"⚠️ 클립보드 오류: {e}")
+                # 새로운 클립보드 헬퍼로 텍스트 삽입
+                insert_success = insert_text_to_editor(self.driver, editor_area, content, platform="cafe")
                 
-                if clipboard_success:
-                    ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
-                    time.sleep(1)
+                if insert_success:
+                    print("✅ 내용 입력 완료 (클립보드 헬퍼)")
+                    
+                    # 글자 크기 19px로 조정
+                    self.driver.execute_script("""
+                        const editor = document.querySelector('.se-content') || document.querySelector('.Editor_content__container') || document.querySelector('.se-viewer') || document.querySelector('[contenteditable="true"]');
+                        if(editor) {
+                            const paragraphs = editor.querySelectorAll('p, span, div');
+                            paragraphs.forEach(p => {
+                                p.style.setProperty('font-size', '19px', 'important');
+                            });
+                        }
+                    """)
                 else:
-                    # fallback: JS로 직접 삽입
-                    raise Exception("Clipboard failed, forcing JS injection")
-                
-                # 🚀 중요: 에디터 상태 강제 업데이트 (Enter -> Backspace -> Space)
-                # 이렇게 키를 직접 입력해야 에디터 내부의 '내용 있음' 상태가 갱신됩니다.
-                ActionChains(self.driver).send_keys(Keys.ENTER).send_keys(Keys.BACKSPACE).send_keys(Keys.SPACE).send_keys(Keys.BACKSPACE).perform()
-                time.sleep(1.5)
-                
-                # 글자 크기 19px로 조정 및 이벤트 트리거
-                self.driver.execute_script("""
-                    const editor = document.querySelector('.se-content') || document.querySelector('.Editor_content__container') || document.querySelector('.se-viewer') || document.querySelector('[contenteditable="true"]');
-                    if(editor) {
-                        const paragraphs = editor.querySelectorAll('p, span, div');
-                        paragraphs.forEach(p => {
-                            p.style.setProperty('font-size', '19px', 'important');
-                        });
-                        // 수동 이벤트 발생
-                        editor.dispatchEvent(new Event('input', { bubbles: true }));
-                        editor.dispatchEvent(new Event('change', { bubbles: true }));
-                        editor.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-                        editor.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-                    }
-                """)
-                print("✅ 내용 입력 및 스타일 적용 완료")
+                    print("⚠️ 클립보드 헬퍼 실패, 직접 JS 주입 시도...")
+                    raise Exception("Clipboard helper failed")
                 
             except Exception as se_err:
-                print(f"⚠️ 에디터 입력 프로세스 실패 (또는 클립보드 실패), JS 직접 주입 시도: {se_err}")
+                print(f"⚠️ 에디터 입력 프로세스 실패, JS 직접 주입 시도: {se_err}")
                 self.driver.execute_script("""
                     const editor = document.querySelector('.se-content') || document.querySelector('.Editor_content__container') || document.querySelector('.se-viewer') || document.querySelector('[contenteditable="true"]');
                     if(editor) {

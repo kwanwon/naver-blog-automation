@@ -209,47 +209,22 @@ class NaverBandAutomation:
             self.driver.execute_script("arguments[0].click();", write_btn)
             time.sleep(2)
             
-            # 2. 내용 입력
-            print("⌨️ 내용 입력 중...")
+            # 2. 내용 입력 (다중 폴백 클립보드 헬퍼 사용)
+            print("⌨️ 내용 입력 중 (다중 폴백 헬퍼 사용)...")
             editor = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div[contenteditable='true'], textarea._postWriteInput"))
             )
             
-            # 클립보드를 통한 입력 시도 (한글 깨짐 방지)
             try:
-                import pyperclip
+                from utils.clipboard_helper import insert_text_to_editor
                 
-                # 🔧 클립보드 복사 및 검증
-                clipboard_success = False
-                try:
-                    pyperclip.copy(content)
-                    time.sleep(0.5)  # 클립보드 안정화 대기
-                    
-                    # 클립보드 내용 검증
-                    clipboard_content = pyperclip.paste()
-                    if len(clipboard_content) >= len(content) * 0.9:  # 90% 이상 일치하면 성공으로 간주
-                        clipboard_success = True
-                    else:
-                        print(f"⚠️ 클립보드 복사 불완전 (원본: {len(content)}자, 복사됨: {len(clipboard_content)}자)")
-                except:
-                    clipboard_success = False
-
-                if clipboard_success:
-                    editor.click()
-                    time.sleep(0.3)
-                    
-                    if os.name == 'nt':  # Windows
-                        ActionChains(self.driver).key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
-                    else:  # macOS
-                        ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
-                    
-                    time.sleep(0.5)  # 붙여넣기 후 대기
-                    
-                    # 붙여넣기 후 내용 확인 (선택적)
-                    # editor_text = editor.text
-                    # if len(editor_text) < len(content) * 0.5: raise Exception("Paste failed")
+                insert_success = insert_text_to_editor(self.driver, editor, content, platform="band")
+                
+                if insert_success:
+                    print("✅ 내용 입력 완료 (클립보드 헬퍼)")
                 else:
-                    raise Exception("Clipboard verification failed")
+                    print("⚠️ 클립보드 헬퍼 실패, JS 직접 주입 시도...")
+                    raise Exception("Clipboard helper failed")
                     
             except Exception as e:
                 print(f"⚠️ 클립보드 입력 실패, JS/send_keys 사용: {e}")
