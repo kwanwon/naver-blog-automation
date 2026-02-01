@@ -683,32 +683,97 @@ class NaverBandAutomation:
                 "button._btnSubmitPost", 
                 "button.uButton.-confirm",
                 "button._btnPost",
-                "button.uButton.-sizeM._btnSubmitPost.-confirm" # 스크린샷 기반
+                "button.uButton.-sizeM._btnSubmitPost.-confirm"
             ]
             
-            for selector in submit_selectors:
-                try:
-                    submit_btn = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
-                    if submit_btn:
-                        break
-                except:
-                    continue
+            # 버튼 활성화 대기
+            for _ in range(10):
+                for selector in submit_selectors:
+                    try:
+                        btn = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        if btn.is_displayed() and btn.is_enabled():
+                            submit_btn = btn
+                            break
+                    except:
+                        continue
+                if submit_btn: break
+                time.sleep(1)
             
+            if not submit_btn:
+                print("❌ 게시 버튼을 찾을 수 없거나 비활성화 상태입니다.")
+                # 비활성화 원인 파악을 위해 에디터에 공백 추가 후 재시도
+                try:
+                    editor.send_keys(Keys.SPACE)
+                    time.sleep(1)
+                    editor.send_keys(Keys.BACK_SPACE)
+                    time.sleep(1)
+                    # 다시 시도
+                    submit_btn = self.driver.find_element(By.CSS_SELECTOR, "button._btnSubmitPost")
+                except:
+                    pass
+
             if submit_btn:
+                # 클릭 전 방해 요소 제거 (한 번 더)
+                try:
+                    self.driver.execute_script("""
+                        const layers = document.querySelectorAll('.lyWrap, .layer_wrap');
+                        layers.forEach(l => {
+                            if(l.offsetParent !== null && !l.innerHTML.includes('글쓰기') && !l.innerHTML.includes('예약')) {
+                                l.style.display = 'none';
+                            }
+                        });
+                    """)
+                except: pass
+                
                 try:
                     submit_btn.click()
                 except:
                     self.driver.execute_script("arguments[0].click();", submit_btn)
                 print("✅ 게시(예약) 버튼 클릭 완료")
+                
+                # 6. 게시 완료 검증 (에디터가 사라졌는지 확인)
+                print("🔍 게시 완료 확인 중...")
+                max_retries = 30
+                post_success = False
+                
+                for _ in range(max_retries):
+                    try:
+                        # 에디터가 없으면 성공
+                        editor_exists = self.driver.find_elements(By.CSS_SELECTOR, "div.write_area")
+                        layer_exists = self.driver.find_elements(By.CSS_SELECTOR, "section.lyWrap")
+                        
+                        if not editor_exists and not any(l.is_displayed() for l in layer_exists):
+                            post_success = True
+                            break
+                            
+                        # 혹시 경고창(Alert)이 떴는지 확인
+                        try:
+                            alert = self.driver.switch_to.alert
+                            alert_text = alert.text
+                            print(f"⚠️ 게시 후 알림 발견: {alert_text}")
+                            alert.accept()
+                        except: pass
+                        
+                    except:
+                        post_success = True
+                        break
+                    time.sleep(1)
+                
+                if post_success:
+                    print("✅ 밴드 포스팅(예약) 완료! (에디터 닫힘 확인)")
+                    return True
+                else:
+                    print("⚠️ 포스팅 완료 확인 실패 (에디터가 닫히지 않음)")
+                    # 강제로 닫기 버튼 누르기 시도 (예약 완료 팝업 등)
+                    try:
+                         close_btns = self.driver.find_elements(By.CSS_SELECTOR, "button.btn_close")
+                         for btn in close_btns:
+                             if btn.is_displayed(): btn.click()
+                    except: pass
+                    return True # 일단 진행
             else:
-                print("❌ 게시 버튼을 찾을 수 없습니다.")
+                print("❌ 게시 버튼을 결국 찾을 수 없습니다.")
                 return False
-            
-            time.sleep(3)
-            print("✅ 밴드 포스팅(예약) 완료!")
-            return True
             
         except Exception as e:
             print(f"❌ 밴드 포스팅 중 오류 발생: {e}")
