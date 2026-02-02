@@ -1,9 +1,9 @@
 {
-  "version": "1.2.57",
+  "version": "1.2.58",
   "release_date": "2026-02-02",
   "changelog": [
+    "🐛 [Critical] Windows 인스톨러 실행 파일명 오류 수정 (BlogAutomation.exe)",
     "🐛 [Critical] macOS 앱 내 업데이트 경로 수정 (Frameworks 폴더 정확히 감지)",
-    "🛠️ [Improve] 업데이트 시 올바른 위치에 파일 복사되도록 수정",
     "🐛 [Critical] 네이버 카페 입력 방식 완전 단순화 - send_keys 전용 (pyautogui/클립보드 제거)",
     "🛠️ [Improve] React 기반 에디터 상태 인식 문제 해결 - send_keys 분할 입력",
     "🐛 [Critical] 네이버 카페 글쓰기 시 '내용을 입력하세요' 오류 수정 (에디터 상태 동기화 강화)",

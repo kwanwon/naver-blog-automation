@@ -8,7 +8,7 @@
 #endif
 #define MyAppPublisher "라이온개발자"
 #define MyAppURL "https://github.com/kwanwon/naver-blog-automation"
-#define MyAppExeName "BlogAutomation_Windows.exe"
+#define MyAppExeName "BlogAutomation.exe"
 
 [Setup]
 ; 기본 설정
