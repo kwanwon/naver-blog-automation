@@ -25,8 +25,26 @@ class AutoUpdater:
         # 현재 프로그램 경로
         if getattr(sys, 'frozen', False):
             # PyInstaller로 빌드된 경우
-            self.app_dir = os.path.dirname(sys.executable)
             self.is_frozen = True
+            
+            if sys.platform == 'darwin':
+                # macOS .app 번들 구조:
+                # BlogAutomation_Mac.app/Contents/MacOS/BlogAutomation_Mac ← sys.executable
+                # BlogAutomation_Mac.app/Contents/Frameworks/ ← 실제 코드 위치
+                executable_dir = os.path.dirname(sys.executable)  # Contents/MacOS
+                contents_dir = os.path.dirname(executable_dir)     # Contents
+                frameworks_dir = os.path.join(contents_dir, 'Frameworks')
+                
+                if os.path.exists(frameworks_dir):
+                    self.app_dir = frameworks_dir
+                    print(f"📦 [AutoUpdater] macOS 앱 번들 감지: {self.app_dir}")
+                else:
+                    # Frameworks 폴더가 없는 경우 fallback
+                    self.app_dir = executable_dir
+                    print(f"⚠️ [AutoUpdater] Frameworks 폴더 없음, fallback: {self.app_dir}")
+            else:
+                # Windows/Linux
+                self.app_dir = os.path.dirname(sys.executable)
         else:
             # 소스 코드로 실행되는 경우
             self.app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
