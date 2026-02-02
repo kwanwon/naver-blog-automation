@@ -1,9 +1,10 @@
 {
-  "version": "1.2.55",
+  "version": "1.2.56",
   "release_date": "2026-02-02",
   "changelog": [
+    "🐛 [Critical] 빌드 앱과 개발 모드 동일 동작 보장 - naver_cafe_auto.py 명시적 복사",
+    "🛠️ [Improve] GitHub Actions 빌드 시 자동화 모듈 누락 방지",
     "🐛 [Critical] 네이버 카페 입력 방식 완전 단순화 - send_keys 전용 (pyautogui/클립보드 제거)",
-    "🛠️ [Improve] 빌드 앱과 개발 모드 동일하게 작동하도록 코드 통일",
     "🛠️ [Improve] React 기반 에디터 상태 인식 문제 해결 - send_keys 분할 입력",
     "🐛 [Critical] 네이버 카페 글쓰기 시 '내용을 입력하세요' 오류 수정 (에디터 상태 동기화 강화)",
     "🛠️ [Improve] 카페 에디터 이벤트 트리거 다양화 (input, change, keyup, blur, focus, compositionend)",
