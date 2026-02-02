@@ -1,7 +1,9 @@
 {
-  "version": "1.2.53",
-  "release_date": "2026-02-01",
+  "version": "1.2.54",
+  "release_date": "2026-02-02",
   "changelog": [
+    "🐛 [Critical] 네이버 카페 '내용을 입력하세요' 오류 완전 수정 (키보드 우선 입력 방식)",
+    "🛠️ [Improve] React 기반 에디터 상태 인식 문제 해결 - send_keys 분할 입력",
     "🐛 [Critical] 네이버 카페 글쓰기 시 '내용을 입력하세요' 오류 수정 (에디터 상태 동기화 강화)",
     "🛠️ [Improve] 카페 에디터 이벤트 트리거 다양화 (input, change, keyup, blur, focus, compositionend)",
     "🐛 [Critical] 빌드된 앱에서 GPT 설정 파일(gpt_settings, user_settings, custom_prompts) 경로 인식 불가 문제 수정",

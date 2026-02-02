@@ -65,8 +65,10 @@ class NaverCafeAutomation:
                 title_input.send_keys(title)
             time.sleep(1)
             
-            # 3. 내용 입력 (스마트에디터 ONE 대응 - 다중 폴백)
-            print("⌨️ 내용 입력 중 (다중 폴백)...")
+            # 3. 내용 입력 (스마트에디터 ONE - React 상태 동기화 필요!)
+            # 중요: 카페 에디터는 React 기반이라 클립보드/JS 삽입은 상태 인식 불가
+            # 따라서 키보드 직접 입력을 최우선으로!
+            print("⌨️ 내용 입력 중 (키보드 우선 방식)...")
             
             # 먼저 에디터 영역 찾기
             editor_area = WebDriverWait(self.driver, 15).until(
@@ -79,73 +81,139 @@ class NaverCafeAutomation:
             ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('a').key_up(Keys.COMMAND).send_keys(Keys.BACKSPACE).perform()
             time.sleep(0.5)
             
-            # 방법 1: 클립보드 헬퍼 사용 시도
             insert_success = False
+            
+            # 방법 1 (최우선): pyautogui 키보드 입력 (가장 확실함)
+            print("🔄 [1단계] pyautogui 키보드 입력 시도...")
             try:
-                from utils.clipboard_helper import insert_text_to_editor
-                insert_success = insert_text_to_editor(self.driver, editor_area, content, platform="cafe")
-                if insert_success:
-                    print("✅ 내용 입력 완료 (클립보드 헬퍼)")
-            except ImportError as ie:
-                print(f"⚠️ 클립보드 헬퍼 모듈 import 실패: {ie}")
+                import pyautogui
+                pyautogui.PAUSE = 0.01  # 빠른 입력
+                
+                # 에디터 포커스 확인
+                editor_area.click()
+                time.sleep(0.5)
+                
+                # pyautogui로 직접 타이핑 (한글 지원)
+                pyautogui.write(content, interval=0.005)
+                time.sleep(1)
+                
+                # 검증
+                editor_text = editor_area.text.strip() if editor_area.text else ""
+                if len(editor_text) >= len(content) * 0.3:
+                    insert_success = True
+                    print(f"✅ pyautogui 키보드 입력 성공 ({len(editor_text)}자)")
+            except ImportError:
+                print("⚠️ pyautogui 모듈 없음, 다음 방법 시도...")
             except Exception as e:
-                print(f"⚠️ 클립보드 헬퍼 실행 실패: {e}")
+                print(f"⚠️ pyautogui 오류: {e}")
             
-            # 방법 2: macOS 네이티브 pbcopy + 붙여넣기
+            # 방법 2: send_keys 분할 입력 (ActionChains 사용)
             if not insert_success:
-                print("🔄 [Fallback] macOS pbcopy 시도...")
+                print("🔄 [2단계] send_keys 분할 입력 시도...")
                 try:
-                    import subprocess
-                    import sys
-                    if sys.platform == 'darwin':
-                        process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
-                        process.communicate(content.encode('utf-8'))
-                        if process.returncode == 0:
-                            time.sleep(0.3)
-                            ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
-                            time.sleep(1)
-                            # 검증
-                            editor_text = editor_area.text.strip() if editor_area.text else ""
-                            if len(editor_text) >= len(content) * 0.3:
-                                insert_success = True
-                                print(f"✅ pbcopy 성공 ({len(editor_text)}자)")
-                except Exception as pb_err:
-                    print(f"⚠️ pbcopy 실패: {pb_err}")
-            
-            # 방법 3: JavaScript 직접 주입
-            if not insert_success:
-                print("🔄 [Fallback] JS 직접 주입...")
-                try:
-                    self.driver.execute_script("""
-                        const editor = arguments[0];
-                        const content = arguments[1];
-                        if(editor) {
-                            editor.innerHTML = content.split('\\n').map(line => `<p style="font-size:19px !important;">${line || '&nbsp;'}</p>`).join('');
-                            editor.focus();
-                            editor.dispatchEvent(new Event('input', { bubbles: true }));
-                            editor.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
-                    """, editor_area, content)
+                    editor_area.click()
+                    time.sleep(0.3)
+                    
+                    # 줄 단위로 입력 (한 번에 너무 많이 보내지 않음)
+                    lines = content.split('\n')
+                    for i, line in enumerate(lines):
+                        if line.strip():
+                            # 500자씩 나누어 입력
+                            chunks = [line[j:j+500] for j in range(0, len(line), 500)]
+                            for chunk in chunks:
+                                ActionChains(self.driver).send_keys(chunk).perform()
+                                time.sleep(0.05)
+                        
+                        # 마지막 줄이 아니면 Enter
+                        if i < len(lines) - 1:
+                            ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+                            time.sleep(0.02)
+                    
                     time.sleep(0.5)
+                    
+                    # 검증
                     editor_text = editor_area.text.strip() if editor_area.text else ""
                     if len(editor_text) >= len(content) * 0.2:
                         insert_success = True
-                        print(f"✅ JS 주입 성공 ({len(editor_text)}자)")
-                except Exception as js_err:
-                    print(f"⚠️ JS 주입 실패: {js_err}")
+                        print(f"✅ send_keys 분할 입력 성공 ({len(editor_text)}자)")
+                except Exception as e:
+                    print(f"⚠️ send_keys 분할 입력 실패: {e}")
             
-            # 방법 4: send_keys 직접 입력 (최후의 수단)
+            # 방법 3: 클립보드 + 특수 상태 동기화
             if not insert_success:
-                print("🔄 [Fallback] send_keys 직접 입력...")
+                print("🔄 [3단계] 클립보드 + React 상태 동기화 시도...")
                 try:
-                    # 너무 긴 텍스트는 잘라서 처리
-                    text_to_send = content[:2000] if len(content) > 2000 else content
-                    editor_area.send_keys(text_to_send)
-                    time.sleep(1)
-                    print(f"✅ send_keys 완료 ({len(text_to_send)}자)")
-                    insert_success = True
-                except Exception as sk_err:
-                    print(f"❌ send_keys 실패: {sk_err}")
+                    from utils.clipboard_helper import copy_to_clipboard
+                    
+                    if copy_to_clipboard(content):
+                        time.sleep(0.3)
+                        
+                        # 붙여넣기
+                        ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
+                        time.sleep(1)
+                        
+                        # React 상태 강제 업데이트 시도
+                        self.driver.execute_script("""
+                            const editor = document.querySelector('.se-content') || 
+                                           document.querySelector('.Editor_content__container') ||
+                                           document.querySelector('[contenteditable="true"]');
+                            if (editor) {
+                                // React의 onChange 시뮬레이션
+                                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                                    window.HTMLElement.prototype, 'textContent'
+                                ).set;
+                                
+                                // 커서 위치 끝으로 이동
+                                const range = document.createRange();
+                                const sel = window.getSelection();
+                                range.selectNodeContents(editor);
+                                range.collapse(false);
+                                sel.removeAllRanges();
+                                sel.addRange(range);
+                                
+                                // 다양한 이벤트 발생
+                                const events = ['input', 'change', 'keydown', 'keyup', 'keypress', 'compositionend'];
+                                events.forEach(eventType => {
+                                    let event;
+                                    if (eventType.includes('key')) {
+                                        event = new KeyboardEvent(eventType, {
+                                            bubbles: true,
+                                            cancelable: true,
+                                            key: ' ',
+                                            code: 'Space'
+                                        });
+                                    } else {
+                                        event = new Event(eventType, { bubbles: true, cancelable: true });
+                                    }
+                                    editor.dispatchEvent(event);
+                                });
+                                
+                                // InputEvent (React가 감지하는 이벤트)
+                                const inputEvent = new InputEvent('input', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    inputType: 'insertText',
+                                    data: 'a'
+                                });
+                                editor.dispatchEvent(inputEvent);
+                            }
+                        """)
+                        
+                        time.sleep(0.5)
+                        
+                        # 키보드 이벤트로 상태 갱신 유도
+                        ActionChains(self.driver).send_keys(Keys.SPACE).send_keys(Keys.BACKSPACE).perform()
+                        
+                        # 검증
+                        editor_text = editor_area.text.strip() if editor_area.text else ""
+                        if len(editor_text) >= len(content) * 0.2:
+                            insert_success = True
+                            print(f"✅ 클립보드 + React 동기화 성공 ({len(editor_text)}자)")
+                except Exception as e:
+                    print(f"⚠️ 클립보드 + React 동기화 실패: {e}")
+            
+            if not insert_success:
+                print("❌ 모든 내용 입력 방법 실패")
             
             # 글자 크기 19px로 조정 + 에디터 상태 동기화 (핵심!)
             if insert_success:
