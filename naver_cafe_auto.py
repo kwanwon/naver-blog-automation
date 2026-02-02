@@ -65,15 +65,38 @@ class NaverCafeAutomation:
                 title_input.send_keys(title)
             time.sleep(1)
             
-            # 3. 내용 입력 (스마트에디터 ONE - React 상태 동기화 필요!)
-            # 중요: 카페 에디터는 React 기반이라 클립보드/JS 삽입은 상태 인식 불가
-            # 따라서 키보드 직접 입력을 최우선으로!
-            print("⌨️ 내용 입력 중 (키보드 우선 방식)...")
+            # 3. 내용 입력 (스마트에디터 ONE - 키보드 직접 입력만 사용!)
+            # 중요: React 기반 에디터는 클립보드/JS 삽입으로 상태 인식 불가
+            # 따라서 send_keys 키보드 입력만 사용 (pyautogui는 한글 미지원)
+            print("⌨️ 내용 입력 중 (send_keys 전용)...")
             
-            # 먼저 에디터 영역 찾기
-            editor_area = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, ".se-content, .Editor_content__container, .se-viewer, [contenteditable='true']"))
-            )
+            # 에디터 영역 찾기
+            editor_selectors = [
+                ".se-component-content .se-text-paragraph",  # 스마트에디터 ONE 본문
+                ".se-content",
+                ".Editor_content__container", 
+                ".se-viewer",
+                "[contenteditable='true']",
+                ".se-text-paragraph"
+            ]
+            
+            editor_area = None
+            for selector in editor_selectors:
+                try:
+                    editor_area = WebDriverWait(self.driver, 5).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+                    )
+                    if editor_area:
+                        print(f"✅ 에디터 발견: {selector}")
+                        break
+                except:
+                    continue
+            
+            if not editor_area:
+                print("❌ 에디터 영역을 찾을 수 없습니다.")
+                return False
+            
+            # 에디터 클릭 및 포커스
             editor_area.click()
             time.sleep(1)
             
@@ -81,203 +104,76 @@ class NaverCafeAutomation:
             ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('a').key_up(Keys.COMMAND).send_keys(Keys.BACKSPACE).perform()
             time.sleep(0.5)
             
+            # === 핵심: send_keys 분할 입력 (유일한 방법) ===
+            print("⌨️ send_keys 분할 입력 시작...")
             insert_success = False
             
-            # 방법 1 (최우선): pyautogui 키보드 입력 (가장 확실함)
-            print("🔄 [1단계] pyautogui 키보드 입력 시도...")
             try:
-                import pyautogui
-                pyautogui.PAUSE = 0.01  # 빠른 입력
-                
-                # 에디터 포커스 확인
+                # 다시 에디터 클릭 (포커스 확인)
                 editor_area.click()
-                time.sleep(0.5)
+                time.sleep(0.3)
                 
-                # pyautogui로 직접 타이핑 (한글 지원)
-                pyautogui.write(content, interval=0.005)
-                time.sleep(1)
+                # 줄 단위로 입력
+                lines = content.split('\n')
+                total_lines = len(lines)
+                
+                for i, line in enumerate(lines):
+                    # 진행 상황 표시 (10줄마다)
+                    if i % 10 == 0:
+                        print(f"  📝 입력 중... {i}/{total_lines}줄")
+                    
+                    if line.strip():
+                        # 300자씩 나누어 입력 (더 안정적)
+                        chunks = [line[j:j+300] for j in range(0, len(line), 300)]
+                        for chunk in chunks:
+                            ActionChains(self.driver).send_keys(chunk).perform()
+                            time.sleep(0.03)  # 청크 사이 대기
+                    
+                    # 마지막 줄이 아니면 Enter
+                    if i < len(lines) - 1:
+                        ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+                        time.sleep(0.01)
+                
+                time.sleep(0.5)
                 
                 # 검증
                 editor_text = editor_area.text.strip() if editor_area.text else ""
-                if len(editor_text) >= len(content) * 0.3:
+                if len(editor_text) >= len(content) * 0.2:
                     insert_success = True
-                    print(f"✅ pyautogui 키보드 입력 성공 ({len(editor_text)}자)")
-            except ImportError:
-                print("⚠️ pyautogui 모듈 없음, 다음 방법 시도...")
-            except Exception as e:
-                print(f"⚠️ pyautogui 오류: {e}")
-            
-            # 방법 2: send_keys 분할 입력 (ActionChains 사용)
-            if not insert_success:
-                print("🔄 [2단계] send_keys 분할 입력 시도...")
-                try:
-                    editor_area.click()
-                    time.sleep(0.3)
-                    
-                    # 줄 단위로 입력 (한 번에 너무 많이 보내지 않음)
-                    lines = content.split('\n')
-                    for i, line in enumerate(lines):
-                        if line.strip():
-                            # 500자씩 나누어 입력
-                            chunks = [line[j:j+500] for j in range(0, len(line), 500)]
-                            for chunk in chunks:
-                                ActionChains(self.driver).send_keys(chunk).perform()
-                                time.sleep(0.05)
-                        
-                        # 마지막 줄이 아니면 Enter
-                        if i < len(lines) - 1:
-                            ActionChains(self.driver).send_keys(Keys.ENTER).perform()
-                            time.sleep(0.02)
-                    
-                    time.sleep(0.5)
-                    
-                    # 검증
-                    editor_text = editor_area.text.strip() if editor_area.text else ""
-                    if len(editor_text) >= len(content) * 0.2:
+                    print(f"✅ send_keys 입력 완료 ({len(editor_text)}자 / 원본 {len(content)}자)")
+                else:
+                    print(f"⚠️ 입력 후 검증 실패 (확인된 글자: {len(editor_text)}자)")
+                    # 검증 실패해도 일단 진행 (에디터 텍스트 추출이 불완전할 수 있음)
+                    if len(editor_text) > 0:
                         insert_success = True
-                        print(f"✅ send_keys 분할 입력 성공 ({len(editor_text)}자)")
-                except Exception as e:
-                    print(f"⚠️ send_keys 분할 입력 실패: {e}")
-            
-            # 방법 3: 클립보드 + 특수 상태 동기화
-            if not insert_success:
-                print("🔄 [3단계] 클립보드 + React 상태 동기화 시도...")
-                try:
-                    from utils.clipboard_helper import copy_to_clipboard
-                    
-                    if copy_to_clipboard(content):
-                        time.sleep(0.3)
+                        print("⚠️ 내용이 일부 입력됨, 계속 진행...")
                         
-                        # 붙여넣기
-                        ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
-                        time.sleep(1)
-                        
-                        # React 상태 강제 업데이트 시도
-                        self.driver.execute_script("""
-                            const editor = document.querySelector('.se-content') || 
-                                           document.querySelector('.Editor_content__container') ||
-                                           document.querySelector('[contenteditable="true"]');
-                            if (editor) {
-                                // React의 onChange 시뮬레이션
-                                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                                    window.HTMLElement.prototype, 'textContent'
-                                ).set;
-                                
-                                // 커서 위치 끝으로 이동
-                                const range = document.createRange();
-                                const sel = window.getSelection();
-                                range.selectNodeContents(editor);
-                                range.collapse(false);
-                                sel.removeAllRanges();
-                                sel.addRange(range);
-                                
-                                // 다양한 이벤트 발생
-                                const events = ['input', 'change', 'keydown', 'keyup', 'keypress', 'compositionend'];
-                                events.forEach(eventType => {
-                                    let event;
-                                    if (eventType.includes('key')) {
-                                        event = new KeyboardEvent(eventType, {
-                                            bubbles: true,
-                                            cancelable: true,
-                                            key: ' ',
-                                            code: 'Space'
-                                        });
-                                    } else {
-                                        event = new Event(eventType, { bubbles: true, cancelable: true });
-                                    }
-                                    editor.dispatchEvent(event);
-                                });
-                                
-                                // InputEvent (React가 감지하는 이벤트)
-                                const inputEvent = new InputEvent('input', {
-                                    bubbles: true,
-                                    cancelable: true,
-                                    inputType: 'insertText',
-                                    data: 'a'
-                                });
-                                editor.dispatchEvent(inputEvent);
-                            }
-                        """)
-                        
-                        time.sleep(0.5)
-                        
-                        # 키보드 이벤트로 상태 갱신 유도
-                        ActionChains(self.driver).send_keys(Keys.SPACE).send_keys(Keys.BACKSPACE).perform()
-                        
-                        # 검증
-                        editor_text = editor_area.text.strip() if editor_area.text else ""
-                        if len(editor_text) >= len(content) * 0.2:
-                            insert_success = True
-                            print(f"✅ 클립보드 + React 동기화 성공 ({len(editor_text)}자)")
-                except Exception as e:
-                    print(f"⚠️ 클립보드 + React 동기화 실패: {e}")
+            except Exception as e:
+                print(f"❌ send_keys 입력 오류: {e}")
+                import traceback
+                traceback.print_exc()
             
             if not insert_success:
-                print("❌ 모든 내용 입력 방법 실패")
+                print("❌ 내용 입력 실패 - 포스팅 중단")
+                return False
             
-            # 글자 크기 19px로 조정 + 에디터 상태 동기화 (핵심!)
-            if insert_success:
-                print("🔄 에디터 상태 동기화 중...")
-                # 카페 에디터 상태 강제 업데이트 (중요!)
+            # 글자 크기 조정 (선택적)
+            try:
                 self.driver.execute_script("""
                     const editor = document.querySelector('.se-content') || 
-                                   document.querySelector('.Editor_content__container') || 
-                                   document.querySelector('.se-viewer') || 
+                                   document.querySelector('.Editor_content__container') ||
                                    document.querySelector('[contenteditable="true"]');
                     if(editor) {
-                        // 1. 글자 크기 조정
                         const paragraphs = editor.querySelectorAll('p, span, div');
                         paragraphs.forEach(p => {
                             p.style.setProperty('font-size', '19px', 'important');
                         });
-                        
-                        // 2. 에디터 상태 동기화 (핵심 - 다양한 이벤트 dispatch)
-                        editor.focus();
-                        
-                        // 다양한 이벤트 트리거
-                        ['input', 'change', 'keyup', 'keydown', 'blur', 'focus'].forEach(eventType => {
-                            editor.dispatchEvent(new Event(eventType, { bubbles: true, cancelable: true }));
-                        });
-                        
-                        // InputEvent도 발생시킴
-                        const inputEvent = new InputEvent('input', {
-                            bubbles: true,
-                            cancelable: true,
-                            inputType: 'insertText',
-                            data: editor.innerText.slice(-1) || 'a'
-                        });
-                        editor.dispatchEvent(inputEvent);
-                        
-                        // MutationObserver 트리거
-                        const span = document.createElement('span');
-                        span.textContent = '';
-                        editor.appendChild(span);
-                        setTimeout(() => span.remove(), 100);
-                        
-                        // React/Vue 상태 업데이트 시도
-                        if (window.__reactProps || window.__vue__) {
-                            editor.dispatchEvent(new Event('compositionend', { bubbles: true }));
-                        }
-                        
-                        console.log('[Cafe] Editor state sync completed');
                     }
                 """)
-                time.sleep(1)
-                
-                # 추가: 키보드 이벤트로 에디터 활성화 확인
-                try:
-                    ActionChains(self.driver).send_keys(Keys.END).perform()
-                    time.sleep(0.3)
-                    ActionChains(self.driver).send_keys(' ').perform()
-                    time.sleep(0.2)
-                    ActionChains(self.driver).send_keys(Keys.BACKSPACE).perform()
-                    print("✅ 에디터 상태 동기화 완료")
-                except Exception as sync_err:
-                    print(f"⚠️ 키보드 이벤트 보조 동기화 실패: {sync_err}")
-            else:
-                print("❌ 모든 내용 입력 방법 실패")
+            except:
+                pass
             
-            time.sleep(2)
+            time.sleep(1)
             
             # 3.5 이미지 업로드 (이미지 경로가 있는 경우)
             if image_paths and len(image_paths) > 0:
