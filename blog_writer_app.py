@@ -2528,7 +2528,7 @@ class BlogWriterApp:
                  start_time = time.time()
                  times = task.data.get('times', [])
                  types = task.data.get('types', ['regular'] * len(times))  # 유형 목록 (기본값: regular)
-                 band_url = task.data.get('band_url', self.settings.get('band_url', ''))
+                 band_url = self.settings.get('band_url', '') or task.data.get('band_url', '')
                  
                  print(f"📦 [밴드 일괄 예약] 시작: 총 {len(times)}건 ({', '.join(times)})")
                  
@@ -2639,7 +2639,7 @@ class BlogWriterApp:
                 # 밴드 포스팅 (단일)
                 start_time = time.time()
                 band_auto = NaverBandAutomation(self.get_or_create_driver())
-                band_url = task.data.get('band_url', self.settings.get('band_url', ''))
+                band_url = self.settings.get('band_url', '') or task.data.get('band_url', '')
                 
                 # 예약 시간 확인
                 reservation_time = task.data.get('reservation_time')
@@ -5830,7 +5830,7 @@ class BlogWriterApp:
                     "default_reply": default_reply.value,  # 기본 답글 문구
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                with open(os.path.join(base_dir, 'config/user_settings.txt'), 'w', encoding='utf-8') as f:
+                with open(os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt'), 'w', encoding='utf-8') as f:
                     json.dump(settings, f, ensure_ascii=False, indent=2)
                 
                 # 환경 변수 설정
