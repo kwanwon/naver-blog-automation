@@ -68,6 +68,7 @@ class AutoUpdater:
             'naver_cookies.json',
             'naver_session.json',
             'naver_session.pkl',
+            'config/app_settings.json',
             'config/user_settings.txt',
             'config/gpt_settings.txt',
             'config/custom_prompts.txt',
@@ -77,6 +78,7 @@ class AutoUpdater:
             'user_data.json',
             'config.json',
             'settings.json',
+            'app_settings.json',
             '.env',
         ]
         
