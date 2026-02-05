@@ -339,7 +339,11 @@ class NaverBlogAutomation:
             chrome_options = Options()
             
             # 브라우저 프로필 저장 경로 설정 (로그인 상태 유지) - manual_session_helper와 동일한 경로 사용
-            profile_path = os.path.join(self.base_dir, "manual_chrome_profile")
+            if sys.platform == 'win32':
+                app_data = os.getenv('LOCALAPPDATA', os.path.expanduser('~'))
+                profile_path = os.path.join(app_data, 'BlogAutomation', 'chrome_profile')
+            else:
+                profile_path = os.path.join(os.path.expanduser('~'), '.blog_automation', 'chrome_profile')
             os.makedirs(profile_path, exist_ok=True)
             chrome_options.add_argument(f"--user-data-dir={profile_path}")
             chrome_options.add_argument("--profile-directory=Default")
@@ -357,7 +361,8 @@ class NaverBlogAutomation:
             chrome_options.add_argument("--disable-in-process-stack-traces")
             chrome_options.add_argument("--disable-logging")
             chrome_options.add_argument("--log-level=3")
-            chrome_options.add_argument("--output=/dev/null")
+            if sys.platform != 'win32':
+                chrome_options.add_argument("--output=/dev/null")
             chrome_options.add_argument("--disable-infobars")
             chrome_options.add_argument("--disable-notifications")
             

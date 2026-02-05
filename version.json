@@ -1,13 +1,12 @@
 {
-  "version": "1.2.59",
-  "release_date": "2026-02-03",
+  "version": "1.2.60",
+  "release_date": "2026-02-05",
   "changelog": [
+    "🐛 [Windows] 바로가기 실행 파일 수정 (BlogAutomation.exe -> BlogApp.exe)",
+    "🐛 [Windows] Chrome 프로필 저장 경로 수정 (AppData 사용)",
+    "🐛 [Windows] Chrome 실행 옵션 수정 (/dev/null 인수 제거)",
     "🔧 [Critical] 크로스 플랫폼 설정 경로 표준화 (Windows: AppData, macOS: ~/.blog_automation)",
     "🐛 [Fix] 스케줄러 밴드 URL 우선순위 버그 수정 (현재 설정값 우선 사용)",
-    "🛠️ [Improve] GPT Handler 로그/설정 경로 크로스 플랫폼 지원 강화",
-    "📚 [Doc] Google Drive 설정 가이드 문서 추가",
-    "📚 [Doc] 업데이트 요약 문서 추가 (macOS 권한 안내 포함)",
-    "🐛 [Critical] Windows 인스톨러 실행 파일명 오류 수정 (BlogAutomation.exe)",
     "🛠️ [Improve] 카페 에디터 이벤트 트리거 다양화 (input, change, keyup, blur, focus, compositionend)",
     "🐛 [Critical] 빌드된 앱에서 GPT 설정 파일(gpt_settings, user_settings, custom_prompts) 경로 인식 불가 문제 수정",
     "🛠️ [Improve] 앱 번들 경로(macOS .app) 자동 감지 기능 추가 - 모델 선택이 정상 작동",
