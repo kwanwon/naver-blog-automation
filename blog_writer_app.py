@@ -34,6 +34,7 @@ import platform  # 플랫폼 감지 추가
 from datetime import datetime, timedelta
 import json
 from utils.folder_cleanup import FolderCleanup  # 추가
+from utils.path_utils import get_app_data_dir, get_config_dir, get_data_dir, get_log_dir
 import random
 import hashlib
 import threading
@@ -190,21 +191,8 @@ class BlogWriterApp:
         threading.Thread(target=update_task, daemon=True).start()
 
     def _get_app_data_dir(self):
-        """사용자 데이터 디렉토리 반환 (~/.blog_automation)"""
-        try:
-            home = os.path.expanduser("~")
-            # Windows: AppData/Local/BlogAutomation, Mac: ~/.blog_automation
-            if self.is_windows:
-                app_data = os.getenv('LOCALAPPDATA', os.path.join(home, 'AppData', 'Local'))
-                base = os.path.join(app_data, 'BlogAutomation')
-            else:
-                base = os.path.join(home, '.blog_automation')
-            
-            os.makedirs(base, exist_ok=True)
-            return base
-        except Exception as e:
-            print(f"❌ 데이터 디렉토리 생성 실패: {e}")
-            return os.path.join(os.getcwd(), 'data')
+        """사용자 데이터 디렉토리 반환 (Delegates to utils.path_utils)"""
+        return get_app_data_dir()
 
     def load_settings(self):
         """앱 설정 파일 로드"""

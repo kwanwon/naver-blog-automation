@@ -1,9 +1,10 @@
 {
-  "version": "1.2.61",
+  "version": "1.2.62",
   "release_date": "2026-02-05",
   "changelog": [
+    "🔧 [Refactor] 크로스 플랫폼 데이터 저장 경로 표준화 (Windows: AppData, Mac: ~/.blog_automation)",
+    "🔧 [Refactor] 주요 모듈(설정, 세션, 라이선스, 크롬드라이버)의 파일 경로 로직 개선",
     "🐛 [Critical] 지역 마케팅/댓글 답글 기능에서 Gemini 모델 선택 시 기본 답글만 달리는 문제 수정",
-    "🔧 [Fix] SmartReply 및 NaverBlogCommentReply 모듈이 선택된 AI 모델(Gemini/OpenAI)을 올바르게 사용하도록 개선",
     "🐛 [Windows] 바로가기 실행 파일 수정 (BlogAutomation.exe -> BlogApp.exe)",
     "🔧 [Critical] 크로스 플랫폼 설정 경로 표준화 (Windows: AppData, macOS: ~/.blog_automation)",
     "🐛 [Fix] 스케줄러 밴드 URL 우선순위 버그 수정 (현재 설정값 우선 사용)",

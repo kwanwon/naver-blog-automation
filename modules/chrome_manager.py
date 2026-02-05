@@ -12,6 +12,7 @@ import zipfile
 import shutil
 from pathlib import Path
 from typing import Optional, Tuple
+from utils.path_utils import get_data_dir
 
 # requests 모듈이 없을 때를 대비한 안전한 import
 try:
@@ -33,8 +34,8 @@ class ChromeManager:
         self.platform_system = platform.system().lower()
         self.is_windows = self.platform_system == 'windows'
         
-        # ChromeDriver 저장 경로
-        self.chromedriver_dir = os.path.join(base_dir, 'chromedriver')
+        # ChromeDriver 저장 경로 (사용자 데이터 폴더 사용)
+        self.chromedriver_dir = os.path.join(get_data_dir(), 'chromedriver')
         self.chromedriver_path = None
         
         # Windows에서 ChromeDriver 실행 파일 경로

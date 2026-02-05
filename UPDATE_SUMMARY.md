@@ -1,4 +1,11 @@
-# 업데이트 요약 (v1.2.61)
+# 업데이트 요약 (v1.2.62)
+
+## 시스템 안정성 및 호환성 강화 (v1.2.62)
+
+#### 1. 데이터 저장 경로 표준화 (Refactor)
+- **변경 내용**: Windows에서는 `AppData/Local/BlogAutomation`, Mac에서는 `~/.blog_automation` 경로를 강제로 사용하도록 등 모든 파일 저장 로직을 개선했습니다.
+- **대상**: 앱 설정(config), 로그인 세션(session), 크롬 드라이버(chromedriver), 라이선스 파일 등
+- **목적**: Windows의 `PermissionError` (권한 오류)를 원천 차단하고, Mac 환경과의 호환성을 유지합니다.
 
 ## AI 모델 호환성 개선 (v1.2.61)
 

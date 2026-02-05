@@ -17,14 +17,15 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from utils.path_utils import get_config_dir, get_data_dir
 
 class ManualSessionHelper:
     def __init__(self):
         self.driver = None
-        # 기준 디렉토리 설정 (blog_writer_app.py와 동일한 위치)
-        self.base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.session_file = os.path.join(self.base_dir, "naver_session.pkl")
-        self.cookies_file = os.path.join(self.base_dir, "naver_cookies.json")
+        # 기준 디렉토리 설정 (path_utils 사용)
+        self.config_dir = get_config_dir()
+        self.session_file = os.path.join(self.config_dir, "naver_session.pkl")
+        self.cookies_file = os.path.join(self.config_dir, "naver_cookies.json")
         self.wdm_root = os.path.join(os.path.expanduser("~"), ".wdm", "drivers", "chromedriver")
 
     def _fix_permissions(self, path: str):
@@ -58,7 +59,8 @@ class ManualSessionHelper:
         # 고유한 사용자 데이터 디렉토리 설정 (프로필 충돌 방지)
         import time
         timestamp = int(time.time())
-        user_data_dir = os.path.join(self.base_dir, f"manual_chrome_profile_{timestamp}_{os.urandom(4).hex()}")
+        # user_data_dir를 AppData/data 폴더로 이동
+        user_data_dir = os.path.join(get_data_dir(), f"manual_chrome_profile_{timestamp}_{os.urandom(4).hex()}")
         chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
         
         # 프로젝트 루트의 ChromeDriver 사용

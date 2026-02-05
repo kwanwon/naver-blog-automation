@@ -4,6 +4,7 @@ import requests
 import hashlib
 import platform
 import uuid
+from utils.path_utils import get_config_dir
 
 class LicenseHandler:
     """라이선스 관리 클래스"""
@@ -11,8 +12,8 @@ class LicenseHandler:
     license_server_url = "http://localhost:5000/api/validate"
     
     def __init__(self):
-        self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        self.config_dir = os.path.join(self.base_dir, 'config')
+        # 설정 디렉토리 (path_utils 사용)
+        self.config_dir = get_config_dir()
         self.license_file = os.path.join(self.config_dir, 'license.json')
         
         # 설정 디렉토리가 없으면 생성

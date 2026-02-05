@@ -18,6 +18,7 @@ import platform
 import subprocess
 from datetime import datetime, timedelta
 from typing import Dict, Tuple, Optional
+from utils.path_utils import get_config_dir
 
 class BlogSerialAuth:
     """블로그자동화용 시리얼 인증 클래스"""
@@ -25,10 +26,11 @@ class BlogSerialAuth:
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # 설정 파일은 사용자 홈 디렉토리에 저장 (빌드된 앱에서도 영구 보존)
-        self.config_dir = os.path.join(os.path.expanduser("~"), ".blog_automation")
-        if not os.path.exists(self.config_dir):
-            os.makedirs(self.config_dir, exist_ok=True)
+        
+        # 설정 파일은 사용자 홈 디렉토리에 저장 (path_utils 사용)
+        self.config_dir = get_config_dir()
+        # if not os.path.exists(self.config_dir):
+        #     os.makedirs(self.config_dir, exist_ok=True)
         self.config_file = os.path.join(self.config_dir, "serial_config.json")
         
         self.server_url = "https://aimaster-serial.onrender.com"
