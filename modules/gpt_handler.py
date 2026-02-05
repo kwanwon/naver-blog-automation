@@ -1089,6 +1089,10 @@ class GPTHandler:
         except Exception as e:
             logger.error(f"답글 생성 오류: {e}")
             return "감사합니다! 좋은 하루 보내세요!"
+        finally:
+            # 🆕 다음 생성을 위해 모델 순환 (로드 밸런싱)
+            if self.selected_models:
+                self.current_model_index = (self.current_model_index + 1) % len(self.selected_models)
 
 if __name__ == "__main__":
     # 테스트 코드
