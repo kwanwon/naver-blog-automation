@@ -1,7 +1,9 @@
 {
-  "version": "1.2.64",
+  "version": "1.2.65",
+  "updated_at": "2026-02-05T17:00:00",
   "release_date": "2026-02-05",
   "changelog": [
+    "🔧 [Fix] Windows 자동 업데이트 호환성 개선 (version.json 구조 표준화)",
     "⚡ [Improvement] 댓글/답글 생성 시 선택된 AI 모델들을 순차적으로 사용하도록 개선 (로드 밸런싱)",
     "🐛 [Fix] 업데이트 시 OpenAI API 키가 초기화되는 문제 수정 (설정 파일에 영구 저장)",
     "🔧 [Refactor] OpenAI API 키 저장소를 .env(휘발성)에서 설정 파일(영구적)로 변경",
