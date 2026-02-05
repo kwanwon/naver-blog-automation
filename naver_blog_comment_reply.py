@@ -817,39 +817,25 @@ class NaverBlogCommentReply:
 답글:"""
 
         try:
-            # 직접 OpenAI API 호출 (블로그 생성 로직 우회)
-            import openai
-            
-            # API 키 가져오기
-            api_key = None
-            if hasattr(self.gpt_handler, 'client') and self.gpt_handler.client:
-                api_key = self.gpt_handler.client.api_key
-            
-            if not api_key:
-                import os
-                api_key = os.environ.get('OPENAI_API_KEY')
-            
-            if not api_key:
+            # 통합 GPTHandler 사용 (OpenAI/Gemini 모두 지원)
+            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
+                # 시스템 메시지 구성
+                system_msg = "당신은 친근한 블로그 주인(관장)입니다. 사용자가 제공한 지침을 정확히 따라 댓글에 답글을 남깁니다."
+                if is_consultation and phone_number:
+                    system_msg += f" 상담/문의 댓글에는 전화번호({phone_number})를 반드시 포함하세요."
+                
+                # 지침을 시스템 메시지에 추가
+                system_msg += f"\n\n[답글 작성 지침]\n{instruction}"
+                
+                content = self.gpt_handler.generate_reply(
+                    system_prompt=system_msg,
+                    user_text=f"댓글: \"{comment_text}\"\n위 댓글에 대한 답글을 작성해주세요.",
+                    max_tokens=300
+                )
+            else:
                 return "감사합니다! 행복한 하루 되세요~😊"
             
-            client = openai.OpenAI(api_key=api_key)
-            
-            # 사용자 지침이 있으면 그대로 따르도록 시스템 메시지 설정
-            system_msg = "당신은 친근한 블로그 주인(관장)입니다. 사용자가 제공한 지침을 정확히 따라 댓글에 답글을 남깁니다. 답글 전체를 완성하여 출력하세요."
-            if is_consultation and phone_number:
-                system_msg = f"당신은 친근한 블로그 주인(관장)입니다. 상담/문의 댓글에는 전화번호({phone_number})를 반드시 포함하세요. 지침을 정확히 따르세요."
-            
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_msg},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=200,  # 전체 답글이 잘리지 않도록 충분히 늘림
-                temperature=0.7
-            )
-            
-            content = response.choices[0].message.content.strip()
+
             
             # 후처리: 불필요한 prefix 제거
             prefixes_to_remove = ["답글:", "답변:", "Reply:", "[답글]", "[본문]", "[제목]"]

@@ -40,20 +40,13 @@ class SmartReply:
 
 출력 형식: 오직 대문자 카테고리명만 출력 (예: QUESTION)
 """
-            if hasattr(self.gpt_handler, 'openai_client'):
-                client = self.gpt_handler.openai_client
-                model = self.gpt_handler.model
-                
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system_msg},
-                        {"role": "user", "content": text}
-                    ],
-                    temperature=0.3,
+            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
+                intent = self.gpt_handler.generate_reply(
+                    system_prompt=system_msg,
+                    user_text=text,
                     max_tokens=10
-                )
-                intent = response.choices[0].message.content.strip().upper()
+                ).strip().upper()
+                
                 valid_intents = ['GREETING', 'QUESTION', 'LEAD', 'SPAM', 'OTHER']
                 for v in valid_intents:
                     if v in intent:
@@ -82,20 +75,12 @@ class SmartReply:
             - GREETING: 단순 인사, 감사, 일반 소통일 경우
             """
             
-            if hasattr(self.gpt_handler, 'openai_client'):
-                client = self.gpt_handler.openai_client
-                model = self.gpt_handler.model
-                
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system_msg},
-                        {"role": "user", "content": text}
-                    ],
-                    temperature=0.3,
+            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
+                result = self.gpt_handler.generate_reply(
+                    system_prompt=system_msg,
+                    user_text=text,
                     max_tokens=10
-                )
-                result = response.choices[0].message.content.strip().upper()
+                ).strip().upper()
                 if "INQUIRY" in result: return "INQUIRY"
                 return "GREETING"
                 
@@ -135,20 +120,12 @@ class SmartReply:
             4. 맺음말
             """
 
-            if hasattr(self.gpt_handler, 'openai_client'):
-                client = self.gpt_handler.openai_client
-                model = self.gpt_handler.model
-                
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system_msg},
-                        {"role": "user", "content": text}
-                    ],
-                    temperature=0.7,
+            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
+                return self.gpt_handler.generate_reply(
+                    system_prompt=system_msg,
+                    user_text=text,
                     max_tokens=300
                 )
-                return response.choices[0].message.content.strip()
             
             # Fallback Template
             return f"문의 주셔서 감사합니다! ^^ \n자세한 상담은 아래 연락처로 주시면 친절히 안내해 드리겠습니다.\n\n📞 상담 문의: {phone}\n💬 카톡 상담: {kakao}\n\n편하게 연락 주세요! :)"
@@ -175,20 +152,12 @@ class SmartReply:
             5. 길이는 1~2문장으로 간결하게.
             """
 
-            if hasattr(self.gpt_handler, 'openai_client'):
-                client = self.gpt_handler.openai_client
-                model = self.gpt_handler.model
-                
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system_msg},
-                        {"role": "user", "content": text}
-                    ],
-                    temperature=0.7,
+            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
+                return self.gpt_handler.generate_reply(
+                    system_prompt=system_msg,
+                    user_text=text,
                     max_tokens=150
                 )
-                return response.choices[0].message.content.strip()
             
             # Fallback
             return "방문해 주셔서 감사합니다! 좋은 하루 보내세요~ ^^"
@@ -234,20 +203,13 @@ class SmartReply:
 """
         try:
             # GPT 호출
-            if hasattr(self.gpt_handler, 'openai_client'):
-                client = self.gpt_handler.openai_client
-                model = self.gpt_handler.model
-                
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": system_msg},
-                        {"role": "user", "content": target_text}
-                    ],
-                    temperature=0.7,
+            # GPTHandler 호출
+            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
+                return self.gpt_handler.generate_reply(
+                    system_prompt=system_msg,
+                    user_text=target_text,
                     max_tokens=300
                 )
-                return response.choices[0].message.content.strip()
             
             return "안녕하세요! 좋은 글 잘 보고 갑니다. ^^" # fallback
             
