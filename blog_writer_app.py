@@ -5341,6 +5341,7 @@ class BlogWriterApp:
                     "promotional_ratio": promotional_ratio.value,
                     "informational_ratio": informational_ratio.value,
                     "selected_models": [mid for mid, cb in model_checkboxes.items() if cb.value],
+                    "api_key": api_key_field.value,
                     "gemini_api_key": gemini_api_key_field.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }

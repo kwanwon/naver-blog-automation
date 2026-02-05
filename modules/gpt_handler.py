@@ -8,6 +8,7 @@ import time
 import traceback
 from datetime import datetime
 from typing import Any, List
+from utils.path_utils import get_config_dir, get_log_dir
 
 # OpenAI 최신 SDK 대응
 try:
@@ -54,12 +55,13 @@ class GPTHandler:
         self.use_dummy = use_dummy
         self.settings = self._load_settings()
         
-        # 🆕 크로스 플랫폼: 사용자 홈 디렉토리 사용 (권한 문제 해결)
+        # 🆕 크로스 플랫폼: 로그 경로 (path_utils 사용)
         try:
-            # ~/.blog_automation/logs/debug.log
+            self._log_path = os.path.join(get_log_dir(), 'debug.log')
+        except Exception:
+            # fallback
             user_home = os.path.expanduser("~")
-            app_data_dir = os.path.join(user_home, ".blog_automation")
-            self._log_path = os.path.join(app_data_dir, 'logs', 'debug.log')
+            self._log_path = os.path.join(user_home, ".blog_automation", 'logs', 'debug.log')
         except Exception:
             # fallback: temp directory
             import tempfile
@@ -186,7 +188,9 @@ class GPTHandler:
             
             # 여러 경로 시도 (순서 중요: 글로벌 -> 앱 번들 -> 로컬)
             possible_paths = [
-                # 1. 🆕 글로벌 설정 경로 (우선순위 1위) - 사용자 홈 디렉토리
+                # 1. 🆕 글로벌 설정 경로 (우선순위 1위: AppData/ 표준 경로)
+                os.path.join(get_config_dir(), 'gpt_settings.txt'),
+                # 1.1 레거시 경로 (마이그레이션용)
                 os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'gpt_settings.txt'),
             ]
             
@@ -244,7 +248,9 @@ class GPTHandler:
             
             # 여러 경로 시도 (순서 중요: 글로벌 -> 앱 번들 -> 로컬)
             possible_paths = [
-                # 1. 🆕 글로벌 설정 경로 - 사용자 홈 디렉토리
+                # 1. 🆕 글로벌 설정 경로 (우선순위 1위: AppData/ 표준 경로)
+                os.path.join(get_config_dir(), 'custom_prompts.txt'),
+                # 1.1 레거시 경로
                 os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'custom_prompts.txt'),
             ]
             
