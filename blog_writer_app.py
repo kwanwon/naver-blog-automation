@@ -41,8 +41,22 @@ import threading
 import time
 import traceback
 
+from logger_utils import StreamLogger # 추가
+
 class BlogWriterApp:
     def __init__(self):
+        # 🚀 로거 초기화 (가장 먼저 실행)
+        try:
+            log_dir = os.path.join(os.getcwd(), 'logs')
+            os.makedirs(log_dir, exist_ok=True)
+            self.console_log_path = os.path.join(log_dir, 'console.log')
+        except:
+            self.console_log_path = None
+
+        self.stream_logger = StreamLogger(self.console_log_path)
+        sys.stdout = self.stream_logger
+        sys.stderr = self.stream_logger
+        
         # 플랫폼 정보 감지
         self.platform_system = platform.system().lower()  # 'windows', 'darwin', 'linux'
         self.is_windows = self.platform_system == 'windows'
@@ -57,6 +71,7 @@ class BlogWriterApp:
         
         # 시리얼 인증 초기화
         self.serial_auth = BlogSerialAuth()
+
         
         # 🚀 [Fix] 앱 시작 시 디바이스 정보 및 사용 횟수 즉시 업데이트
         self._initial_device_info_update()
@@ -4581,6 +4596,123 @@ class BlogWriterApp:
             self.page.update()
         except:
             pass
+
+    
+    def _show_log_viewer(self, page):
+        """로그 뷰어 다이얼로그 표시"""
+        try:
+            # 디버그: 터미널에 직접 출력
+            sys.__stdout__.write("📜 로그 뷰어 열기 요청됨\n")
+            
+            # 로그 내용을 담을 텍스트
+            log_text = ft.Text(
+                value=self.stream_logger.get_logs(),
+                font_family="Consolas, monospace", # 윈도우/맥 호환 폰트
+                color=ft.Colors.GREEN_400,
+                size=12,
+                selectable=True,
+                no_wrap=False 
+            )
+            
+            # 스크롤 가능한 컨테이너
+            log_view = ft.Column(
+                [log_text],
+                scroll=ft.ScrollMode.ALWAYS,
+                auto_scroll=True,
+                expand=True
+            )
+            
+            # 다이얼로그 참조를 위한 변수
+            log_dialog = None
+            
+            # 실시간 업데이트 콜백
+            def on_log_update(message):
+                try:
+                    if log_dialog and log_dialog.open:
+                        log_text.value += message
+                        log_text.update()
+                        log_view.scroll_to(offset=-1, duration=50)
+                except:
+                    pass
+            
+            self.stream_logger.set_callback(on_log_update)
+            
+            def close_dialog(e):
+                self.stream_logger.set_callback(None)
+                log_dialog.open = False
+                page.update()
+                
+            def copy_log(e):
+                page.set_clipboard(log_text.value)
+                page.snack_bar = ft.SnackBar(content=ft.Text("로그가 복사되었습니다."))
+                page.snack_bar.open = True
+                page.update()
+            
+            def open_external(e):
+                try:
+                    if not self.console_log_path or not os.path.exists(self.console_log_path):
+                        page.snack_bar = ft.SnackBar(content=ft.Text("로그 파일이 없습니다."))
+                        page.snack_bar.open = True
+                        page.update()
+                        return
+                        
+                    if sys.platform == 'darwin':
+                        # Mac: Terminal.app으로 tail -f 실행
+                        cmd = f'tell application "Terminal" to do script "tail -f {self.console_log_path}"'
+                        subprocess.run(['osascript', '-e', cmd])
+                        
+                    elif sys.platform == 'win32':
+                        # Windows: 새 창 열어서 로그 감시
+                        subprocess.Popen(
+                            f'start powershell -NoExit -Command "Get-Content \'{self.console_log_path}\' -Wait"', 
+                            shell=True
+                        )
+                    elif sys.platform == 'linux':
+                         subprocess.Popen(['gnome-terminal', '--', 'tail', '-f', self.console_log_path])
+
+                    page.snack_bar = ft.SnackBar(content=ft.Text("새 터미널 창을 열었습니다."))
+                    page.snack_bar.open = True
+                    page.update()
+                    
+                    # 🚀 중요: 앱을 계속 사용할 수 있도록 내부 다이얼로그 닫기
+                    close_dialog(None)
+                    
+                except Exception as ex:
+                     sys.__stdout__.write(f"터미널 열기 실패: {ex}\n")
+                     # page.snack_bar = ft.SnackBar(content=ft.Text("터미널 실행 실패")) # 에러 시 스낵바 생략하거나 try-except
+                     try:
+                         page.snack_bar = ft.SnackBar(content=ft.Text(f"오류: {ex}"))
+                         page.snack_bar.open = True
+                         page.update()
+                     except: 
+                        pass
+
+            log_dialog = ft.AlertDialog(
+                title=ft.Text("📜 실시간 실행 로그 (개발자 모드)", size=16, weight=ft.FontWeight.BOLD),
+                content=ft.Container(
+                    content=log_view,
+                    width=900,
+                    height=600,
+                    bgcolor=ft.Colors.BLACK,
+                    padding=15,
+                    border_radius=10,
+                    border=ft.border.all(1, ft.Colors.GREY_800)
+                ),
+                actions=[
+                    ft.TextButton("새 창으로 보기 ↗️", icon=ft.Icons.OPEN_IN_NEW, on_click=open_external),
+                    ft.TextButton("복사하기", icon=ft.Icons.COPY, on_click=copy_log),
+                    ft.TextButton("닫기", on_click=close_dialog),
+                ],
+                on_dismiss=lambda e: self.stream_logger.set_callback(None),
+            )
+            
+            # Flet 0.21+ 방식: page.open() 사용
+            page.open(log_dialog)
+            sys.__stdout__.write("✅ 로그 뷰어 열기 성공 (page.open)\n")
+            
+        except Exception as e:
+            sys.__stdout__.write(f"❌ 로그 뷰어 열기 실패: {str(e)}\n")
+            traceback.print_exc(file=sys.__stdout__)
 
     def main(self, page: ft.Page):
         # 페이지 객체 저장 (먼저 설정)
@@ -9713,6 +9845,14 @@ class BlogWriterApp:
             tooltip="최신 버전으로 업데이트합니다"
         )
         
+        # 로그 버튼 생성
+        log_button = ft.IconButton(
+            icon=ft.Icons.TERMINAL,
+            tooltip="실시간 로그 보기 (개발자 모드)",
+            on_click=lambda _: self._show_log_viewer(page),
+            icon_color=ft.Colors.GREY_700
+        )
+
         # 상단 헤더 (시계 + 시리얼 상태 + 업데이트 버튼)
         header = ft.Container(
             content=ft.Row([
@@ -9725,8 +9865,11 @@ class BlogWriterApp:
                 # 중앙: 시계
                 self.clock_text,
                 
-                # 오른쪽: 업데이트 버튼
-                update_button
+                # 오른쪽: 기능 버튼들 (로그, 업데이트)
+                ft.Row([
+                    log_button,
+                    update_button
+                ], spacing=5)
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             padding=ft.padding.symmetric(vertical=15, horizontal=20),
             bgcolor=ft.Colors.BLUE_GREY_50,
