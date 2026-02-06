@@ -96,6 +96,7 @@ class GPTHandler:
         
         # 모델 선택 로드
         self.selected_models = self.settings.get('selected_models', [])
+        
         # 삭제된/미지원 모델 정리
         self.selected_models = [
             m for m in self.selected_models if m in Config.AI_MODELS
@@ -391,6 +392,8 @@ class GPTHandler:
 스타일: {settings['style']}
 추가 타입 지침: {type_instructions}
 금지: HTML 태그 사용 금지 (<h2>, <p> 등), 자기소개(OOO입니다) 금지
+필수: 문단 사이에는 반드시 빈 줄을 추가하여 가독성을 높이세요.
+필수: 문장 간 띄어쓰기와 맞춤법을 정확히 지키세요.
 """
         base_prompt = f"""주제: {topic}
 

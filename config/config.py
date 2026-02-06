@@ -93,7 +93,7 @@ class Config:
             "provider": "gemini",
             "name": "Gemini 2.5 Flash-Lite",
             "context": "1M",
-            "free": True,  # 무료/저가 프로모 구간 가정
+            "free": True,
             "input_cost_per_1k_krw": 0.0,
             "output_cost_per_1k_krw": 0.0
         },
@@ -102,7 +102,7 @@ class Config:
             "name": "Gemini 2.5 Flash",
             "context": "1M",
             "free": False,
-            "input_cost_per_1k_krw": 0.2,   # 추정 단가
+            "input_cost_per_1k_krw": 0.2,
             "output_cost_per_1k_krw": 0.4
         }
     }

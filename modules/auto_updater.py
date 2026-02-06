@@ -105,24 +105,51 @@ class AutoUpdater:
             self.logger.addHandler(stream_handler)
 
     def get_remote_version(self):
-        """깃허브 Releases에서 최신 버전 정보 가져오기"""
+        """OS별 버전 파일(version_mac.json 등)을 확인하여 최신 버전 정보 가져오기"""
         try:
-            # GitHub Releases API 호출
-            release_url = f"{self.github_api_url}/releases/latest"
-            self.logger.info(f"릴리스 정보 확인 URL: {release_url}")
+            # 1. OS별 타겟 파일 결정
+            if sys.platform == 'darwin':
+                target_file = 'version_mac.json'
+            elif sys.platform == 'win32':
+                target_file = 'version_win.json'
+            else:
+                target_file = 'version.json'
             
-            response = requests.get(release_url, timeout=15)
+            # 2. Raw 파일 내용 가져오기 (main 브랜치 기준)
+            # 기본 브랜치는 main 가정, 실패 시 master 시도
+            raw_url = f"https://raw.githubusercontent.com/{self.github_repo}/main/{target_file}"
+            self.logger.info(f"버전 확인 URL: {raw_url}")
+            
+            response = requests.get(raw_url, timeout=10)
+            if response.status_code != 200:
+                raw_url = f"https://raw.githubusercontent.com/{self.github_repo}/master/{target_file}"
+                response = requests.get(raw_url, timeout=10)
             
             if response.status_code == 200:
-                release_info = response.json()
-                # 'v1.2.32' -> '1.2.32'
-                tag_name = release_info.get('tag_name', '').lstrip('v') 
-                body = release_info.get('body', '')
-                assets = release_info.get('assets', [])
+                data = response.json()
+                version = data.get('version')
+                if not version:
+                    self.logger.warning(f"버전 파일에 version 필드가 없음: {target_file}")
+                    return None, [], [], None
                 
-                return tag_name, body, assets, release_info
+                # 3. 해당 버전의 Release 정보(Assets) 가져오기
+                # 태그 형식은 보통 v1.2.3 형태라고 가정
+                tag_name = f"v{version}"
+                release_api_url = f"{self.github_api_url}/releases/tags/{tag_name}"
+                
+                rel_resp = requests.get(release_api_url, timeout=15)
+                if rel_resp.status_code == 200:
+                    rel_info = rel_resp.json()
+                    assets = rel_info.get('assets', [])
+                    body = rel_info.get('body', '')
+                    # 리턴: 버전(문자열), 릴리스노트, 자산리스트, 원본정보
+                    return version, body, assets, rel_info
+                else:
+                    self.logger.warning(f"릴리스 태그 {tag_name}를 찾을 수 없음 (HTTP {rel_resp.status_code}). 버전 파일만 업데이트되고 태그가 없을 수 있음.")
+                    # 아직 릴리스(태그)가 없으면 업데이트 진행 불가
+                    return None, [], [], None
             else:
-                self.logger.warning(f"릴리스 정보를 가져올 수 없습니다. HTTP {response.status_code}")
+                self.logger.warning(f"버전 파일 {target_file}을 읽을 수 없습니다. (HTTP {response.status_code})")
                 return None, [], [], None
                 
         except Exception as e:
