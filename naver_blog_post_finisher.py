@@ -405,7 +405,7 @@ class NaverBlogPostFinisher:
                     
                     # 링크 입력창이 나타날 때까지 대기 (최대 5초)
                     link_input_appeared = False
-                    for attempt in range(10):  # 0.5초씩 10번 = 최대 5초
+                    for attempt in range(30):  # 0.5초씩 30번 = 최대 15초
                         try:
                             # 링크 입력창 확인
                             link_input = self.driver.find_element(By.CSS_SELECTOR, 
@@ -702,15 +702,15 @@ class NaverBlogPostFinisher:
                 # 기존 입력 내용 삭제 후 새로 입력
                 location_input.clear()
                 location_input.send_keys(search_text)
-                time.sleep(1)  # 0.5초에서 1초로 변경
-                print("검색어 입력 완료, 1초 대기")
+                time.sleep(2)  # 0.5초에서 1초로, 다시 2초로 변경
+                print("검색어 입력 완료, 2초 대기")
                 
                 # Enter 키 입력으로 검색 실행
                 print("Enter 키 입력으로 검색 실행...")
                 actions = ActionChains(self.driver)
                 actions.send_keys(Keys.ENTER).perform()
-                time.sleep(2)  # 검색 결과 로드를 위해 대기 시간 (3초에서 2초로 변경)
-                print("Enter 키 입력 완료, 2초 대기")
+                time.sleep(5)  # 검색 결과 로드를 위해 대기 시간 (5초로 증가)
+                print("Enter 키 입력 완료, 5초 대기")
 
                 # 검색 결과 항목 선택자 출력 (디버깅용)
                 print("페이지의 검색 결과 UI 정보 수집 중...")

@@ -27,10 +27,11 @@ class NaverBandCommentReply:
     - 이미 답글 단 댓글은 스킵
     """
     
-    def __init__(self, driver, gpt_handler=None, base_dir=None):
+    def __init__(self, driver, gpt_handler=None, base_dir=None, instruction=None):
         self.driver = driver
         self.gpt_handler = gpt_handler
         self.base_dir = base_dir
+        self.instruction = instruction
         self.stop_flag = False
         
         # 운영자/관장 키워드 (스킵 대상)
@@ -552,7 +553,11 @@ class NaverBandCommentReply:
         if not self.gpt_handler:
             return self._get_next_default_reply()
         
-        system_prompt = """당신은 친절하고 따뜻한 합기도 체육관 관장님입니다.
+        # 사용자 설정 지침이 있으면 사용, 없으면 기본 지침 사용
+        if self.instruction:
+            system_prompt = self.instruction
+        else:
+            system_prompt = """당신은 친절하고 따뜻한 합기도 체육관 관장님입니다.
 
 [답글 작성 지침]
 1. 댓글 내용에 자연스럽게 맞는 답변을 하세요.

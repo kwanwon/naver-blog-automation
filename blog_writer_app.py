@@ -2811,7 +2811,8 @@ class BlogWriterApp:
                             band_reply = NaverBandCommentReply(
                                 driver=driver,
                                 gpt_handler=self.gpt_handler,
-                                base_dir=self.base_dir
+                                base_dir=self.base_dir,
+                                instruction=self.settings.get('reply_instruction')
                             )
                             limit_count = int(task.data.get('limit', task.data.get('reply_count', 30))) if task.data else 30
                             success = band_reply.process_band_comments(band_url=band_url, use_ai=True, limit=limit_count)
@@ -2849,7 +2850,8 @@ class BlogWriterApp:
                         band_reply = NaverBandCommentReply(
                             driver=driver,
                             gpt_handler=self.gpt_handler,
-                            base_dir=self.base_dir
+                            base_dir=self.base_dir,
+                            instruction=self.settings.get('reply_instruction')
                         )
                         limit_count = int(task.data.get('limit', task.data.get('reply_count', 30))) if task.data else 30
                         success = band_reply.process_band_comments(band_url=band_url, use_ai=True, limit=limit_count)
@@ -8501,7 +8503,8 @@ class BlogWriterApp:
                     self.band_comment_reply_instance = NaverBandCommentReply(
                         driver=self.get_or_create_driver(),
                         gpt_handler=self.gpt_handler,
-                        base_dir=self.base_dir
+                        base_dir=self.base_dir,
+                        instruction=self.settings.get('reply_instruction')
                     )
                     success = self.band_comment_reply_instance.process_band_comments(
                         band_url=band_url,
