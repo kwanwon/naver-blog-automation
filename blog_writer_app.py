@@ -230,9 +230,14 @@ class BlogWriterApp:
     def _save_setting(self, key: str, value):
         """개별 설정 저장 (UI on_blur 이벤트용)"""
         # 폴더 경로 설정의 경우 따옴표 자동 제거
+        # 폴더 경로 설정의 경우 따옴표 자동 제거
         if isinstance(value, str) and 'folder' in key.lower():
             value = value.strip("'").strip('"').strip()
         
+        # 변경사항 없으면 스킵 (on_change 과부하 방지)
+        if self.settings.get(key) == value:
+            return
+
         self.settings[key] = value
         self.save_settings()
         print(f"✅ 설정 저장됨 [Key: {key}, Value: {value}] -> app_settings.json")
@@ -9047,7 +9052,7 @@ class BlogWriterApp:
                             hint_text="https://docs.google.com/spreadsheets/d/.../edit?usp=sharing",
                             # [Fix] 설정값 강제 로드
                             value=self.settings.get('google_sheet_url', ''),
-                            on_blur=lambda e: self._save_setting('google_sheet_url', e.control.value)
+                            on_change=lambda e: self._save_setting('google_sheet_url', e.control.value)
                         ),
                         ft.Text("💡 선택사항: 오늘 날짜의 수련내용을 자동으로 가져와 AI 글 주제로 사용합니다. 없으면 기본 주제 사용.", size=11, color=ft.Colors.GREY_600),
                         
@@ -9058,7 +9063,7 @@ class BlogWriterApp:
                                 label="상위 폴더 경로 (하위 폴더들을 자동 감지)",
                                 hint_text="/Users/.../Google Drive/수련사진및영상",
                                 value=self.settings.get('drive_parent_folder', ''),
-                                on_blur=lambda e: self._save_setting('drive_parent_folder', e.control.value),
+                                on_change=lambda e: self._save_setting('drive_parent_folder', e.control.value),
                                 expand=True
                             ),
 

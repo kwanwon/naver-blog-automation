@@ -202,9 +202,15 @@ class SmartReply:
 - 광고성 멘트로 도배하지 말고, 진정성 있는 '사람'처럼 대화하세요.
 """
         try:
-            # GPT 호출
-            # GPTHandler 호출
             if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
+                # Handle empty input (likely emoticon/sticker only)
+                if not target_text or not target_text.strip():
+                    target_text = "[이모티콘 또는 사진만 있는 댓글]"
+                    system_msg += "\n[추가 상황] 상대방이 텍스트 없이 이모티콘이나 사진만 남겼습니다. 이에 대해 감사의 의미를 담아 센스 있게 답글을 남겨주세요."
+
+                # Add variety instruction to prevent repetition
+                system_msg += "\n[중요 지침] 매번 똑같은 '감사합니다', '좋은 하루 되세요' 등의 반복적인 표현을 피하고, 다양하고 창의적인 표현을 사용하세요."
+
                 return self.gpt_handler.generate_reply(
                     system_prompt=system_msg,
                     user_text=target_text,
@@ -216,3 +222,4 @@ class SmartReply:
         except Exception as e:
             self.logger.error(f"답글 생성 실패: {e}")
             return "안녕하세요! 소통하고 싶어서 들렀습니다."
+

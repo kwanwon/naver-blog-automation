@@ -89,21 +89,25 @@ class Config:
             "input_cost_per_1k_krw": 0.7,   # 참고 추정치
             "output_cost_per_1k_krw": 2.0
         },
+
         "gemini-2.5-flash-lite": {
             "provider": "gemini",
             "name": "Gemini 2.5 Flash-Lite",
             "context": "1M",
             "free": True,
             "input_cost_per_1k_krw": 0.0,
-            "output_cost_per_1k_krw": 0.0
+            "output_cost_per_1k_krw": 0.0,
+            "daily_limit": 990
         },
         "gemini-2.5-flash": {
             "provider": "gemini",
             "name": "Gemini 2.5 Flash",
             "context": "1M",
-            "free": False,
-            "input_cost_per_1k_krw": 0.2,
-            "output_cost_per_1k_krw": 0.4
+            "input_cost_per_1k_krw": 0.0,
+            "output_cost_per_1k_krw": 0.0,
+            "description": "안정적으로 작동하는 최신 2.5 Flash 모델 (추천)",
+            "description": "안정적으로 작동하는 최신 2.5 Flash 모델 (추천)",
+            "daily_limit": 48
         }
     }
     

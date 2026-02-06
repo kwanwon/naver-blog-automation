@@ -150,6 +150,23 @@ class GPTHandler:
             self.use_dummy = True
         
         self.custom_prompt = self._load_custom_prompt()
+        self._print_usage_status()
+
+    def _print_usage_status(self):
+        """현재 AI 사용량 로그 출력 (초기화 여부 확인용)"""
+        try:
+            data = self._load_ai_usage()
+            usage = data.get("usage", {})
+            
+            f_usage = usage.get("gemini-2.5-flash", 0)
+            f_limit = Config.AI_MODELS["gemini-2.5-flash"]["daily_limit"]
+            
+            l_usage = usage.get("gemini-2.5-flash-lite", 0)
+            l_limit = Config.AI_MODELS["gemini-2.5-flash-lite"]["daily_limit"]
+            
+            logger.info(f"📊 [AI 사용량 체크] Flash: {f_usage}/{f_limit}회 | Lite: {l_usage}/{l_limit}회 (오늘 누적)")
+        except:
+            pass
 
     def _load_settings(self):
         """GPT 설정을 로드합니다."""
@@ -361,6 +378,72 @@ class GPTHandler:
             
         return user_settings
 
+    def _get_usage_path(self):
+        """AI 사용량 기록 파일 경로"""
+        try:
+            return os.path.join(get_config_dir(), 'ai_usage.json')
+        except:
+            return os.path.join(self.settings.get('base_dir', '.'), 'config', 'ai_usage.json')
+
+    def _load_ai_usage(self):
+        """AI 사용량 로드"""
+        path = self._get_usage_path()
+        try:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except:
+            pass
+        return {"date": datetime.now().strftime("%Y-%m-%d"), "usage": {}}
+
+    def _save_ai_usage(self, data):
+        """AI 사용량 저장"""
+        try:
+            path = self._get_usage_path()
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except:
+            pass
+
+    def _check_daily_limit(self, model_name):
+        """일일 사용량 한도 체크"""
+        model_info = Config.AI_MODELS.get(model_name, {})
+        limit = model_info.get('daily_limit')
+        
+        if limit is None: # 제한 없음
+            return True
+            
+        data = self._load_ai_usage()
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        # 날짜 변경 체크 및 초기화
+        if data.get("date") != today:
+            data = {"date": today, "usage": {}}
+            self._save_ai_usage(data)
+            
+        used = data["usage"].get(model_name, 0)
+        
+        if used >= limit:
+            logger.warning(f"⛔ {model_name} 일일 한도 초과 ({used}/{limit}) - 건너뜀")
+            return False
+            
+        return True
+
+    def _increment_usage(self, model_name):
+        """사용량 증가"""
+        try:
+            data = self._load_ai_usage()
+            today = datetime.now().strftime("%Y-%m-%d")
+            
+            if data.get("date") != today:
+                data = {"date": today, "usage": {}}
+            
+            data["usage"][model_name] = data["usage"].get(model_name, 0) + 1
+            self._save_ai_usage(data)
+            logger.info(f"📈 {model_name} 사용량 업데이트: {data['usage'][model_name]}회")
+        except Exception as e:
+            logger.error(f"사용량 업데이트 실패: {e}")
+
     def generate_content(self, topic, post_order=1, post_type_config=None, platform='blog', task_type=None):
         """주어진 주제로 블로그 콘텐츠를 생성합니다."""
         settings = self._load_settings()
@@ -424,6 +507,12 @@ class GPTHandler:
         for step in range(total):
             model_idx = (start_idx + step) % total
             model_name = selected_models[model_idx]
+
+            # 🟢 일일 한도 체크
+            if not self._check_daily_limit(model_name):
+                logger.info(f"{model_name} 한도 초과로 스킵")
+                continue
+
             provider = Config.AI_MODELS.get(model_name, {}).get("provider", "openai")
             logger.info(f"모델 시도 {step+1}/{total}: {model_name} ({provider})")
             try:
@@ -495,6 +584,7 @@ class GPTHandler:
                     body = f"{body}\n\n{slogan}"
                 
                 # 성공 시 다음 호출은 그다음 모델부터 시작
+                self._increment_usage(model_name)  # 🟢 사용량 증가
                 self.current_model_index = (model_idx + 1) % total
                 self._dbg(
                     "gpt_handler.generate_blog_post",
@@ -781,13 +871,22 @@ class GPTHandler:
             raise ImportError("google-generativeai 패키지가 필요합니다. pip install google-generativeai") from e
         
         genai.configure(api_key=target_api_key)
+    
+        # [System] 날짜 정보 자동 주입 (시점 오류 방지)
+        current_date_str = datetime.now().strftime("%Y년 %m월 %d일")
+        date_instruction = f"\n\n[System: 시점 고정]\n오늘은 {current_date_str}입니다. 글의 시점은 반드시 오늘({current_date_str})을 기준으로 작성되어야 합니다. 과거 데이터(2024년 등)에 얽매이지 말고 현재 시점에 맞춰 서술하세요."
+        if system_message:
+            system_message += date_instruction
+        else:
+            system_message = date_instruction
+
         model = genai.GenerativeModel(model_name)
         prompt_text = f"{system_message}\n\n{user_prompt}"
         response = model.generate_content(
             prompt_text,
             generation_config={
                 "temperature": 0.7,
-                "max_output_tokens": 2000,
+                "max_output_tokens": 8192,
                 "top_p": 0.9,
             }
         )

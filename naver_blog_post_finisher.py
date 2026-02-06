@@ -1266,19 +1266,33 @@ class NaverBlogPostFinisher:
         try:
             import json
             import os
+            import sys
             
-            # 설정 파일 경로
-            config_path = os.path.join(os.path.dirname(__file__), 'config', 'app_settings.json')
+            # 1. 사용자 데이터 디렉토리에서 먼저 확인 (path_utils.get_app_data_dir 로직)
+            if sys.platform == "win32":
+                local_app_data = os.environ.get('LOCALAPPDATA', os.path.expanduser('~\\AppData\\Local'))
+                base_path = os.path.join(local_app_data, 'BlogAutomation')
+            else:
+                base_path = os.path.join(os.path.expanduser('~'), '.blog_automation')
+            
+            config_path = os.path.join(base_path, 'config', 'app_settings.json')
             
             if os.path.exists(config_path):
                 with open(config_path, 'r', encoding='utf-8') as f:
                     settings = json.load(f)
                     # 기본값은 True (체크됨)
                     return settings.get('auto_final_publish', True)
-            else:
-                # 설정 파일이 없으면 기본값 True
-                print("⚠️ 앱 설정 파일을 찾을 수 없습니다. 기본값(자동 발행)을 사용합니다.")
-                return True
+            
+            # 2. 레거시 경로 확인 (현재 디렉토리)
+            legacy_path = os.path.join(os.path.dirname(__file__), 'config', 'app_settings.json')
+            if os.path.exists(legacy_path):
+                with open(legacy_path, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    return settings.get('auto_final_publish', True)
+            
+            # 설정 파일이 없으면 기본값 True
+            print("⚠️ 앱 설정 파일을 찾을 수 없습니다. 기본값(자동 발행)을 사용합니다.")
+            return True
                 
         except Exception as e:
             print(f"⚠️ 앱 설정 읽기 중 오류: {str(e)}. 기본값(자동 발행)을 사용합니다.")
@@ -2022,10 +2036,21 @@ class NaverBlogPostFinisher:
                 # 스크립트로 검색 입력 시도
                 script = f"""
                 function findAndEnterSearchQuery() {{
-                    const inputs = document.querySelectorAll('input[type="text"]');
+                    const inputs = document.querySelectorAll('input');
                     for (const input of inputs) {{
-                        if ((input.placeholder && (input.placeholder.includes('검색') || input.placeholder.includes('장소'))) ||
-                            (input.className && (input.className.includes('search') || input.className.includes('map')))) {{
+                        const type = (input.type || '').toLowerCase();
+                        if (type === 'hidden' || type === 'button' || type === 'submit') continue;
+                        
+                        const placeholder = (input.placeholder || '');
+                        const className = (input.className || '');
+                        
+                        // Check visibility
+                        if (!(input.offsetWidth > 0 && input.offsetHeight > 0)) continue;
+
+                        if ((placeholder && (placeholder.includes('검색') || placeholder.includes('장소'))) ||
+                            (className && (className.includes('search') || className.includes('map')))) {{
+                            
+                            input.focus();
                             input.value = '';
                             input.value = '{search_query}';
                             input.dispatchEvent(new Event('input', {{ bubbles: true }}));

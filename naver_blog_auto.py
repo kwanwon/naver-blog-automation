@@ -116,8 +116,17 @@ class NaverBlogAutomation:
         }
         
         try:
+            # 사용자 데이터 디렉토리 경로 계산
+            if sys.platform == "win32":
+                local_app_data = os.environ.get('LOCALAPPDATA', os.path.expanduser('~\\AppData\\Local'))
+                user_data_base = os.path.join(local_app_data, 'BlogAutomation')
+            else:
+                user_data_base = os.path.join(os.path.expanduser('~'), '.blog_automation')
+
             # 배포용 설정 파일 경로 처리 (우선순위 순서)
             config_paths = [
+                # 0. 사용자 데이터 및 글로벌 설정 (최우선)
+                os.path.join(user_data_base, 'config', 'user_settings.txt'),
                 # 1. 현재 디렉토리의 config 폴더 (개발 환경)
                 os.path.join(self.base_dir, 'config', 'user_settings.txt'),
                 # 2. settings 폴더의 JSON 파일 (앱 내 설정)

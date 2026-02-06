@@ -22,6 +22,7 @@ from utils.path_utils import get_config_dir, get_data_dir
 class ManualSessionHelper:
     def __init__(self):
         self.driver = None
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
         # 기준 디렉토리 설정 (path_utils 사용)
         self.config_dir = get_config_dir()
         self.session_file = os.path.join(self.config_dir, "naver_session.pkl")

@@ -31,7 +31,21 @@ def copy_to_clipboard(text: str) -> bool:
     Returns:
         성공 여부 (True/False)
     """
-    # 방법 1: pyperclip 시도
+    # 방법 1: macOS pbcopy (우선 순위 상향 - 포맷 보존)
+    if sys.platform == 'darwin':
+        try:
+            # pbcopy는 utf-8 인코딩된 바이트를 받음
+            process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process.communicate(text.encode('utf-8'))
+            if process.returncode == 0:
+                print("✅ [Clipboard] macOS pbcopy로 복사 성공")
+                return True
+            else:
+                print(f"⚠️ [Clipboard] pbcopy 실패: returncode={process.returncode}")
+        except Exception as e:
+            print(f"⚠️ [Clipboard] pbcopy 오류: {e}")
+
+    # 방법 2: pyperclip (Mac이 아니거나 pbcopy 실패 시)
     if PYPERCLIP_AVAILABLE:
         try:
             pyperclip.copy(text)
@@ -44,19 +58,6 @@ def copy_to_clipboard(text: str) -> bool:
                 print(f"⚠️ [Clipboard] pyperclip 복사 후 검증 실패 (원본: {len(text)}자, 결과: {len(result) if result else 0}자)")
         except Exception as e:
             print(f"⚠️ [Clipboard] pyperclip 오류: {e}")
-    
-    # 방법 2: macOS pbcopy 시도
-    if sys.platform == 'darwin':
-        try:
-            process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
-            process.communicate(text.encode('utf-8'))
-            if process.returncode == 0:
-                print("✅ [Clipboard] pbcopy로 복사 성공")
-                return True
-            else:
-                print(f"⚠️ [Clipboard] pbcopy 실패: returncode={process.returncode}")
-        except Exception as e:
-            print(f"⚠️ [Clipboard] pbcopy 오류: {e}")
     
     # 방법 3: Windows clip 시도
     if sys.platform == 'win32':
@@ -97,18 +98,16 @@ def paste_from_clipboard() -> str:
     # 방법 1: pyperclip
     if PYPERCLIP_AVAILABLE:
         try:
-            result = pyperclip.paste()
-            if result:
-                return result
+            return pyperclip.paste()
         except Exception as e:
             print(f"⚠️ [Clipboard] pyperclip paste 오류: {e}")
     
     # 방법 2: macOS pbpaste
     if sys.platform == 'darwin':
         try:
-            result = subprocess.run(['pbpaste'], capture_output=True, text=True)
-            if result.returncode == 0:
-                return result.stdout
+            process = subprocess.Popen(['pbpaste'], stdout=subprocess.PIPE)
+            out, err = process.communicate()
+            return out.decode('utf-8')
         except Exception as e:
             print(f"⚠️ [Clipboard] pbpaste 오류: {e}")
     
@@ -128,7 +127,7 @@ def paste_from_clipboard() -> str:
     return ""
 
 
-def insert_text_to_editor(driver, editor_element, content: str, platform: str = "generic") -> bool:
+def insert_text_to_editor(driver, editor_element, content: str, platform: str = "blog") -> bool:
     """
     에디터에 텍스트를 삽입합니다. 여러 가지 방법을 순차적으로 시도합니다.
     
@@ -141,9 +140,12 @@ def insert_text_to_editor(driver, editor_element, content: str, platform: str = 
     Returns:
         성공 여부
     """
+    import time
     from selenium.webdriver.common.keys import Keys
     from selenium.webdriver.common.action_chains import ActionChains
-    import time
+
+    if not content:
+        return True
     
     print(f"📝 [Insert] 텍스트 삽입 시도 ({len(content)}자, 플랫폼: {platform})")
     
@@ -180,7 +182,7 @@ def insert_text_to_editor(driver, editor_element, content: str, platform: str = 
         except Exception as e:
             print(f"⚠️ [Insert] 클립보드 붙여넣기 오류: {e}")
     
-    # 방법 2: JavaScript로 직접 삽입
+    # 방법 2: JavaScript로 직접 삽입 (execCommand 사용 추가)
     print("🔄 [Insert] JS 직접 삽입 시도...")
     try:
         # 플랫폼별 JS 스크립트
@@ -190,7 +192,22 @@ def insert_text_to_editor(driver, editor_element, content: str, platform: str = 
             
             if (!editor) return false;
             
-            // 방법 2a: innerText 직접 설정
+            // 방법 2a: insertText Command (가장 표준적인 텍스트 삽입)
+            try {
+                editor.focus();
+                const success = document.execCommand('insertText', false, content);
+                if (success) {
+                    console.log('execCommand insertText 성공');
+                    // 이벤트 트리거
+                    editor.dispatchEvent(new Event('input', { bubbles: true }));
+                    editor.dispatchEvent(new Event('change', { bubbles: true }));
+                    return true;
+                }
+            } catch (e) {
+                console.log('execCommand 시도 실패', e);
+            }
+
+            // 방법 2b: innerText 직접 설정
             try {
                 editor.focus();
                 editor.innerText = content;
@@ -198,15 +215,12 @@ def insert_text_to_editor(driver, editor_element, content: str, platform: str = 
                 // 이벤트 트리거
                 editor.dispatchEvent(new Event('input', { bubbles: true }));
                 editor.dispatchEvent(new Event('change', { bubbles: true }));
-                editor.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: ' ' }));
-                editor.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: ' ' }));
-                
                 return true;
             } catch (e) {
                 console.error('JS 삽입 오류:', e);
             }
             
-            // 방법 2b: innerHTML (줄바꿈 처리)
+            // 방법 2c: innerHTML (줄바꿈 처리)
             try {
                 const lines = content.split('\\n');
                 const html = lines.map(line => `<p>${line || '&nbsp;'}</p>`).join('');
