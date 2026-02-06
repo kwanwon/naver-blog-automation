@@ -152,7 +152,8 @@ class CrossPlatformBuilder:
             'manual_session_helper.py',
             'manual_login_helper.py',
             'setup_chrome_permissions.py',
-            'chromedriver'
+            'chromedriver',
+            'version.json'
         ]
         
         # ChromeDriver 플랫폼별 추가
