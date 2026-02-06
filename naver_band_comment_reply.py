@@ -213,10 +213,12 @@ class NaverBandCommentReply:
         
         try:
             # ★ 핵심: 답글쓰기 버튼들 찾기 ★
-            reply_buttons = self.driver.find_elements(By.CSS_SELECTOR, "button._replyBtn")
+            time.sleep(2)  # 페이지 로딩 대기
+            reply_btn_selectors = "button._replyBtn, button.reply, button.btn_reply, button.comment_reply"
+            reply_buttons = self.driver.find_elements(By.CSS_SELECTOR, reply_btn_selectors)
             
             if not reply_buttons:
-                print("  ℹ️ 답글쓰기 버튼을 찾을 수 없습니다.")
+                print("  ℹ️ 답글쓰기 버튼을 찾을 수 없습니다. (댓글이 없거나 로딩 실패)")
                 return 0
             
             total_buttons = len(reply_buttons)
@@ -232,7 +234,7 @@ class NaverBandCommentReply:
                 
                 try:
                     # 버튼 다시 찾기 (DOM 변경 대응)
-                    reply_buttons = self.driver.find_elements(By.CSS_SELECTOR, "button._replyBtn")
+                    reply_buttons = self.driver.find_elements(By.CSS_SELECTOR, reply_btn_selectors)
                     
                     if not reply_buttons:
                         break
@@ -389,7 +391,7 @@ class NaverBandCommentReply:
         """
         try:
             # 모든 답글쓰기 버튼 찾기
-            all_buttons = self.driver.find_elements(By.CSS_SELECTOR, "button._replyBtn")
+            all_buttons = self.driver.find_elements(By.CSS_SELECTOR, "button._replyBtn, button.reply, button.btn_reply, button.comment_reply")
             
             # 현재 버튼의 인덱스 찾기
             current_index = -1

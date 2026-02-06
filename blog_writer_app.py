@@ -2813,7 +2813,8 @@ class BlogWriterApp:
                                 gpt_handler=self.gpt_handler,
                                 base_dir=self.base_dir
                             )
-                            success = band_reply.process_band_comments(band_url=band_url, use_ai=True, limit=5)
+                            limit_count = int(task.data.get('limit', task.data.get('reply_count', 30))) if task.data else 30
+                            success = band_reply.process_band_comments(band_url=band_url, use_ai=True, limit=limit_count)
                             if success:
                                 print("✅ 밴드 댓글 답글 완료")
                                 task.last_status = 'completed'
@@ -2827,7 +2828,8 @@ class BlogWriterApp:
                     from naver_blog_comment_reply import NaverBlogCommentReply
                     driver = self.get_or_create_driver()
                     reply_bot = NaverBlogCommentReply(driver=driver, gpt_handler=self.gpt_handler)
-                    count = reply_bot.process_all_unanswered_comments(use_ai=True, limit=10)
+                    limit_val = int(task.data.get('limit', 10)) if task.data else 10
+                    count = reply_bot.process_all_unanswered_comments(use_ai=True, limit=limit_val)
                     print(f"✅ 블로그 댓글 답글 완료: {count}개")
                     if count > 0:
                         task.last_status = 'completed'
@@ -2849,7 +2851,8 @@ class BlogWriterApp:
                             gpt_handler=self.gpt_handler,
                             base_dir=self.base_dir
                         )
-                        success = band_reply.process_band_comments(band_url=band_url, use_ai=True, limit=5)
+                        limit_count = int(task.data.get('limit', task.data.get('reply_count', 30))) if task.data else 30
+                        success = band_reply.process_band_comments(band_url=band_url, use_ai=True, limit=limit_count)
                         if success:
                             print("✅ 밴드 댓글 답글 완료")
                             task.last_status = 'completed'
