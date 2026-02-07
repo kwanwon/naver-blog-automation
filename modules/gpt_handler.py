@@ -44,7 +44,19 @@ def get_app_bundle_config_path():
             # /Users/.../BlogAutomation_Mac.app/Contents/MacOS/BlogAutomation_Mac
             macos_dir = os.path.dirname(exe_path)
             # /Users/.../BlogAutomation_Mac.app/Contents/MacOS
-            return os.path.join(macos_dir, 'config')
+            macos_dir = os.path.dirname(exe_path)
+            
+            # 1. MacOS/config 확인
+            macos_config = os.path.join(macos_dir, 'config')
+            if os.path.exists(macos_config):
+                return macos_config
+                
+            # 2. Resources/config 확인 (PyInstaller 기본)
+            resources_config = os.path.join(os.path.dirname(macos_dir), 'Resources', 'config')
+            if os.path.exists(resources_config):
+                return resources_config
+                
+            return macos_config
     except Exception:
         pass
     return None
