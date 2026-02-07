@@ -128,8 +128,14 @@ class GPTHandler:
                 api_key = self.settings['api_key']
                 logger.info("GPT 설정 파일에서 API 키를 로드했습니다.")
             else:
-                api_key = Config.GPT_API_KEY
-                logger.info("환경변수에서 API 키를 로드했습니다.")
+                # 🆕 api_key.json 파일 확인
+                file_api_key = self._load_api_key_from_file()
+                if file_api_key:
+                    api_key = file_api_key
+                    logger.info("api_key.json 파일에서 API 키를 로드했습니다.")
+                else:
+                    api_key = Config.GPT_API_KEY
+                    logger.info("환경변수에서 API 키를 로드했습니다.")
             
             if api_key == 'your-api-key-here' or not api_key:
                 logger.warning("API 키가 설정되지 않았습니다. 더미 모드로 전환합니다.")
@@ -310,6 +316,50 @@ class GPTHandler:
             traceback.print_exc()
             
         return custom_prompts
+
+    def _load_api_key_from_file(self):
+        """api_key.json 파일에서 API 키를 로드합니다."""
+        try:
+            # 스크립트 파일의 위치를 기준으로 경로 계산
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(script_dir)
+            
+            # 앱 번들 경로 확인
+            app_bundle_config = get_app_bundle_config_path()
+            
+            # 여러 경로 시도
+            possible_paths = [
+                # 1. 글로벌 설정
+                os.path.join(get_config_dir(), 'api_key.json'),
+                # 1.1 레거시
+                os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'api_key.json'),
+            ]
+            
+            # 2. 앱 번들
+            if app_bundle_config:
+                possible_paths.append(os.path.join(app_bundle_config, 'api_key.json'))
+            
+            # 3. 로컬/리소스
+            possible_paths.extend([
+                os.path.join(parent_dir, 'config', 'api_key.json'),
+                os.path.join(os.getcwd(), 'config', 'api_key.json'),
+                'config/api_key.json',
+                resource_path('config/api_key.json')
+            ])
+            
+            for path in possible_paths:
+                abs_path = os.path.abspath(path)
+                if os.path.exists(abs_path):
+                    with open(abs_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        if isinstance(data, dict) and 'api_key' in data and data['api_key']:
+                            return data['api_key']
+                            
+        except Exception as e:
+            # print(f"API 키 파일 로드 실패: {e}")
+            pass
+            
+        return None
 
     def _load_user_settings(self):
         """사용자 설정을 로드합니다."""
