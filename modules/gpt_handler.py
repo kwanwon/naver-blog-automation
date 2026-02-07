@@ -55,6 +55,16 @@ def get_app_bundle_config_path():
             resources_config = os.path.join(os.path.dirname(macos_dir), 'Resources', 'config')
             if os.path.exists(resources_config):
                 return resources_config
+            
+            # 3. Frameworks/config 확인 (GitHub Actions 빌드 등)
+            frameworks_config = os.path.join(os.path.dirname(macos_dir), 'Frameworks', 'config')
+            if os.path.exists(frameworks_config):
+                return frameworks_config
+
+            # 4. Frameworks 루트 확인
+            frameworks_root = os.path.join(os.path.dirname(macos_dir), 'Frameworks')
+            if os.path.exists(os.path.join(frameworks_root, 'gpt_settings.txt')):
+                return frameworks_root
                 
             return macos_config
     except Exception:

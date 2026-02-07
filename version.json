@@ -1,8 +1,9 @@
 {
-  "version": "1.2.71",
-  "updated_at": "2026-02-07T17:18:00",
+  "version": "1.2.72",
+  "updated_at": "2026-02-07T18:55:00",
   "release_date": "2026-02-07",
   "changelog": [
+    "🐛 [Fix] GitHub Actions 빌드 호환성 개선: `Contents/Frameworks` 내부 설정 파일 인식 지원",
     "⚡ [Critical Fix] Gemini 2.5 Flash 모델 삭제 (생성 중단/불안정 이슈 해결)",
     "🔧 [Critical Fix] API Key 로드 로직 개선 및 .env 파일 의존성 제거 (보안성 강화)",
     "🐛 [Fix] macOS 번들 내 설정 파일(api_key.json 등) 인식 경로 수정",
