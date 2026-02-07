@@ -99,16 +99,7 @@ class Config:
             "output_cost_per_1k_krw": 0.0,
             "daily_limit": 990
         },
-        "gemini-2.5-flash": {
-            "provider": "gemini",
-            "name": "Gemini 2.5 Flash",
-            "context": "1M",
-            "input_cost_per_1k_krw": 0.0,
-            "output_cost_per_1k_krw": 0.0,
-            "description": "안정적으로 작동하는 최신 2.5 Flash 모델 (추천)",
-            "description": "안정적으로 작동하는 최신 2.5 Flash 모델 (추천)",
-            "daily_limit": 48
-        }
+
     }
     
     @staticmethod

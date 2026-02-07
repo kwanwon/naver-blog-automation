@@ -1,8 +1,11 @@
 {
-  "version": "1.2.70",
-  "updated_at": "2026-02-06T19:50:00",
-  "release_date": "2026-02-06",
+  "version": "1.2.71",
+  "updated_at": "2026-02-07T17:18:00",
+  "release_date": "2026-02-07",
   "changelog": [
+    "⚡ [Critical Fix] Gemini 2.5 Flash 모델 삭제 (생성 중단/불안정 이슈 해결)",
+    "🔧 [Critical Fix] API Key 로드 로직 개선 및 .env 파일 의존성 제거 (보안성 강화)",
+    "🐛 [Fix] macOS 번들 내 설정 파일(api_key.json 등) 인식 경로 수정",
     "✨ [Feature] 실시간 로그 뷰어 추가 (앱 내 실행 로그 확인 및 외부 터미널 열기 기능)",
     "🐛 [Critical] 네이버 블로그 자동 발행/태그 설정 미적용 문제 수정 (설정 파일 경로 인식 오류 해결)",
     "🐛 [Fix] 설정값(구글 시트, 폴더 등) 변경 시 즉시 저장되도록 개선 (데이터 유실 방지)",
