@@ -1230,43 +1230,63 @@ class GPTHandler:
 
     def generate_reply(self, system_prompt: str, user_text: str, max_tokens: int = 150) -> str:
         """
-        간단한 댓글 답글 생성용 메서드
-        - system_prompt: AI 역할 및 지침
-        - user_text: 사용자(회원) 댓글 내용
-        - max_tokens: 최대 토큰 수
+        간단한 댓글 답글 생성용 메서드 (모델 순환 및 재시도 로직 적용)
         """
-        if self.use_dummy:
-            return "감사합니다! 좋은 하루 보내세요!"
+        fallback_msg = "잘 보고 갑니다! 좋은 하루 되세요~"
         
-        try:
-            model_name = self.selected_models[self.current_model_index] if self.selected_models else "gpt-4o-mini"
+        if self.use_dummy:
+            return fallback_msg
+        
+        selected_models = self.selected_models
+        if not selected_models:
+            selected_models = [Config.GPT_MODEL]
+            
+        total = len(selected_models)
+        # 로드 밸런싱: 현재 인덱스부터 시작
+        start_idx = self.current_model_index if self.current_model_index < total else 0
+        
+        for step in range(total):
+            model_idx = (start_idx + step) % total
+            model_name = selected_models[model_idx]
+            
+            # 일일 한도 체크 (선택 사항)
+            if not self._check_daily_limit(model_name):
+                continue
+
             provider = Config.AI_MODELS.get(model_name, {}).get("provider", "openai")
             
-            if provider == "openai":
-                resp = self.openai_client.chat.completions.create(
-                    model=model_name,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_text}
-                    ],
-                    temperature=0.8,
-                    max_tokens=max_tokens,
-                    top_p=0.9
-                )
-                return resp.choices[0].message.content.strip()
-            elif provider == "gemini":
-                prompt_text = f"{system_prompt}\n\n{user_text}"
-                content = self._generate_with_gemini(model_name, system_prompt, user_text)
-                return content.strip()
-            else:
-                return "감사합니다! 좋은 하루 보내세요!"
-        except Exception as e:
-            logger.error(f"답글 생성 오류: {e}")
-            return "감사합니다! 좋은 하루 보내세요!"
-        finally:
-            # 🆕 다음 생성을 위해 모델 순환 (로드 밸런싱)
-            if self.selected_models:
-                self.current_model_index = (self.current_model_index + 1) % len(self.selected_models)
+            try:
+                if provider == "openai":
+                    resp = self.openai_client.chat.completions.create(
+                        model=model_name,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_text}
+                        ],
+                        temperature=0.8,
+                        max_tokens=max_tokens,
+                        top_p=0.9
+                    )
+                    content = resp.choices[0].message.content.strip()
+                elif provider == "gemini":
+                    # Flash-Lite 등 쿼터 에러 대응
+                    content = self._generate_with_gemini(model_name, system_prompt, user_text)
+                else:
+                    continue
+
+                if content:
+                    # 성공 시 다음 모델 인덱스 업데이트
+                    self._increment_usage(model_name)
+                    self.current_model_index = (model_idx + 1) % total
+                    return content
+                    
+            except Exception as e:
+                logger.error(f"답글 생성 오류 ({model_name}): {e}")
+                continue
+        
+        # 모든 모델 실패 시 더미 반환
+        logger.warning("모든 모델 답글 생성 실패, 기본 문구 사용")
+        return fallback_msg
 
 if __name__ == "__main__":
     # 테스트 코드
