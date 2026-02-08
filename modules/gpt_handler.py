@@ -4,6 +4,8 @@ import random
 import os
 import sys
 import json
+import urllib.request
+import urllib.parse
 import time
 import traceback
 from datetime import datetime
@@ -947,6 +949,16 @@ class GPTHandler:
         # [System] 날짜 정보 자동 주입 (시점 오류 방지)
         current_date_str = datetime.now().strftime("%Y년 %m월 %d일")
         date_instruction = f"\n\n[System: 시점 고정]\n오늘은 {current_date_str}입니다. 글의 시점은 반드시 오늘({current_date_str})을 기준으로 작성되어야 합니다. 과거 데이터(2024년 등)에 얽매이지 말고 현재 시점에 맞춰 서술하세요."
+        
+        # [System] Brave Search (실시간 정보 검색)
+        search_results = self._search_brave(topic)
+        if search_results:
+            search_context = f"\n\n[System: 실시간 검색 결과 (Brave Search)]\n다음 최신 정보를 참고하여 글을 풍성하게 작성하세요:\n{search_results}\n\n(검색된 내용을 자연스럽게 본문에 녹여내세요.)"
+            if system_message:
+                system_message += search_context
+            else:
+                system_message = search_context
+
         if system_message:
             system_message += date_instruction
         else:
@@ -1287,6 +1299,39 @@ class GPTHandler:
         # 모든 모델 실패 시 더미 반환
         logger.warning("모든 모델 답글 생성 실패, 기본 문구 사용")
         return fallback_msg
+
+    def _search_brave(self, query: str) -> str:
+        """Brave Search API를 사용하여 실시간 검색 결과를 반환합니다."""
+        api_key = self.settings.get('brave_key')
+        if not api_key:
+            return ""
+            
+        try:
+            # 기본 검색 URL
+            url = "https://api.search.brave.com/res/v1/web/search"
+            headers = {"X-Subscription-Token": api_key, "Accept": "application/json"}
+            # 검색어 인코딩 및 파라미터 설정 (상위 3개 결과)
+            params = urllib.parse.urlencode({"q": query, "count": 3})
+            
+            req = urllib.request.Request(f"{url}?{params}", headers=headers)
+            with urllib.request.urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                
+            results = []
+            for item in data.get('web', {}).get('results', []):
+                title = item.get('title', '')
+                desc = item.get('description', '')
+                link = item.get('url', '')
+                results.append(f"- **{title}**: {desc} (출처: {link})")
+                
+            if results:
+                logger.info(f"Brave Search 성공: '{query}' 관련 {len(results)}건 검색됨")
+                return "\n".join(results)
+            return ""
+            
+        except Exception as e:
+            logger.warning(f"Brave Search 실패 (무시됨): {e}")
+            return ""
 
 if __name__ == "__main__":
     # 테스트 코드
