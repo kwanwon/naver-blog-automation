@@ -4548,8 +4548,9 @@ class BlogWriterApp:
                 body_text = "본문 내용을 가져올 수 없습니다."
 
             # Generate Reply
-            intent = self.smart_reply.classify_intent(body_text)
-            reply_text = self.smart_reply.generate_reply(target_text=body_text, intent=intent, platform=platform)
+            selected_models = self.settings.get('selected_models')
+            intent = self.smart_reply.classify_intent(body_text, selected_models=selected_models)
+            reply_text = self.smart_reply.generate_reply(target_text=body_text, intent=intent, platform=platform, selected_models=selected_models)
             
             if not reply_text:
                 self.page.snack_bar = ft.SnackBar(ft.Text("❌ 댓글 생성 실패"), bgcolor=ft.Colors.RED)

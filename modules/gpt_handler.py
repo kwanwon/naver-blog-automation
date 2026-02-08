@@ -1228,7 +1228,7 @@ class GPTHandler:
         
         return '\n\n'.join(formatted_paragraphs)
 
-    def generate_reply(self, system_prompt: str, user_text: str, max_tokens: int = 150) -> str:
+    def generate_reply(self, system_prompt: str, user_text: str, max_tokens: int = 150, selected_models: list = None) -> str:
         """
         간단한 댓글 답글 생성용 메서드 (모델 순환 및 재시도 로직 적용)
         """
@@ -1237,17 +1237,19 @@ class GPTHandler:
         if self.use_dummy:
             return fallback_msg
         
-        selected_models = self.selected_models
-        if not selected_models:
-            selected_models = [Config.GPT_MODEL]
+        # 인자로 전달된 모델 목록이 있으면 사용, 없으면 설정된 모델 사용
+        models_to_use = selected_models if selected_models else self.selected_models
+        
+        if not models_to_use:
+            models_to_use = [Config.GPT_MODEL]
             
-        total = len(selected_models)
-        # 로드 밸런싱: 현재 인덱스부터 시작
-        start_idx = self.current_model_index if self.current_model_index < total else 0
+        total = len(models_to_use)
+        # 로드 밸런싱: 현재 인덱스부터 시작 (단, 모델 목록이 변경되었을 수 있으므로 인덱스 조정 필요)
+        start_idx = self.current_model_index % total
         
         for step in range(total):
             model_idx = (start_idx + step) % total
-            model_name = selected_models[model_idx]
+            model_name = models_to_use[model_idx]
             
             # 일일 한도 체크 (선택 사항)
             if not self._check_daily_limit(model_name):
