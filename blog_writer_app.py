@@ -5229,6 +5229,15 @@ class BlogWriterApp:
             can_reveal_password=False,
             visible=True
         )
+
+        # Brave Search API 키 (New)
+        brave_api_key_field = ft.TextField(
+            label="Brave Search API 키",
+            hint_text="Brave Search API 키 (선택 사항)",
+            password=True,
+            can_reveal_password=True,
+            visible=True
+        )
         
         api_key_help_text = ft.Text(
             "API 키는 보안을 위해 항상 암호화되어 표시됩니다. *** 웹사이트에서 발급받은 키를 입력하세요.",
@@ -5485,6 +5494,7 @@ class BlogWriterApp:
                     "selected_models": [mid for mid, cb in model_checkboxes.items() if cb.value],
                     "api_key": api_key_field.value,
                     "gemini_api_key": gemini_api_key_field.value,
+                    "brave_key": brave_api_key_field.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 # 🆕 글로벌 설정 경로 사용
@@ -5574,6 +5584,7 @@ class BlogWriterApp:
                         for mid, cb in model_checkboxes.items():
                             cb.value = mid in selected_models
                         gemini_api_key_field.value = settings.get('gemini_api_key', '')
+                        brave_api_key_field.value = settings.get('brave_key', '')
                 
                 # API 사용 여부 설정 로드
                 # 🆕 글로벌 설정 경로 사용
@@ -6895,6 +6906,7 @@ class BlogWriterApp:
                             use_api_checkbox,
                             api_key_field,
                             gemini_api_key_field,
+                            brave_api_key_field,
                             api_key_help_text,
                             auto_upload_checkbox,
                             auto_upload_help_text,
