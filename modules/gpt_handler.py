@@ -119,10 +119,23 @@ class GPTHandler:
         # 모델 선택 로드
         self.selected_models = self.settings.get('selected_models', [])
         
-        # 삭제된/미지원 모델 정리
-        self.selected_models = [
-            m for m in self.selected_models if m in Config.AI_MODELS
-        ]
+        # 삭제된/미지원 모델 정리 (경고만 하고 유지)
+        original_models = self.selected_models
+        self.selected_models = []
+        for m in original_models:
+            if m in Config.AI_MODELS:
+                self.selected_models.append(m)
+            else:
+                # 설정에 없어도 이름 기반으로 공급자 추론하여 허용
+                inferred_provider = "gemini" if "gemini" in m.lower() else "openai"
+                # 런타임에 Config에 추가 (임시 지원)
+                Config.AI_MODELS[m] = {
+                    "provider": inferred_provider,
+                    "name": m,
+                    "manual_add": True
+                }
+                self.selected_models.append(m)
+                logger.warning(f"⚠️ 설정에 없는 모델 '{m}'이 감지되었습니다. 임시로 {inferred_provider} 공급자로 등록합니다.")
         if not self.selected_models:
             self.selected_models = [Config.GPT_MODEL]
         self.current_model_index = 0

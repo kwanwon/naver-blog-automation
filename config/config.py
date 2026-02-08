@@ -99,7 +99,15 @@ class Config:
             "output_cost_per_1k_krw": 0.0,
             "daily_limit": 990
         },
-
+        "gemini-2.5-flash": {
+            "provider": "gemini",
+            "name": "Gemini 2.5 Flash",
+            "context": "1M",
+            "free": True,
+            "input_cost_per_1k_krw": 0.0,
+            "output_cost_per_1k_krw": 0.0,
+            "daily_limit": 990
+        },
     }
     
     @staticmethod
