@@ -552,6 +552,13 @@ class GPTHandler:
 필수: 문단 사이에는 반드시 빈 줄을 추가하여 가독성을 높이세요.
 필수: 문장 간 띄어쓰기와 맞춤법을 정확히 지키세요.
 """
+        
+        # 🟢 Brave Search (실시간 정보 검색) - 모든 플랫폼(블로그/밴드/카페) 공통 적용
+        if topic:
+            search_results = self._search_brave(topic)
+            if search_results:
+                search_hint = f"\n\n[System: 실시간 검색 결과 (Brave Search)]\n다음 최신 정보를 참고하여 글을 풍성하게 작성하세요:\n{search_results}\n(검색된 내용을 자연스럽게 본문에 녹여내세요.)"
+                system_message += search_hint
         base_prompt = f"""주제: {topic}
 
 다음 형식으로 작성:
@@ -949,15 +956,6 @@ class GPTHandler:
         # [System] 날짜 정보 자동 주입 (시점 오류 방지)
         current_date_str = datetime.now().strftime("%Y년 %m월 %d일")
         date_instruction = f"\n\n[System: 시점 고정]\n오늘은 {current_date_str}입니다. 글의 시점은 반드시 오늘({current_date_str})을 기준으로 작성되어야 합니다. 과거 데이터(2024년 등)에 얽매이지 말고 현재 시점에 맞춰 서술하세요."
-        
-        # [System] Brave Search (실시간 정보 검색)
-        search_results = self._search_brave(topic)
-        if search_results:
-            search_context = f"\n\n[System: 실시간 검색 결과 (Brave Search)]\n다음 최신 정보를 참고하여 글을 풍성하게 작성하세요:\n{search_results}\n\n(검색된 내용을 자연스럽게 본문에 녹여내세요.)"
-            if system_message:
-                system_message += search_context
-            else:
-                system_message = search_context
 
         if system_message:
             system_message += date_instruction
