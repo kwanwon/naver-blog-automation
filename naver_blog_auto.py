@@ -387,6 +387,8 @@ class NaverBlogAutomation:
             chrome_options.add_argument("--disable-sync")
             chrome_options.add_argument("--metrics-recording-only")
             chrome_options.add_argument("--no-first-run")
+            chrome_options.add_argument("--no-default-browser-check")
+            chrome_options.add_argument("--disable-search-engine-choice-screen")
             chrome_options.add_argument("--safebrowsing-disable-auto-update")
             chrome_options.add_argument("--enable-automation")
             chrome_options.add_argument("--password-store=basic")
