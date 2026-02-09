@@ -559,6 +559,13 @@ class GPTHandler:
             if search_results:
                 search_hint = f"\n\n[System: 실시간 검색 결과 (Brave Search)]\n다음 최신 정보를 참고하여 글을 풍성하게 작성하세요:\n{search_results}\n(검색된 내용을 자연스럽게 본문에 녹여내세요.)"
                 system_message += search_hint
+        
+        # 🟢 현재 날짜/시간 정보 주입 (AI가 '오늘'을 알 수 있게 함)
+        weekdays = ["월", "화", "수", "목", "금", "토", "일"]
+        now = datetime.now()
+        weekday_str = weekdays[now.weekday()]
+        now_str = now.strftime(f"%Y년 %m월 %d일 ({weekday_str}) %H시 %M분")
+        system_message += f"\n[현재 시간: {now_str}]\n"
         base_prompt = f"""주제: {topic}
 
 다음 형식으로 작성:
@@ -1309,7 +1316,14 @@ class GPTHandler:
             url = "https://api.search.brave.com/res/v1/web/search"
             headers = {"X-Subscription-Token": api_key, "Accept": "application/json"}
             # 검색어 인코딩 및 파라미터 설정 (상위 3개 결과)
-            params = urllib.parse.urlencode({"q": query, "count": 3})
+            params_dict = {"q": query, "count": 3}
+            
+            # 🟢 뉴스/날씨/이슈 관련 검색이면 '최신성(Past Day)' 필터 적용
+            if any(k in query for k in ["뉴스", "소식", "이슈", "동향", "트렌드", "날씨", "미세먼지", "오늘", "속보", "최신"]):
+                params_dict["freshness"] = "pd"  # pd: Past Day (지난 24시간)
+                logger.info(f"Brave Search 최신성 필터 적용 (freshness=pd): {query}")
+            
+            params = urllib.parse.urlencode(params_dict)
             
             req = urllib.request.Request(f"{url}?{params}", headers=headers)
             with urllib.request.urlopen(req, timeout=5) as response:
