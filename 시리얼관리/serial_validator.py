@@ -259,8 +259,6 @@ class SerialManager:
         self.check_serial_status()  # 상태 체크 시작
         self.check_server_connection()
         self.root.after(3600000, self.check_expiring_serials)
-        
-        self.check_server_connection()
     
     def init_database(self):
         """데이터베이스 초기화"""
@@ -413,9 +411,7 @@ class SerialManager:
         self.tree.tag_configure('in_use', foreground='blue')  # 사용중
         self.tree.tag_configure('expiring_soon', foreground='#FFA500')  # 만료 예정
         
-        # 현재 시간 표시 레이블 추가
-        self.time_label = ttk.Label(self.root, text="", font=("Helvetica", 12))
-        self.time_label.pack(pady=5)
+
     
     def check_server_connection(self):
         """서버 연결 상태 확인"""
@@ -935,7 +931,8 @@ class SerialManager:
                     has_device_info = device_info and any(device_info.values())
                     
                     if has_device_info:
-                        device_id = device_info.get('hostname', '') + device_info.get('ip_address', '')
+                        app_name = device_info.get('app_name', '')
+                        device_id = device_info.get('hostname', '') + device_info.get('ip_address', '') + app_name
                         if device_id:
                             # 이미 해당 디바이스에 다른 시리얼이 활성화되어 있다면
                             if device_id in active_devices:
@@ -943,7 +940,7 @@ class SerialManager:
                                 old_serial = active_devices[device_id]
                                 self.cursor.execute("""
                                     UPDATE serials 
-                                    SET device_info = '{}', activation_count = 0
+                                    SET device_info = '{}', activation_count = 0, status = '사용가능'
                                     WHERE serial_number = ?
                                 """, (old_serial,))
                             active_devices[device_id] = serial_number
@@ -1615,7 +1612,7 @@ class SerialManager:
                                 f"{SERVER_URL}/api/serials/{serial_number}",
                                 json={
                                     "status": new_status,
-                                    "expiry_date": expiry_date_str
+                                    "expiry_date": expiry_date.strftime('%Y-%m-%d')
                                 },
                                 timeout=30
                             )
