@@ -13,6 +13,8 @@ import requests
 import zipfile
 import tempfile
 import platform
+import subprocess
+import time
 import logging
 from datetime import datetime
 
@@ -348,7 +350,91 @@ class AutoUpdater:
             self.logger.error(f"압축 해제 오류: {e}")
             return None
 
-    def apply_update(self, update_path, preserved_data):
+    def _update_on_mac(self, update_source_dir, preserved_data):
+        """macOS: .app 번들 전체 교체 및 재시작 스크립트 실행"""
+        try:
+            # 1. 경로 식별
+            # self.app_dir = .../Contents/Frameworks
+            # bundle_path = .../App.app
+            frameworks_dir = self.app_dir
+            contents_dir = os.path.dirname(frameworks_dir)
+            app_bundle_path = os.path.dirname(contents_dir)
+            app_bundle_name = os.path.basename(app_bundle_path)
+            
+            # 현재 실행 중인 경로가 .app 번들 내부인지 확인
+            if not app_bundle_name.endswith('.app'):
+                self.logger.warning(f"App Bundle 경로가 아님: {app_bundle_path}. 기본 복사 방식 사용.")
+                # 개발 환경 등에서는 기존 방식 사용
+                return self.apply_update(update_source_dir, preserved_data), "기본 업데이트 적용"
+
+            # 2. 새로운 앱 번들 찾기
+            # update_source_dir은 version.json이 있는 곳 (.../Contents/Frameworks)
+            up_contents = os.path.dirname(update_source_dir)
+            up_bundle = os.path.dirname(up_contents)
+            
+            if not up_bundle.endswith('.app'):
+                 self.logger.warning(f"업데이트 소스에서 .app 번들을 찾을 수 없음: {up_bundle}")
+                 return False, "업데이트 패키지 구조 오류 (.app 번들 구조가 아님)"
+
+            new_app_bundle = up_bundle
+            
+            self.logger.info(f"macOS 번들 업데이트 준비: {new_app_bundle} -> {app_bundle_path}")
+
+            # 3. 데이터 보존 (Temp 경로에 저장)
+            restore_temp_dir = os.path.join(self.temp_dir, "restore_data")
+            if os.path.exists(restore_temp_dir):
+                shutil.rmtree(restore_temp_dir)
+            os.makedirs(restore_temp_dir)
+            
+            # 메모리에 있는 preserved_data를 temp 파일로 저장
+            for rel_path, content in preserved_data.items():
+                full_path = os.path.join(restore_temp_dir, rel_path)
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                with open(full_path, 'wb') as f:
+                    f.write(content)
+            
+            # 4. 쉘 스크립트 생성
+            script_path = os.path.join(self.temp_dir, "update_script.sh")
+            trash_path = os.path.join(self.temp_dir, f"old_app_{int(time.time())}")
+            
+            script_content = f"""#!/bin/bash
+# Wait for app to close
+sleep 2
+
+echo "Running update for {app_bundle_name}..."
+
+# 1. Move old app to temp trash
+mv "{app_bundle_path}" "{trash_path}"
+
+# 2. Move new app to destination
+mv "{new_app_bundle}" "{app_bundle_path}"
+
+# 3. Restore User Data
+# copy preserved files into Frameworks
+TARGET_FRAMEWORKS="{app_bundle_path}/Contents/Frameworks"
+if [ -d "$TARGET_FRAMEWORKS" ]; then
+    cp -R "{restore_temp_dir}/" "$TARGET_FRAMEWORKS/"
+fi
+
+# 4. cleanup
+# rm -rf "{trash_path}" # 안전을 위해 일단 보존하거나 나중에 삭제
+
+# 5. Relaunch
+open "{app_bundle_path}"
+"""
+            with open(script_path, 'w') as f:
+                f.write(script_content)
+            os.chmod(script_path, 0o755)
+            
+            # 5. 스크립트 실행 (Detached)
+            subprocess.Popen([script_path], shell=False, start_new_session=True)
+            return True, "업데이트 스크립트가 시작되었습니다. 앱이 재시작됩니다."
+            
+        except Exception as e:
+            self.logger.error(f"macOS 업데이트 스크립트 생성 실패: {e}")
+            return False, f"업데이트 실패: {e}"
+
+
         """업데이트 파일 덮어쓰기"""
         try:
             self.logger.info("업데이트 적용 시작...")
@@ -477,8 +563,20 @@ class AutoUpdater:
                     return True, "업데이트를 위해 앱을 재시작합니다..."
                 else:
                     return False, "Windows 업데이트 스크립트 실행 실패"
+            
+            elif sys.platform == 'darwin' and self.is_frozen:
+                # macOS (Frozen App): .app 번들 교체 방식
+                self.logger.info("macOS 환경: Bundle 교체 프로세스 진입")
+                success, msg = self._update_on_mac(update_path, preserved_data)
+                
+                if success:
+                    # 스크립트가 실행되었으므로 앱은 곧 종료/재시작됨
+                    return True, msg
+                else:
+                    return False, msg
+                    
             else:
-                # macOS/Linux: 즉시 적용
+                # Linux or Source mode: 파일 덮어쓰기 방식
                 if not self.apply_update(update_path, preserved_data):
                     # 롤백 로직이 필요하다면 여기에 추가
                     return False, "업데이트 적용에 실패했습니다."
