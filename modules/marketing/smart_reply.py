@@ -165,16 +165,31 @@ class SmartReply:
         except Exception as e:
             self.logger.error(f"인사 답글 생성 실패: {e}")
             return "감사합니다! 자주 소통해요! :)"
-    def generate_reply(self, target_text: str, intent: str, platform: str = 'blog') -> str:
+    def generate_reply(self, target_text: str, intent: str, platform: str = 'blog', is_outbound: bool = False) -> str:
         """
         상대방 글에 대한 댓글/답글 생성
+        :param is_outbound: True이면 남의 블로그에 찾아가서 다는 댓글 (홍보 절대 금지), False이면 내 블로그에 달린 댓글에 대한 답글
         """
-        # 1. 페르소나 컨텍스트 가져오기
-        persona_context = self.persona_manager.get_system_prompt_context()
+        
+        # 1. 페르소나 컨텍스트 설정
+        if is_outbound:
+            # [남의 블로그 방문 시] - 철저한 방문자 모드
+            persona_context = """
+당신은 블로그 이웃들과 소통하기를 좋아하는 친절하고 센스 있는 블로거입니다.
+상대방의 글을 읽고 진심으로 공감하거나 칭찬하는 댓글을 남기세요.
+
+[절대 금지 사항]
+1. **당신의 정체(체육관 관장, 지도자 등)를 절대 밝히지 마세요.**
+2. **"우리 체육관", "저희 도장", "상담", "프로그램" 등 홍보성 단어를 절대 사용하지 마세요.**
+3. 상대방이 묻지 않았는데 당신의 이야기나 홍보를 하지 마세요. 오직 상대방의 글 내용에만 집중하세요.
+"""
+        else:
+            # [내 블로그 답글 시] - 기존 페르소나 (관장님 모드)
+            persona_context = self.persona_manager.get_system_prompt_context()
         
         # 2. 의도별 추가 지침
         intent_instruction = ""
-        marketing_block = "" # 광고 금지 지침
+        marketing_block = ""
         
         if intent == 'SENSITIVE':
             intent_instruction = "가장 중요: 절대 홍보하지 마세요. 오직 걱정과 위로의 마음만 짧게 전하세요. '안전이 최우선입니다', '큰 피해 없으시길 바랍니다' 등. 이모지도 사용하지 않거나 슬픈 표정 1개만 사용하세요."
@@ -182,11 +197,21 @@ class SmartReply:
         elif intent == 'GREETING':
             intent_instruction = "가볍게 감사 인사를 전하고, 공감하는 내용을 한 줄 추가하세요. 홍보 멘트는 하지 마세요."
         elif intent == 'QUESTION':
-            intent_instruction = "질문에 대해 친절하고 정확하게 답변하세요. 질문에 대한 답을 주는 과정에서만 자연스럽게 우리 프로그램을 언급하세요."
+            if is_outbound:
+                intent_instruction = "상대방의 질문에 대해 아는 범위 내에서 친절하게 답하되, 당신의 체육관을 홍보하지 마세요. 순수한 정보 공유 차원에서 답하세요."
+            else:
+                intent_instruction = "질문에 대해 친절하고 정확하게 답변하세요. 질문에 대한 답을 주는 과정에서만 자연스럽게 우리 프로그램을 언급하세요."
         elif intent == 'LEAD':
-            intent_instruction = "정중하게 상담을 안내하세요. 연락처나 방문 방법을 안내하되 강요하지 마세요."
+            if is_outbound:
+                intent_instruction = "상대방이 운동에 관심을 보인다면 격려해주세요. 하지만 우리 체육관으로 오라고 하지 마세요."
+            else:
+                intent_instruction = "정중하게 상담을 안내하세요. 연락처나 방문 방법을 안내하되 강요하지 마세요."
         else:
-            intent_instruction = "이웃처럼 친근하게 소통하세요. 글 내용에 대해 공감하고 칭찬하세요. 억지로 체육관 이야기를 꺼내지 마세요 (ID가 홍보 역할을 합니다)."
+            intent_instruction = "이웃처럼 친근하게 소통하세요. 글 내용에 대해 공감하고 칭찬하세요."
+            if is_outbound:
+                marketing_block = "내 체육관 이야기 금지. 순수 소통만."
+            else:
+                marketing_block = "억지로 체육관 이야기를 꺼내지 마세요 (ID가 홍보 역할을 합니다)."
             
         system_msg = f"""
 {persona_context}

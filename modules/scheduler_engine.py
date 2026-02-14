@@ -239,6 +239,60 @@ class SmartScheduler:
             
             print(f"\n🎵 [{self.current_index + 1}/{len(self.tasks)}] 작업 실행: [{task.platform.upper()}] {task.task_type}")
             
+            # ⏳ 대기 작업 처리 (Wait Task)
+            if task.platform == 'wait':
+                target_time = task.data.get('target_time')
+                print(f"⏳ 대기 작업 시작: {target_time}까지 대기 중...")
+                task.last_status = 'waiting'
+                self.save_tasks()
+                
+                try:
+                    # 목표 시간 파싱
+                    now = datetime.now()
+                    target_h, target_m = map(int, target_time.split(':'))
+                    target_dt = now.replace(hour=target_h, minute=target_m, second=0, microsecond=0)
+                    
+                    # 이미 지난 시간이라면? (오늘 내일 결정)
+                    # 사용자 의도는 "오늘 이 시간까지 기다려라"임.
+                    # 만약 지금 14:00인데 09:00까지 기다리라고 하면? -> 이미 지났으므로 즉시 통과 (대기 안함)
+                    if now >= target_dt:
+                        print(f"⏩ 목표 시간({target_time})이 이미 지났으므로 즉시 다음 단계로 진행합니다.")
+                    else:
+                        # 대기 루프
+                        while self.running and not self.paused:
+                            now = datetime.now()
+                            if now >= target_dt:
+                                print(f"⏰ 목표 시간({target_time}) 도달! 대기 종료.")
+                                break
+                            
+                            remaining = (target_dt - now).total_seconds()
+                            if remaining > 60:
+                                # 1분 이상 남았으면 로그 덜 찍기
+                                if int(remaining) % 60 == 0:
+                                    print(f"⏳ {target_time}까지 대기 중... ({int(remaining/60)}분 남음)")
+                            else:
+                                print(f"⏳ {target_time}까지 대기 중... ({int(remaining)}초 남음)")
+                            
+                            time.sleep(1)
+                            
+                            # 일시정지 체크 (루프 내부)
+                            while self.paused and self.running:
+                                time.sleep(1)
+
+                    if self.running:
+                        task.is_completed = True
+                        task.last_status = 'completed'
+                        task.last_run_date = datetime.now().strftime("%Y-%m-%d")
+                        print(f"✅ 대기 작업 완료")
+                        
+                except Exception as e:
+                    print(f"❌ 대기 작업 중 오류: {e}")
+                    task.last_status = 'failed'
+                
+                self.save_tasks()
+                self.current_index += 1
+                continue
+
             with self.current_task_lock:
                 self.is_task_running = True
             
