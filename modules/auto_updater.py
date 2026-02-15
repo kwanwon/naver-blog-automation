@@ -435,6 +435,7 @@ open "{app_bundle_path}"
             return False, f"업데이트 실패: {e}"
 
 
+    def apply_update(self, update_path, preserved_data):
         """업데이트 파일 덮어쓰기"""
         try:
             self.logger.info("업데이트 적용 시작...")
@@ -614,7 +615,7 @@ echo Waiting for application to exit...
 ping 127.0.0.1 -n 3 > nul
 
 echo Copying new files...
-xcopy "{update_source_dir}\*" "{exe_dir}\" /s /e /y /q
+xcopy "{update_source_dir}\\*" "{exe_dir}\\" /s /e /y /q
 
 echo Restarting application...
 start "" "{exe_path}"

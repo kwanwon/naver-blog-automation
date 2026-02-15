@@ -1,8 +1,9 @@
 {
-  "version": "1.2.90",
-  "updated_at": "2026-02-15T03:30:00",
+  "version": "1.2.91",
+  "updated_at": "2026-02-15T14:20:00",
   "release_date": "2026-02-15",
   "changelog": [
+    "🐛 [Hotfix] macOS 업데이트 모듈 apply_update 함수 누락 복구",
     "🔧 [Fix] macOS 앱 업데이트 시 UI 변경사항이 반영되지 않는 문제 해결 (앱 번들 전체 교체 방식 도입)",
     "🛡️ [Critical] 사용자 데이터 보호 강화: used_folders.json, marketing_history.json 등 업데이트 시 초기화 방지",
     "📝 [Feature] 밴드 포스팅 지침 고도화: 아침(날씨 고정) vs 오후/저녁(뉴스/유행어/상식 랜덤) 차별화 전략 적용",
