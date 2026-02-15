@@ -1,10 +1,8 @@
 {
-  "version": "1.2.75",
-  "updated_at": "2026-02-08T23:25:00",
-  "release_date": "2026-02-08",
+  "version": "1.2.73",
+  "updated_at": "2026-02-07T19:50:00",
+  "release_date": "2026-02-07",
   "changelog": [
-    "⚡ [Critical Fix] Chrome 로그인 창 미표시(흰 화면/구글 창) 문제 해결 (--no-first-run 옵션 추가)",
-    "✨ [New] AI 모델 선택 로직 개선: 설정에 없는 모델(Gemini 2.5 등)도 자동 인식하여 사용 가능하도록 변경",
     "⚡ [Fix] 댓글/답글 생성(Region Marketing) 시 모델 재시도(Failover) 로직 추가 (Gemini 실패 시 GPT 자동 전환)",
     "🔧 [Improvement] AI 생성 실패 시 기본 문구를 '잘 보고 갑니다! 좋은 하루 되세요~'로 변경",
     "⚡ [Critical Fix] Gemini 2.5 Flash 모델 삭제 (생성 중단/불안정 이슈 해결)",

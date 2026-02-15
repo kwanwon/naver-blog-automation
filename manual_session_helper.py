@@ -53,9 +53,9 @@ class ManualSessionHelper:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         
-        # 자동화 감지 방지 (최소한만)
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option('useAutomationExtension', False)
+        # 자동화 감지 방지 (최소한만) - 안정성을 위해 일시 비활성화
+        # chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        # chrome_options.add_experimental_option('useAutomationExtension', False)
         
         # 첫 실행 마법사 및 검색엔진 선택 화면 비활성화
         chrome_options.add_argument("--no-first-run")

@@ -2,6 +2,8 @@
 import json
 import os
 import logging
+import sys
+import platform
 from typing import Dict, List, Any
 
 class PersonaManager:
@@ -11,7 +13,24 @@ class PersonaManager:
     """
     
     def __init__(self, base_path: str):
-        self.config_path = os.path.join(base_path, 'config', 'marketing_persona.json')
+        # 기본 경로 설정 (OS별/실행환경별 분기)
+        if getattr(sys, 'frozen', False):
+            # 빌드된 앱: 사용자 데이터 폴더 사용 (AppData/Application Support)
+            if sys.platform == 'win32':
+                data_dir = os.path.join(os.environ.get('APPDATA', ''), 'BlogAutomation')
+            elif sys.platform == 'darwin':
+                data_dir = os.path.expanduser('~/Library/Application Support/BlogAutomation')
+            else:
+                data_dir = os.path.expanduser('~/.local/share/BlogAutomation')
+            
+            # config 폴더 확보
+            config_dir = os.path.join(data_dir, 'config')
+            os.makedirs(config_dir, exist_ok=True)
+            self.config_path = os.path.join(config_dir, 'marketing_persona.json')
+        else:
+            # 개발 환경: 전달받은 base_path 사용
+            self.config_path = os.path.join(base_path, 'config', 'marketing_persona.json')
+            
         self.logger = logging.getLogger("PersonaManager")
         self._ensure_config_exists()
         

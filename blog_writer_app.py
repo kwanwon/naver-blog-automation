@@ -94,6 +94,30 @@ class BlogWriterApp:
         
         # 설정 초기화
         self.settings = self.load_settings()
+        
+        # 🟢 종목 기반 주제 자동 수정 (마이그레이션)
+        # 기본 주제 목록에 '태권도'가 포함되어 있고, 현재 설정된 종목이 '태권도'가 아닌 경우
+        # 자동으로 해당 종목으로 치환하여 사용자 편의성 증대
+        try:
+            gym_sport = self.settings.get('gym_sport', '합기도')
+            primary_sport = gym_sport.split(',')[0].strip()
+            
+            # 태권도가 아닌 경우에만 치환 로직 실행
+            if primary_sport != '태권도' and primary_sport:
+                changed = False
+                for key in ['blog_topics', 'band_topics', 'cafe_topics']:
+                    topics = self.settings.get(key, '')
+                    if topics and '태권도' in topics:
+                        # 단순 치환
+                        new_topics = topics.replace('태권도', primary_sport)
+                        self.settings[key] = new_topics
+                        changed = True
+                        print(f"🔄 [Auto-Fix] {key}의 기본값 '태권도'를 '{primary_sport}'(으)로 일괄 수정함")
+                
+                if changed:
+                    self.save_settings()
+        except Exception as e:
+            print(f"⚠️ 주제 자동 수정 중 오류: {e}")
         self.use_dummy = self.settings.get('use_dummy', False)
         
         self.gpt_handler = GPTHandler(use_dummy=self.use_dummy)
@@ -208,6 +232,29 @@ class BlogWriterApp:
     def _get_app_data_dir(self):
         """사용자 데이터 디렉토리 반환 (Delegates to utils.path_utils)"""
         return get_app_data_dir()
+
+    def _get_time_based_task_type(self, target_time_str=None):
+        """현재 시간(또는 예약 시간) 기반으로 task_type 자동 판별
+        
+        - morning: ~12시 (오전) → 날씨 중심
+        - regular: 12~18시 (오후) → 뉴스/이슈 중심
+        - closing: 18시~ (저녁) → 뉴스/이슈 중심
+        """
+        from datetime import datetime as dt_cls
+        try:
+            if target_time_str:
+                hour = int(target_time_str.split(':')[0])
+            else:
+                hour = dt_cls.now().hour
+            
+            if hour < 12:
+                return 'morning'
+            elif hour < 18:
+                return 'regular'
+            else:
+                return 'closing'
+        except Exception:
+            return 'regular'
 
     def load_settings(self):
         """앱 설정 파일 로드"""
@@ -2191,7 +2238,10 @@ class BlogWriterApp:
                     try:
                         # 1. 주제 선택 및 내용 생성
                         topic = self.select_sequential_topic('blog') or "일상 이야기"
-                        result = self.gpt_handler.generate_platform_content(topic, platform='blog')
+                        # 🟢 시간대 자동 판별: 예약 시간 기준
+                        blog_task_type = self._get_time_based_task_type(res_time)
+                        print(f"    📊 시간대 판별: {res_time} → {blog_task_type}")
+                        result = self.gpt_handler.generate_platform_content(topic, platform='blog', task_type=blog_task_type, target_time=res_time)
                         
                         if not result or not result.get('content'):
                             print(f"    ❌ 내용 생성 실패 ({res_time})")
@@ -2311,7 +2361,7 @@ class BlogWriterApp:
                         
                         if reservation_success:
                             # 7. 발행 버튼 클릭
-                            publish_success = finisher.click_final_publish_button()
+                            publish_success = finisher.click_final_publish_button(is_reservation=True)
                             
                             if publish_success:
                                 success_cnt += 1
@@ -2397,7 +2447,10 @@ class BlogWriterApp:
                     try:
                         # 주제 및 내용 생성
                         topic = self.select_sequential_topic('blog') or "일상 이야기"
-                        result = self.gpt_handler.generate_platform_content(topic, platform='blog')
+                        # 🟢 시간대 자동 판별: 예약 시간 기준
+                        blog_task_type = self._get_time_based_task_type(reservation_time)
+                        print(f"    📊 시간대 판별: {reservation_time} → {blog_task_type}")
+                        result = self.gpt_handler.generate_platform_content(topic, platform='blog', task_type=blog_task_type, target_time=reservation_time)
                         
                         if not result or not result.get('content'):
                             print(f"    ❌ 내용 생성 실패")
@@ -2498,7 +2551,7 @@ class BlogWriterApp:
                         publish_success = False  # 초기화
                         
                         if reservation_success:
-                            publish_success = finisher.click_final_publish_button()
+                            publish_success = finisher.click_final_publish_button(is_reservation=True)
                             
                             if publish_success:
                                 print(f"    ✅ 블로그 예약 성공: {reservation_time}")
@@ -2548,6 +2601,22 @@ class BlogWriterApp:
                  
                  success_cnt = 0
                  
+                 # 🟢 뉴스 중복 방지 (방안 A): 뉴스 6건 사전 검색 후 분배
+                 news_type_count = sum(1 for t in times if self._get_time_based_task_type(t) in ('regular', 'closing'))
+                 all_news = None
+                 news_items = []
+                 if news_type_count >= 2:
+                     try:
+                         all_news = self.gpt_handler._get_trending_topics(count=6)
+                         if all_news:
+                             news_items = all_news.split('\n')
+                             print(f"  📰 뉴스 {len(news_items)}건 사전 검색 완료 (분배 모드)")
+                     except Exception as e:
+                         print(f"  ⚠️ 뉴스 사전 검색 실패, 개별 검색 모드: {e}")
+                 
+                 news_distribution_index = 0  # 뉴스 분배 인덱스
+                 previous_news_summary = ""   # 이전 포스팅 뉴스 (방안 C)
+                 
                  for i, res_time in enumerate(times):
                      # 🆕 스케줄러 중지 체크
                      if not self.scheduler or not self.scheduler.running:
@@ -2564,12 +2633,34 @@ class BlogWriterApp:
                          print(f"  ⛔ 스케줄러가 중지되었습니다. 남은 작업 취소.")
                          break
                      
-                     task_type = types[i] if i < len(types) else 'regular'
+                     user_type = types[i] if i < len(types) else 'regular'
+                     # 🟢 예약 시간 기준 자동 판별 (사용자 선택 무시 → 시간 기준 강제)
+                     task_type = self._get_time_based_task_type(res_time)
+                     if user_type != task_type:
+                         print(f"  🔄 유형 자동 보정: '{user_type}' → '{task_type}' (예약 시간 {res_time} 기준)")
                      print(f"  👉 예약 작업 {i+1}/{len(times)}: {res_time} (유형: {task_type}) 처리 중...")
+                     
+                     # 🟢 뉴스 분배 (방안 A+C): regular/closing 타입에 뉴스 3건씩 분배
+                     news_pool = None
+                     if task_type in ('regular', 'closing') and news_items:
+                         start_idx = news_distribution_index * 3
+                         end_idx = start_idx + 3
+                         news_subset = news_items[start_idx:end_idx]
+                         if news_subset:
+                             news_pool = '\n'.join(news_subset)
+                             print(f"    📰 뉴스 분배: {start_idx+1}~{end_idx}번 ({len(news_subset)}건)")
+                             news_distribution_index += 1
                      
                      # 주제 및 내용 생성 (유형에 따라 다른 스타일)
                      topic = self.select_sequential_topic('band') or "체육관 일상"
-                     result = self.gpt_handler.generate_platform_content(topic, platform='band', task_type=task_type)
+                     result = self.gpt_handler.generate_platform_content(
+                         topic, platform='band', task_type=task_type, target_time=res_time,
+                         news_pool=news_pool, previous_news=previous_news_summary
+                     )
+                     
+                     # 🟢 방안 C: 이전 뉴스 기록 (다음 포스팅에서 중복 방지)
+                     if task_type in ('regular', 'closing') and news_pool:
+                         previous_news_summary = news_pool
                      
                      if not result or not result.get('content'):
                          print(f"    ❌ 내용 생성 실패 ({res_time})")
@@ -2727,8 +2818,10 @@ class BlogWriterApp:
                 
                 # 내용 생성
                 topic = self.select_sequential_topic('cafe') or "체육관 소식"
-                print(f"🤖 [카페] '{topic}' 주제로 내용 생성 중... (타입: {task.task_type})")
-                result = self.gpt_handler.generate_platform_content(topic, platform='cafe', task_type=task.task_type)
+                # 🟢 카페: 현재 시간 기준 시간대 자동 판별 (예약 없음)
+                cafe_task_type = self._get_time_based_task_type()
+                print(f"🤖 [카페] '{topic}' 주제로 내용 생성 중... (시간대: {cafe_task_type})")
+                result = self.gpt_handler.generate_platform_content(topic, platform='cafe', task_type=cafe_task_type)
                 
                 if not result or not result.get('content'):
                     print("❌ [카페] AI 내용 생성에 실패했습니다.")
@@ -4548,9 +4641,8 @@ class BlogWriterApp:
                 body_text = "본문 내용을 가져올 수 없습니다."
 
             # Generate Reply
-            selected_models = self.settings.get('selected_models')
-            intent = self.smart_reply.classify_intent(body_text, selected_models=selected_models)
-            reply_text = self.smart_reply.generate_reply(target_text=body_text, intent=intent, platform=platform, selected_models=selected_models)
+            intent = self.smart_reply.classify_intent(body_text)
+            reply_text = self.smart_reply.generate_reply(target_text=body_text, intent=intent, platform=platform)
             
             if not reply_text:
                 self.page.snack_bar = ft.SnackBar(ft.Text("❌ 댓글 생성 실패"), bgcolor=ft.Colors.RED)
@@ -5148,12 +5240,29 @@ class BlogWriterApp:
         )
         
         band_instructions = ft.TextField(
-            label="밴드 전용 지침",
-            hint_text="밴드 포스팅 시 적용할 전용 지침을 입력하세요 (예: 친근하게, 해시태그 포함)...",
+            label="밴드 전용 AI 지침",
+            hint_text="밴드 글 작성 시 AI가 참고할 지침 (비워두면 기본값 사용)",
             multiline=True,
-            min_lines=2,
-            max_lines=4,
-            expand=True
+            min_lines=3,
+            max_lines=10,
+            expand=True,
+            value="""[페르소나] 너는 [OO지역]에서 [N]년 경력을 가진 [종목] 관장님이야. 학부모님께는 신뢰받는 교육 전문가이자, 아이들에게는 따뜻한 멘토야.
+
+[톤앤매너 (중요 ⭐)]
+- 하오체/합쇼체(다, 까): 뉴스, 건강 상식, 핫이슈 등 객관적인 정보를 전달할 때는 신뢰감을 주기 위해 '다/까'를 사용해.
+- 해요체(요): 첫 인사, 공감하는 대목, 학부모님께 드리는 조언과 응원 등 감성적인 대화 부분에서는 부드러운 '해요체'를 사용해.
+- 이 두 말투를 한 글 안에서 자연스럽게 섞어 '따뜻한 전문가'의 이미지를 구축해줘.
+
+[내용 구성 규칙]
+- 시간/날씨 반영: 비밀 쪽지(현재 시간)를 확인해 인사를 건네고, [OO지역] 날씨에 따른 아이들의 건강 관리를 언급해.
+- 학부모 대화 소재(이슈): 검색된 뉴스(교육/생활/건강) 활용.
+- 생활 운동: 누구나 따라 할 수 있는 간단한 스트레칭이나 건강 팁을 포함해.
+- 수련생 언급: "우리 아이들의 건강한 성장"처럼 포괄적으로 표현(특정 시간 언급 X).
+
+[글 구조 및 제약]
+- 분량: 400~500자 내외, 2~3개 문단.
+- 필수 포함: 따뜻한 제목, 명언 1구절(작가 포함), 20자 이내 희망 문구, 25자 이내 응원 문구.
+- 이모지: 문단 끝에 최대 2개만 허용. 질문은 딱 1회만."""
         )
         
         cafe_instructions = ft.TextField(
@@ -5228,6 +5337,15 @@ class BlogWriterApp:
             hint_text="Gemini API 키를 입력하세요...",
             password=True,
             can_reveal_password=False,
+            visible=True
+        )
+
+        # Brave Search API 키 (New)
+        brave_api_key_field = ft.TextField(
+            label="Brave Search API 키",
+            hint_text="Brave Search API 키 (선택 사항)",
+            password=True,
+            can_reveal_password=True,
             visible=True
         )
         
@@ -5409,7 +5527,8 @@ class BlogWriterApp:
 
         def save_app_settings(e=None):
             try:
-                app_settings = {
+                # 🔄 기존 설정 업데이트 (덮어쓰기 방지)
+                self.settings.update({
                     "use_dummy": not use_api_checkbox.value,
                     "auto_upload": auto_upload_checkbox.value,
                     "auto_image": auto_image_checkbox.value,
@@ -5423,13 +5542,13 @@ class BlogWriterApp:
                     "idle_use_ai_comment": idle_use_ai_comment.value if 'idle_use_ai_comment' in locals() else self.settings.get('idle_use_ai_comment', True),
                     "idle_do_like": idle_do_like.value if 'idle_do_like' in locals() else self.settings.get('idle_do_like', True),
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                }
-                self.settings = app_settings
+                })
+                
                 # 🆕 글로벌 설정 경로 사용
                 app_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'app_settings.json')
                 os.makedirs(os.path.dirname(app_settings_path), exist_ok=True)
                 with open(app_settings_path, 'w', encoding='utf-8') as f:
-                    json.dump(app_settings, f, ensure_ascii=False, indent=2)
+                    json.dump(self.settings, f, ensure_ascii=False, indent=2)
                 
                 if e:  # 직접 호출이 아닌 경우에만 메시지 표시
                     page.snack_bar = ft.SnackBar(content=ft.Text("앱 설정이 저장되었습니다."))
@@ -5486,6 +5605,7 @@ class BlogWriterApp:
                     "selected_models": [mid for mid, cb in model_checkboxes.items() if cb.value],
                     "api_key": api_key_field.value,
                     "gemini_api_key": gemini_api_key_field.value,
+                    "brave_key": brave_api_key_field.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 # 🆕 글로벌 설정 경로 사용
@@ -5575,6 +5695,7 @@ class BlogWriterApp:
                         for mid, cb in model_checkboxes.items():
                             cb.value = mid in selected_models
                         gemini_api_key_field.value = settings.get('gemini_api_key', '')
+                        brave_api_key_field.value = settings.get('brave_key', '')
                 
                 # API 사용 여부 설정 로드
                 # 🆕 글로벌 설정 경로 사용
@@ -5647,6 +5768,17 @@ class BlogWriterApp:
             hint_text="네이버 비밀번호를 입력하세요..."
         )
 
+        weather_location = ft.TextField(
+            label="날씨 지역 (동/면/읍 단위)",
+            hint_text="예: 인천 부평구, 원주시, 강릉시"
+        )
+
+        kma_api_key = ft.TextField(
+            label="기상청 API 키 (공공데이터포털)",
+            hint_text="data.go.kr에서 발급받은 단기예보 인증키를 입력하세요",
+            password=True
+        )
+
         kakao_url = ft.TextField(
             label="카카오톡 상담 링크 (상담 답글용)",
             hint_text="카카오톡 오픈채팅방 URL을 입력하세요..."
@@ -5660,12 +5792,33 @@ class BlogWriterApp:
             max_lines=4
         )
 
+        # 🟢 종목에 따른 기본 주제어 치환 로직
+        gym_sport = self.settings.get('gym_sport', '합기도')
+        primary_sport = gym_sport.split(',')[0].strip() or '합기도'
+        
+        def apply_sport_to_topics(topics):
+            if primary_sport != '태권도':
+                return topics.replace('태권도', primary_sport)
+            return topics
+
+        # 기본 주제 목록 정의
+        default_blog_topics_str = apply_sport_to_topics(
+            "[새학기 필독] 학교 적응 잘하는 아이들의 공통점과 멘탈 관리법, [건강] 요즘 유행하는 소아 독감 vs 감기 차이점과 예방, [교육 이슈] 초등학생 문해력 골든타임 운동이 정답인 이유, [성장 꿀팁] 우리 아이 숨은 키 1cm 찾아주는 성장판 자극 운동, 스쿨존 교통안전법규(민식이법) 최신 개정 사항과 주의점, [계절] 미세먼지 심한 날 실내에서 하는 키 크는 체조, [심리] 친구 관계 어려워하는 아이 자존감 높여주는 대화법, 소아 비만 골든타임 살이 키로 간다는 말의 진실과 오해, 스마트폰 중독 예방 무조건 금지보다 효과적인 약속 정하기, [건강] 아이들 체력 관리 실내 적정 온도와 환기의 중요성, [영양] 편식하는 아이도 잘 먹는 키 성장 슈퍼푸드 5가지, 초등학생 학교 폭력 예방 부모님이 꼭 체크해야 할 신호, [운동 효과] 줄넘기만 하면 무릎 아프다? 올바른 점프 운동법, 집중력 짧은 아이 엉덩이 힘 기르는 신체 활동의 비밀, [면역력] 잔병치레 잦은 아이 면역력 쑥쑥 올리는 생활 습관, [교육] 개정되는 초등 교육 과정 무엇이 핵심일까?, 아침밥 꼭 먹어야 할까? 두뇌 회전과 아침 식사의 관계, [수면] 밤 10시부터 새벽 2시 성장 호르몬 골든타임 사수하기, [안전] 자전거 킥보드 타는 아이 헬멧 착용과 안전 수칙, 형제 자매 싸움 줄이고 우애 깊게 키우는 부모의 중재법, [건강] 갑자기 더워진 날씨 아이들 온열 질환 예방 가이드, 비 오는 날 아이와 뭐 하고 놀지? 집콕 신체놀이 추천, [성격] 소심하고 내성적인 아이 태권도로 리더십 키우기, 인스턴트 간식 줄이기 대작전 건강하고 맛있는 대안은?, [예방] 유행성 눈병 피부질환 예방하는 위생 수칙, [자세] 구부정한 거북목 척추측만증 예방하는 바른 자세 교정, 학원 뺑뺑이로 지친 아이 멍 때리기(휴식)의 중요성, [이슈] 딥페이크 등 디지털 범죄로부터 우리 아이 지키는 법, 운동 싫어하는 아이 놀이처럼 시작하는 3가지 방법, [식습관] 밥 안 먹고 군것질만 하는 아이 습관 고치기, 사춘기 빨리 오는 성조숙증 예방하는 생활 습관 체크리스트, [발달] 아이 신발 밑창이 한쪽만 닳는다면? 골반 불균형 체크, [정보] 주말에 아이와 가볼 만한 지역 명소 박물관 추천, 칭찬 스티커의 역효과? 올바른 동기 부여와 보상 방법, [감정] 떼쓰고 화내는 아이 감정 조절 능력 키워주는 훈육, [안전] 지진 화재 발생 시 아이들에게 가르쳐야 할 대피 요령, 초등 글쓰기 실력 독서보다 경험 말하기가 먼저다, [방학] 춥거나 더울 때 실내 운동으로 체력 키 성장 잡기, 우리 아이 첫 사회생활 태권도장에서 배우는 예절과 질서, [건강] 눈 나빠지는 아이들 드림렌즈 대신 눈 건강 생활 수칙, 넘어져도 툭 털고 일어나는 회복 탄력성 기르는 법, [교육] 코딩 교육 열풍 논리적 사고력은 신체 활동에서 시작된다, 층간소음 걱정 없는 집안 운동 소리 없이 강한 동작들, [위생] 손 씻기만큼 중요한 아이들 개인 위생 용품 관리법, 아이가 거짓말을 했을 때 혼내기보다 이유를 물어보세요, [영양] 우유만 많이 먹으면 키가 클까? 칼슘 흡수의 비밀, 맞벌이 부모를 위한 아이 방과 후 돌봄 안전하게 관리하기, [트렌드] 요즘 초등학생 사이에서 유행하는 놀이 문화를 아시나요?, 실패를 두려워하지 않는 도전 정신 띠 승급 심사의 효과, [부모마음] 우리 아이가 가장 듣고 싶어 하는 말 한마디 사랑해 믿어"
+        )
+
+        default_band_topics_str = apply_sport_to_topics(
+            "[육아 꿀팁] 아침 등굣길 아이 기분 좋게 깨우는 방법, [공감] 엄마 배고파 소리 무서운 방학 시즌 간식 뭐 해주시나요?, [건강] 환절기 감기 기운 있을 때 효과 좋은 민간요법 공유해요, [질문] 우리 아이가 가장 좋아하는 반찬은 무엇인가요?, [정보] 주말 비 소식 있을 때 집에서 할 수 있는 풍선 놀이 추천, [일상] 운동하고 땀 흘린 뒤 밝게 웃는 아이 표정이 제일 예쁘죠?, [안전] 스쿨존 30km 서행 우리 아이들을 위해 꼭 지켜주세요, [성장] 키 크는 스트레칭 자기 전 딱 5분만 같이 해주세요, [소통] 아이에게 들었을 때 가장 힘이 나는 말은? (댓글로 자랑해주세요), [날씨] 갑자기 추워진 날씨 아이들 옷차림 어떻게 입히셨나요?, [교육] 숙제하기 싫어하는 아이 5분 타이머 법칙 써보세요, [자랑] 오늘 태권도장에서 칭찬받았다고 자랑하던가요?, [정보] 요즘 독감이 독하네요 아이들 마스크 챙겨주시나요?, [주말] 이번 주말 가족 나들이 계획 좋은 곳 있으면 공유해요!, [습관] 정리 정돈 잘하는 아이로 키우는 바구니 법칙, [음식] 편식쟁이도 무장해제시키는 마법의 메뉴 있나요?, [심리] 아이가 속상해할 때 그랬구나 공감 한마디의 힘, [이슈] 요즘 학교 앞에서 유행한다는 불량식품 주의하세요, [계절] 꽃 피는 계절 아이 사진 예쁘게 찍어주는 팁, [응원] 오늘도 아이 키우느라 고생하신 학부모님들 모두 파이팅입니다, [메뉴] 오늘 저녁 메뉴 고민되시죠? 간단한 아이 반찬 추천해요, [질문] 하얀 도복 깨끗하게 세탁하는 노하우 있으신가요?, [공감] 학원 가기 싫다고 떼쓰는 날 어떻게 달래주시나요?, [정보] 아이들 키 크는데 도움 되는 영양제 추천해주세요, [자랑] 우리 아이가 줄넘기 쌩쌩이 성공했다고 자랑하네요!, [주말] 비 오는 주말 아이와 가볼 만한 실내 놀이터 추천, [일상] 아이 등원시키고 마시는 커피 한잔의 여유 즐기셨나요?, [교육] 초등 받아쓰기 연습 재미있게 하는 꿀팁 있을까요?, [계절] 날씨가 더워졌는데 벌써 반팔 입혀 보내시나요?, [건강] 아이들 치아 관리 양치질 전쟁 평화롭게 끝내는 법, [질문] 아이 생일 파티 집에서 하시나요 키즈카페 가시나요?, [공감] 아이가 그려준 엄마 아빠 얼굴 보고 빵 터졌던 경험, [정보] 우리 동네 소아과 주말 진료하는 곳 공유해요, [안전] 킥보드 탈 때 헬멧 꼭 씌우시나요? 안전 교육 필수!, [성장] 일찍 자야 키 큰다고 하는데 아이들 몇 시에 재우세요?, [소통] 아이가 태권도 관장님 좋다고 이야기 많이 하나요?, [날씨] 미세먼지 나쁨인 날 집에서 할 수 있는 에너지 발산 놀이, [교육] 독서 습관 들이기 거실을 서재로 바꿔보신 분 계신가요?, [자랑] 어버이날 아이에게 받은 카네이션 편지 감동이네요, [정보] 아이들 핸드폰 사용 시간 하루에 얼마나 허용하시나요?, [주말] 캠핑장 예약 전쟁! 아이랑 가기 좋은 캠핑장 추천해주세요, [습관] 아침밥 뚝딱 잘 먹는 아이들 비결이 궁금합니다, [음식] 맵지 않은 떡볶이 레시피 아이들이 정말 좋아해요, [심리] 아이가 친구랑 싸우고 왔을 때 어떻게 위로해주시나요?, [이슈] 요즘 유행하는 장난감 사달라고 조르는데 다 사주시나요?, [계절] 장마철 눅눅한 집안 관리와 아이 건강 챙기기, [응원] 일과 육아 병행하는 워킹맘 학부모님들 힘내세요!, [야식] 치킨 vs 피자 아이들이 더 좋아하는 메뉴는?, [질문] 아이 용돈 얼마씩 주시나요? 경제 교육 궁금해요, [단상] 오늘도 아이들 행복한 웃음소리에 피로가 싹 풀리네요"
+        )
+        
+        default_cafe_topics_str = default_band_topics_str # 카페/밴드 동일 사용
+
         blog_topics = ft.TextField(
             label="블로그 주제 목록",
             hint_text="블로그 자동 작성에 사용될 주제들을 쉼표(,)로 구분하여 입력하세요.",
             multiline=True,
             min_lines=3,
-            max_lines=5
+            max_lines=5,
+            value=self.settings.get('blog_topics', default_blog_topics_str)
         )
 
         band_topics = ft.TextField(
@@ -5673,7 +5826,8 @@ class BlogWriterApp:
             hint_text="밴드 자동 포스팅에 사용될 주제들을 쉼표(,)로 구분하여 입력하세요.",
             multiline=True,
             min_lines=3,
-            max_lines=5
+            max_lines=5,
+            value=self.settings.get('band_topics', default_band_topics_str)
         )
 
         cafe_topics = ft.TextField(
@@ -5681,7 +5835,8 @@ class BlogWriterApp:
             hint_text="카페 자동 포스팅에 사용될 주제들을 쉼표(,)로 구분하여 입력하세요.",
             multiline=True,
             min_lines=3,
-            max_lines=5
+            max_lines=5,
+            value=self.settings.get('cafe_topics', default_cafe_topics_str)
         )
 
         blog_slogan = ft.TextField(
@@ -5946,6 +6101,8 @@ class BlogWriterApp:
                     "blog_url": blog_url.value,
                     "naver_id": naver_id.value,
                     "naver_pw": naver_pw.value,
+                    "weather_location": weather_location.value,
+                    "kma_api_key": kma_api_key.value,
                     "kakao_url": kakao_url.value,
                     "blog_tags": blog_tags.value,
                     "blog_topics": blog_topics.value,
@@ -5990,6 +6147,8 @@ class BlogWriterApp:
                         blog_url.value = settings.get('blog_url', '')
                         naver_id.value = settings.get('naver_id', '')
                         naver_pw.value = settings.get('naver_pw', '')
+                        weather_location.value = settings.get('weather_location', '')
+                        kma_api_key.value = settings.get('kma_api_key', '')
                         kakao_url.value = settings.get('kakao_url', '')
                         blog_tags.value = settings.get('blog_tags', '')
                         blog_topics.value = settings.get('blog_topics', '')
@@ -6896,6 +7055,7 @@ class BlogWriterApp:
                             use_api_checkbox,
                             api_key_field,
                             gemini_api_key_field,
+                            brave_api_key_field,
                             api_key_help_text,
                             auto_upload_checkbox,
                             auto_upload_help_text,
@@ -7051,6 +7211,8 @@ class BlogWriterApp:
                     blog_url,
                     naver_id,
                     naver_pw,
+                    weather_location,
+                    kma_api_key,
                     kakao_url,
                     blog_tags,
                     blog_topics,
@@ -7281,7 +7443,8 @@ class BlogWriterApp:
                 "visit": "방문 소통",
                 "reply": "댓글 소통",
                 "reservation_batch": "예약 일괄 실행",
-                "neighbor": "이웃방문"  # 🆕 추가
+                "neighbor": "이웃방문",
+                "wait": "대기 작업"
             }
             # 🆕 플랫폼 이름 매핑 (더 읽기 좋게 표시)
             platform_map = {
@@ -7291,7 +7454,8 @@ class BlogWriterApp:
                 "blog_reply": "블로그 답글",
                 "band_reply": "밴드 답글",
                 "neighbor_visit": "이웃방문",
-                "idle": "대기"
+                "idle": "대기",
+                "wait": "⏳ 대기"
             }
             
             # 🆕 작업별 예상 소요 시간 (분)
@@ -7303,7 +7467,8 @@ class BlogWriterApp:
                 "reply": 1,
                 "reservation_batch": 5,  # 기본값, 실제는 data에서 계산
                 "neighbor": 1,
-                "댓글답글": 5
+                "댓글답글": 5,
+                "wait": 0 # 가변적
             }
             
             # 현재 시간 기준 누적 예상 시간 계산
@@ -7334,6 +7499,23 @@ class BlogWriterApp:
                 if task.data and 'limit' in task.data:
                     estimated_minutes = max(1, task.data['limit'] // 3)  # 3개당 1분
                 
+                # ⏳ 대기 작업 시간 계산
+                if task.platform == 'wait' and task.data and 'target_time' in task.data:
+                    try:
+                        target_time_str = task.data['target_time']
+                        target_h, target_m = map(int, target_time_str.split(':'))
+                        estimated_start_time = current_time + timedelta(minutes=cumulative_minutes)
+                        target_dt = estimated_start_time.replace(hour=target_h, minute=target_m, second=0)
+                        
+                        # 만약 타겟 시간이 시작 시간보다 미래라면 차이를 대기 시간으로
+                        if target_dt > estimated_start_time:
+                            diff = (target_dt - estimated_start_time).total_seconds() / 60
+                            estimated_minutes = int(diff)
+                        else:
+                            estimated_minutes = 0
+                    except:
+                        estimated_minutes = 0
+
                 # 🆕 예상 실행 시간 계산 (앞 작업들의 누적)
                 if idx < self.scheduler.current_index or task.is_completed:
                     estimated_time_str = ""  # 이미 완료된 작업
@@ -7353,14 +7535,24 @@ class BlogWriterApp:
                     detail_text = f"🚶 {task.data['visit_count']}회 방문"
                 elif task.data and 'limit' in task.data:
                     detail_text = f"💬 {task.data['limit']}개 답글"
+                elif task.platform == 'wait' and task.data and 'target_time' in task.data:
+                    detail_text = f"⏳ {task.data['target_time']}까지 대기"
                 
                 # 상태에 따른 색상 및 아이콘 설정
                 if is_current:
                     status_color = ft.Colors.BLUE
                     bg_color = ft.Colors.BLUE_100
                     border_color = ft.Colors.BLUE
-                    status_icon = ft.Icons.PLAY_ARROW
-                    status_text = "▶️ 실행 중"
+                    
+                    if task.last_status == 'waiting':
+                        status_icon = ft.Icons.HOURGLASS_TOP
+                        status_text = "⏳ 대기 중"
+                        status_color = ft.Colors.ORANGE
+                        bg_color = ft.Colors.ORANGE_50
+                    else:
+                        status_icon = ft.Icons.PLAY_ARROW
+                        status_text = "▶️ 실행 중"
+
                 elif task.is_completed or task.last_status == 'completed':
                     status_color = ft.Colors.GREEN
                     bg_color = ft.Colors.GREEN_50
@@ -8250,6 +8442,47 @@ class BlogWriterApp:
             border_radius=10
         )
 
+        # ========== 🆕 대기 작업 (Wait Task) 설정 UI ==========
+        wait_task_time = ft.TextField(label="대기 시간", value="09:00", width=100, hint_text="HH:MM")
+        
+        def add_wait_task(e):
+            """대기 작업 추가"""
+            target_time = wait_task_time.value
+            
+            # 시간 검증
+            import re
+            if not re.match(r"^\d{1,2}:\d{2}$", target_time):
+                page.snack_bar = ft.SnackBar(content=ft.Text("시간 형식이 올바르지 않습니다 (HH:MM)"))
+                page.snack_bar.open = True
+                page.update()
+                return
+            
+            # 스케줄러에 추가
+            self.scheduler.add_task(
+                platform='wait',
+                task_type='regular',
+                data={'target_time': target_time}
+            )
+            
+            update_scheduler_ui()
+            page.snack_bar = ft.SnackBar(content=ft.Text(f"⏳ 대기 작업 추가됨: {target_time}까지 대기"), bgcolor=ft.Colors.BLUE)
+            page.snack_bar.open = True
+            page.update()
+
+        wait_task_section = ft.Container(
+            content=ft.Column([
+                ft.Text("⏳ 대기 작업 추가", size=16, weight=ft.FontWeight.BOLD),
+                ft.Text("🎵 플레이리스트 실행 중 지정된 시간까지 대기합니다. (예: 09:00까지 대기 후 다음 작업 실행)", size=11, color=ft.Colors.GREY_600),
+                ft.Row([
+                    wait_task_time,
+                    ft.ElevatedButton("작업 추가", icon=ft.Icons.ADD_ALARM, on_click=add_wait_task, bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE)
+                ], spacing=10),
+            ], spacing=8),
+            padding=15,
+            bgcolor=ft.Colors.BLUE_50,
+            border_radius=10
+        )
+
         scheduler_tab_content = ft.Container(
             content=ft.Column([
                 ft.Row([
@@ -8275,6 +8508,12 @@ class BlogWriterApp:
                 ft.ExpansionTile(
                     title=ft.Text("🎵 밴드 예약 프리셋 (클릭하여 펼치기)", size=14, weight=ft.FontWeight.BOLD),
                     controls=[band_preset_section],
+                    initially_expanded=False
+                ),
+                # 🆕 대기 작업 추가
+                ft.ExpansionTile(
+                    title=ft.Text("⏳ 특정 시간 대기 작업 (클릭하여 펼치기)", size=14, weight=ft.FontWeight.BOLD),
+                    controls=[wait_task_section],
                     initially_expanded=False
                 ),
                 # 🆕 매일 자동 시작 설정

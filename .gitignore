@@ -78,3 +78,9 @@ default_images_*/
 band_images_*/
 cafe_images_*/
 bundle_images/
+
+# 사용자 데이터 (업데이트 시 보존 필요)
+data/
+config/used_folders.json
+config/current_folder_index.txt
+data/marketing_history.json
