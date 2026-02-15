@@ -2,10 +2,29 @@ import json
 import os
 import urllib.parse
 from datetime import datetime
+import sys
+import platform
 
 class HistoryManager:
-    def __init__(self, history_file="data/marketing_history.json"):
-        self.history_file = history_file
+    def __init__(self, history_file=None):
+        if history_file:
+            self.history_file = history_file
+        else:
+            # 기본 경로 설정 (OS별/실행환경별 분기)
+            if getattr(sys, 'frozen', False):
+                # 빌드된 앱: 사용자 데이터 폴더 사용
+                if sys.platform == 'win32':
+                    base_dir = os.path.join(os.environ.get('APPDATA', ''), 'BlogAutomation')
+                elif sys.platform == 'darwin':
+                    base_dir = os.path.expanduser('~/Library/Application Support/BlogAutomation')
+                else:
+                    base_dir = os.path.expanduser('~/.local/share/BlogAutomation')
+                
+                self.history_file = os.path.join(base_dir, 'data', 'marketing_history.json')
+            else:
+                # 개발 환경: 로컬 data 폴더 사용
+                self.history_file = "data/marketing_history.json"
+                
         self._ensure_file_exists()
 
     def _ensure_file_exists(self):
