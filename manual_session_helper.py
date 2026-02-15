@@ -53,9 +53,9 @@ class ManualSessionHelper:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         
-        # 자동화 감지 방지 (최소한만)
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option('useAutomationExtension', False)
+        # 자동화 감지 방지 (최소한만) - 안정성을 위해 일시 비활성화
+        # chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        # chrome_options.add_experimental_option('useAutomationExtension', False)
         
         # 고유한 사용자 데이터 디렉토리 설정 (프로필 충돌 방지)
         import time

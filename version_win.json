@@ -1,9 +1,10 @@
 {
-  "version": "1.2.92",
-  "updated_at": "2026-02-15T15:45:00",
+  "version": "1.2.93",
+  "updated_at": "2026-02-15T16:05:00",
   "release_date": "2026-02-15",
   "changelog": [
-    "🐛 [Fix] Windows 권한 오류 해결: 데이터 저장 경로를 Program Files에서 AppData로 변경 (History, Persona)",
+    "🐛 [Fix] 크롬 로그인 화면이 뜨지 않는 문제 해결 (자동화 감지 옵션 완화)",
+    "🐛 [Fix] 빌드 시 로그인 헬퍼 파일 누락 방지 (hidden-import 추가)",
     "🐛 [Fix] macOS 업데이트 모듈 apply_update 함수 누락 복구",
     "🔧 [Fix] macOS 앱 업데이트 시 UI 변경사항이 반영되지 않는 문제 해결 (앱 번들 전체 교체 방식 도입)",
     "🛡️ [Critical] 사용자 데이터 보호 강화: used_folders.json, marketing_history.json 등 업데이트 시 초기화 방지",
