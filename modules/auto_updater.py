@@ -215,7 +215,12 @@ class AutoUpdater:
                 self.logger.info(f"일반 매칭 Asset 발견: {asset['name']}")
                 return asset['browser_download_url']
         
-        # 찾지 못했으면 소스코드 URL 반환 (Fallback)
+        # 찾지 못했으면...
+        if self.is_frozen:
+            self.logger.warning("적절한 바이너리 Asset을 찾지 못함. (Source code Fallback 방지)")
+            return None
+            
+        # 소스 코드 환경에서는 Source URL 사용
         self.logger.warning("적절한 바이너리 Asset을 찾지 못함. Source code URL로 대체합니다.")
         return release_info.get('zipball_url')
 
