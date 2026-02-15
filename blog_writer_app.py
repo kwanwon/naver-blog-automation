@@ -2361,7 +2361,7 @@ class BlogWriterApp:
                         
                         if reservation_success:
                             # 7. 발행 버튼 클릭
-                            publish_success = finisher.click_final_publish_button()
+                            publish_success = finisher.click_final_publish_button(is_reservation=True)
                             
                             if publish_success:
                                 success_cnt += 1
@@ -2551,7 +2551,7 @@ class BlogWriterApp:
                         publish_success = False  # 초기화
                         
                         if reservation_success:
-                            publish_success = finisher.click_final_publish_button()
+                            publish_success = finisher.click_final_publish_button(is_reservation=True)
                             
                             if publish_success:
                                 print(f"    ✅ 블로그 예약 성공: {reservation_time}")

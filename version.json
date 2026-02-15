@@ -1,8 +1,10 @@
 {
-  "version": "1.2.93",
-  "updated_at": "2026-02-15T16:05:00",
+  "version": "1.2.94",
+  "updated_at": "2026-02-15T20:30:00",
   "release_date": "2026-02-15",
   "changelog": [
+    "🐛 [Fix] Windows 블로그 수동 포스팅 시 첫 발행 실패 문제 해결 (발행 검증 로직 추가)",
+    "🔧 [Improvement] 스케줄러 안정성 확보 (예약 발행 검증 예외 처리)",
     "🐛 [Fix] 크롬 로그인 화면이 뜨지 않는 문제 해결 (자동화 감지 옵션 완화)",
     "🐛 [Fix] 빌드 시 로그인 헬퍼 파일 누락 방지 (hidden-import 추가)",
     "🐛 [Fix] macOS 업데이트 모듈 apply_update 함수 누락 복구",
