@@ -1,6 +1,6 @@
 {
-  "version": "1.2.94",
-  "updated_at": "2026-02-15T20:30:00",
+  "version": "1.2.95",
+  "updated_at": "2026-02-15T21:05:00",
   "release_date": "2026-02-15",
   "changelog": [
     "🐛 [Fix] Windows 블로그 수동 포스팅 시 첫 발행 실패 문제 해결 (발행 검증 로직 추가)",
