@@ -928,7 +928,10 @@ class GPTHandler:
                         f"\n[System: 오늘의 뉴스/이슈/트렌드]\n"
                         f"{trending_info}\n"
                         f"{topic_guide}"
-                        f"{dedup_guide}"
+                        f"{dedup_guide}\n"
+                        "[⚠️ 뉴스 인용 안전 규칙]\n"
+                        "- 정치(여당/야당/대통령 등), 종교, 범죄, 선정적, 자극적인 내용은 절대 인용하지 마세요.\n"
+                        "- 만약 검색된 뉴스가 모두 그런 내용이라면, 차라리 '오늘의 생활 건강 팁'으로 주제를 변경하세요."
                     )
                     
                     # 🟢 밴드 오후/저녁에도 실시간 날씨 참고 정보 제공 (할루시네이션 방지)
@@ -1736,12 +1739,14 @@ class GPTHandler:
                 weather_data[key][cat] = fvalue
             
             if forecast:
-                # --- 내일 예보 ---
+                # --- 내일 예보 (예약 포스팅용) ---
                 tomorrow_temps = []
                 tomorrow_sky = ""
                 tomorrow_pop = ""
                 morning_temp = None
-                morning_sky = ""
+                
+                # 06~09시 사이의 기온을 '아침 기온'으로 간주
+                target_morning_hours = ['0600', '0700', '0800', '0900']
                 
                 for key, vals in sorted(weather_data.items()):
                     if not key.startswith(fcst_date):
@@ -1757,9 +1762,9 @@ class GPTHandler:
                             pass
                     
                     # 오전 6~9시 기준 날씨
-                    if ftime in ('0600', '0700', '0800', '0900'):
+                    if ftime in target_morning_hours:
                         if tmp and morning_temp is None:
-                            morning_temp = tmp
+                            morning_temp = float(tmp)
                         sky_code = vals.get('SKY', '')
                         if sky_code:
                             morning_sky = sky_map.get(sky_code, sky_code)
@@ -1772,26 +1777,50 @@ class GPTHandler:
                     max_temp = max(tomorrow_temps)
                     
                     # 오전 날씨가 없으면 첫 번째 값 사용
-                    if not morning_sky:
+                    if not tomorrow_sky:
                         for key, vals in sorted(weather_data.items()):
                             if key.startswith(fcst_date):
                                 sky_code = vals.get('SKY', '')
                                 if sky_code:
-                                    morning_sky = sky_map.get(sky_code, sky_code)
+                                    tomorrow_sky = sky_map.get(sky_code, sky_code)
                                     break
                     
                     result_text = (
                         f"[{location} 내일 날씨 예보 (기상청)]\n"
                         f"지역: {location}\n"
-                        f"날씨: {morning_sky if morning_sky else '확인중'}, "
+                        f"날씨: {tomorrow_sky if tomorrow_sky else '확인중'}, "
                         f"최저/최고: {min_temp:.0f}/{max_temp:.0f}도"
                     )
-                    if morning_temp:
-                        result_text += f", 오전 기온: {morning_temp}도"
+                    if morning_temp is not None:
+                        result_text += f", 오전 기온: {morning_temp:.1f}도"
                     if tomorrow_pop:
                         result_text += f", 강수확률: {tomorrow_pop}%"
-                    
-                    logger.info(f"기상청 내일 예보 성공: {location} → nx={nx},ny={ny}")
+
+                    # 🟢 오늘(비교 대상) 아침 기온 구하기 (비교 로직)
+                    today_morning_temp = None
+                    try:
+                        for key, vals in sorted(weather_data.items()):
+                            if not key.startswith(compare_date): # 오늘 날짜
+                                continue
+                            ftime = key.split('_')[1]
+                            if ftime in target_morning_hours:
+                                t_tmp = vals.get('TMP', vals.get('T1H', ''))
+                                if t_tmp:
+                                    today_morning_temp = float(t_tmp)
+                                    break # 가장 빠른 아침 시간대 하나만 잡음
+                        
+                        if today_morning_temp is not None and morning_temp is not None:
+                            diff = morning_temp - today_morning_temp
+                            if diff > 0:
+                                result_text += f"\\n어제(오늘) 같은 아침보다 {abs(diff):.1f}도 높습니다 (↑상승)"
+                            elif diff < 0:
+                                result_text += f"\\n어제(오늘) 같은 아침보다 {abs(diff):.1f}도 낮습니다 (↓하강)"
+                            else:
+                                result_text += f"\\n어제(오늘) 아침과 비슷한 기온입니다"
+                    except Exception as e:
+                        logger.warning(f"내일 예보 비교 로직 실패: {e}")
+
+                    logger.info(f"기상청 내일 예보 성공: {location} (비교 포함)")
                     return result_text
                 else:
                     logger.warning("기상청 내일 예보: 기온 데이터 없음")
@@ -2012,14 +2041,35 @@ class GPTHandler:
             logger.warning(f"날씨 크롤링 실패: {e}")
             return None
     
+    def _filter_news_content(self, text: str) -> bool:
+        """뉴스 내용에 금칙어가 포함되어 있는지 확인"""
+        forbidden_keywords = [
+            '정치', '여당', '야당', '대통령', '의원', '선거', '투표', '탄핵', '시위', 
+            '종교', '교회', '성당', '불교', '기독교', '목사', '스님', '사이비',
+            '살인', '성범죄', '마약', '도박', '자살', '충격', '경악', '속보', '19금', '성인'
+        ]
+        
+        for keyword in forbidden_keywords:
+            if keyword in text:
+                return True
+        return False
+
     def _get_trending_topics(self, count=3):
         # 오후/저녁용: 최신 뉴스/이슈/트렌드 정보 수집
         # count: 가져올 뉴스 수 (기본 3, 배치 분배용 6)
         try:
             # 1순위: Brave Search로 오늘의 핫이슈 검색
-            brave_result = self._search_brave("오늘 뉴스 이슈 트렌드", count=count)
+            brave_result = self._search_brave("오늘 뉴스 이슈 트렌드", count=count * 2) # 필터링 고려해 더 많이 검색
             if brave_result:
-                return brave_result
+                # 🟢 코드 레벨 필터링 적용
+                lines = brave_result.split('\n')
+                filtered_lines = []
+                for line in lines:
+                    if not self._filter_news_content(line):
+                        filtered_lines.append(line)
+                
+                if filtered_lines:
+                    return "\n".join(filtered_lines[:count])
             
             # 2순위: 네이버 실시간 검색어/인기 검색어 크롤링
             try:
@@ -2034,11 +2084,17 @@ class GPTHandler:
                 # 뉴스 제목 추출
                 news_titles = re.findall(r'class="news_tit"[^>]*>(.*?)<', html)
                 if news_titles:
-                    top_news = news_titles[:count]
-                    lines = []
-                    for i, title in enumerate(top_news, 1):
-                        lines.append(f"{i}. {title}")
-                    return "\n".join(lines)
+                    filtered_news = []
+                    for title in news_titles:
+                        if not self._filter_news_content(title):
+                            filtered_news.append(title)
+                    
+                    if filtered_news:
+                        top_news = filtered_news[:count]
+                        lines = []
+                        for i, title in enumerate(top_news, 1):
+                            lines.append(f"{i}. {title}")
+                        return "\n".join(lines)
             except Exception:
                 pass
             
@@ -2062,13 +2118,19 @@ class GPTHandler:
             # 기본 검색 URL
             url = "https://api.search.brave.com/res/v1/web/search"
             headers = {"X-Subscription-Token": api_key, "Accept": "application/json"}
+            
+            # 🟢 1단계: 검색어 원천 차단 (부정 키워드 추가)
+            safe_query = query
+            if any(k in query for k in ["뉴스", "소식", "이슈", "동향", "트렌드"]):
+                safe_query += " -정치 -여당 -야당 -종교 -사건 -사고 -성인 -19금"
+                
             # 검색어 인코딩 및 파라미터 설정 (상위 count개 결과)
-            params_dict = {"q": query, "count": count}
+            params_dict = {"q": safe_query, "count": count}
             
             # 🟢 뉴스/날씨/이슈 관련 검색이면 '최신성(Past Day)' 필터 적용
             if any(k in query for k in ["뉴스", "소식", "이슈", "동향", "트렌드", "날씨", "미세먼지", "오늘", "속보", "최신"]):
                 params_dict["freshness"] = "pd"  # pd: Past Day (지난 24시간)
-                logger.info(f"Brave Search 최신성 필터 적용 (freshness=pd): {query}")
+                logger.info(f"Brave Search 최신성 필터 적용 (freshness=pd): {safe_query}")
             
             params = urllib.parse.urlencode(params_dict)
             
@@ -2084,7 +2146,7 @@ class GPTHandler:
                 results.append(f"- **{title}**: {desc} (출처: {link})")
                 
             if results:
-                logger.info(f"Brave Search 성공: '{query}' 관련 {len(results)}건 검색됨")
+                logger.info(f"Brave Search 성공: '{safe_query}' 관련 {len(results)}건 검색됨")
                 return "\n".join(results)
             return ""
             

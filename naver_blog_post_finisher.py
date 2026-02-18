@@ -1651,7 +1651,7 @@ class NaverBlogPostFinisher:
             return False
 
     
-    def click_final_publish_button(self):
+    def click_final_publish_button(self, is_reservation=False):
         """최종 발행 버튼 클릭 (녹색 발행 버튼)"""
         try:
             print("🚀 최종 발행 버튼 클릭 시도...")
