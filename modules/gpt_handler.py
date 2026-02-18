@@ -1518,15 +1518,10 @@ class GPTHandler:
         
         return '\n\n'.join(formatted_paragraphs)
 
-<<<<<<< HEAD
     def generate_reply(self, system_prompt: str, user_text: str, max_tokens: int = 150, selected_models: list = None) -> str:
         """
         간단한 댓글 답글 생성용 메서드 (모델 순환 및 재시도 로직 적용)
         """
-=======
-    def generate_reply(self, system_prompt: str, user_text: str, max_tokens: int = 150) -> str:
-        # 간단한 댓글 답글 생성용 메서드 (모델 순환 및 재시도 로직 적용)
->>>>>>> 8454879e8bd28d218ab65b03c524a12294c072f6
         fallback_msg = "잘 보고 갑니다! 좋은 하루 되세요~"
         
         if self.use_dummy:
