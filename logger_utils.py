@@ -19,10 +19,13 @@ class StreamLogger:
 
     def write(self, message):
         try:
-            # 터미널 출력 유지
-            if self.terminal:
-                self.terminal.write(message)
-                self.terminal.flush()
+            # 터미널 출력 유지 (터미널이 유효할 때만)
+            if self.terminal and hasattr(self.terminal, 'write'):
+                try:
+                    self.terminal.write(message)
+                    self.terminal.flush()
+                except Exception:
+                    pass # 터미널 출력 실패는 무시 (Windows noconsole 등)
             
             # 파일 출력
             if self.log_file:

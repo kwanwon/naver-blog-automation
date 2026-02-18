@@ -59,9 +59,15 @@ class ManualSessionHelper:
         
         # 고유한 사용자 데이터 디렉토리 설정 (프로필 충돌 방지)
         import time
-        timestamp = int(time.time())
-        # user_data_dir를 AppData/data 폴더로 이동
-        user_data_dir = os.path.join(get_data_dir(), f"manual_chrome_profile_{timestamp}_{os.urandom(4).hex()}")
+        # 🆕 세션 유지를 위해 고정된 프로필 디렉토리 사용 (타임스탬프 제거)
+        # 이전 임시 프로필 방식: user_data_dir = os.path.join(get_data_dir(), f"manual_chrome_profile_{timestamp}_{os.urandom(4).hex()}")
+        # 이제 하나의 프로필을 계속 재사용하여 로그인을 유지합니다.
+        try:
+            timestamp = int(time.time()) # 타임스탬프는 혹시 몰라 남겨둠 (사용안함)
+        except:
+            pass
+            
+        user_data_dir = os.path.join(get_data_dir(), "naver_blog_automation_profile")
         chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
         
         # 프로젝트 루트의 ChromeDriver 사용

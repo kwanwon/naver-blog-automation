@@ -48,7 +48,7 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 class NaverBlogAutomation:
-    def __init__(self, auto_mode=True, image_insert_mode="random", use_stickers=False, custom_images_folder=None):
+    def __init__(self, auto_mode=True, image_insert_mode="random", use_stickers=False, custom_images_folder=None, naver_id=None):
         self.driver = None
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.today = datetime.now().strftime("%Y-%m-%d")
@@ -56,6 +56,7 @@ class NaverBlogAutomation:
         self.images_folder = os.path.join(self.post_folder, "images")
         self.default_images_folder = os.path.join(self.base_dir, "default_images")  # 기본 이미지 폴더
         self.custom_images_folder = custom_images_folder  # 커스텀 이미지 폴더 추가
+        self.naver_id = naver_id  # 🆕 네이버 ID 저장
         self.used_images = []
         self.auto_mode = auto_mode
         self.image_insert_mode = image_insert_mode
@@ -1487,7 +1488,9 @@ class NaverBlogAutomation:
             print(f"계산된 이미지 위치 정보를 사용합니다: {image_positions}")
             
             # 블로그 글쓰기 페이지로 이동
-            self.driver.get("https://blog.naver.com/gm2hapkido?Redirect=Write&")
+            target_id = self.naver_id if self.naver_id else "gm2hapkido"
+            print(f"📝 글쓰기 페이지로 이동: https://blog.naver.com/{target_id}?Redirect=Write&")
+            self.driver.get(f"https://blog.naver.com/{target_id}?Redirect=Write&")
             time.sleep(1)
 
             # iframe 전환
