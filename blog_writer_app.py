@@ -18,18 +18,24 @@ from selenium.webdriver.common.by import By
 
 import subprocess
 import os
+import asyncio
 import sys  # sys 모듈 추가
 import io
 import pyperclip
 
 # 🆕 Windows 콘솔 인코딩 문제 해결 (이모지 출력 시 UnicodeEncodeError 방지)
+# 🆕 Windows 콘솔 인코딩 문제 해결 및 Noconsole 모드 지원
 if sys.platform == 'win32':
     try:
-        # stdout/stderr를 UTF-8로 설정하고, 인코딩 불가능한 문자는 ?로 대체
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        # stdout/stderr가 None이 아닐 때만 인코딩 설정 (Noconsole 모드 대응)
+        if sys.stdout and hasattr(sys.stdout, 'buffer'):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        if sys.stderr and hasattr(sys.stderr, 'buffer'):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
     except Exception:
-        pass  # 콘솔이 없는 경우 (noconsole 모드) 무시
+        # 콘솔이 없는 경우 (noconsole 모드) 또는 설정 실패 시 무시
+        pass
+
 import platform  # 플랫폼 감지 추가
 from datetime import datetime, timedelta
 import json
@@ -47,7 +53,8 @@ class BlogWriterApp:
     def __init__(self):
         # 🚀 로거 초기화 (가장 먼저 실행)
         try:
-            log_dir = os.path.join(os.getcwd(), 'logs')
+            # 안전한 로그 디렉토리 확보 (os.getcwd 대신 get_log_dir 사용)
+            log_dir = get_log_dir()
             os.makedirs(log_dir, exist_ok=True)
             self.console_log_path = os.path.join(log_dir, 'console.log')
         except:
@@ -1979,12 +1986,10 @@ class BlogWriterApp:
                                 next_time_str = self.next_post_time.strftime('%H:%M:%S') if self.next_post_time else '계산 중...'
                                 print(f"🎯 새로운 다음 포스팅 시간: {next_time_str}")
                                 
-                                # UI에 다이얼로그 알림 표시 (별도 스레드에서 실행)
+                                # UI에 다이얼로그 알림 표시 (안전하게 실행)
                                 if self.page_ref:
                                     try:
-                                        # UI 스레드에서 안전하게 실행
-                                        import threading
-                                        def show_update_dialog():
+                                        async def show_update_dialog():
                                             try:
                                                 self.show_dialog(
                                                     self.page_ref,
@@ -1995,8 +2000,8 @@ class BlogWriterApp:
                                             except Exception as dialog_e:
                                                 print(f"❌ 설정 업데이트 다이얼로그 표시 실패: {dialog_e}")
                                         
-                                        # 메인 스레드에서 실행
-                                        threading.Timer(0.1, show_update_dialog).start()
+                                        # Flet UI 스레드에서 실행 (Windows 크래시 방지)
+                                        self.page_ref.run_task(show_update_dialog)
                                         
                                     except Exception as e:
                                         print(f"❌ 설정 업데이트 알림 처리 중 오류: {e}")
@@ -2024,9 +2029,8 @@ class BlogWriterApp:
                         self._last_operating_time_alert = now
                         if self.page_ref:
                             try:
-                                # UI 스레드에서 안전하게 실행
-                                import threading
-                                def show_operating_time_dialog():
+                                # UI 스레드에서 안전하게 실행 (Windows 크래시 방지)
+                                async def show_operating_time_dialog():
                                     try:
                                         self.show_dialog(
                                             self.page_ref,
@@ -2037,8 +2041,8 @@ class BlogWriterApp:
                                     except Exception as dialog_e:
                                         print(f"❌ 운영 시간 다이얼로그 표시 실패: {dialog_e}")
                                 
-                                # 메인 스레드에서 실행
-                                threading.Timer(0.1, show_operating_time_dialog).start()
+                                # Flet 태스크로 실행
+                                self.page_ref.run_task(show_operating_time_dialog)
                                 
                             except Exception as e:
                                 print(f"❌ 운영 시간 알림 처리 중 오류: {e}")
@@ -2056,9 +2060,8 @@ class BlogWriterApp:
                         self._last_limit_alert = now
                         if self.page_ref:
                             try:
-                                # UI 스레드에서 안전하게 실행
-                                import threading
-                                def show_limit_dialog():
+                                # UI 스레드에서 안전하게 실행 (Windows 크래시 방지)
+                                async def show_limit_dialog():
                                     try:
                                         self.show_dialog(
                                             self.page_ref,
@@ -2069,8 +2072,8 @@ class BlogWriterApp:
                                     except Exception as dialog_e:
                                         print(f"❌ 일일 제한 다이얼로그 표시 실패: {dialog_e}")
                                 
-                                # 메인 스레드에서 실행
-                                threading.Timer(0.1, show_limit_dialog).start()
+                                # Flet 태스크로 실행
+                                self.page_ref.run_task(show_limit_dialog)
                                 
                             except Exception as e:
                                 print(f"❌ 일일 제한 알림 처리 중 오류: {e}")
@@ -2272,12 +2275,16 @@ class BlogWriterApp:
                         except Exception as img_folder_err:
                             print(f"    ⚠️ 이미지 폴더 선택 오류: {img_folder_err}")
                         
+                        # 🆕 네이버 ID 설정 가져오기
+                        naver_id = self.settings.get('naver_id', '')
+
                         # 자동화 인스턴스 생성 (이미지 삽입 활성화)
                         blog_auto = NaverBlogAutomation(
                             auto_mode=images_available,  # 이미지가 있으면 자동 삽입
                             image_insert_mode="random",
                             use_stickers=False,
-                            custom_images_folder=custom_images_folder
+                            custom_images_folder=custom_images_folder,
+                            naver_id=naver_id # 🆕 네이버 ID 전달
                         )
                         
                         # 기본 디렉토리 및 설정
@@ -2474,12 +2481,16 @@ class BlogWriterApp:
                         except Exception as img_err:
                             print(f"    ⚠️ 이미지 폴더 오류: {img_err}")
                         
+                        # 🆕 네이버 ID 설정 가져오기
+                        naver_id = self.settings.get('naver_id', '')
+
                         # 블로그 자동화 객체 생성
                         blog_auto = NaverBlogAutomation(
                             auto_mode=images_available,
                             image_insert_mode="random",
                             use_stickers=False,
-                            custom_images_folder=custom_images_folder
+                            custom_images_folder=custom_images_folder,
+                            naver_id=naver_id # 🆕 네이버 ID 전달
                         )
                         
                         blog_auto.base_dir = self.base_dir
@@ -3029,6 +3040,10 @@ class BlogWriterApp:
                 options.add_argument('--headless=new')
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
+            
+            # 🆕 윈도우 세션 유지를 위해 고정된 프로필 사용 (ManualSessionHelper와 동일 경로)
+            user_data_dir = os.path.join(get_data_dir(), "naver_blog_automation_profile")
+            options.add_argument(f"--user-data-dir={user_data_dir}")
             
             # Use ChromeDriverManager to install/manage driver
             service = Service(ChromeDriverManager().install())
@@ -4729,20 +4744,23 @@ class BlogWriterApp:
             # 다이얼로그 참조를 위한 변수
             log_dialog = None
             
-            # 실시간 업데이트 콜백
-            def on_log_update(message):
-                try:
-                    if log_dialog and log_dialog.open:
-                        log_text.value += message
-                        log_text.update()
-                        log_view.scroll_to(offset=-1, duration=50)
-                except:
-                    pass
+            # 실시간 업데이트를 위한 폴링 루프 (스레드 안전성 확보 - Async 필수)
+            async def update_log_loop():
+                while log_dialog and log_dialog.open:
+                    try:
+                        current_logs = self.stream_logger.get_logs()
+                        if log_text.value != current_logs:
+                            log_text.value = current_logs
+                            log_text.update()
+                            log_view.scroll_to(offset=-1, duration=50)
+                    except:
+                        pass
+                    await asyncio.sleep(0.5)  # 0.5초마다 갱신 (asyncio 사용)
             
-            self.stream_logger.set_callback(on_log_update)
+            # 콜백 방식 제거 (Windows 크래시 원인)
+            # self.stream_logger.set_callback(on_log_update)
             
             def close_dialog(e):
-                self.stream_logger.set_callback(None)
                 log_dialog.open = False
                 page.update()
                 
@@ -4807,14 +4825,22 @@ class BlogWriterApp:
                     ft.TextButton("복사하기", icon=ft.Icons.COPY, on_click=copy_log),
                     ft.TextButton("닫기", on_click=close_dialog),
                 ],
-                on_dismiss=lambda e: self.stream_logger.set_callback(None),
+                on_dismiss=lambda e: None, # 콜백 제거됨
             )
             
             # Flet 0.21+ 방식: page.open() 사용
             page.open(log_dialog)
-            # 🆕 강제 업데이트로 다이얼로그 표시 보장
+            # 🆕 강제 업데이트로 다이얼로그 표시 보장 (Windows Fix)
             page.update()
-            sys.__stdout__.write("✅ 로그 뷰어 열기 성공 (page.open + page.update)\n")
+            
+            # 🆕 로그 업데이트 폴링 루프 시작 (백그라운드 실행) (Mac Fix)
+            try:
+                page.run_task(update_log_loop)
+            except AttributeError:
+                # page.run_task가 없는 구버전 Flet일 경우 백그라운드 태스크로 실행 시도
+                asyncio.create_task(update_log_loop())
+
+            sys.__stdout__.write("✅ 로그 뷰어 열기 성공 (page.open + update + polling)\n")
             
         except Exception as e:
             sys.__stdout__.write(f"❌ 로그 뷰어 열기 실패: {str(e)}\n")
@@ -6533,84 +6559,33 @@ class BlogWriterApp:
                 page.update()
                 return
 
-            # 로그인 상태 확인 (브라우저 인스턴스 확인) - 디버깅 정보 추가
-            print(f"🔍 브라우저 상태 확인:")
-            print(f"  - hasattr(self, 'browser_driver'): {hasattr(self, 'browser_driver')}")
-            if hasattr(self, 'browser_driver'):
-                print(f"  - self.browser_driver is not None: {self.browser_driver is not None}")
-                if self.browser_driver:
-                    try:
-                        current_url = self.browser_driver.current_url
-                        print(f"  - 현재 브라우저 URL: {current_url}")
-                    except Exception as browser_e:
-                        print(f"  - 브라우저 상태 확인 중 오류: {browser_e}")
-                        self.browser_driver = None
+            # 로그인 상태 확인 및 세션 복구
+            print(f"🔍 브라우저 세션 확인 중...")
             
-            if not hasattr(self, 'browser_driver') or not self.browser_driver:
-                # 저장된 쿠키가 있는지 확인
-                cookies_file = os.path.join(self.base_dir, 'naver_cookies.json')
-                if os.path.exists(cookies_file):
-                    print("💾 저장된 쿠키 발견, 새 브라우저 세션 생성 시도...")
-                    try:
-                        # 새 브라우저 생성 및 쿠키 로드
-                        from manual_session_helper import ManualSessionHelper
-                        helper = ManualSessionHelper()
-                        helper.setup_driver()
+            # 드라이버가 없거나 죽었으면 새로 생성 (고정 프로필 사용하므로 자동 로그인 됨)
+            if not hasattr(self, 'browser_driver') or not self.browser_driver or not self.is_driver_alive(self.browser_driver):
+                print("⚠️ 유효한 브라우저 세션이 없습니다. 고정 프로필로 복구 시도...")
+                try:
+                    self.browser_driver = self.get_or_create_driver()
+                    
+                    if self.browser_driver:
+                        # 네이버 블로그 메인으로 이동하여 로그인 상태 확인 (필요 시)
+                        self.browser_driver.get('https://blog.naver.com')
+                        time.sleep(1)
+                        print("✅ 브라우저 세션 복구 완료")
+                    else:
+                        raise Exception("브라우저 드라이버 생성 실패")
                         
-                        # 네이버 메인 페이지로 이동
-                        helper.driver.get('https://www.naver.com')
-                        time.sleep(2)
-                        
-                        # 쿠키 로드
-                        with open(cookies_file, 'r', encoding='utf-8') as f:
-                            cookies = json.load(f)
-                        
-                        for cookie in cookies:
-                            try:
-                                helper.driver.add_cookie(cookie)
-                            except Exception as cookie_e:
-                                print(f"쿠키 추가 실패: {cookie.get('name', 'unknown')} - {cookie_e}")
-                        
-                        # 페이지 새로고침하여 로그인 상태 적용
-                        helper.driver.refresh()
-                        time.sleep(3)
-                        
-                        # 내 블로그로 이동
-                        helper.driver.get('https://blog.naver.com')
-                        time.sleep(3)
-                        
-                        # 로그인 상태 확인
-                        page_source = helper.driver.page_source
-                        if "로그아웃" in page_source or "님" in page_source:
-                            self.browser_driver = helper.driver
-                            print("✅ 저장된 쿠키로 브라우저 세션 복원 성공!")
-                            page.snack_bar = ft.SnackBar(
-                                content=ft.Text("✅ 저장된 로그인 정보로 브라우저 세션을 복원했습니다!"),
-                                bgcolor=ft.Colors.GREEN
-                            )
-                            page.snack_bar.open = True
-                            page.update()
-                        else:
-                            helper.driver.quit()
-                            raise Exception("쿠키로 로그인 복원 실패")
-                            
-                    except Exception as restore_e:
-                        print(f"❌ 브라우저 세션 복원 실패: {restore_e}")
-                        page.snack_bar = ft.SnackBar(
-                            content=ft.Text("❌ 브라우저 세션이 없습니다.\n\n1. '네이버 로그인' 버튼 클릭\n2. 브라우저에서 로그인 완료\n3. '로그인 완료' 버튼 클릭\n\n위 단계를 완료한 후 다시 시도해주세요."),
-                            bgcolor=ft.Colors.ORANGE
-                        )
-                        page.snack_bar.open = True
-                        page.update()
-                        return
-                else:
+                except Exception as e:
+                    print(f"❌ 브라우저 세션 복구 실패: {str(e)}")
                     page.snack_bar = ft.SnackBar(
-                        content=ft.Text("❌ 브라우저 세션이 없습니다.\n\n1. '네이버 로그인' 버튼 클릭\n2. 브라우저에서 로그인 완료\n3. '로그인 완료' 버튼 클릭\n\n위 단계를 완료한 후 다시 시도해주세요."),
-                        bgcolor=ft.Colors.ORANGE
+                        content=ft.Text(f"브라우저 실행 오류: {str(e)}"),
+                        bgcolor=ft.Colors.RED
                     )
                     page.snack_bar.open = True
                     page.update()
                     return
+
 
             try:
                 # 업로드 진행 상태 표시
@@ -6712,11 +6687,15 @@ class BlogWriterApp:
                     auto_image_enabled = auto_image_checkbox.value and images_available
                     
                     # 자동화 인스턴스 생성 (기존 브라우저 세션 활용)
+                    # 🆕 네이버 ID 설정 가져오기
+                    naver_id = self.settings.get('naver_id', '')
+                    
                     blog_auto = NaverBlogAutomation(
                         auto_mode=auto_image_enabled,  # 포스트 단위 이미지 사용 여부
                         image_insert_mode="random",
                         use_stickers=False,
-                        custom_images_folder=custom_images_folder  # 포스트별 단일 폴더 고정
+                        custom_images_folder=custom_images_folder,  # 포스트별 단일 폴더 고정
+                        naver_id=naver_id # 🆕 네이버 ID 전달
                     )
                     
                     # 기본 디렉토리를 현재 작업 디렉토리로 설정하여 설정 파일 경로 보정
@@ -10270,7 +10249,8 @@ class BlogWriterApp:
             
     def handle_update_click(self, page):
         """업데이트 버튼 클릭 핸들러"""
-        def update_process():
+        # 🆕 UI 스레드 안전성을 위해 page.run_task 사용 (Windows 크래시 방지)
+        async def update_process():
             try:
                 # 로딩 다이얼로그 표시
                 loading_dialog = ft.AlertDialog(
@@ -10293,8 +10273,8 @@ class BlogWriterApp:
                 current_version = self.get_current_version()
                 updater = AutoUpdater(current_version)
                 
-                # 원격 버전 확인
-                remote_version, changelog, assets, release_info = updater.get_remote_version()
+                # 원격 버전 확인 (네트워크 작업이므로 별도 스레드에서 비동기 실행)
+                remote_version, changelog, assets, release_info = await asyncio.to_thread(updater.get_remote_version)
                 
                 # 로딩 다이얼로그 닫기
                 loading_dialog.open = False
@@ -10327,10 +10307,16 @@ class BlogWriterApp:
                 # 업데이트 확인 다이얼로그
                 changelog_text = "\n".join([f"• {change}" for change in changelog])
                 
-                def perform_update_action(_):
+                # 확인 버튼 핸들러 (내부 함수)
+                def perform_update_action(e):
                     confirm_dialog.open = False
                     page.update()
                     
+                    # 🆕 업데이트 진행 및 파일 다운로드를 위한 비동기 태스크 시작
+                    page.run_task(execute_update_task)
+
+                # 실제 업데이트 실행 태스크
+                async def execute_update_task():
                     # 업데이트 진행 다이얼로그
                     progress_dialog = ft.AlertDialog(
                         title=ft.Text("🚀 업데이트 진행 중", text_align=ft.TextAlign.CENTER),
@@ -10349,8 +10335,8 @@ class BlogWriterApp:
                     progress_dialog.open = True
                     page.update()
                     
-                    # 업데이트 실행
-                    success, message = updater.check_and_update()
+                    # 업데이트 실행 (다운로드 등 무거운 작업은 스레드로 분리)
+                    success, message = await asyncio.to_thread(updater.check_and_update)
                     
                     progress_dialog.open = False
                     page.update()
@@ -10365,45 +10351,36 @@ class BlogWriterApp:
                             ft.Text("모든 설정과 시리얼 정보는 안전하게 보존되었습니다.", color=ft.Colors.GREEN_600),
                         ]
                         
-                        if is_built_app:
-                            # 빌드된 앱은 새 버전 다운로드 필요
-                            dialog_content.extend([
-                                ft.Divider(),
-                                ft.Text("⚠️ 빌드된 앱을 사용 중입니다.", weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE_600),
-                                ft.Text("완전한 업데이트를 위해 새 버전을 다운로드해주세요:", size=12),
-                                ft.TextButton(
-                                    "📥 다운로드 페이지 열기",
-                                    url="https://github.com/kwanwon/naver-blog-automation/releases"
-                                ),
-                                ft.Text("다운로드 후 현재 앱을 종료하고 새 앱을 실행하세요.", size=12, color=ft.Colors.GREY_600)
-                            ])
+                        if is_built_app and sys.platform == 'win32':
+                             # 윈도우 빌드 앱은 자동 재시작 스크립트가 실행됨
+                             dialog_content.append(ft.Text("잠시 후 프로그램이 자동으로 재시작됩니다.", weight=ft.FontWeight.BOLD))
+                        elif is_built_app:
+                            # Mac 등 기타 (다운로드 유도 없음, 이미 교체됨)
+                            dialog_content.append(ft.Text("프로그램을 재시작해주세요.", weight=ft.FontWeight.BOLD))
                         else:
                             dialog_content.append(ft.Text("프로그램을 재시작해주세요.", weight=ft.FontWeight.BOLD))
                         
                         success_dialog = ft.AlertDialog(
-                            title=ft.Text("🎉 업데이트 완료!"),
-                            content=ft.Column(dialog_content),
-                            actions=[
-                                ft.TextButton("재시작", on_click=lambda _: self.restart_application()),
-                                ft.TextButton("나중에", on_click=lambda _: self.close_dialog(page, success_dialog))
-                            ]
+                            title=ft.Text("✅ 업데이트 준비 완료"),
+                            content=ft.Column(dialog_content, tight=True),
+                            actions=[ft.TextButton("확인", on_click=lambda _: self.close_dialog(page, success_dialog))]
                         )
                         page.overlay.append(success_dialog)
                         success_dialog.open = True
                         page.update()
                     else:
-                        # 실패 다이얼로그
-                        error_dialog = ft.AlertDialog(
+                        # 실패
+                        fail_dialog = ft.AlertDialog(
                             title=ft.Text("❌ 업데이트 실패"),
-                            content=ft.Text(f"업데이트 중 오류가 발생했습니다:\n{message}"),
-                            actions=[ft.TextButton("확인", on_click=lambda _: self.close_dialog(page, error_dialog))]
+                            content=ft.Text(f"오류: {message}"),
+                            actions=[ft.TextButton("확인", on_click=lambda _: self.close_dialog(page, fail_dialog))]
                         )
-                        page.overlay.append(error_dialog)
-                        error_dialog.open = True
+                        page.overlay.append(fail_dialog)
+                        fail_dialog.open = True
                         page.update()
                 
                 confirm_dialog = ft.AlertDialog(
-                    title=ft.Text(f"🆕 새 버전 발견: v{remote_version}"),
+                    title=ft.Text(f"🚀 새 버전 발견: v{remote_version}"),
                     content=ft.Container(
                         content=ft.Column([
                             ft.Text(f"현재 버전: v{current_version}", weight=ft.FontWeight.BOLD),
@@ -10447,8 +10424,8 @@ class BlogWriterApp:
                 error_dialog.open = True
                 page.update()
         
-        # 백그라운드에서 실행
-        threading.Thread(target=update_process, daemon=True).start()
+        # 백그라운드 태스크로 실행
+        page.run_task(update_process)
         
     def close_dialog(self, page, dialog):
         """다이얼로그 닫기"""
