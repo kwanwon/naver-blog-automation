@@ -702,20 +702,34 @@ class NaverBandAutomation:
                 "button._btnSubmitPost", 
                 "button.uButton.-confirm",
                 "button._btnPost",
-                "button.uButton.-sizeM._btnSubmitPost.-confirm"
+                "button.uButton.-sizeM._btnSubmitPost.-confirm",
+                "//button[contains(text(), '게시')]",
+                "//button[contains(text(), '완료')]",
+                "//button[contains(text(), '확인')]"  # 예약 시
             ]
             
-            # 버튼 활성화 대기
-            for _ in range(10):
+            # 버튼 활성화 대기 (최대 20초)
+            found_clickable = False
+            for i in range(20):
                 for selector in submit_selectors:
                     try:
-                        btn = self.driver.find_element(By.CSS_SELECTOR, selector)
-                        if btn.is_displayed() and btn.is_enabled():
-                            submit_btn = btn
-                            break
+                        if selector.startswith("//"):
+                            btn = self.driver.find_element(By.XPATH, selector)
+                        else:
+                            btn = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        
+                        if btn.is_displayed():
+                            if btn.is_enabled():
+                                submit_btn = btn
+                                found_clickable = True
+                                break
+                            else:
+                                print(f"  ⏳ 버튼 발견됨(비활성 상태) - 대기 중... ({i+1}/20)")
                     except:
                         continue
-                if submit_btn: break
+                
+                if found_clickable:
+                    break
                 time.sleep(1)
             
             if not submit_btn:
@@ -737,13 +751,21 @@ class NaverBandAutomation:
                     self.driver.execute_script("""
                         const layers = document.querySelectorAll('.lyWrap, .layer_wrap');
                         layers.forEach(l => {
-                            if(l.offsetParent !== null && !l.innerHTML.includes('글쓰기') && !l.innerHTML.includes('예약')) {
+                            // 글쓰기/예약 레이어는 제외하고 닫기
+                            const text = l.innerText || '';
+                            if(l.offsetParent !== null && !text.includes('글쓰기') && !text.includes('예약')) {
                                 l.style.display = 'none';
+                                console.log('Hidden layer:', l);
                             }
                         });
-                    """)
-                except: pass
+                        // 강제로 disabled 속성 제거 시도 (최후의 수단)
+                        arguments[0].removeAttribute('disabled');
+                        arguments[0].classList.remove('disabled');
+                    """, submit_btn)
+                except Exception as e:
+                    print(f"⚠️ 방해 요소 제거 중 오류: {e}")
                 
+                time.sleep(0.5)
                 try:
                     submit_btn.click()
                 except:

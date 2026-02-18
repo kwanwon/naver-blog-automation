@@ -1115,6 +1115,75 @@ class NaverBlogPostFinisher:
             traceback.print_exc()
             return True  # 계속 진행하기 위해 True 반환
             
+    def _open_publish_panel_robust(self):
+        """발행 옵션 패널을 안전하게 엽니다 (재시도 로직 포함)"""
+        try:
+            print("  📋 발행 옵션 패널 확인 및 열기 시도 (Robust)...")
+            
+            # 1. 예약 라디오 버튼이 이미 보이는지 확인 (패널 열림 상태)
+            try:
+                # 빠른 확인을 위해 0.5초 대기
+                WebDriverWait(self.driver, 0.5).until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, 'input#radio_time2, label[for="radio_time2"]'))
+                )
+                print("  ✅ 발행 패널이 이미 열려있음")
+                return True
+            except:
+                pass
+            
+            # 2. 발행 버튼 클릭하여 패널 열기
+            print("  🚀 발행 버튼 클릭하여 옵션 패널 열기 시도...")
+            publish_selectors = [
+                'button.publish_btn__m9KHH',
+                'button[data-testid="btn-publish"]',
+                'button[class*="publish_btn"]',
+                '.publish_btn__m9KHH', 
+                '//button[contains(text(), "발행")]'
+            ]
+            
+            max_attempts = 5
+            for attempt in range(max_attempts):
+                # 버튼 클릭 시도
+                clicked = False
+                for selector in publish_selectors:
+                    try:
+                        if selector.startswith("//"):
+                            btns = self.driver.find_elements(By.XPATH, selector)
+                        else:
+                            btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                        
+                        for btn in btns:
+                            if btn.is_displayed() and btn.is_enabled():
+                                btn.click()
+                                print(f"  ✅ 발행 버튼 클릭: {selector}")
+                                clicked = True
+                                break
+                    except:
+                        continue
+                    if clicked: break
+                
+                if clicked:
+                    # 패널 열림 확인
+                    try:
+                        WebDriverWait(self.driver, 3).until(
+                            EC.visibility_of_element_located((By.CSS_SELECTOR, 'input#radio_time2, label[for="radio_time2"]'))
+                        )
+                        print("  ✅ 발행 패널 열기 확인됨")
+                        return True
+                    except:
+                        print(f"  ⚠️ 패널이 아직 열리지 않음 (시도 {attempt+1}/{max_attempts})")
+                        time.sleep(1)
+                else:
+                    print(f"  ⚠️ 발행 버튼을 찾을 수 없음 (시도 {attempt+1}/{max_attempts})")
+                    time.sleep(1)
+            
+            print("  ❌ 발행 옵션 패널을 열 수 없습니다.")
+            return False
+            
+        except Exception as e:
+            print(f"  ❌ 발행 패널 열기 중 오류: {str(e)}")
+            return False
+
     def add_tags(self, tags=None, skip_publish=False):
         """태그 추가"""
         try:
@@ -1150,45 +1219,11 @@ class NaverBlogPostFinisher:
                 return False
             
             # 🎯 발행 버튼을 클릭해서 발행 패널 열기
-            print("📋 발행 버튼 클릭하여 발행 패널 열기...")
-            panel_opened = self.driver.execute_script("""
-            console.log('발행 버튼 클릭하여 발행 패널 열기...');
-            
-            const publishBtnSelectors = [
-                'button.publish_btn__m9KHH',
-                'button[class*="publish_btn"]',
-                'button[data-testid="btn-publish"]',
-                '.publish_btn__m9KHH'
-            ];
-            
-            for (const selector of publishBtnSelectors) {
-                try {
-                    const btn = document.querySelector(selector);
-                    if (btn && btn.offsetWidth > 0) {
-                        btn.click();
-                        console.log('✅ 발행 버튼 클릭 성공: ' + selector);
-                        return true;
-                    }
-                } catch (e) {}
-            }
-            
-            // 텍스트로 찾기
-            const allButtons = document.querySelectorAll('button');
-            for (const btn of allButtons) {
-                if (btn.textContent.includes('발행') && btn.offsetWidth > 0) {
-                    btn.click();
-                    console.log('✅ 텍스트로 발행 버튼 클릭 성공');
-                    return true;
-                }
-            }
-            
-            console.log('❌ 발행 버튼을 찾을 수 없습니다.');
-            return false;
-            """)
+            panel_opened = self._open_publish_panel_robust()
             
             if panel_opened:
                 print("✅ 발행 패널 열기 성공")
-                time.sleep(2)  # 발행 패널 로딩 대기
+                time.sleep(1)  # 발행 패널 로딩 대기
             else:
                 print("⚠️ 발행 패널 열기 실패, 계속 진행...")
             
@@ -1350,39 +1385,8 @@ class NaverBlogPostFinisher:
             print(f"  🎯 설정할 예약 시간: {target_dt.strftime('%Y-%m-%d')} {h:02d}:{m:02d}")
             
             # 0. 먼저 발행 패널이 열려있는지 확인 (add_tags에서 이미 열었을 수 있음)
-            print("  📋 발행 옵션 패널 확인...")
-            panel_opened = self.driver.execute_script("""
-            // 예약 라디오 버튼이 이미 보이는지 확인
-            const reserveRadio = document.querySelector('input#radio_time2, label[for="radio_time2"]');
-            if (reserveRadio && reserveRadio.offsetWidth > 0) {
-                console.log('✅ 발행 패널이 이미 열려있음');
-                return true;
-            }
-            
-            console.log('발행 버튼 클릭하여 옵션 패널 열기...');
-            
-            // 발행 버튼 찾기
-            const publishBtnSelectors = [
-                'button.publish_btn__m9KHH',
-                'button[class*="publish_btn"]',
-                'button[data-testid="btn-publish"]',
-                '.publish_btn__m9KHH'
-            ];
-            
-            for (const selector of publishBtnSelectors) {
-                try {
-                    const btn = document.querySelector(selector);
-                    if (btn && btn.offsetWidth > 0) {
-                        btn.click();
-                        console.log('✅ 발행 버튼 클릭 성공: ' + selector);
-                        return true;
-                    }
-                } catch (e) {}
-            }
-            
-            console.log('❌ 발행 버튼을 찾을 수 없습니다.');
-            return false;
-            """)
+            # 0. 먼저 발행 패널이 열려있는지 확인 (add_tags에서 이미 열었을 수 있음)
+            panel_opened = self._open_publish_panel_robust()
             
             if not panel_opened:
                 print("  ⚠️ 발행 옵션 패널 열기 실패, 계속 진행...")
@@ -1651,7 +1655,7 @@ class NaverBlogPostFinisher:
             return False
 
     
-    def click_final_publish_button(self, is_reservation=False):
+    def click_final_publish_button_legacy(self):
         """최종 발행 버튼 클릭 (녹색 발행 버튼)"""
         try:
             print("🚀 최종 발행 버튼 클릭 시도...")
@@ -1796,6 +1800,86 @@ class NaverBlogPostFinisher:
             traceback.print_exc()
             return False
             
+
+    def click_final_publish_button(self, is_reservation=False):
+        """최종 발행 버튼 클릭 (녹색 발행 버튼) - 예약 포함 (Robust Version)"""
+        try:
+            print("🚀 최종 발행(또는 예약) 버튼 클릭 시도 (Robust)...")
+            
+            # 버튼 활성화 대기 및 클릭 시도 (최대 30초)
+            publish_success = False
+            max_retries = 30
+            
+            # 확장된 선택자 목록
+            publish_selectors = [
+                'button.publish_btn__m9KHH',
+                'button[data-testid="scOnePublishBtn"]',
+                'button.confirm_btn_WEaBq',
+                'button[class*="confirm_btn"]',
+                'button[class*="publish_btn"]',
+                '//button[contains(text(), "발행")]',
+                '//button[contains(text(), "예약")]' 
+            ]
+            
+            for i in range(max_retries):
+                # 1. CSS/XPath 선택자로 찾기
+                for selector in publish_selectors:
+                    try:
+                        if selector.startswith("//"):
+                            btns = self.driver.find_elements(By.XPATH, selector)
+                        else:
+                            btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                            
+                        for btn in btns:
+                            if btn.is_displayed() and btn.is_enabled():
+                                print(f"✅ 발행 버튼 발견: {selector}")
+                                btn.click()
+                                publish_success = True
+                                break
+                    except:
+                        continue
+                    if publish_success: break
+                
+                if publish_success: break
+                
+                # 2. 텍스트 일치로 찾기 (JS fallback)
+                if i % 3 == 0: # 3번에 한 번만 JS 시도
+                    try:
+                        publish_success = self.driver.execute_script("""
+                            const buttons = document.querySelectorAll('button');
+                            for (const btn of buttons) {
+                                const text = (btn.innerText || btn.textContent || '').trim();
+                                const isVisible = btn.offsetWidth > 0 && btn.offsetHeight > 0;
+                                if (isVisible && !btn.disabled && (text === '발행' || text === '예약')) {
+                                    console.log('JS: 발행/예약 버튼 클릭', text);
+                                    btn.click();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        """)
+                    except: pass
+                    
+                    if publish_success:
+                        print("✅ JS로 발행/예약 버튼 클릭 성공")
+                        break
+                
+                print(f"  ⏳ 발행 버튼 대기 중... ({i+1}/{max_retries})")
+                time.sleep(1)
+            
+            if not publish_success:
+                print("❌ 최종 발행 버튼을 찾을 수 없거나 클릭할 수 없습니다.")
+                return False
+            
+            print("✅ 최종 발행 버튼 클릭 성공!")
+            time.sleep(3)  # 발행 완료 대기
+            return True
+            
+        except Exception as e:
+            print(f"최종 발행 버튼 클릭 중 오류 발생: {str(e)}")
+            traceback.print_exc()
+            return False
+
     def click_publish_button(self):
         """발행 버튼 클릭"""
         try:

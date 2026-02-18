@@ -57,6 +57,12 @@ class ManualSessionHelper:
         # chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         # chrome_options.add_experimental_option('useAutomationExtension', False)
         
+        # 첫 실행 마법사 및 검색엔진 선택 화면 비활성화
+        chrome_options.add_argument("--no-first-run")
+        chrome_options.add_argument("--no-default-browser-check")
+        chrome_options.add_argument("--disable-search-engine-choice-screen")
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        
         # 고유한 사용자 데이터 디렉토리 설정 (프로필 충돌 방지)
         import time
         # 🆕 세션 유지를 위해 고정된 프로필 디렉토리 사용 (타임스탬프 제거)

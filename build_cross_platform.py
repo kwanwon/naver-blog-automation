@@ -23,10 +23,11 @@ from pathlib import Path
 import json
 
 class CrossPlatformBuilder:
-    def __init__(self, target_platform=None):
+    def __init__(self, target_platform=None, single_file=False):
         self.host_system = platform.system().lower()
         self.host_machine = platform.machine().lower()
         self.target_platform = target_platform or self.host_system
+        self.single_file = single_file
         
         # 플랫폼 매핑
         self.platform_map = {
@@ -240,7 +241,7 @@ class CrossPlatformBuilder:
         # 빌드 옵션
         cmd.extend([
             '--windowed',      # GUI 모드 (콘솔 숨김)
-            '--onedir',        # 디렉토리 형태로 빌드
+            '--onefile' if self.single_file else '--onedir',  # 단일 파일 또는 디렉토리
             '--clean',         # 이전 빌드 캐시 정리
             '--noconfirm',     # 확인 없이 덮어쓰기
         ])
@@ -387,9 +388,15 @@ def main():
         help="타겟 플랫폼 (기본값: 현재 플랫폼)"
     )
     
+    parser.add_argument(
+        '--single-file',
+        action='store_true',
+        help="단일 실행 파일(.exe)로 빌드 (기본값: 폴더 방식)"
+    )
+    
     args = parser.parse_args()
     
-    builder = CrossPlatformBuilder(args.platform)
+    builder = CrossPlatformBuilder(args.platform, single_file=args.single_file)
     success = builder.run_full_build()
     
     sys.exit(0 if success else 1)

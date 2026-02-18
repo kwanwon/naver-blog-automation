@@ -4657,7 +4657,7 @@ class BlogWriterApp:
 
             # Generate Reply
             intent = self.smart_reply.classify_intent(body_text)
-            reply_text = self.smart_reply.generate_reply(target_text=body_text, intent=intent, platform=platform, is_outbound=True)
+            reply_text = self.smart_reply.generate_reply(target_text=body_text, intent=intent, platform=platform)
             
             if not reply_text:
                 self.page.snack_bar = ft.SnackBar(ft.Text("❌ 댓글 생성 실패"), bgcolor=ft.Colors.RED)
@@ -4717,9 +4717,15 @@ class BlogWriterApp:
             # 디버그: 터미널에 직접 출력
             sys.__stdout__.write("📜 로그 뷰어 열기 요청됨\n")
             
+            # 로그 내용 가져오기 & 빈 값 처리
+            log_content = self.stream_logger.get_logs()
+            if not log_content:
+                log_content = "⏳ 로그가 아직 없습니다. (잠시 후 업데이트됩니다...)\n"
+                sys.__stdout__.write("ℹ️ 초기 로그가 비어있음\n")
+
             # 로그 내용을 담을 텍스트
             log_text = ft.Text(
-                value=self.stream_logger.get_logs(),
+                value=log_content,
                 font_family="Consolas, monospace", # 윈도우/맥 호환 폰트
                 color=ft.Colors.GREEN_400,
                 size=12,
@@ -4824,11 +4830,17 @@ class BlogWriterApp:
             
             # Flet 0.21+ 방식: page.open() 사용
             page.open(log_dialog)
+            # 🆕 강제 업데이트로 다이얼로그 표시 보장 (Windows Fix)
+            page.update()
             
-            # 🆕 로그 업데이트 폴링 루프 시작 (백그라운드 실행)
-            page.run_task(update_log_loop)
-            
-            sys.__stdout__.write("✅ 로그 뷰어 열기 성공 (page.open + polling)\n")
+            # 🆕 로그 업데이트 폴링 루프 시작 (백그라운드 실행) (Mac Fix)
+            try:
+                page.run_task(update_log_loop)
+            except AttributeError:
+                # page.run_task가 없는 구버전 Flet일 경우 백그라운드 태스크로 실행 시도
+                asyncio.create_task(update_log_loop())
+
+            sys.__stdout__.write("✅ 로그 뷰어 열기 성공 (page.open + update + polling)\n")
             
         except Exception as e:
             sys.__stdout__.write(f"❌ 로그 뷰어 열기 실패: {str(e)}\n")

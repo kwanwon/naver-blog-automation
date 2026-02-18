@@ -20,7 +20,7 @@ class SmartReply:
         sensitive_keywords = ['화재', '사고', '부상', '사망', '별세', '추모', '피해', '재난', '지진', '홍수', '태풍', '침수', '전복', '충돌']
         return any(keyword in text for keyword in sensitive_keywords)
 
-    def classify_intent(self, text: str) -> str:
+    def classify_intent(self, text: str, selected_models: list = None) -> str:
         """
         상대방 글/댓글의 의도를 분류
         :return: 'SENSITIVE', 'GREETING', 'QUESTION', 'LEAD', 'OTHER', 'SPAM'
@@ -44,7 +44,8 @@ class SmartReply:
                 intent = self.gpt_handler.generate_reply(
                     system_prompt=system_msg,
                     user_text=text,
-                    max_tokens=10
+                    max_tokens=10,
+                    selected_models=selected_models
                 ).strip().upper()
                 
                 valid_intents = ['GREETING', 'QUESTION', 'LEAD', 'SPAM', 'OTHER']
@@ -165,7 +166,11 @@ class SmartReply:
         except Exception as e:
             self.logger.error(f"인사 답글 생성 실패: {e}")
             return "감사합니다! 자주 소통해요! :)"
+<<<<<<< HEAD
+    def generate_reply(self, target_text: str, intent: str, platform: str = 'blog', selected_models: list = None) -> str:
+=======
     def generate_reply(self, target_text: str, intent: str, platform: str = 'blog', is_outbound: bool = False) -> str:
+>>>>>>> 8454879e8bd28d218ab65b03c524a12294c072f6
         """
         상대방 글에 대한 댓글/답글 생성
         :param is_outbound: True이면 남의 블로그에 찾아가서 다는 댓글 (홍보 절대 금지), False이면 내 블로그에 달린 댓글에 대한 답글
@@ -239,7 +244,8 @@ class SmartReply:
                 return self.gpt_handler.generate_reply(
                     system_prompt=system_msg,
                     user_text=target_text,
-                    max_tokens=300
+                    max_tokens=300,
+                    selected_models=selected_models
                 )
             
             return "안녕하세요! 좋은 글 잘 보고 갑니다. ^^" # fallback
