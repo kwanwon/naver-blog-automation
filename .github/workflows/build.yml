@@ -7,132 +7,132 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flet==0.28.3 flet-desktop pyinstaller
-          pip install selenium webdriver-manager
-          pip install Pillow requests tkcalendar
-          pip install openai google-generativeai
-          pip install psutil cryptography
-          pip install pyperclip httpx
-          pip install pandas watchdog
-          
-      - name: Build with PyInstaller (Onedir mode)
-        run: |
-          pyinstaller blog_writer_app.py --name BlogApp --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all flet_desktop --collect-all certifi --hidden-import pandas --hidden-import watchdog --hidden-import manual_session_helper --hidden-import setup_chrome_permissions --noconfirm
-
-          pyinstaller launcher.py --name BlogAutomation --noconsole --onefile --clean --icon assets/icon.ico --noconfirm
-        shell: cmd
-
-      - name: Organize output folder
-        run: |
-          echo "=== Debug: Checking dist folder ==="
-          dir dist
-          
-          if exist "dist\BlogApp" (
-              echo "Found build folder. Renaming to App folder..."
-              move "dist\BlogApp" "dist\BlogAutomation_Windows_App"
-          ) else (
-              echo "Error: Build folder dist\BlogApp not found!"
-              exit 1
-          )
-
-          if exist "dist\BlogAutomation.exe" (
-              echo "Found Launcher. Moving to App folder..."
-              copy "dist\BlogAutomation.exe" "dist\BlogAutomation_Windows_App\"
-          ) else (
-              echo "Error: Launcher dist\BlogAutomation.exe not found!"
-              exit 1
-          )
-          
-          echo "=== Debug: App folder content ==="
-          dir dist\BlogAutomation_Windows_App
-        shell: cmd
-          
-      - name: Copy additional data files
-        run: |
-          xcopy /E /I modules dist\BlogAutomation_Windows_App\modules
-          xcopy /E /I config dist\BlogAutomation_Windows_App\config
-          xcopy /E /I utils dist\BlogAutomation_Windows_App\utils
-          xcopy /E /I assets dist\BlogAutomation_Windows_App\assets
-          copy version.json dist\BlogAutomation_Windows_App\
-          copy naver_cafe_auto.py dist\BlogAutomation_Windows_App\
-          copy naver_band_auto.py dist\BlogAutomation_Windows_App\
-          copy naver_blog_auto.py dist\BlogAutomation_Windows_App\
-          copy naver_blog_auto_image.py dist\BlogAutomation_Windows_App\
-          copy naver_blog_post_finisher.py dist\BlogAutomation_Windows_App\
-          del /F dist\BlogAutomation_Windows_App\modules\.developer_mode 2>nul
-        shell: cmd
-      
-      - name: Show final folder structure
-        run: |
-          echo "=== dist folder structure AFTER copy ==="
-          dir dist /s /b
-          echo "=== BlogAutomation_Windows_App folder ==="
-          dir dist\BlogAutomation_Windows_App /s /b
-        shell: cmd
-      
-      # Inno Setup 설치 및 인스톨러 빌드
-      - name: Install Inno Setup
-        run: |
-          choco install innosetup -y
-        shell: cmd
-        
-      - name: Get version from version.json
-        id: get_version
-        run: |
-          $version = (Get-Content version.json | ConvertFrom-Json).version
-          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-          echo "App version: $version"
-        shell: powershell
-        
-      - name: Create output directory
-        run: New-Item -ItemType Directory -Force -Path "output"
-        shell: powershell
-        
-      - name: Build Inno Setup installer
-        env:
-          APP_VERSION: ${{ steps.get_version.outputs.VERSION }}
-        run: |
-          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\installer.iss"
-        shell: cmd
-          
-      - name: Create Windows ZIP
-        run: |
-          cd dist
-          Compress-Archive -Path "BlogAutomation_Windows_App" -DestinationPath "BlogAutomation-Windows.zip"
-        shell: powershell
-        
-      - name: List output files
-        run: |
-          echo "=== dist folder ==="
-          dir dist
-          echo "=== output folder ==="
-          dir output
-        shell: cmd
-          
-      - name: Upload Windows ZIP artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: BlogAutomation-Windows-ZIP
-          path: dist/BlogAutomation-Windows.zip
-          
-      - name: Upload Windows Installer artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: BlogAutomation-Windows-Setup
-          path: output/BlogAutomation_Setup_*.exe
+#   build-windows:
+#     runs-on: windows-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.11'
+#           
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install flet==0.28.3 flet-desktop pyinstaller
+#           pip install selenium webdriver-manager
+#           pip install Pillow requests tkcalendar
+#           pip install openai google-generativeai
+#           pip install psutil cryptography
+#           pip install pyperclip httpx
+#           pip install pandas watchdog
+#           
+#       - name: Build with PyInstaller (Onedir mode)
+#         run: |
+#           pyinstaller blog_writer_app.py --name BlogApp --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all flet_desktop --collect-all certifi --hidden-import pandas --hidden-import watchdog --hidden-import manual_session_helper --hidden-import setup_chrome_permissions --noconfirm
+# 
+#           pyinstaller launcher.py --name BlogAutomation --noconsole --onefile --clean --icon assets/icon.ico --noconfirm
+#         shell: cmd
+# 
+#       - name: Organize output folder
+#         run: |
+#           echo "=== Debug: Checking dist folder ==="
+#           dir dist
+#           
+#           if exist "dist\BlogApp" (
+#               echo "Found build folder. Renaming to App folder..."
+#               move "dist\BlogApp" "dist\BlogAutomation_Windows_App"
+#           ) else (
+#               echo "Error: Build folder dist\BlogApp not found!"
+#               exit 1
+#           )
+# 
+#           if exist "dist\BlogAutomation.exe" (
+#               echo "Found Launcher. Moving to App folder..."
+#               copy "dist\BlogAutomation.exe" "dist\BlogAutomation_Windows_App\"
+#           ) else (
+#               echo "Error: Launcher dist\BlogAutomation.exe not found!"
+#               exit 1
+#           )
+#           
+#           echo "=== Debug: App folder content ==="
+#           dir dist\BlogAutomation_Windows_App
+#         shell: cmd
+#           
+#       - name: Copy additional data files
+#         run: |
+#           xcopy /E /I modules dist\BlogAutomation_Windows_App\modules
+#           xcopy /E /I config dist\BlogAutomation_Windows_App\config
+#           xcopy /E /I utils dist\BlogAutomation_Windows_App\utils
+#           xcopy /E /I assets dist\BlogAutomation_Windows_App\assets
+#           copy version.json dist\BlogAutomation_Windows_App\
+#           copy naver_cafe_auto.py dist\BlogAutomation_Windows_App\
+#           copy naver_band_auto.py dist\BlogAutomation_Windows_App\
+#           copy naver_blog_auto.py dist\BlogAutomation_Windows_App\
+#           copy naver_blog_auto_image.py dist\BlogAutomation_Windows_App\
+#           copy naver_blog_post_finisher.py dist\BlogAutomation_Windows_App\
+#           del /F dist\BlogAutomation_Windows_App\modules\.developer_mode 2>nul
+#         shell: cmd
+#       
+#       - name: Show final folder structure
+#         run: |
+#           echo "=== dist folder structure AFTER copy ==="
+#           dir dist /s /b
+#           echo "=== BlogAutomation_Windows_App folder ==="
+#           dir dist\BlogAutomation_Windows_App /s /b
+#         shell: cmd
+#       
+#       # Inno Setup 설치 및 인스톨러 빌드
+#       - name: Install Inno Setup
+#         run: |
+#           choco install innosetup -y
+#         shell: cmd
+#         
+#       - name: Get version from version.json
+#         id: get_version
+#         run: |
+#           $version = (Get-Content version.json | ConvertFrom-Json).version
+#           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+#           echo "App version: $version"
+#         shell: powershell
+#         
+#       - name: Create output directory
+#         run: New-Item -ItemType Directory -Force -Path "output"
+#         shell: powershell
+#         
+#       - name: Build Inno Setup installer
+#         env:
+#           APP_VERSION: ${{ steps.get_version.outputs.VERSION }}
+#         run: |
+#           "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\installer.iss"
+#         shell: cmd
+#           
+#       - name: Create Windows ZIP
+#         run: |
+#           cd dist
+#           Compress-Archive -Path "BlogAutomation_Windows_App" -DestinationPath "BlogAutomation-Windows.zip"
+#         shell: powershell
+#         
+#       - name: List output files
+#         run: |
+#           echo "=== dist folder ==="
+#           dir dist
+#           echo "=== output folder ==="
+#           dir output
+#         shell: cmd
+#           
+#       - name: Upload Windows ZIP artifact
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: BlogAutomation-Windows-ZIP
+#           path: dist/BlogAutomation-Windows.zip
+#           
+#       - name: Upload Windows Installer artifact
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: BlogAutomation-Windows-Setup
+#           path: output/BlogAutomation_Setup_*.exe
 
   build-macos:
     runs-on: macos-latest
