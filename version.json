@@ -1,9 +1,9 @@
 {
-  "version": "1.2.100",
-  "updated_at": "2026-02-18T21:45:00",
+  "version": "1.2.101",
+  "updated_at": "2026-02-18T21:55:00",
   "release_date": "2026-02-18",
   "changelog": [
-    "🚑 [Hotfix] gpt_handler.py 병합 충돌 해결 및 버전 안정화",
+    "🚑 [Hotfix] gpt_handler.py 및 smart_reply.py 병합 충돌 해결 (최종 안정화)",
     "🌤️ [Feature] 예약 포스팅 시 날씨 비교 로직 추가 (어제 대비 기온 상승/하강 멘트 적용)",
     "�️ [Security] 뉴스 필터링 3단계 적용 (검색어 차단, 금칙어 필터, AI 프롬프트 강화)",
     "�🐛 [Critical Fix] 자동 업데이트 시 소스코드 다운로드로 인한 앱 손상 방지 (Frozen 모드 보호)",

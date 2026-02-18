@@ -166,11 +166,7 @@ class SmartReply:
         except Exception as e:
             self.logger.error(f"인사 답글 생성 실패: {e}")
             return "감사합니다! 자주 소통해요! :)"
-<<<<<<< HEAD
-    def generate_reply(self, target_text: str, intent: str, platform: str = 'blog', selected_models: list = None) -> str:
-=======
-    def generate_reply(self, target_text: str, intent: str, platform: str = 'blog', is_outbound: bool = False) -> str:
->>>>>>> 8454879e8bd28d218ab65b03c524a12294c072f6
+    def generate_reply(self, target_text: str, intent: str, platform: str = 'blog', is_outbound: bool = False, selected_models: list = None) -> str:
         """
         상대방 글에 대한 댓글/답글 생성
         :param is_outbound: True이면 남의 블로그에 찾아가서 다는 댓글 (홍보 절대 금지), False이면 내 블로그에 달린 댓글에 대한 답글
