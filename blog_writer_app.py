@@ -4702,9 +4702,15 @@ class BlogWriterApp:
             # 디버그: 터미널에 직접 출력
             sys.__stdout__.write("📜 로그 뷰어 열기 요청됨\n")
             
+            # 로그 내용 가져오기 & 빈 값 처리
+            log_content = self.stream_logger.get_logs()
+            if not log_content:
+                log_content = "⏳ 로그가 아직 없습니다. (잠시 후 업데이트됩니다...)\n"
+                sys.__stdout__.write("ℹ️ 초기 로그가 비어있음\n")
+
             # 로그 내용을 담을 텍스트
             log_text = ft.Text(
-                value=self.stream_logger.get_logs(),
+                value=log_content,
                 font_family="Consolas, monospace", # 윈도우/맥 호환 폰트
                 color=ft.Colors.GREEN_400,
                 size=12,
@@ -4806,7 +4812,9 @@ class BlogWriterApp:
             
             # Flet 0.21+ 방식: page.open() 사용
             page.open(log_dialog)
-            sys.__stdout__.write("✅ 로그 뷰어 열기 성공 (page.open)\n")
+            # 🆕 강제 업데이트로 다이얼로그 표시 보장
+            page.update()
+            sys.__stdout__.write("✅ 로그 뷰어 열기 성공 (page.open + page.update)\n")
             
         except Exception as e:
             sys.__stdout__.write(f"❌ 로그 뷰어 열기 실패: {str(e)}\n")
