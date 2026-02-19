@@ -1,7 +1,7 @@
 {
-  "version": "1.2.101",
-  "updated_at": "2026-02-18T21:50:00",
-  "release_date": "2026-02-18",
+  "version": "1.2.103",
+  "updated_at": "2026-02-19T12:50:00",
+  "release_date": "2026-02-19",
   "changelog": [
     "🚑 [Hotfix] gpt_handler.py/smart_reply.py 병합 충돌 해결 및 버전 안정화",
     "🐛 [Critical Fix] 자동 업데이트 시 소스코드 다운로드로 인한 앱 손상 방지 (Frozen 모드 보호)",
@@ -79,7 +79,11 @@
   ],
   "min_requirements": {
     "python": "3.8+",
-    "os": ["Windows", "macOS", "Linux"]
+    "os": [
+      "Windows",
+      "macOS",
+      "Linux"
+    ]
   },
   "preserved_files": [
     "modules/serial_config.json",

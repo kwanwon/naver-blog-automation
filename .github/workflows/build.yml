@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
 
 jobs:
-<<<<<<< HEAD
 #   build-windows:
 #     runs-on: windows-latest
 #     steps:
@@ -135,8 +134,7 @@ jobs:
 #           name: BlogAutomation-Windows-Setup
 #           path: output/BlogAutomation_Setup_*.exe
 
-=======
->>>>>>> d483ff1f759d8af3162d6c3c5b7ffe1566853cc3
+
   build-macos:
     runs-on: macos-latest
     steps:
