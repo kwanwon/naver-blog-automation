@@ -1,9 +1,9 @@
 {
-  "version": "1.2.102",
-  "updated_at": "2026-02-19T10:30:00",
-  "release_date": "2026-02-19",
+  "version": "1.2.101",
+  "updated_at": "2026-02-18T21:50:00",
+  "release_date": "2026-02-18",
   "changelog": [
-    "🚑 [Hotfix] 예약글 존재 시 발행 버튼 대신 예약확인 버튼이 클릭되는 문제 수정 (정확한 선택자 적용)",
+    "🚑 [Hotfix] gpt_handler.py/smart_reply.py 병합 충돌 해결 및 버전 안정화",
     "🐛 [Critical Fix] 자동 업데이트 시 소스코드 다운로드로 인한 앱 손상 방지 (Frozen 모드 보호)",
     "🐛 [Fix] Windows 블로그 수동 포스팅 시 첫 발행 실패 문제 해결 (발행 검증 로직 추가)",
     "🔧 [Improvement] 스케줄러 안정성 확보 (예약 발행 검증 예외 처리)",
