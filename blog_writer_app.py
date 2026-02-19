@@ -10197,32 +10197,48 @@ class BlogWriterApp:
         threading.Thread(target=update_check, daemon=True).start()
         
     def get_current_version(self):
-        """현재 버전 가져오기"""
+        """현재 버전 가져오기 (Robust)"""
         try:
-            # 여러 경로에서 version.json 찾기
-            possible_paths = [
-                os.path.join(self.base_dir, 'version.json'),
-                os.path.join(os.path.dirname(os.path.abspath(__file__)), 'version.json'),
-            ]
+            # 검색할 경로 목록 (우선순위 순)
+            possible_paths = []
             
-            # PyInstaller frozen 모드에서 추가 경로
+            # 1. 실행 파일/스크립트 기준 경로
             if getattr(sys, 'frozen', False):
                 exe_dir = os.path.dirname(sys.executable)
-                possible_paths.extend([
-                    os.path.join(exe_dir, 'version.json'),
-                    os.path.join(exe_dir, '..', 'Frameworks', 'version.json'),  # macOS app bundle
-                    os.path.join(exe_dir, '..', 'Resources', 'version.json'),
-                ])
+                possible_paths.append(os.path.join(exe_dir, 'version.json'))
+                possible_paths.append(os.path.join(exe_dir, '..', 'Frameworks', 'version.json')) # macOS
+                possible_paths.append(os.path.join(exe_dir, '_internal', 'version.json')) # PyInstaller onedir
+            else:
+                # 스크립트 실행 시
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                possible_paths.append(os.path.join(script_dir, 'version.json'))
+
+            # 2. 현재 작업 디렉토리 기준 (개발 환경 등)
+            possible_paths.append(os.path.join(os.getcwd(), 'version.json'))
             
+            # 3. base_dir 기준 (앱 내부 설정 경로)
+            if hasattr(self, 'base_dir'):
+                possible_paths.append(os.path.join(self.base_dir, 'version.json'))
+
+            print(f"🔍 버전 파일 검색 경로: {possible_paths}")
+
             for version_file in possible_paths:
                 if os.path.exists(version_file):
-                    with open(version_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        version = data.get('version', '1.0.0')
-                        if version != '1.0.0':  # 실제 버전 찾음
-                            return version
+                    try:
+                        with open(version_file, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            version = data.get('version', '1.0.0')
+                            if version != '1.0.0':
+                                print(f"✅ 버전 파일 로드 성공: {version_file} (v{version})")
+                                return version
+                    except Exception as e:
+                        print(f"⚠️ 버전 파일 읽기 실패 ({version_file}): {e}")
+                        continue
+            
+            print("❌ 유효한 version.json을 찾을 수 없음, 기본값 1.0.0 사용")
             return '1.0.0'
-        except:
+        except Exception as e:
+            print(f"❌ 버전 확인 중 오류 발생: {e}")
             return '1.0.0'
             
     def perform_update(self):
@@ -10504,11 +10520,23 @@ if __name__ == "__main__":
         current_dir = os.path.dirname(os.path.abspath(__file__))
         version_file = os.path.join(current_dir, 'version.json')
         
-        current_version = '1.0.0'
-        if os.path.exists(version_file):
-            with open(version_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                current_version = data.get('version', '1.0.0')
+        # 버전 로드 로직 (get_current_version과 동일한 로직 적용)
+        try:
+            possible_paths = [
+                os.path.join(current_dir, 'version.json'),
+                os.path.join(os.getcwd(), 'version.json')
+            ]
+            
+            for path in possible_paths:
+                if os.path.exists(path):
+                    with open(path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        current_version = data.get('version', '1.0.0')
+                        if current_version != '1.0.0':
+                            print(f"🚀 앱 시작 버전 로드: {path} (v{current_version})")
+                            break
+        except Exception as e:
+            print(f"⚠️ 앱 시작 시 버전 로드 실패: {e}")
                 
         updater = AutoUpdater(current_version)
         
