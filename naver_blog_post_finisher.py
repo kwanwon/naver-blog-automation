@@ -1136,9 +1136,9 @@ class NaverBlogPostFinisher:
             publish_selectors = [
                 'button.publish_btn__m9KHH',
                 'button[data-testid="btn-publish"]',
-                'button[class*="publish_btn"]',
+                'button[class*="publish_btn"]', # 녹색 버튼 클래스
                 '.publish_btn__m9KHH', 
-                '//button[contains(text(), "발행")]'
+                '//button[normalize-space()="발행"]' # 정확히 "발행"만 있는 버튼
             ]
             
             max_attempts = 5
@@ -1154,8 +1154,14 @@ class NaverBlogPostFinisher:
                         
                         for btn in btns:
                             if btn.is_displayed() and btn.is_enabled():
+                                # 텍스트 검증: "예약"이 포함된 버튼은 절대 클릭하지 않음
+                                btn_text = btn.text.strip()
+                                if "예약" in btn_text:
+                                    print(f"  ⚠️ '예약' 텍스트가 포함된 버튼은 건너뜁니다: {btn_text}")
+                                    continue
+                                    
                                 btn.click()
-                                print(f"  ✅ 발행 버튼 클릭: {selector}")
+                                print(f"  ✅ 발행 버튼 클릭: {selector} (텍스트: {btn_text})")
                                 clicked = True
                                 break
                     except:
