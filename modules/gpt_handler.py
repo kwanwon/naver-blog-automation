@@ -910,7 +910,8 @@ class GPTHandler:
                         "(위 날씨 정보를 바탕으로 회원들에게 건넬 따뜻한 인사말과 옷차림/건강 팁을 작성하세요. "
                         "⚠️ 절대 위 데이터에 없는 주간 예보나 다른 날짜의 날씨를 지어내지 마세요.)"
                     )
-            
+
+
             # --- 오후형 / 저녁형: 뉴스, 이슈, 실검 등 ---
             elif task_type in ('regular', 'closing'):
                 # 🟢 방안 A: 외부에서 분배된 뉴스 풀 우선 사용
@@ -941,7 +942,10 @@ class GPTHandler:
                         f"\n[System: 오늘의 뉴스/이슈/트렌드]\n"
                         f"{trending_info}\n"
                         f"{topic_guide}"
-                        f"{dedup_guide}"
+                        f"{dedup_guide}\n"
+                        "[⚠️ 뉴스 인용 안전 규칙]\n"
+                        "- 정치(여당/야당/대통령 등), 종교, 범죄, 선정적, 자극적인 내용은 절대 인용하지 마세요.\n"
+                        "- 만약 검색된 뉴스가 모두 그런 내용이라면, 차라리 '오늘의 생활 건강 팁'으로 주제를 변경하세요."
                     )
                     
                     # 🟢 밴드 오후/저녁에도 실시간 날씨 참고 정보 제공 (할루시네이션 방지)
@@ -1206,7 +1210,13 @@ class GPTHandler:
                 "- closing(마감/저녁) 유형이면 뉴스/이슈를 훅으로 활용\n\n"
                 f"주의: \"함께 공부하며 지식을 나누는 한국체대 라이온 블로거 입니다\" 문구는\n"
                 f"블로그 전용이므로, {platform}용 글에는 절대 포함하지 마세요.\n"
+
             )
+
+        # 🟢 [Smart Context] 학기/방학 시즌 자동 감지 및 지침 주입
+        semester_context = self._get_semester_context()
+        if semester_context:
+            system_message += f"\n\n[System: {semester_context['period_name']} 시즌 가이드]\n{semester_context['instruction']}"
         
         # 블로그는 기존 parse_content 사용, 밴드/카페는 별도 처리 고려 가능
         result = self.generate_content(
@@ -1753,12 +1763,14 @@ class GPTHandler:
                 weather_data[key][cat] = fvalue
             
             if forecast:
-                # --- 내일 예보 ---
+                # --- 내일 예보 (예약 포스팅용) ---
                 tomorrow_temps = []
                 tomorrow_sky = ""
                 tomorrow_pop = ""
                 morning_temp = None
-                morning_sky = ""
+                
+                # 06~09시 사이의 기온을 '아침 기온'으로 간주
+                target_morning_hours = ['0600', '0700', '0800', '0900']
                 
                 for key, vals in sorted(weather_data.items()):
                     if not key.startswith(fcst_date):
@@ -1774,9 +1786,9 @@ class GPTHandler:
                             pass
                     
                     # 오전 6~9시 기준 날씨
-                    if ftime in ('0600', '0700', '0800', '0900'):
+                    if ftime in target_morning_hours:
                         if tmp and morning_temp is None:
-                            morning_temp = tmp
+                            morning_temp = float(tmp)
                         sky_code = vals.get('SKY', '')
                         if sky_code:
                             morning_sky = sky_map.get(sky_code, sky_code)
@@ -1789,26 +1801,50 @@ class GPTHandler:
                     max_temp = max(tomorrow_temps)
                     
                     # 오전 날씨가 없으면 첫 번째 값 사용
-                    if not morning_sky:
+                    if not tomorrow_sky:
                         for key, vals in sorted(weather_data.items()):
                             if key.startswith(fcst_date):
                                 sky_code = vals.get('SKY', '')
                                 if sky_code:
-                                    morning_sky = sky_map.get(sky_code, sky_code)
+                                    tomorrow_sky = sky_map.get(sky_code, sky_code)
                                     break
                     
                     result_text = (
                         f"[{location} 내일 날씨 예보 (기상청)]\n"
                         f"지역: {location}\n"
-                        f"날씨: {morning_sky if morning_sky else '확인중'}, "
+                        f"날씨: {tomorrow_sky if tomorrow_sky else '확인중'}, "
                         f"최저/최고: {min_temp:.0f}/{max_temp:.0f}도"
                     )
-                    if morning_temp:
-                        result_text += f", 오전 기온: {morning_temp}도"
+                    if morning_temp is not None:
+                        result_text += f", 오전 기온: {morning_temp:.1f}도"
                     if tomorrow_pop:
                         result_text += f", 강수확률: {tomorrow_pop}%"
-                    
-                    logger.info(f"기상청 내일 예보 성공: {location} → nx={nx},ny={ny}")
+
+                    # 🟢 오늘(비교 대상) 아침 기온 구하기 (비교 로직)
+                    today_morning_temp = None
+                    try:
+                        for key, vals in sorted(weather_data.items()):
+                            if not key.startswith(compare_date): # 오늘 날짜
+                                continue
+                            ftime = key.split('_')[1]
+                            if ftime in target_morning_hours:
+                                t_tmp = vals.get('TMP', vals.get('T1H', ''))
+                                if t_tmp:
+                                    today_morning_temp = float(t_tmp)
+                                    break # 가장 빠른 아침 시간대 하나만 잡음
+                        
+                        if today_morning_temp is not None and morning_temp is not None:
+                            diff = morning_temp - today_morning_temp
+                            if diff > 0:
+                                result_text += f"\\n어제(오늘) 같은 아침보다 {abs(diff):.1f}도 높습니다 (↑상승)"
+                            elif diff < 0:
+                                result_text += f"\\n어제(오늘) 같은 아침보다 {abs(diff):.1f}도 낮습니다 (↓하강)"
+                            else:
+                                result_text += f"\\n어제(오늘) 아침과 비슷한 기온입니다"
+                    except Exception as e:
+                        logger.warning(f"내일 예보 비교 로직 실패: {e}")
+
+                    logger.info(f"기상청 내일 예보 성공: {location} (비교 포함)")
                     return result_text
                 else:
                     logger.warning("기상청 내일 예보: 기온 데이터 없음")
@@ -2029,14 +2065,35 @@ class GPTHandler:
             logger.warning(f"날씨 크롤링 실패: {e}")
             return None
     
+    def _filter_news_content(self, text: str) -> bool:
+        """뉴스 내용에 금칙어가 포함되어 있는지 확인"""
+        forbidden_keywords = [
+            '정치', '여당', '야당', '대통령', '의원', '선거', '투표', '탄핵', '시위', 
+            '종교', '교회', '성당', '불교', '기독교', '목사', '스님', '사이비',
+            '살인', '성범죄', '마약', '도박', '자살', '충격', '경악', '속보', '19금', '성인'
+        ]
+        
+        for keyword in forbidden_keywords:
+            if keyword in text:
+                return True
+        return False
+
     def _get_trending_topics(self, count=3):
         # 오후/저녁용: 최신 뉴스/이슈/트렌드 정보 수집
         # count: 가져올 뉴스 수 (기본 3, 배치 분배용 6)
         try:
             # 1순위: Brave Search로 오늘의 핫이슈 검색
-            brave_result = self._search_brave("오늘 뉴스 이슈 트렌드", count=count)
+            brave_result = self._search_brave("오늘 뉴스 이슈 트렌드", count=count * 2) # 필터링 고려해 더 많이 검색
             if brave_result:
-                return brave_result
+                # 🟢 코드 레벨 필터링 적용
+                lines = brave_result.split('\n')
+                filtered_lines = []
+                for line in lines:
+                    if not self._filter_news_content(line):
+                        filtered_lines.append(line)
+                
+                if filtered_lines:
+                    return "\n".join(filtered_lines[:count])
             
             # 2순위: 네이버 실시간 검색어/인기 검색어 크롤링
             try:
@@ -2051,11 +2108,17 @@ class GPTHandler:
                 # 뉴스 제목 추출
                 news_titles = re.findall(r'class="news_tit"[^>]*>(.*?)<', html)
                 if news_titles:
-                    top_news = news_titles[:count]
-                    lines = []
-                    for i, title in enumerate(top_news, 1):
-                        lines.append(f"{i}. {title}")
-                    return "\n".join(lines)
+                    filtered_news = []
+                    for title in news_titles:
+                        if not self._filter_news_content(title):
+                            filtered_news.append(title)
+                    
+                    if filtered_news:
+                        top_news = filtered_news[:count]
+                        lines = []
+                        for i, title in enumerate(top_news, 1):
+                            lines.append(f"{i}. {title}")
+                        return "\n".join(lines)
             except Exception:
                 pass
             
@@ -2079,13 +2142,19 @@ class GPTHandler:
             # 기본 검색 URL
             url = "https://api.search.brave.com/res/v1/web/search"
             headers = {"X-Subscription-Token": api_key, "Accept": "application/json"}
+            
+            # 🟢 1단계: 검색어 원천 차단 (부정 키워드 추가)
+            safe_query = query
+            if any(k in query for k in ["뉴스", "소식", "이슈", "동향", "트렌드"]):
+                safe_query += " -정치 -여당 -야당 -종교 -사건 -사고 -성인 -19금"
+                
             # 검색어 인코딩 및 파라미터 설정 (상위 count개 결과)
-            params_dict = {"q": query, "count": count}
+            params_dict = {"q": safe_query, "count": count}
             
             # 🟢 뉴스/날씨/이슈 관련 검색이면 '최신성(Past Day)' 필터 적용
             if any(k in query for k in ["뉴스", "소식", "이슈", "동향", "트렌드", "날씨", "미세먼지", "오늘", "속보", "최신"]):
                 params_dict["freshness"] = "pd"  # pd: Past Day (지난 24시간)
-                logger.info(f"Brave Search 최신성 필터 적용 (freshness=pd): {query}")
+                logger.info(f"Brave Search 최신성 필터 적용 (freshness=pd): {safe_query}")
             
             params = urllib.parse.urlencode(params_dict)
             
@@ -2101,13 +2170,100 @@ class GPTHandler:
                 results.append(f"- **{title}**: {desc} (출처: {link})")
                 
             if results:
-                logger.info(f"Brave Search 성공: '{query}' 관련 {len(results)}건 검색됨")
+                logger.info(f"Brave Search 성공: '{safe_query}' 관련 {len(results)}건 검색됨")
                 return "\n".join(results)
             return ""
             
         except Exception as e:
             logger.warning(f"Brave Search 실패 (무시됨): {e}")
             return ""
+
+    def _get_semester_context(self):
+        """
+        현재 날짜를 기준으로 한국 학교 학사 일정(방학/개학) 시즌을 감지하여
+        AI에게 적절한 지침(금지어/권장어)을 반환합니다.
+        """
+
+        now = datetime.now()
+        month = now.month
+        day = now.day
+        
+
+        # 1. 겨울 방학 & 봄방학 (1월 1일 ~ 2월 28일)
+        # - 특징: 학교 안 감. 날씨 추움. 새학기 준비 기간. 졸업 시즌(2월).
+        if month in [1, 2]:
+            period_name = "겨울방학 및 졸업 시즌"
+            instruction = (
+                "- [상황] 현재는 초/중/고등학교 '겨울방학' 기간입니다.\n"
+                "- [⛔ 금지] '학교 가는 길', '등하교', '급식', '교복' 등 **현재 학교에 다니는 상황**을 묘사하지 마세요.\n"
+                "- [✅ 권장] '방학 생활', '가정 보육', '새학기 준비', '졸업 축하', '실내 활동' 등을 소재로 삼으세요.\n"
+                "- [💡 필살기] 만약 주제가 '등하교'나 '급식'이라면, 문맥을 **'곧 다가올 새학기엔 이렇게 변해요'** 또는 **'미리 준비하는 꿀팁'**으로 자연스럽게 돌려서 작성하세요."
+            )
+            
+        # 2. 새학기 적응 기간 (3월 1일 ~ 3월 15일)
+        # - 특징: 입학식, 개학식, 새로운 친구, 긴장과 설렘. 
+        elif month == 3 and day <= 15:
+            period_name = "새학기 시작 (적응 기간)"
+            instruction = (
+                "- [상황] 3월 신학기가 막 시작되었습니다. 입학식과 개학식이 있는 시기입니다.\n"
+                "- [✅ 강조] '새로운 출발', '입학 축하', '새 친구', '학교 적응', '등하굣길 안전(교통안전)'을 적극적으로 언급하세요.\n"
+                "- [Tip] 학부모님들의 설렘과 걱정을 공감해주는 따뜻한 멘트가 좋습니다."
+            )
+            
+        # 3. 1학기 중반 (3월 16일 ~ 7월 20일)
+        # - 특징: 평범한 학기 중. 5월 가정의 달. 6월 호국보훈/초여름.
+        elif (month == 3 and day > 15) or month in [4, 5, 6] or (month == 7 and day <= 20):
+            # 5월 가정의 달 특수 처리
+            if month == 5:
+                period_name = "1학기 중 (가정의 달)"
+                instruction = (
+                    "- [상황] 활기찬 1학기가 진행 중이며, 5월은 가정의 달입니다.\n"
+                    "- [✅ 권장] '어린이날', '어버이날', '스승의 날', '가족 나들이', '운동회/체육대회' 관련 소재를 적극 활용하세요."
+                )
+            else:
+                return None # 특별한 지침 없는 평시
+
+        # 4. 여름 방학 (7월 21일 ~ 8월 15일)
+        # - 특징: 학교 안 감. 매우 더움. 휴가철.
+        elif (month == 7 and day > 20) or (month == 8 and day <= 15):
+            period_name = "여름방학 및 휴가 시즌"
+            instruction = (
+                "- [상황] 현재는 초/중/고등학교 '여름방학' 기간입니다.\n"
+                "- [⛔ 금지] '등하교', '학교 급식', '교복' 언급을 피하세요. (학생들이 학교에 가지 않습니다.)\n"
+                "- [✅ 권장] '여름 휴가', '물놀이 안전', '냉방병 예방', '폭염 건강 관리', '방학 숙제' 등을 소재로 삼으세요.\n"
+                "- [💡 필살기] 만약 '등하교 안전' 같은 주제가 나오면 **'학기 중엔 등하교가 걱정이었지만, 방학 땐 학원 오가는 길 안전이 중요하죠!'** 라고 센스있게 비틀어주세요."
+            )
+            
+        # 5. 2학기 개학 (8월 16일 ~ 8월 31일)
+        # - 특징: 짧은 방학 끝, 다시 등교. 처서(가을 기운).
+        elif month == 8 and day > 15:
+            period_name = "2학기 개학 시즌"
+            instruction = (
+                "- [상황] 짧은 여름방학이 끝나고 2학기가 시작되는 시기입니다.\n"
+                "- [✅ 권장] '개학', '다시 시작된 등교', '2학기 준비', '환절기 건강'을 언급하세요."
+            )
+            
+        # 6. 2학기 중반 & 연말 (9월 1일 ~ 12월 31일)
+        # - 특징: 가을 운동회, 소풍, 수능(11월), 학기 마무리.
+        else: # 9, 10, 11, 12월
+            # 11월 수능 시즌 특수 처리
+            if month == 11 and 10 <= day <= 20: # 대략적 수능 기간
+                period_name = "2학기 중 (수능 시즌)"
+                instruction = (
+                    "- [상황] 대학수학능력시험(수능)이 있는 중요한 시기입니다.\n"
+                    "- [✅ 권장] '수험생 응원', '합격 기원', '차분한 분위기', '따뜻한 격려'의 메시지를 담으세요."
+                )
+            # 12월 말 방학 직전
+            elif month == 12 and day >= 25:
+                period_name = "겨울방학 시작 및 연말"
+                instruction = (
+                    "- [상황] 한 해를 마무리하고 겨울방학을 맞이하는 시기입니다.\n"
+                    "- [✅ 권장] '한 해 정리', '새해 다짐', '크리스마스/연말 인사', '방학 계획'을 언급하세요."
+                )
+            else:
+                return None # 특별한 지침 없는 평시 (가을 학기)
+
+        return {"period_name": period_name, "instruction": instruction}
 
 if __name__ == "__main__":
     # 테스트 코드

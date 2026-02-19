@@ -1,17 +1,9 @@
 {
-<<<<<<< HEAD
-  "version": "1.2.74",
-  "updated_at": "2026-02-08T20:50:00",
-  "release_date": "2026-02-08",
+  "version": "1.2.101",
+  "updated_at": "2026-02-18T21:50:00",
+  "release_date": "2026-02-18",
   "changelog": [
-    "✨ [Win] AI 자동 소통 기능 버그 수정 (설정된 모델 정상 사용)",
-    "🔧 [Fix] Gemini/GPT Failover 로직 안정화",
-    "⚡ [Improvement] 단일 실행 파일(.exe) 배포 구조 적용",
-=======
-  "version": "1.2.96",
-  "updated_at": "2026-02-15T23:00:00",
-  "release_date": "2026-02-15",
-  "changelog": [
+    "🚑 [Hotfix] gpt_handler.py/smart_reply.py 병합 충돌 해결 및 버전 안정화",
     "🐛 [Critical Fix] 자동 업데이트 시 소스코드 다운로드로 인한 앱 손상 방지 (Frozen 모드 보호)",
     "🐛 [Fix] Windows 블로그 수동 포스팅 시 첫 발행 실패 문제 해결 (발행 검증 로직 추가)",
     "🔧 [Improvement] 스케줄러 안정성 확보 (예약 발행 검증 예외 처리)",
@@ -41,7 +33,6 @@
     "⚡ [Critical Fix] Gemini 2.5 Flash 모델 삭제 (생성 중단/불안정 이슈 해결)",
     "🔧 [Critical Fix] API Key 로드 로직 개선 및 .env 파일 의존성 제거 (보안성 강화)",
     "🐛 [Fix] macOS 번들 내 설정 파일(api_key.json 등) 인식 경로 수정",
->>>>>>> 8454879e8bd28d218ab65b03c524a12294c072f6
     "✨ [Feature] 실시간 로그 뷰어 추가 (앱 내 실행 로그 확인 및 외부 터미널 열기 기능)",
     "🐛 [Critical] 네이버 블로그 자동 발행/태그 설정 미적용 문제 수정 (설정 파일 경로 인식 오류 해결)",
     "🐛 [Fix] 설정값(구글 시트, 폴더 등) 변경 시 즉시 저장되도록 개선 (데이터 유실 방지)",
