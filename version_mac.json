@@ -1,7 +1,7 @@
 {
-  "version": "1.2.105",
-  "updated_at": "2026-02-19T12:50:00",
-  "release_date": "2026-02-19",
+  "version": "1.2.96",
+  "updated_at": "2026-02-15T23:00:00",
+  "release_date": "2026-02-15",
   "changelog": [
     "🐛 [Critical Fix] 자동 업데이트 시 소스코드 다운로드로 인한 앱 손상 방지 (Frozen 모드 보호)",
     "🐛 [Fix] Windows 블로그 수동 포스팅 시 첫 발행 실패 문제 해결 (발행 검증 로직 추가)",
@@ -78,11 +78,7 @@
   ],
   "min_requirements": {
     "python": "3.8+",
-    "os": [
-      "Windows",
-      "macOS",
-      "Linux"
-    ]
+    "os": ["Windows", "macOS", "Linux"]
   },
   "preserved_files": [
     "modules/serial_config.json",
