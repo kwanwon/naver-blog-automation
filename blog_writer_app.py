@@ -64,6 +64,25 @@ class BlogWriterApp:
         sys.stdout = self.stream_logger
         sys.stderr = self.stream_logger
         
+        # 🚀 [Fix] 루트 로거의 핸들러를 StreamLogger로 모두 교체하여 Noconsole 충돌 방지
+        import logging
+        root_logger = logging.getLogger()
+        for handler in root_logger.handlers[:]:
+            root_logger.removeHandler(handler)
+        
+        class CustomStreamHandler(logging.StreamHandler):
+            def emit(self, record):
+                try:
+                    msg = self.format(record)
+                    self.stream.write(msg + '\n')
+                except Exception:
+                    pass
+        
+        custom_handler = CustomStreamHandler(self.stream_logger)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        custom_handler.setFormatter(formatter)
+        root_logger.addHandler(custom_handler)
+        
         # 플랫폼 정보 감지
         self.platform_system = platform.system().lower()  # 'windows', 'darwin', 'linux'
         self.is_windows = self.platform_system == 'windows'
@@ -4714,14 +4733,23 @@ class BlogWriterApp:
     def _show_log_viewer(self, page):
         """로그 뷰어 다이얼로그 표시"""
         try:
-            # 디버그: 터미널에 직접 출력
-            sys.__stdout__.write("📜 로그 뷰어 열기 요청됨\n")
+            # 안전한 콘솔 로깅 (noconsole 빌드 대응)
+            def safe_print(msg):
+                try:
+                    if hasattr(self, 'logger'):
+                        self.logger.info(msg)
+                    else:
+                        print(msg)
+                except:
+                    pass
+                    
+            safe_print("📜 로그 뷰어 열기 요청됨")
             
             # 로그 내용 가져오기 & 빈 값 처리
             log_content = self.stream_logger.get_logs()
             if not log_content:
                 log_content = "⏳ 로그가 아직 없습니다. (잠시 후 업데이트됩니다...)\n"
-                sys.__stdout__.write("ℹ️ 초기 로그가 비어있음\n")
+                safe_print("ℹ️ 초기 로그가 비어있음")
 
             # 로그 내용을 담을 텍스트
             log_text = ft.Text(
@@ -4743,25 +4771,26 @@ class BlogWriterApp:
             
             # 다이얼로그 참조를 위한 변수
             log_dialog = None
+            log_loop_running = [True]  # 스레드 제어용 플래그
             
-            # 실시간 업데이트를 위한 폴링 루프 (스레드 안전성 확보 - Async 필수)
-            async def update_log_loop():
-                while log_dialog and log_dialog.open:
+            # 실시간 업데이트를 위한 폴링 루프 (threading.Thread 사용 방식으로 변경 - PyInstaller 호환성 목적)
+            def update_log_loop():
+                import time
+                while log_dialog and log_dialog.open and log_loop_running[0]:
                     try:
                         current_logs = self.stream_logger.get_logs()
                         if log_text.value != current_logs:
                             log_text.value = current_logs
                             log_text.update()
                             log_view.scroll_to(offset=-1, duration=50)
-                    except:
+                    except Exception as ex:
                         pass
-                    await asyncio.sleep(0.5)  # 0.5초마다 갱신 (asyncio 사용)
-            
-            # 콜백 방식 제거 (Windows 크래시 원인)
-            # self.stream_logger.set_callback(on_log_update)
+                    time.sleep(0.5)  # 0.5초마다 갱신
             
             def close_dialog(e):
-                log_dialog.open = False
+                log_loop_running[0] = False
+                if log_dialog:
+                    log_dialog.open = False
                 page.update()
                 
             def copy_log(e):
@@ -4800,8 +4829,7 @@ class BlogWriterApp:
                     close_dialog(None)
                     
                 except Exception as ex:
-                     sys.__stdout__.write(f"터미널 열기 실패: {ex}\n")
-                     # page.snack_bar = ft.SnackBar(content=ft.Text("터미널 실행 실패")) # 에러 시 스낵바 생략하거나 try-except
+                     safe_print(f"터미널 열기 실패: {ex}")
                      try:
                          page.snack_bar = ft.SnackBar(content=ft.Text(f"오류: {ex}"))
                          page.snack_bar.open = True
@@ -4810,7 +4838,7 @@ class BlogWriterApp:
                         pass
 
             log_dialog = ft.AlertDialog(
-                title=ft.Text("📜 실시간 실행 로그 (개발자 모드)", size=16, weight=ft.FontWeight.BOLD),
+                title=ft.Text("📜 실시간 실행 로그", size=16, weight=ft.FontWeight.BOLD),
                 content=ft.Container(
                     content=log_view,
                     width=900,
@@ -4821,11 +4849,11 @@ class BlogWriterApp:
                     border=ft.border.all(1, ft.Colors.GREY_800)
                 ),
                 actions=[
-                    ft.TextButton("새 창으로 보기 ↗️", icon=ft.Icons.OPEN_IN_NEW, on_click=open_external),
+                    ft.TextButton("새 터미널 창으로 보기 ↗️", icon=ft.Icons.OPEN_IN_NEW, on_click=open_external),
                     ft.TextButton("복사하기", icon=ft.Icons.COPY, on_click=copy_log),
                     ft.TextButton("닫기", on_click=close_dialog),
                 ],
-                on_dismiss=lambda e: None, # 콜백 제거됨
+                on_dismiss=close_dialog, # 다이얼로그 바깥을 눌러서 닫을 때도 루프 종료
             )
             
             # Flet 0.21+ 방식: page.open() 사용
@@ -4833,18 +4861,20 @@ class BlogWriterApp:
             # 🆕 강제 업데이트로 다이얼로그 표시 보장 (Windows Fix)
             page.update()
             
-            # 🆕 로그 업데이트 폴링 루프 시작 (백그라운드 실행) (Mac Fix)
-            try:
-                page.run_task(update_log_loop)
-            except AttributeError:
-                # page.run_task가 없는 구버전 Flet일 경우 백그라운드 태스크로 실행 시도
-                asyncio.create_task(update_log_loop())
+            # 🆕 로그 업데이트 폴링 루프 시작 (백그라운드 스레드)
+            import threading
+            worker = threading.Thread(target=update_log_loop, daemon=True)
+            worker.start()
 
-            sys.__stdout__.write("✅ 로그 뷰어 열기 성공 (page.open + update + polling)\n")
+            safe_print("✅ 로그 뷰어 열기 성공 (page.open + update + threading polling)")
             
         except Exception as e:
-            sys.__stdout__.write(f"❌ 로그 뷰어 열기 실패: {str(e)}\n")
-            traceback.print_exc(file=sys.__stdout__)
+            try:
+                page.snack_bar = ft.SnackBar(content=ft.Text(f"로그 뷰어 열기 실패: {str(e)}"))
+                page.snack_bar.open = True
+                page.update()
+            except:
+                pass
 
     def main(self, page: ft.Page):
         # 페이지 객체 저장 (먼저 설정)

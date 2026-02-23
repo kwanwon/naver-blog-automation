@@ -877,8 +877,12 @@ class GPTHandler:
                     try:
                         if isinstance(target_time, str):
                             t = dt_cls.strptime(target_time, "%H:%M")
-                            target_dt = datetime.now().replace(hour=t.hour, minute=t.minute, second=0)
-                            if target_dt < datetime.now():
+                            # 현재 시간 기준으로 동일한 시/분의 datetime 객체 생성
+                            target_dt = datetime.now().replace(hour=t.hour, minute=t.minute, second=0, microsecond=0)
+                            
+                            # ✨ [Fix] 스케줄러가 정각에 실행될 때 미세한 시간차로 오늘로 인식되는 문제 방지
+                            # 현재 시간보다 5분 이상 과거인 시간(ex: 현재 14:00인데 target이 07:00)이라면 내일로 간주
+                            if target_dt < datetime.now() - timedelta(minutes=5):
                                 target_dt += timedelta(days=1)
                                 is_forecast = True
                         else:
@@ -974,8 +978,12 @@ class GPTHandler:
                     try:
                         if isinstance(target_time, str):
                             t = dt_cls.strptime(target_time, "%H:%M")
-                            target_dt = datetime.now().replace(hour=t.hour, minute=t.minute, second=0)
-                            if target_dt < datetime.now():
+                            # 현재 시간 기준으로 동일한 시/분의 datetime 객체 생성
+                            target_dt = datetime.now().replace(hour=t.hour, minute=t.minute, second=0, microsecond=0)
+                            
+                            # ✨ [Fix] 스케줄러가 정각에 실행될 때 미세한 시간차로 오늘로 인식되는 문제 방지
+                            # 현재 시간보다 5분 이상 과거인 시간(ex: 현재 14:00인데 target이 07:00)이라면 내일로 간주
+                            if target_dt < datetime.now() - timedelta(minutes=5):
                                 target_dt += timedelta(days=1)
                                 is_forecast = True
                         else:
