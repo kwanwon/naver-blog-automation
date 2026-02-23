@@ -68,7 +68,8 @@ def build_app():
         ('naver_blog_auto.py', '.'), # 메인 클래스 파일 추가
         ('naver_blog_auto_image.py', '.'), # 이미지 처리 클래스 파일 추가
         ('naver_blog_post_finisher.py', '.'), # 포스트 마무리 처리 클래스 파일 추가
-        ('modules', 'modules') # 모듈 디렉토리 추가
+        ('modules', 'modules'), # 모듈 디렉토리 추가
+        ('version.json', '.') # 버전 파일 추가
     ]
     
     # data 인자 구성

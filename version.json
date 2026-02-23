@@ -1,8 +1,10 @@
 {
-  "version": "1.2.103",
+  "version": "1.2.104",
   "updated_at": "2026-02-19T12:50:00",
   "release_date": "2026-02-19",
   "changelog": [
+    "✅ [Fix] 설치형 앱 로그 뷰어 충돌 원인(logging 라이브러리 Noconsole 환경 충돌) 해결",
+    "✅ [Fix] 예약 포스팅 설정 시 내일 아침 날씨가 오늘 날씨로 들어가는 시간 연산 버그 수정",
     "🐛 [Windows] 블로그 예약 발행 버튼 인식 오류 수정 (Robust Click 적용)",
     "✨ [Feature] 스마트 학기/방학 감지 로직 적용 (Smart Semester Context)",
     "💡 [Improvement] 방학 중 '등하교', '급식' 등 학교 관련 주제 입력 시 '새학기 준비'로 자동 우회(Smart Detour)",
