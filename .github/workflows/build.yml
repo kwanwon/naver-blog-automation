@@ -158,7 +158,22 @@ jobs:
           
       - name: Build with flet pack
         run: |
-          flet pack blog_writer_app.py --name BlogAutomation_Mac --icon assets/icon.png --add-data "manual_session_helper.py:." --add-data "setup_chrome_permissions.py:."
+          flet pack blog_writer_app.py \
+            --name BlogAutomation_Mac \
+            --icon assets/icon.png \
+            --add-data "manual_session_helper.py:." \
+            --add-data "setup_chrome_permissions.py:." \
+            --hidden-import selenium.webdriver.chrome.webdriver \
+            --hidden-import selenium.webdriver.chrome.service \
+            --hidden-import selenium.webdriver.chrome.options \
+            --hidden-import selenium.webdriver.common.by \
+            --hidden-import selenium.webdriver.common.keys \
+            --hidden-import selenium.webdriver.common.action_chains \
+            --hidden-import selenium.webdriver.support.ui \
+            --hidden-import selenium.webdriver.support.expected_conditions \
+            --hidden-import selenium.webdriver.remote.webdriver \
+            --hidden-import selenium.webdriver.remote.webelement \
+            --hidden-import certifi
           
       - name: Copy additional data files to app bundle
         run: |
