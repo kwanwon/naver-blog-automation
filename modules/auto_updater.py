@@ -421,10 +421,19 @@ if [ -d "$TARGET_FRAMEWORKS" ]; then
     cp -R "{restore_temp_dir}/" "$TARGET_FRAMEWORKS/"
 fi
 
-# 4. cleanup
+# 4. macOS 권한 복원 (업데이트 후 실행 불가 방지)
+echo "Restoring macOS permissions..."
+# 실행 파일에 실행 권한 부여
+find "{app_bundle_path}/Contents/MacOS" -type f -exec chmod +x {{}} \\;
+# 격리(quarantine) 속성 제거
+xattr -cr "{app_bundle_path}"
+# 코드 서명 (ad-hoc)
+codesign -s - --force --deep "{app_bundle_path}" 2>/dev/null || echo "codesign skipped"
+
+# 5. cleanup
 # rm -rf "{trash_path}" # 안전을 위해 일단 보존하거나 나중에 삭제
 
-# 5. Relaunch
+# 6. Relaunch
 open "{app_bundle_path}"
 """
             with open(script_path, 'w') as f:
