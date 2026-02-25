@@ -1,8 +1,9 @@
 {
-  "version": "1.2.109",
-  "updated_at": "2026-02-19T12:50:00",
-  "release_date": "2026-02-19",
+  "version": "1.2.110",
+  "updated_at": "2026-02-25T22:45:00",
+  "release_date": "2026-02-25",
   "changelog": [
+    "🐛 [Windows] 설치형 앱 실행 시 권한 문제(WinError 5) 해결 (데이터를 AppData에 저장)",
     "✅ [Fix] 설치형 앱 로그 뷰어 충돌 원인(logging 라이브러리 Noconsole 환경 충돌) 해결",
     "✅ [Fix] 예약 포스팅 설정 시 내일 아침 날씨가 오늘 날씨로 들어가는 시간 연산 버그 수정",
     "🐛 [Windows] 블로그 예약 발행 버튼 인식 오류 수정 (Robust Click 적용)",
