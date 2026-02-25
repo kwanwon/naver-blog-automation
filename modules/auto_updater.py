@@ -66,10 +66,6 @@ class AutoUpdater:
         self.preserve_files = [
             'modules/serial_config.json',
             'modules/.developer_mode',
-            'naver_cookies.pkl',
-            'naver_cookies.json',
-            'naver_session.json',
-            'naver_session.pkl',
             'config/app_settings.json',
             'config/user_settings.txt',
             'config/gpt_settings.txt',

@@ -1017,7 +1017,7 @@ class BlogWriterApp:
         directories = ['config', 'drafts', 'settings', 'logs']
         
         for directory in directories:
-            dir_path = os.path.join(self.base_dir, directory)
+            dir_path = os.path.join(self._get_app_data_dir(), directory)
             try:
                 os.makedirs(dir_path, exist_ok=True)
                 print(f"📁 디렉토리 확인/생성: {dir_path}")
@@ -1026,7 +1026,7 @@ class BlogWriterApp:
         
         # 디렉토리 내용 확인 (디버깅용)
         try:
-            contents = os.listdir(self.base_dir)
+            contents = os.listdir(self._get_app_data_dir())
             print(f"📋 기본 디렉토리 내용: {contents}")
         except Exception as e:
             print(f"❌ 디렉토리 내용 확인 실패: {str(e)}")
@@ -1243,7 +1243,7 @@ class BlogWriterApp:
                 if "로그아웃" in page_source or "님" in page_source:
                     # 세션 정보 저장
                     cookies = self.temp_driver.get_cookies()
-                    cookies_file = os.path.join(self.base_dir, 'naver_cookies.json')
+                    cookies_file = os.path.join(get_config_dir(), 'naver_cookies.json')
                     with open(cookies_file, 'w', encoding='utf-8') as f:
                         json.dump(cookies, f, ensure_ascii=False, indent=2)
                     
@@ -1328,7 +1328,7 @@ class BlogWriterApp:
 
     def check_login_status(self):
         """네이버 로그인 상태 확인"""
-        cookies_path = os.path.join(self.base_dir, 'naver_cookies.json')
+        cookies_path = os.path.join(get_config_dir(), 'naver_cookies.json')
         return os.path.exists(cookies_path)
     
     def band_login(self, page, e):
@@ -3055,7 +3055,7 @@ class BlogWriterApp:
 
         try:
             options = Options()
-            if self.is_headless:
+            if getattr(self, 'is_headless', False):
                 options.add_argument('--headless=new')
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")

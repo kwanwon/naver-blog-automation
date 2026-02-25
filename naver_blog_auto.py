@@ -709,7 +709,8 @@ class NaverBlogAutomation:
     def login_naver(self):
         """네이버 로그인 (수동 세션 기반)"""
         import json
-        cookies_path = os.path.join(self.base_dir, 'naver_cookies.json')
+        from utils.path_utils import get_config_dir
+        cookies_path = os.path.join(get_config_dir(), 'naver_cookies.json')
         
         try:
             if not self.setup_driver():
