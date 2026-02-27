@@ -187,29 +187,22 @@ class AutoUpdater:
         if system_name == 'darwin':
             target_keywords = ['mac', 'macos', 'osx']
         elif system_name == 'windows':
-            target_keywords = ['windows', 'win', 'setup']
+            target_keywords = ['windows', 'win']
         
-        # 완벽한 일치(확장자 포함) 검색 우선
-        for asset in assets:
-            name = asset['name'].lower()
-            if system_name == 'windows' and name.endswith('.exe'):
-                # 윈도우는 exe 우선 (Setup 파일 등)
-                 if any(k in name for k in target_keywords):
-                     self.logger.info(f"Windows Executable Asset 발견: {asset['name']}")
-                     return asset['browser_download_url']
-            
-            if system_name == 'darwin' and name.endswith('.zip'):
-                # 맥은 zip 우선
-                if any(k in name for k in target_keywords):
-                    self.logger.info(f"macOS Zip Asset 발견: {asset['name']}")
-                    return asset['browser_download_url']
-
-        # 일반적인 키워드 매칭 (이름에 OS 명칭이 들어간 zip)
+        # Windows/Mac 공통: ZIP 파일 우선 검색 (in-app 업데이트는 ZIP 압축 해제 방식)
         for asset in assets:
             name = asset['name'].lower()
             if name.endswith('.zip') and any(k in name for k in target_keywords):
-                self.logger.info(f"일반 매칭 Asset 발견: {asset['name']}")
+                self.logger.info(f"ZIP Asset 발견 (우선): {asset['name']}")
                 return asset['browser_download_url']
+        
+        # ZIP을 못 찾은 경우에만 EXE 시도 (Windows)
+        if system_name == 'windows':
+            for asset in assets:
+                name = asset['name'].lower()
+                if name.endswith('.exe') and any(k in name for k in target_keywords):
+                    self.logger.info(f"Windows EXE Asset 발견 (대체): {asset['name']}")
+                    return asset['browser_download_url']
         
         # 찾지 못했으면...
         if self.is_frozen:
