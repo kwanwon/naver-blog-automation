@@ -27,6 +27,7 @@ import requests
 from selenium.webdriver.chrome.options import Options
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional, Union
+from utils.path_utils import get_app_data_dir  # AppData 경로를 위해 import
 from selenium.common.exceptions import (
     TimeoutException, NoSuchElementException, ElementClickInterceptedException,
     StaleElementReferenceException, WebDriverException
@@ -51,10 +52,14 @@ class NaverBlogAutomation:
     def __init__(self, auto_mode=True, image_insert_mode="random", use_stickers=False, custom_images_folder=None, naver_id=None):
         self.driver = None
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # 데이터 폴더를 AppData 기반으로 변경하여 퍼미션 에러 방지
+        self.data_dir = get_app_data_dir("data")
         self.today = datetime.now().strftime("%Y-%m-%d")
-        self.post_folder = os.path.join(self.base_dir, self.today)
+        self.post_folder = os.path.join(self.data_dir, self.today)
         self.images_folder = os.path.join(self.post_folder, "images")
-        self.default_images_folder = os.path.join(self.base_dir, "default_images")  # 기본 이미지 폴더
+        
+        self.default_images_folder = os.path.join(self.base_dir, "default_images")  # 기본 설정은 base_dir 그대로 둠 (리소스 복사 관련)
         self.custom_images_folder = custom_images_folder  # 커스텀 이미지 폴더 추가
         self.naver_id = naver_id  # 🆕 네이버 ID 저장
         self.used_images = []
