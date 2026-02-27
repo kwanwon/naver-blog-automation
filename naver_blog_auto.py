@@ -82,10 +82,10 @@ class NaverBlogAutomation:
             today = datetime.now()
             tomorrow = today + timedelta(days=1)
             
-            # 날짜별 폴더 생성
+            # 날짜별 폴더 생성 (AppData 기반 data_dir 사용 — 퍼미션 에러 방지)
             for date in [today, tomorrow]:
                 date_str = date.strftime("%Y-%m-%d")
-                post_folder = os.path.join(self.base_dir, date_str)
+                post_folder = os.path.join(self.data_dir, date_str)
                 images_folder = os.path.join(post_folder, "images")
                 
                 # 포스트 폴더 생성

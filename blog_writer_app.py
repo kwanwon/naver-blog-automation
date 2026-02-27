@@ -6675,11 +6675,12 @@ class BlogWriterApp:
                 # 원본 내용을 모바일 친화적으로 포맷팅
                 formatted_content = format_content_for_mobile(content_input.value)
                 
-                # 임시 파일에 내용 저장
+                # 임시 파일에 내용 저장 (AppData 기반으로 변경 — 퍼미션 에러 방지)
                 today = datetime.now().strftime("%Y-%m-%d")
-                os.makedirs(os.path.join(self.base_dir, today), exist_ok=True)
+                today_dir = os.path.join(self._get_app_data_dir(), 'data', today)
+                os.makedirs(today_dir, exist_ok=True)
                 
-                file_path = os.path.join(os.path.join(self.base_dir, today), f"{title_input.value}.txt")
+                file_path = os.path.join(today_dir, f"{title_input.value}.txt")
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(f"제목: {title_input.value}\n\n{formatted_content}")
 
