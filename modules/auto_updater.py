@@ -98,9 +98,11 @@ class AutoUpdater:
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
             
-            stream_handler = logging.StreamHandler()
-            stream_handler.setFormatter(formatter)
-            self.logger.addHandler(stream_handler)
+            # Windows GUI 앱에선 sys.stderr가 None일 수 있음
+            if sys.stderr is not None:
+                stream_handler = logging.StreamHandler()
+                stream_handler.setFormatter(formatter)
+                self.logger.addHandler(stream_handler)
 
     def get_remote_version(self):
         """OS별 버전 파일(version_mac.json 등)을 확인하여 최신 버전 정보 가져오기"""

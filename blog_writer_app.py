@@ -6680,9 +6680,16 @@ class BlogWriterApp:
                 today_dir = os.path.join(self._get_app_data_dir(), 'data', today)
                 os.makedirs(today_dir, exist_ok=True)
                 
-                file_path = os.path.join(today_dir, f"{title_input.value}.txt")
+                # 윈도우 파일명 사용 불가능 문자 제거 (? 등)
+                raw_title = title_input.value
+                import re
+                clean_title = re.sub(r'[\/:*?"<>|]', '', raw_title).strip()
+                if not clean_title:
+                    clean_title = "제목없음_" + datetime.now().strftime("%H%M%S")
+                
+                file_path = os.path.join(today_dir, f"{clean_title}.txt")
                 with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(f"제목: {title_input.value}\n\n{formatted_content}")
+                    f.write(f"제목: {raw_title}\n\n{formatted_content}")
 
                 try:
                     # 기존 naver_blog_auto.py 시스템 활용

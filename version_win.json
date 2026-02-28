@@ -1,7 +1,7 @@
 {
-  "version": "1.2.112",
-  "updated_at": "2026-02-25T22:45:00",
-  "release_date": "2026-02-25",
+  "version": "1.2.115",
+  "updated_at": "2026-02-28T09:25:00",
+  "release_date": "2026-02-28",
   "changelog": [
     "🐛 [Windows] 설치형 앱 실행 시 권한 문제(WinError 5) 해결 (데이터를 AppData에 저장)",
     "✅ [Fix] 설치형 앱 로그 뷰어 충돌 원인(logging 라이브러리 Noconsole 환경 충돌) 해결",
