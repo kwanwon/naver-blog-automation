@@ -4876,6 +4876,171 @@ class BlogWriterApp:
             except:
                 pass
 
+    def _open_guide(self, section=None):
+        """사용자 가이드 다이얼로그 표시 (앱 내부에서 단계별 안내 + 사이트 이동 버튼)"""
+        
+        guides = {
+            "openai-api-키-gpt-4o-등-사용": {
+                "title": "🤖 OpenAI API 키 발급 방법",
+                "url": "https://platform.openai.com/api-keys",
+                "btn_label": "OpenAI 사이트 이동",
+                "steps": [
+                    "platform.openai.com 에 접속합니다.",
+                    "구글 또는 이메일로 회원가입/로그인 합니다.",
+                    "왼쪽 메뉴에서 [API Keys] 를 클릭합니다.",
+                    "[+ Create new secret key] 버튼을 누릅니다.",
+                    "키 이름(예: MyBlogBot)을 입력하고 생성합니다.",
+                    "생성된 키(sk-xxx...)를 복사합니다.",
+                    "이 프로그램의 [OpenAI API 키] 칸에 붙여넣기 합니다.",
+                ],
+                "warning": "⚠️ 키는 생성 시 한 번만 보여줍니다! 반드시 즉시 복사하세요."
+            },
+            "gemini-api-키-무료-모델-사용-가능": {
+                "title": "♊ Gemini API 키 발급 방법 (무료!)",
+                "url": "https://aistudio.google.com/app/apikey",
+                "btn_label": "Google AI Studio 이동",
+                "steps": [
+                    "aistudio.google.com 에 접속합니다.",
+                    "구글 계정으로 로그인합니다.",
+                    "[Create API key] 버튼을 클릭합니다.",
+                    "프로젝트를 선택하거나 새로 만듭니다.",
+                    "생성된 키를 복사합니다.",
+                    "이 프로그램의 [Gemini API 키] 칸에 붙여넣기 합니다.",
+                ],
+                "warning": "💡 Gemini는 무료로 사용 가능합니다! 일일 990회 제한이 있습니다."
+            },
+            "brave-search-api-키-뉴스정보-검색용": {
+                "title": "🔍 Brave Search API 키 발급 방법",
+                "url": "https://brave.com/search/api/",
+                "btn_label": "Brave Search 사이트 이동",
+                "steps": [
+                    "brave.com/search/api/ 에 접속합니다.",
+                    "회원가입 후 로그인합니다.",
+                    "[Get Started] 또는 Plans 에서 Free Plan을 선택합니다.",
+                    "API Keys 메뉴에서 새 키를 생성합니다.",
+                    "생성된 키를 복사합니다.",
+                    "이 프로그램의 [Brave Search API 키] 칸에 붙여넣기 합니다.",
+                ],
+                "warning": "💡 Free Plan은 월 2,000회 검색이 무료입니다."
+            },
+            "기상청-api-키-날씨-정보용": {
+                "title": "🌦️ 기상청 API 키 발급 방법",
+                "url": "https://www.data.go.kr",
+                "btn_label": "공공데이터포털 이동",
+                "steps": [
+                    "data.go.kr (공공데이터포털)에 접속합니다.",
+                    "회원가입 후 로그인합니다.",
+                    "검색창에 '단기예보' 를 검색합니다.",
+                    "[기상청_단기예보 ((구)동네예보) 조회서비스] 를 클릭합니다.",
+                    "[활용신청] 버튼을 눌러 신청합니다. (즉시 승인!)",
+                    "마이페이지 → 데이터활용 → 활용신청 현황으로 이동합니다.",
+                    "[인증키] 중 Decoding 키를 복사합니다.",
+                    "이 프로그램의 [기상청 API 키] 칸에 붙여넣기 합니다.",
+                ],
+                "warning": "💡 승인은 즉시 되며, 하루 1,000회 무료입니다."
+            },
+            "네이버-밴드-url": {
+                "title": "💚 네이버 밴드 URL 넣는 법",
+                "url": "https://band.us",
+                "btn_label": "네이버 밴드 이동",
+                "steps": [
+                    "웹 브라우저에서 band.us 에 접속합니다.",
+                    "글을 올릴 밴드를 클릭합니다.",
+                    "브라우저 상단 주소창의 URL을 전체 복사합니다.",
+                    "예시: https://band.us/band/12345678",
+                    "이 프로그램의 [밴드 URL] 칸에 붙여넣기 합니다.",
+                ],
+                "warning": "💡 밴드 번호(숫자)까지만 입력해도 자동 인식됩니다."
+            },
+            "네이버-카페-url-및-메뉴-id": {
+                "title": "☕ 네이버 카페 URL & 메뉴 ID 넣는 법",
+                "url": "https://cafe.naver.com",
+                "btn_label": "네이버 카페 이동",
+                "steps": [
+                    "웹 브라우저에서 cafe.naver.com 에 접속합니다.",
+                    "글을 올릴 카페를 클릭합니다.",
+                    "카페 메인 주소를 복사하여 [카페 URL] 칸에 입력합니다.",
+                    "예시: https://cafe.naver.com/mycafename",
+                    "글을 올릴 게시판(메뉴)을 클릭합니다.",
+                    "주소창에서 menuId=숫자 부분의 숫자만 복사합니다.",
+                    "예시: menuId=123 → 123 을 [메뉴 ID] 칸에 입력합니다.",
+                ],
+                "warning": "⚠️ 메뉴 ID를 정확히 입력해야 원하는 게시판에 글이 올라갑니다!"
+            },
+        }
+        
+        guide = guides.get(section)
+        if not guide:
+            try:
+                self.page.launch_url("https://github.com/kwanwon/naver-blog-automation")
+            except:
+                pass
+            return
+        
+        # 단계별 안내 UI 구성
+        step_controls = []
+        for i, step in enumerate(guide["steps"], 1):
+            step_controls.append(
+                ft.Container(
+                    content=ft.Row([
+                        ft.Container(
+                            content=ft.Text(str(i), size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                            bgcolor=ft.Colors.BLUE_600,
+                            width=26, height=26,
+                            border_radius=13,
+                            alignment=ft.alignment.center
+                        ),
+                        ft.Text(step, size=13, expand=True)
+                    ], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                    padding=ft.padding.symmetric(horizontal=8, vertical=4)
+                )
+            )
+        
+        def close_dlg(e):
+            guide_dlg.open = False
+            self.page.update()
+        
+        def open_site(e):
+            try:
+                self.page.launch_url(guide["url"])
+            except Exception as ex:
+                print(f"⚠️ 사이트 열기 실패: {ex}")
+        
+        guide_dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(guide["title"], size=18, weight=ft.FontWeight.BOLD),
+            content=ft.Container(
+                content=ft.Column([
+                    *step_controls,
+                    ft.Divider(height=10),
+                    ft.Container(
+                        content=ft.Text(guide.get("warning", ""), size=12, color=ft.Colors.ORANGE_700, weight=ft.FontWeight.BOLD),
+                        padding=8,
+                        bgcolor=ft.Colors.ORANGE_50,
+                        border_radius=6
+                    )
+                ], spacing=6, scroll=ft.ScrollMode.AUTO),
+                width=460,
+                height=350
+            ),
+            actions=[
+                ft.ElevatedButton(
+                    guide["btn_label"],
+                    icon=ft.Icons.OPEN_IN_NEW,
+                    on_click=open_site,
+                    bgcolor=ft.Colors.BLUE_600,
+                    color=ft.Colors.WHITE
+                ),
+                ft.TextButton("닫기", on_click=close_dlg)
+            ],
+            actions_alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+        )
+        
+        self.page.overlay.append(guide_dlg)
+        guide_dlg.open = True
+        self.page.update()
+
+
     def main(self, page: ft.Page):
         # 페이지 객체 저장 (먼저 설정)
         self.page = page
@@ -5392,6 +5557,14 @@ class BlogWriterApp:
             hint_text="OpenAI API 키를 입력하세요...",
             password=True,  # 비밀번호 형태로 표시
             can_reveal_password=False,  # 비밀번호 표시 버튼 제거
+            visible=not self.use_dummy,
+            expand=True
+        )
+
+        openai_help_btn = ft.IconButton(
+            icon=ft.Icons.HELP_OUTLINE,
+            tooltip="OpenAI API 키 발급 가이드 보기",
+            on_click=lambda _: self._open_guide("openai-api-키-gpt-4o-등-사용"),
             visible=not self.use_dummy
         )
 
@@ -5401,6 +5574,14 @@ class BlogWriterApp:
             hint_text="Gemini API 키를 입력하세요...",
             password=True,
             can_reveal_password=False,
+            visible=True,
+            expand=True
+        )
+
+        gemini_help_btn = ft.IconButton(
+            icon=ft.Icons.HELP_OUTLINE,
+            tooltip="Gemini API 키 발급 가이드 보기",
+            on_click=lambda _: self._open_guide("gemini-api-키-무료-모델-사용-가능"),
             visible=True
         )
 
@@ -5410,6 +5591,14 @@ class BlogWriterApp:
             hint_text="Brave Search API 키 (선택 사항)",
             password=True,
             can_reveal_password=True,
+            visible=True,
+            expand=True
+        )
+
+        brave_help_btn = ft.IconButton(
+            icon=ft.Icons.HELP_OUTLINE,
+            tooltip="Brave Search API 키 발급 가이드 보기",
+            on_click=lambda _: self._open_guide("brave-search-api-키-뉴스정보-검색용"),
             visible=True
         )
         
@@ -5840,7 +6029,14 @@ class BlogWriterApp:
         kma_api_key = ft.TextField(
             label="기상청 API 키 (공공데이터포털)",
             hint_text="data.go.kr에서 발급받은 단기예보 인증키를 입력하세요",
-            password=True
+            password=True,
+            expand=True
+        )
+
+        kma_help_btn = ft.IconButton(
+            icon=ft.Icons.HELP_OUTLINE,
+            tooltip="기상청 API 키 발급 가이드 보기",
+            on_click=lambda _: self._open_guide("기상청-api-키-날씨-정보용")
         )
 
         kakao_url = ft.TextField(
@@ -7078,9 +7274,9 @@ class BlogWriterApp:
                     ft.Container(
                         content=ft.Column([
                             use_api_checkbox,
-                            api_key_field,
-                            gemini_api_key_field,
-                            brave_api_key_field,
+                            ft.Row([api_key_field, openai_help_btn], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                            ft.Row([gemini_api_key_field, gemini_help_btn], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                            ft.Row([brave_api_key_field, brave_help_btn], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER),
                             api_key_help_text,
                             auto_upload_checkbox,
                             auto_upload_help_text,
@@ -7237,7 +7433,7 @@ class BlogWriterApp:
                     naver_id,
                     naver_pw,
                     weather_location,
-                    kma_api_key,
+                    ft.Row([kma_api_key, kma_help_btn], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER),
                     kakao_url,
                     blog_tags,
                     blog_topics,
@@ -8579,6 +8775,12 @@ class BlogWriterApp:
             expand=True,
             on_blur=on_band_url_change  # 포커스 벗어날 때 저장
         )
+        
+        band_url_help_btn = ft.IconButton(
+            icon=ft.Icons.HELP_OUTLINE,
+            tooltip="네이버 밴드 URL 가이드 보기",
+            on_click=lambda _: self._open_guide("네이버-밴드-url")
+        )
         band_title_input = ft.TextField(label="제목 (옵션)", expand=True)
         band_content_input = ft.TextField(label="내용", multiline=True, min_lines=10, expand=True)
         band_single_reserve_time = ft.TextField(label="예약 시간 (선택, HH:MM)", hint_text="예: 14:30 (비워두면 즉시 발행)", expand=True)
@@ -9352,7 +9554,7 @@ class BlogWriterApp:
         band_settings_tab = ft.Container(
             content=ft.Column([
                 ft.Text("💚 네이버 밴드 포스팅", size=20, weight=ft.FontWeight.BOLD),
-                band_url_input,
+                ft.Row([band_url_input, band_url_help_btn], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER),
                 band_title_input,
                 band_content_input,
                 ft.Row([
@@ -9612,12 +9814,25 @@ class BlogWriterApp:
             expand=True,
             on_blur=on_cafe_url_change
         )
+        
+        cafe_url_help_btn = ft.IconButton(
+            icon=ft.Icons.HELP_OUTLINE,
+            tooltip="네이버 카페 URL 가이드 보기",
+            on_click=lambda _: self._open_guide("네이버-카페-url-및-메뉴-id")
+        )
+
         cafe_menu_input = ft.TextField(
             label="메뉴 ID (menuid)", 
             value=self.settings.get('cafe_menu_id', ''), 
             hint_text="카페 게시판 클릭 시 주소창의 menuId=숫자 부분 입력",
             expand=True,
             on_blur=on_cafe_menu_change
+        )
+
+        cafe_menu_help_btn = ft.IconButton(
+            icon=ft.Icons.HELP_OUTLINE,
+            tooltip="카페 메뉴 ID 가이드 보기",
+            on_click=lambda _: self._open_guide("네이버-카페-url-및-메뉴-id")
         )
         cafe_title_input = ft.TextField(label="제목", expand=True)
         cafe_content_input = ft.TextField(label="내용", multiline=True, min_lines=10, expand=True)
@@ -9726,8 +9941,8 @@ class BlogWriterApp:
         cafe_settings_tab = ft.Container(
             content=ft.Column([
                 ft.Text("☕ 네이버 카페 포스팅", size=20, weight=ft.FontWeight.BOLD),
-                cafe_url_input,
-                cafe_menu_input,
+                ft.Row([cafe_url_input, cafe_url_help_btn], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                ft.Row([cafe_menu_input, cafe_menu_help_btn], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER),
                 cafe_title_input,
                 cafe_content_input,
                 cafe_image_checkbox,
