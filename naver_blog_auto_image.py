@@ -35,7 +35,7 @@ def get_date_folder(date_str=None):
         date_str = datetime.datetime.now().strftime("%Y-%m-%d")
     
     # 앱 실행 디렉토리 대신 안전한 AppData 하위 data 폴더 사용
-    base_dir = get_app_data_dir("data")
+    base_dir = os.path.join(get_app_data_dir(), "data")
     date_folder = os.path.join(base_dir, date_str)
     
     # 폴더가 없으면 생성 시도
@@ -96,7 +96,7 @@ class NaverBlogImageInserter:
         print(f"이미지 인서터 초기화: 주 폴더={self.images_folder}, 대체 폴더={self.fallback_folder}")
         
         # 임시 업로드 폴더 설정 (AppData 폴더 내에 생성)
-        self.temp_upload_dir = os.path.join(get_app_data_dir("temp"), "_temp_upload")
+        self.temp_upload_dir = os.path.join(get_app_data_dir(), "temp", "_temp_upload")
         os.makedirs(self.temp_upload_dir, exist_ok=True)
         self.cleanup_temp_images()  # 초기화 시 기존 임시 파일 정리
 

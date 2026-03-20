@@ -54,7 +54,8 @@ class NaverBlogAutomation:
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         
         # 데이터 폴더를 AppData 기반으로 변경하여 퍼미션 에러 방지
-        self.data_dir = get_app_data_dir("data")
+        from utils.path_utils import get_data_dir
+        self.data_dir = get_data_dir()
         self.today = datetime.now().strftime("%Y-%m-%d")
         self.post_folder = os.path.join(self.data_dir, self.today)
         self.images_folder = os.path.join(self.post_folder, "images")

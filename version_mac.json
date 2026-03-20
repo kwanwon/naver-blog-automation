@@ -1,8 +1,9 @@
 {
-  "version": "1.2.116",
-  "updated_at": "2026-03-13T17:55:00",
-  "release_date": "2026-03-13",
+  "version": "1.2.117",
+  "updated_at": "2026-03-20T18:40:00",
+  "release_date": "2026-03-20",
   "changelog": [
+    "🚀 [Critical Fix] 블로그 이미지 업로드 시 AppData 경로 TypeError 버그 수정 (맥/윈도우 공통)",
     "✨ [New] 초보자를 위한 상세 가이드 및 인앱 도움말 버튼 추가 (API 키/주소 설정)",
     "🐛 [Windows] 설치형 앱 실행 시 권한 문제(WinError 5) 해결 (데이터를 AppData에 저장)",
     "✨ [Feature] 스마트 학기/방학 감지 로직 적용 (Smart Semester Context)",
