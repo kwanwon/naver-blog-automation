@@ -66,13 +66,14 @@ def main():
         'pyinstaller',
         '--onedir',
         '--windowed',
-        '--name=블로그자동화',
+        '--name=BlogApp',
         '--add-data', 'config:config',
         '--add-data', 'modules:modules',
         '--add-data', 'default_images:default_images',
         '--add-data', 'requirements.txt:.',
         '--add-data', 'version.json:.',
         '--add-data', 'chromedriver:.',
+        '--icon=build_resources/app_icon.ico',
         '--hidden-import=flet',
         '--hidden-import=openai',
         '--hidden-import=selenium',
@@ -104,7 +105,7 @@ def main():
         print("✅ PyInstaller 빌드 성공!")
         
         # 빌드 결과 확인
-        app_dir = os.path.join('dist', '블로그자동화')
+        app_dir = os.path.join('dist', 'BlogApp')
         if os.path.exists(app_dir):
             print(f"📦 빌드 결과: {app_dir}")
             
@@ -115,8 +116,7 @@ def main():
             else:
                 print("⚠️ 개발자 모드 파일이 빌드에 포함됨 (비정상)")
             
-            # macOS .app 번들 확인
-            app_bundle = os.path.join('dist', '블로그자동화.app')
+            app_bundle = os.path.join('dist', 'BlogApp.app')
             if os.path.exists(app_bundle):
                 print(f"🍎 macOS 앱 번들 생성: {app_bundle}")
         
