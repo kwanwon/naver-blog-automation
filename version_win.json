@@ -1,9 +1,16 @@
 {
   "version": "1.2.117",
+<<<<<<< HEAD
+  "updated_at": "2026-03-23T07:45:00",
+  "release_date": "2026-03-23",
+  "changelog": [
+    "💊 [Fix] Windows 버전 버그 수정 및 안정성 향상",
+=======
   "updated_at": "2026-03-20T18:40:00",
   "release_date": "2026-03-20",
   "changelog": [
     "🚀 [Critical Fix] 블로그 이미지 업로드 시 AppData 경로 TypeError 버그 수정 (맥/윈도우 공통)",
+>>>>>>> c6dbc093c6883cf650eb5dc153f1aa5495205993
     "✨ [New] 초보자를 위한 상세 가이드 및 인앱 도움말 버튼 추가 (API 키/주소 설정)",
     "🐛 [Windows] 설치형 앱 실행 시 권한 문제(WinError 5) 해결 (데이터를 AppData에 저장)",
     "✅ [Fix] 설치형 앱 로그 뷰어 충돌 원인(logging 라이브러리 Noconsole 환경 충돌) 해결",
