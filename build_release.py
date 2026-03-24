@@ -66,9 +66,10 @@ def main():
         'pyinstaller',
         '--onedir',
         '--windowed',
-        '--name=BlogApp',
+        '--name=BlogAutomation_Windows',
         '--add-data', 'config:config',
         '--add-data', 'modules:modules',
+        '--add-data', 'build_resources:build_resources',
         '--add-data', 'default_images:default_images',
         '--add-data', 'requirements.txt:.',
         '--add-data', 'version.json:.',
@@ -105,7 +106,7 @@ def main():
         print("✅ PyInstaller 빌드 성공!")
         
         # 빌드 결과 확인
-        app_dir = os.path.join('dist', 'BlogApp')
+        app_dir = os.path.join('dist', 'BlogAutomation_Windows')
         if os.path.exists(app_dir):
             print(f"📦 빌드 결과: {app_dir}")
             
@@ -116,7 +117,7 @@ def main():
             else:
                 print("⚠️ 개발자 모드 파일이 빌드에 포함됨 (비정상)")
             
-            app_bundle = os.path.join('dist', 'BlogApp.app')
+            app_bundle = os.path.join('dist', 'BlogAutomation_Windows.app')
             if os.path.exists(app_bundle):
                 print(f"🍎 macOS 앱 번들 생성: {app_bundle}")
         
