@@ -1689,8 +1689,8 @@ class GPTHandler:
                     break
         
         if nx is None:
-            logger.warning(f"기상청 격자좌표 매핑 실패: {location}, 기본값(서울) 사용")
-            nx, ny = 60, 127  # 서울 기본값
+            logger.warning(f"기상청 격자좌표 매핑 실패: {location}, 네이버 폴백 즉시 사용")
+            return None
         
         try:
             now = datetime.now()
@@ -2025,6 +2025,21 @@ class GPTHandler:
             min_temp = min_match.group(1).strip() if min_match else "?"
             max_temp = max_match.group(1).strip() if max_match else "?"
             
+            # --- 어제 비교 크롤링 (현재/오전/오후 모든 경우에 유용) ---
+            yesterday_comp = ""
+            summary_match = re.search(r'class="summary"[^>]*>(.*?)</p>', html, re.DOTALL)
+            if summary_match:
+                text = re.sub(r'<[^>]+>', ' ', summary_match.group(1))
+                text = " ".join(text.split())
+                if "어제보다" in text:
+                    parts = text.split("어제보다")[1].strip().split()
+                    if len(parts) >= 2:
+                        yesterday_comp = f"어제보다 {parts[0]} {parts[1]}".replace("°", "도")
+                    else:
+                        yesterday_comp = text.replace("°", "도")
+            
+            yesterday_text = f" [{yesterday_comp}]" if yesterday_comp else ""
+            
             if forecast:
                 # --- 내일 예보 추출 시도 ---
                 # 네이버 날씨 페이지에서 내일 최저/최고/상태 추출
@@ -2032,39 +2047,56 @@ class GPTHandler:
                 tomorrow_max = "?"
                 tomorrow_status = ""
                 
-                # 내일 기온: "내일" 이후 최저/최고
-                tomorrow_section = re.search(r'내일(.*?)(?:모레|<\/div>)', html, re.DOTALL)
-                if tomorrow_section:
-                    t_block = tomorrow_section.group(1)
-                    t_min = re.search(r'최저기온</span>(.*?)(?:\xb0|<)', t_block)
-                    t_max = re.search(r'최고기온</span>(.*?)(?:\xb0|<)', t_block)
-                    t_stat = re.search(r'class="weather">(.*?)<', t_block)
-                    if t_min:
-                        tomorrow_min = t_min.group(1).strip()
-                    if t_max:
-                        tomorrow_max = t_max.group(1).strip()
-                    if t_stat:
-                        tomorrow_status = t_stat.group(1).strip()
+                # 내일 기온: 주간 예보 영역 활용
+                days = re.findall(r'<strong class="day">(.*?)</strong>.*?최저기온</span>(.*?)<.*?최고기온</span>(.*?)<', html, re.DOTALL)
+                for d in days:
+                    if d[0].strip() == "내일":
+                        tomorrow_min = d[1].strip().replace("°", "")
+                        tomorrow_max = d[2].strip().replace("°", "")
+                        break
+                        
+                t_stat_match = re.search(r'<strong class="day">내일</strong>.*?class="weather[^>]*>(.*?)<', html, re.DOTALL)
+                if t_stat_match:
+                    tomorrow_status = t_stat_match.group(1).strip()
                 
                 # 내일 예보가 파싱 안 되면 오늘 정보로 대체
                 if tomorrow_min == "?" and tomorrow_max == "?":
                     return (
-                        f"[내일 예보 미확인 - 오늘 기준 참고]\n"
-                        f"현재: {current_temp}도 ({weather_status}), "
+                        f"[{location} 내일 예보 미확인 - 오늘 기준 참고]\n"
+                        f"현재: {current_temp}도 ({weather_status}){yesterday_text}, "
                         f"최저/최고: {min_temp}/{max_temp}도, "
                         f"미세먼지: {fine_dust}, 초미세먼지: {ultra_dust}"
                     )
                 
+                # 오늘과 내일 기온 비교
+                tomorrow_comp = ""
+                if tomorrow_min != "?" and min_temp != "?":
+                    try:
+                        t_min_val = float(tomorrow_min)
+                        t_max_val = float(tomorrow_max)
+                        t_diff_min = t_min_val - float(min_temp)
+                        t_diff_max = t_max_val - float(max_temp)
+                        
+                        min_str = f"{abs(t_diff_min):.1f}도 높고" if t_diff_min > 0 else f"{abs(t_diff_min):.1f}도 낮고" if t_diff_min < 0 else "거의 비슷하고"
+                        max_str = f"{abs(t_diff_max):.1f}도 높습니다" if t_diff_max > 0 else f"{abs(t_diff_max):.1f}도 낮습니다" if t_diff_max < 0 else "거의 비슷합니다"
+                        
+                        tomorrow_comp = f"\n오늘 기온 대비 내일 최저기온은 {min_str}, 최고기온은 {max_str}."
+                    except (ValueError, TypeError):
+                        pass
+                
                 return (
-                    f"[내일 날씨 예보]\n"
+                    f"[{location} 내일 날씨 예보 (네이버)]\n"
+                    f"지역: {location}\n"
                     f"날씨: {tomorrow_status if tomorrow_status else '확인중'}, "
-                    f"최저/최고: {tomorrow_min}/{tomorrow_max}도\n"
+                    f"최저/최고: {tomorrow_min}/{tomorrow_max}도{tomorrow_comp}\n"
                     f"[오늘 기준 대기질] 미세먼지: {fine_dust}, 초미세먼지: {ultra_dust}"
                 )
             else:
                 # --- 현재 날씨 반환 ---
                 return (
-                    f"현재 기온: {current_temp}도 ({weather_status})\n"
+                    f"[{location} 실시간 날씨 (네이버)]\n"
+                    f"지역: {location}\n"
+                    f"현재 기온: {current_temp}도 ({weather_status}){yesterday_text}\n"
                     f"최저/최고: {min_temp}/{max_temp}도\n"
                     f"미세먼지: {fine_dust}, 초미세먼지: {ultra_dust}"
                 )
