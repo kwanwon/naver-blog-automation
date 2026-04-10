@@ -556,15 +556,7 @@ class DriveAutoPostSystem:
     
     def _get_topic(self, folder_name: str) -> str:
         """
-        주제 결정 (폴더 유형별 + 시간대별 분기 처리)
-        
-        [시간대 매핑]
-        - 오전: 생활체육오전반, 캠프활동
-        - 오후: 1시부~6시부, 승급심사, 승단심사
-        - 저녁: 7시부~9시부, 선수부, 시범부, 합숙훈련
-        
-        [수련내용 결합]
-        - C열(행사명) + D/E/F열(시간대) 결합
+        주제 결정 (폴더명에 구애받지 않고 스프레드시트 우선 참조)
         """
         # 1순위: 수동 입력
         if self.get_manual_topic:
@@ -573,48 +565,31 @@ class DriveAutoPostSystem:
                 print(f"📌 수동 입력 주제 사용: {manual[:30]}...")
                 return manual.strip()
         
-        # 스프레드시트 참조 폴더 (시간대별)
-        all_sheet_folders = {
-            '생활체육오전반', '오전반',
-            '1시부', '2시부', '3시부', '4시부', '5시부', '6시부',
-            '7시부', '8시부', '9시부',
-            '캠프활동', '합숙훈련', '대회',
-            '한체대팀라이온선수부', '선수부',
-            '한체대팀라이온시범부', '시범부',
-            '한체대라이온승급심사', '승급심사',
-            '합기도승단심사', '승단심사',
-            '한체대라이온짐합숙훈련', '합숙',
-            '합기도대회'
-        }
+        # 2순위: 스프레드시트 참조 (모든 폴더 대상)
+        if self.sheets_reader.sheet_url:
+            try:
+                # 폴더명에서 시간대 유추 시도
+                period = self._folder_to_period(folder_name)
+                print(f"📊 폴더 '{folder_name}' → 유추된 시간대: {period}")
+                
+                # 시간대별 수련내용 가져오기 시도
+                sheet_content = self.sheets_reader.get_combined_content_by_period(period)
+                
+                # 시간대별 열이 없으면 공통 열(C열 등) 단독 확인
+                if not sheet_content:
+                    print(f"   ℹ️ 시간대별 내용 없음, 공통 수련내용(C열) 확인...")
+                    sheet_content = self.sheets_reader.get_today_content()
+                
+                if sheet_content:
+                    # 폴더명과 시트 수련내용 결합
+                    topic = f"한국체대 라이온짐 {folder_name} 수련\n수련내용: {sheet_content}"
+                    print(f"📊 구글 시트 주제 적용 완료")
+                    return topic
+            except Exception as e:
+                print(f"⚠️ 스프레드시트 조회 오류: {e}")
         
-        # 스프레드시트 참조
-        if folder_name in all_sheet_folders:
-            if self.sheets_reader.sheet_url:
-                try:
-                    # 폴더 → 시간대 매핑
-                    period = self._folder_to_period(folder_name)
-                    print(f"📊 폴더 '{folder_name}' → 시간대: {period}")
-                    
-                    # 시간대별 수련내용 가져오기 (결합 로직 포함)
-                    sheet_content = self.sheets_reader.get_combined_content_by_period(period)
-                    
-                    # 시간대별 열이 없으면 기존 방식 폴백
-                    if not sheet_content:
-                        print(f"   ℹ️ 시간대별 열 없음, 기존 C열 확인...")
-                        sheet_content = self.sheets_reader.get_today_content()
-                    
-                    if sheet_content:
-                        # 폴더명과 수련내용 결합
-                        topic = f"한국체대 라이온짐 {folder_name} 수련\n수련내용: {sheet_content}"
-                        print(f"📊 스프레드시트 주제 사용")
-                        return topic
-                except Exception as e:
-                    print(f"⚠️ 스프레드시트 조회 오류: {e}")
-            
-            # 스프레드시트 실패 시 기본 템플릿
-            return f"한국체대 라이온짐 {folder_name} 수련"
-        
-        # 기타 폴더
+        # 3순위: 구글 시트 미설정 또는 오늘 데이터가 없을 때 기본 템플릿 (Fallback)
+        print(f"⚠️ 시트 정보를 찾지 못했습니다. 기본 템플릿으로 우회합니다.")
         return f"한국체대 라이온짐 {folder_name} 활동"
     
     def _get_special_folder_topic(self, folder_name: str) -> str:

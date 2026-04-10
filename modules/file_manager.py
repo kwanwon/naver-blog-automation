@@ -35,7 +35,7 @@ class FileManager:
         else:
             self.error_dir = self._get_default_error_dir()
             
-        self.retention_hours = 24  # 보관 시간 (24시간 후 자동 삭제)
+        self.retention_hours = 12  # 보관 시간 (12시간 후 자동 삭제)
         
         # 디렉토리 생성
         self._ensure_dirs()
@@ -46,7 +46,30 @@ class FileManager:
         system = platform.system()
         
         if system == 'Darwin':  # macOS
-            return os.path.expanduser("~/Google Drive/Backup")
+            # 🆕 이메일 주소가 포함된 특수 폴더(내 드라이브(...))를 최우선적으로 탐색
+            home = os.path.expanduser("~")
+            potential_roots = []
+            
+            try:
+                import glob
+                # 1. '내 드라이브'로 시작하는 모든 폴더 (동기화 폴더 최우선)
+                potential_roots.extend(glob.glob(os.path.join(home, "내 드라이브*")))
+                # 2. 'Google Drive'로 시작하는 모든 폴더
+                potential_roots.extend(glob.glob(os.path.join(home, "Google Drive*")))
+                # 3. 'GoogleDrive'로 시작하는 모든 폴더
+                potential_roots.extend(glob.glob(os.path.join(home, "GoogleDrive*")))
+            except:
+                pass
+
+            # 동기화 폴더(이메일 포함된 것)를 우선순위로 정렬
+            potential_roots.sort(key=lambda x: ("@" in x), reverse=True)
+            
+            for root in potential_roots:
+                if os.path.isdir(root):
+                    return os.path.join(root, "Backup")
+            
+            # 검색 실패 시 기본값 fallback
+            return os.path.expanduser("~/Desktop/Backup")
         elif system == 'Windows':
             # Windows: Google Drive 스트림 또는 Desktop
             possible_paths = [
@@ -69,7 +92,25 @@ class FileManager:
         system = platform.system()
         
         if system == 'Darwin':  # macOS
-            return os.path.expanduser("~/Google Drive/Error_Photos")
+            # 🆕 이메일 주소가 포함된 특수 폴더를 최우선적으로 탐색
+            home = os.path.expanduser("~")
+            potential_roots = []
+            
+            try:
+                import glob
+                potential_roots.extend(glob.glob(os.path.join(home, "내 드라이브*")))
+                potential_roots.extend(glob.glob(os.path.join(home, "Google Drive*")))
+                potential_roots.extend(glob.glob(os.path.join(home, "GoogleDrive*")))
+            except:
+                pass
+
+            potential_roots.sort(key=lambda x: ("@" in x), reverse=True)
+            
+            for root in potential_roots:
+                if os.path.isdir(root):
+                    return os.path.join(root, "Error_Photos")
+            
+            return os.path.expanduser("~/Desktop/Error_Photos")
         elif system == 'Windows':
             possible_paths = [
                 os.path.expanduser("~/Google Drive/Error_Photos"),

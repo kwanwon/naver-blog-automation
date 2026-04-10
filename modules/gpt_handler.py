@@ -13,7 +13,8 @@ import re
 import ssl
 from datetime import datetime, timedelta
 from typing import Any, List
-from utils.path_utils import get_config_dir, get_log_dir
+from utils.path_utils import get_config_dir, get_log_dir, get_gpt_settings_path, get_api_key_path
+from utils.security_utils import deobfuscate, deobfuscate_dict_fields
 
 # OpenAI 최신 SDK 대응
 try:
@@ -247,40 +248,28 @@ class GPTHandler:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             parent_dir = os.path.dirname(script_dir)
             
-            # 앱 번들 경로 확인
-            app_bundle_config = get_app_bundle_config_path()
-            
-            # 여러 경로 시도 (순서 중요: 글로벌 -> 앱 번들 -> 로컬)
-            possible_paths = [
-                # 1. 🆕 글로벌 설정 경로 (우선순위 1위: AppData/ 표준 경로)
-                os.path.join(get_config_dir(), 'gpt_settings.txt'),
-                # 1.1 레거시 경로 (마이그레이션용)
-                os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'gpt_settings.txt'),
-            ]
-            
-            # 2. 🆕 앱 번들 경로 (macOS 빌드된 앱)
-            if app_bundle_config:
-                possible_paths.append(os.path.join(app_bundle_config, 'gpt_settings.txt'))
-            
-            # 3. 로컬 개발 환경/레거시 경로
-            possible_paths.extend([
-                os.path.join(parent_dir, 'config', 'gpt_settings.txt'),
-                os.path.join(os.getcwd(), 'config', 'gpt_settings.txt'),
-                'config/gpt_settings.txt',
-                resource_path('config/gpt_settings.txt')
-            ])
-            
-            settings_path = None
-            for path in possible_paths:
-                abs_path = os.path.abspath(path)
-                if os.path.exists(abs_path):
-                    settings_path = abs_path
-                    break
+            # 설정 파일 여러 경로 시도 (순서 중요: 글로벌 -> 앱 번들 -> 로컬)
+            settings_path = get_gpt_settings_path()
+            if not os.path.exists(settings_path):
+                # 앱 번들 내 설정 확인
+                app_bundle_config = get_app_bundle_config_path()
+                if app_bundle_config:
+                    settings_path = os.path.join(app_bundle_config, 'gpt_settings.txt')
+                
+                if not os.path.exists(settings_path):
+                    # 레거시 경로 시도... (중략: 간단하게 로컬/번들 fallback)
+                    settings_path = resource_path('config/gpt_settings.txt')
+
+            if not os.path.exists(settings_path):
+                settings_path = None
             
             # 설정 파일이 존재하면 로드
             if settings_path:
                 with open(settings_path, 'r', encoding='utf-8') as f:
                     loaded_settings = json.load(f)
+                    # 🔐 민감 데이터 복호화 시도
+                    loaded_settings = deobfuscate_dict_fields(loaded_settings)
+                    
                     # 모든 키를 병합하여 selected_models, gemini_api_key 등도 반영
                     default_settings.update(loaded_settings)
                 
@@ -297,6 +286,27 @@ class GPTHandler:
             default_settings['instructions'] = instr + fixed_review_instructions
             
         return default_settings
+
+    def _get_common_system_rules(self, platform='blog'):
+        """모든 플랫폼에 적용되는 핵심 품질 및 보안 지침 (Background Rules)"""
+        rules = """
+[필수 준수 사항: Anti-AI Filter]
+1. 가짜 이름 사용 금지: 특정 학생의 이름을 임의로 지어내지 마세요. 대신 "우리 아이들", "제자들", "수련생들"이라는 표현을 사용하세요.
+2. 용어의 교육적 변환: 무도 용어를 학부모가 이해하기 쉬운 교육적 가치와 연결하여 서술하세요. (예: 낙법 -> '자신의 몸을 보호하는 안전 교육', 발차기 -> '기초 체력과 밸런스 향상')
+3. 가독성 최우선: 한 문장은 짧고 간결하게 작성하고, 문단 사이에는 반드시 빈 줄을 추가하세요.
+4. 자기소개 금지: "관장 OOO입니다"와 같은 자기소개는 생략하고 바로 본론으로 들어가세요.
+5. 따옴표 사용 절대 금지: 제목과 본문 모두에서 큰따옴표(" ")와 작은따옴표(' ')를 절대 사용하지 마세요. 강조가 필요한 경우 반드시 **[대괄호]**나 볼드체를 사용하세요.
+6. 휴먼라이크 리스트: 숫자(1. 2. 3.) 형태의 나열 대신 '첫 번째는', '둘째로', '하나 더 말씀드리면' 등 사람의 대화 호흡처럼 자연스럽게 서술하세요.
+7. 금지 단어: 최고, 최선, 소중한, 놀라운, 발전하는, 결론적으로, 요약하자면 등 AI가 즐겨 쓰는 표현은 피하고 담백하게 서술하세요.
+"""
+        if platform in ['band', 'drive_auto', 'idle']:
+            rules += "5. 이모티콘 제한: 그래픽 이미지 이모티콘(😊, 🥋 등) 대신 문자 이모티콘(^^, ㅎㅎ)을 상황에 맞춰 절제하여 사용하세요.\n"
+        
+        if platform == 'idle':
+            rules += "6. 소통 진정성: 반드시 상대방 포스팅의 본문 내용 중 핵심 키워드나 상황을 언급하여 '정성스럽게 읽고 쓴 댓글'임을 증명하세요.\n"
+            rules += "7. 홍보 금지: 본인의 비즈니스 홍보나 방문 유도 멘트를 절대 사용하지 마세요.\n"
+        
+        return rules
 
     def _load_custom_prompt(self):
         # 커스텀 프롬프트를 로드합니다.
@@ -322,19 +332,13 @@ class GPTHandler:
             if app_bundle_config:
                 possible_paths.append(os.path.join(app_bundle_config, 'custom_prompts.txt'))
             
-            # 3. 로컬 개발 환경/레거시 경로
-            possible_paths.extend([
-                os.path.join(parent_dir, 'config', 'custom_prompts.txt'),
-                os.path.join(os.getcwd(), 'config', 'custom_prompts.txt'),
-                'config/custom_prompts.txt',
-                resource_path('config/custom_prompts.txt')
-            ])
+            # 3. 로컬 번들 경로 (resource_path)
+            possible_paths.append(resource_path('config/custom_prompts.txt'))
             
             prompts_path = None
             for path in possible_paths:
-                abs_path = os.path.abspath(path)
-                if os.path.exists(abs_path):
-                    prompts_path = abs_path
+                if path and os.path.exists(path):
+                    prompts_path = path
                     break
             
             # 프롬프트 파일이 존재하면 로드
@@ -393,7 +397,11 @@ class GPTHandler:
                     with open(abs_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         if isinstance(data, dict) and 'api_key' in data and data['api_key']:
-                            return data['api_key']
+                            key = data['api_key']
+                            # 🔐 암호화된 키인 경우 복호화
+                            if key.startswith("OBF:"):
+                                key = deobfuscate(key[4:])
+                            return key
                             
         except Exception as e:
             # print(f"API 키 파일 로드 실패: {e}")
@@ -592,98 +600,78 @@ class GPTHandler:
                 
                 # 기준 시간 업데이트
                 now = target_dt
-                weekday_str = weekdays[now.weekday()]
-                now_str = now.strftime(f"%Y년 %m월 %d일 ({weekday_str}) %H시 %M분")
-                
-                system_message += f"\\n[작성 기준 시간(예약): {now_str}]\\n"
-                system_message += "\\n[중요: 이 글은 위 '작성 기준 시간'에 업로드될 예약 글입니다. 현재 시간이 아닌 작성 기준 시간(아침/점심/저녁)에 맞춰 인사를 건네세요.]\\n"
             except Exception as e:
                 logger.warning(f"타겟 시간 파싱 실패: {target_time}, error: {e}")
-                weekday_str = weekdays[now.weekday()]
-                now_str = now.strftime(f"%Y년 %m월 %d일 ({weekday_str}) %H시 %M분")
-                system_message += f"\\n[현재 시간: {now_str}]\\n"
-        else:
-            weekday_str = weekdays[now.weekday()]
-            now_str = now.strftime(f"%Y년 %m월 %d일 ({weekday_str}) %H시 %M분")
-            system_message += f"\\n[현재 시간: {now_str}]\\n"
+
+        weekday_str = weekdays[now.weekday()]
+        now_str = now.strftime(f"%Y년 %m월 %d일 ({weekday_str}) %H시 %M분")
         
-        # 🟢 [HotFix] 블로그/카페 수동 포스팅 시 시간대별 훅 주입
-        # custom_system이 없는 경우(즉, generate_platform_content를 거치지 않은 경우)에만 적용
-        if platform in ('blog', 'cafe') and (not post_type_config or not post_type_config.get('custom_system')):
+        if target_time:
+            system_message += f"\n[작성 기준 시간(예약): {now_str}]\n"
+            system_message += "\n[중요: 이 글은 위 '작성 기준 시간'에 업로드될 예약 글입니다. 현재 시간이 아닌 작성 기준 시간(아침/점심/저녁)에 맞춰 인사를 건네세요.]\n"
+        else:
+            system_message += f"\n[현재 시간: {now_str}]\n"
+        
+        # 🟢 [Smart Hooks] 플랫폼별/시간대별 지능형 훅 주입 (Phase 2)
+        # 모든 플랫폼(blog, cafe, band, drive_auto 등)에 대해 지능형 훅 적용 시도
+        if platform in ('blog', 'cafe', 'band', 'drive_auto', 'manual_topic'):
             try:
-                # 시간대 자동 판별 (task_type이 없거나 기본값이면 현재 시간 기준)
+                # 1. 예약 포스팅 여부 확인 (내일 아침 인사를 위해)
+                is_forecast = self._check_is_forecast(target_time)
+                
+                # 2. 작업 타입 결정 (오전/정규/마감)
                 effective_task_type = task_type
                 if not effective_task_type or effective_task_type == 'regular':
-                    current_hour = datetime.now().hour
-                    if current_hour < 12:
+                    current_hour = now.hour # 🟢 타임머신 반영된 now 사용
+                    if current_hour < 11:
                         effective_task_type = 'morning'
-                    elif current_hour < 18:
-                        effective_task_type = 'regular'
-                    else:
+                    elif current_hour >= 18:
                         effective_task_type = 'closing'
                 
                 weather_loc = settings.get('weather_location', '')
                 
-                if effective_task_type == 'morning' and weather_loc:
-                    # 오전: 날씨 정보로 시작 (기상청 1순위 → 네이버 폴백)
-                    weather_info = self._get_kma_weather(weather_loc)
-                    if not weather_info:
-                        weather_info = self._get_naver_weather(weather_loc)
-                    if weather_info:
-                        system_message += (
-                            f"\n[System: 실시간 날씨 정보 (기상청/네이버) - 지역: {weather_loc}]\n"
-                            f"{weather_info}\n"
-                            "(위 날씨 정보를 바탕으로 글의 도입부를 작성하세요.)\n"
-                            "[!!! 필수 규칙 !!!]\n"
-                            "글의 첫 문단(도입부)은 반드시 위의 날씨 정보로 시작하세요.\n"
-                            "⚠️ 절대 위 데이터에 없는 내용(주간 예보, 내일 이후의 날씨 등)을 지어내지 마세요.\n"
-                            "그리고 자연스럽게 본론 주제로 연결하세요.\n"
-                            "제목 또한 '날씨 + 주제'를 결합하여 클릭을 유도하는 형태로 작성하세요."
-                        )
-                else:
-                    # 오후/저녁: 뉴스/이슈로 시작 + 날씨 참고 정보 포함
-                    trending_info = self._get_trending_topics()
-                    if trending_info:
-                        system_message += (
-                            f"\n[System: 오늘의 뉴스/이슈/트렌드]\n"
-                            f"{trending_info}\n"
-                            "(위 최신 뉴스/이슈 중 하나를 골라 자연스럽게 글의 시작으로 활용하세요.)\n"
-                            "[!!! 필수 규칙 !!!]\n"
-                            "글의 첫 문단(도입부)은 반드시 위의 뉴스/이슈 중 하나로 시작하세요.\n"
-                            "그리고 자연스럽게 본론 주제로 연결하세요.\n"
-                            "제목 또한 '뉴스/이슈 + 주제'를 결합하여 클릭을 유도하는 형태로 작성하세요."
-                        )
+                # 3. 훅 생성 및 주입
+                # [상시 날씨 주입] 모든 시간대에 현재 날씨 정보를 기본 제공하여 할루시네이션 방지
+                weather_hook = ""
+                if weather_loc:
+                    weather_hook = self._build_weather_hook_message(weather_loc, is_forecast, platform)
+                    if weather_hook:
+                        system_message += weather_hook
+                
+                # 4. 시간대별 추가 훅 (뉴스 등)
+                if effective_task_type != 'morning':
+                    # 오후/저녁: 뉴스 훅 추가 (날씨와 함께 제공 가능)
+                    news_hook = self._build_news_hook_message(platform)
+                    if news_hook:
+                        system_message += news_hook
                     
-                    # 🟢 오후/저녁에도 실시간 날씨 참고 정보 제공 (할루시네이션 방지)
-                    if weather_loc:
-                        weather_info_ref = self._get_kma_weather(weather_loc)
-                        if not weather_info_ref:
-                            weather_info_ref = self._get_naver_weather(weather_loc)
-                        if weather_info_ref:
-                            system_message += (
-                                f"\n[System: 참고 - 현재 {weather_loc} 실시간 날씨 (기상청)]\n"
-                                f"{weather_info_ref}\n"
-                                "⚠️ 위 날씨는 참고용입니다. 날씨를 언급할 경우 반드시 위 데이터 기준으로만 작성하세요.\n"
-                                "절대 위 데이터에 없는 주간 예보나 다른 날짜 날씨를 지어내지 마세요."
-                            )
+                    # 저녁(마감) 포스팅 시 하단에 내일 날씨 꿀팁 추가
+                    if effective_task_type == 'closing' and weather_loc:
+                        closing_weather = self._build_closing_weather_message(weather_loc)
+                        if closing_weather:
+                            system_message += closing_weather
+
             except Exception as e:
-                logger.warning(f"뉴스 훅 주입 실패: {e}")
+                logger.warning(f"⚠️ 지능형 훅 주입 실패 (platform={platform}): {e}")
 
         base_prompt = f"""주제: {topic}
 
 다음 형식으로 작성:
 [제목]
-(뉴스/날씨 + 주제를 결합한 클릭유도형 제목)
+(제공된 뉴스나 날씨 정보가 있다면 이를 적극 활용하여 클릭유도형 제목 작성. **[주의] 만약 아래 제공된 '날씨 정보'에 구체적인 소식(비, 눈, 맑음 등)이 없다면 절대 임의로 상상하여 "비가 온다"거나 "눈이 내린다"고 작성하지 마세요.** 데이터가 없으면 주제에만 집중하여 작성하세요.)
 
 [본문]
-(1문단: 뉴스/날씨 훅으로 시선 끌기 -> 2문단부터: 본론 주제)
+(1문단: 제공된 뉴스/날씨 정보가 있을 경우 해당 데이터로 흥미를 유발하며 시작 -> 2문단부터: 본론 주제)
 ...
 
 규칙:
 - 마크다운 헤더만 사용(##, ###), HTML 태그 금지
+- 친절하고 다정한 말투 (학부모님께 이야기하듯 세심하게)
+- 리스트나 순차적 설명 시 '1., 2.' 대신 '하나., 둘., 셋.' 또는 '첫째로, 둘째로' 같은 한글 표기를 사용하여 부드럽게 표현할 것
 - 자연스러운 흐름, 실용 팁 포함
 - 깔끔한 마무리와 명언 포함
 - **시간대 인사 금지** (좋은 아침입니다 등) -> 뉴스/날씨로 바로 시작
+- **[경고] 날씨 정보 누락 시**: 아래 [System: 날씨 정보] 섹션이 없거나 비어있다면, 절대 "비", "미세먼지", "추위" 등 기상 상태를 언급하지 마세요. 대신 "활기찬 수련 시간", "오늘의 운동 팁" 등으로 시작하세요.
 """
         user_prompt = post_type_config.get('custom_user') if post_type_config and post_type_config.get('custom_user') else (f"{custom_prompt}\n\n{base_prompt}" if custom_prompt else base_prompt)
         
@@ -745,13 +733,10 @@ class GPTHandler:
                 elif platform == 'cafe':
                     first_sentence = user_settings.get('cafe_first_sentence', '').strip()
                 elif platform == 'band':
-                    # 밴드는 task_type이 morning일 때만 설정된 첫 문장(보통 아침 인사)을 사용
-                    # 만약 task_type이 없거나 morning이면 적용, regular/closing이면 미적용
-                    if task_type == 'morning' or not task_type:
-                        first_sentence = user_settings.get('band_first_sentence', '').strip()
-                    else:
-                        logger.info(f"밴드 {task_type} 작업이므로 설정된 첫 문장(아침 인사)을 건너뜁니다.")
-                        first_sentence = ""
+                    # 밴드는 설정된 첫 문장이 있다면 시간대(task_type)에 관계없이 무조건 적용합니다.
+                    first_sentence = user_settings.get('band_first_sentence', '').strip()
+                    if first_sentence:
+                        logger.info(f"밴드 포스팅에 사용자 설정 첫 문장 적용: {first_sentence[:30]}...")
                 elif platform in ['drive_auto', 'manual_topic']:
                     # 🟢 드라이브 자동포스팅/수동주제 포스팅은 밴드에 올라가므로 밴드 첫 문장 사용
                     first_sentence = user_settings.get('band_first_sentence', '').strip()
@@ -764,8 +749,7 @@ class GPTHandler:
                 # 플랫폼별 슬로건(마지막 문구) 추가
                 slogan = ""
                 if platform == 'blog':
-                    # 블로그는 naver_blog_auto.py가 'slogan' 설정을 읽어서 처리하므로 여기선 추가하지 않음 (중복 방지)
-                    pass 
+                    slogan = user_settings.get('blog_slogan', user_settings.get('slogan', '')).strip()
                 elif platform == 'cafe':
                     slogan = user_settings.get('cafe_slogan', '').strip()
                 elif platform == 'band':
@@ -806,8 +790,8 @@ class GPTHandler:
         # 플랫폼별 맞춤형 콘텐츠 생성
         settings = self._load_settings() # settings를 먼저 로드
         
-        # 🟢 밴드 지침 수정: '아침 희망 메시지' 등 특정 시간대 강제 문구가 있으면 제거/수정
-        band_instr = settings.get('band_instructions', "밴드 멤버들과 소통하기 좋은 친근하고 간결한 스타일로 작성해주세요.")
+        # 🟢 밴드 지침: 기본 300~400자 제약 추가
+        band_instr = settings.get('band_instructions', "밴드 멤버들과 소통하기 좋은 친근하고 간결한 스타일로 작성해주세요. (공백 포함 300~400자 이내)")
         if platform == 'band':
             # '아침'이라는 단어가 포함되어 있고 태스크 타입이 아침이 아니면, '아침' 관련 문구 무력화
             if '아침' in band_instr and task_type not in ['morning', 'regular_morning']:
@@ -819,11 +803,21 @@ class GPTHandler:
             'blog': settings.get('instructions', "자세하고 정보가 풍부한 블로그 포스트 스타일로 작성해주세요."),
             'band': band_instr,
             'cafe': settings.get('cafe_instructions', "카페 게시판 성격에 맞는 예의 바르고 정보 공유적인 스타일로 작성해주세요."),
-            'idle': settings.get('idle_instructions', "블로그 이웃 소통을 위해 친근하고 짧은 응원 댓글을 작성해주세요."),
-            # 🟢 드라이브 자동포스팅 전용 지침
-            'drive_auto': settings.get('drive_auto_instructions', "수련 사진과 함께 올리는 짧고 따뜻한 글을 작성해주세요. 200~300자 내외로 간결하게."),
-            # 🟢 수동 주제 포스팅 전용 지침 (블로그 지침 사용 안 함)
-            'manual_topic': "네이버 밴드에 올리는 짧고 따뜻한 글을 작성하세요. 150~250자 내외로 간결하게."
+            'idle': settings.get('idle_instructions', (
+                "이웃의 글에 공감하며 따뜻하게 소통하는 댓글을 작성해주세요.\n"
+                "- 분량: 공백 포함 50~80자 내외 (2문장 정도)\n"
+                "- 구조: [상대 내용 공감/칭찬] + [핵심 키워드 언급] + [오늘을 응원하는 마무리 인사]"
+            )),
+            # 🟢 드라이브 자동포스팅 전용 지침 (백그라운드 고정 지침)
+            'drive_auto': (
+                "당신은 체육관 관장으로서 매 수련 시간의 모습을 기록합니다.\n"
+                "- 분량: 공백 포함 150~250자 내외로 매우 짧게 작성 (가독성 최우선)\n"
+                "- 말투: 신뢰의 '~합니다'(60%)와 다정한 '~해요/죠?'(40%) 비율 준수\n"
+                "- 이모티콘: 그래픽 이모티콘 절대 금지. 텍스트 웃음( ^^ )만 전체에서 딱 1번 사용\n"
+                "- 구조: [타이틀: {부수} 수련 모습] -> [본문: 교육 가치 중심 2문장] -> [맺음: 사진/영상 확인 권유]"
+            ),
+            # 🟢 수동 주제 포스팅 전용 지침
+            'manual_topic': "네이버 밴드에 올리는 짧고 따뜻한 글을 작성하세요. 공백 포함 250~350자 내외로 간결하게."
         }
         
         # task_type별 시간대 지침 (더 명확하고 구체적으로)
@@ -858,9 +852,12 @@ class GPTHandler:
         
         system_message = (
             f"당신은 {platform} 운영자입니다.\n"
-            f"페르소나: {settings['persona']}\n"
-            f"플랫폼 지침: {platform_instructions.get(platform, platform_instructions['blog'])}\n"
+            f"인성 교육 가치: {settings.get('persona', '기본 페르소나')}\n"
             f"스타일: {settings['style']}\n\n"
+            f"### [플랫폼별 필수 지침 (사용자 설정)]\n"
+            f"{platform_instructions.get(platform, '')}\n\n"
+            f"### [기본 시스템 수칙]\n"
+            f"{self._get_common_system_rules(platform)}\n"
             f"{time_instruction}\n"
         )
 
@@ -999,11 +996,14 @@ class GPTHandler:
                     weather_info = self._get_naver_weather(weather_loc, forecast=is_forecast)
                 if weather_info:
                     if is_forecast:
-                        weather_label = "오늘 오전 날씨 (발행 시점 기준)"
+                        weather_label = "내일 오전 발행용 계절 및 시즌 배경 정보"
+                        current_date = datetime.now() + timedelta(days=1)
+                        month = current_date.month
+                        season_info = f"{month}월의 계절감, 시즌 이슈(입학, 개학, 환절기 등)"
                         weather_guide = (
-                            "(위 날씨 정보는 글이 발행되는 시점의 날씨입니다. "
-                            "'내일'이라는 표현을 절대 사용하지 말고, **'오늘'** 또는 **'오늘 아침'**으로 표현하세요. "
-                            "예: '오늘 아침은 영하 3도로 춥습니다, 따뜻한 하루 보내세요' 등 구체적 언급 필수)"
+                            f"(위 날씨 정보는 '내일' 발행용입니다. 기상청 정보가 부정확할 수 있으므로, "
+                            f"**구체적인 기온보다는 {season_info}** 등 자연스러운 계절 변화나 일상 소식으로 시작하세요. "
+                            f"예: '벌써 {month}월이라 꽃샘추위가 있네요', '새학기가 시작되는 계절입니다' 등.)"
                         )
                     else:
                         weather_label = "실시간 날씨 정보 (네이버)"
@@ -1041,6 +1041,17 @@ class GPTHandler:
                         "그리고 자연스럽게 본론 주제로 연결하세요."
                     )
                     
+                    # 🟢 저녁 포스팅용 '내일의 준비' 특급 팁 추가 (관장님 요청사항)
+                    if task_type == 'closing' and weather_loc:
+                        tomorrow_weather = self._get_kma_weather(weather_loc, forecast=True)
+                        if tomorrow_weather:
+                            system_message += (
+                                f"\n[System: 내일의 준비 (저녁형 포스팅용 필수 팁)]\n"
+                                f"{tomorrow_weather}\n"
+                                "(위 내일 날씨 정보를 참고하여, 글 마무리 단계에서 이웃들에게 세심한 배려를 보여주세요. "
+                                "예: '내일은 비 소식이 있으니 우산을 챙기세요', '아침 기온이 뚝 떨어진다고 하니 바람막이를 입으세요' 등.)"
+                            )
+                    
                     # 🟢 카페 오후/저녁에도 실시간 날씨 참고 정보 제공 (할루시네이션 방지)
                     if weather_loc:
                         weather_info_ref = self._get_kma_weather(weather_loc)
@@ -1059,19 +1070,20 @@ class GPTHandler:
         if platform == 'blog':
             user_prompt = (
                 f"주제: {topic}\n\n"
-                "✅ [블로그 상위노출 및 체류시간 증대 전략 적용]\n"
-                "1. **상위노출(Exposure)**: 주제 키워드({topic})가 첫 문단에 반드시 1회, 본문 전체에 3~4회 자연스럽게 포함되도록 하세요.\n"
-                "2. **클릭률(CTR)**: 제목은 [뉴스/날씨/이슈]와 [본론 주제]를 결합하되, 호기심을 자극하거나 이득을 강조하세요. (예: '오늘 비 오는데 OO 운동이 좋은 이유?', '요즘 뜨는 뉴스 속 OO의 비밀')\n"
-                "3. **가독성(체류시간)**: 문단은 3~4줄 이내로 짧게 끊고, 핵심 내용은 **굵게 표시**하세요. 중간중간 글머리 기호(•)를 사용하세요.\n"
-                "4. **소통 유도**: 글 마지막에 독자에게 건네는 가벼운 질문(예: '여러분은 어떻게 생각하시나요?')으로 댓글을 유도하세요.\n\n"
-                "✅ 필수 규칙: 글의 첫 문단은 반드시 오늘의 뉴스 또는 날씨 이야기로 시작하세요.\n"
-                "그리고 '그래서/이럴 때일수록/이런 시기에' 등의 연결어로 자연스럽게 본론 주제로 넘어가세요.\n\n"
+                "✅ [블로그 상위노출 및 고품질 정보성 글쓰기 전략]\n"
+                f"1. **콘텐츠 길이**: 독자가 충분한 정보를 얻을 수 있도록 **총 공백 포함 1,200 ~ 1,300자** 내외로 풍성하게 작성하세요.\n"
+                f"2. **현지 밀착형 도입**: 양양의 계절감, 풍경, 날씨로 시작하여 학부모님의 고민을 자연스럽게 언급하며 독자의 공감을 이끌어내세요.\n"
+                f"3. **전문성 및 친절한 설명**: 전문 용어(예: 근방추, 성장판, 코어 등)를 반드시 포함하되, 반드시 **[쉽게 말해 ~라는 뜻입니다]**와 같은 친절한 설명을 덧붙이세요.\n"
+                "4. **상위노출(Exposure)**: 주제 키워드가 첫 문단과 본문 곳곳에 자연스럽게 포함되도록 하세요.\n"
+                "5. **소통 유도 및 제안**: 글 마지막에 오늘 밤 아이에게 해줄 수 있는 작은 격려나 신체 활동을 구체적으로 제안하며 마무리하세요.\n\n"
+                "✅ [필수 금기 사항]\n"
+                "- 제목과 본문에 **따옴표(\" \", ' ') 사용을 절대 금지**합니다.\n"
+                "- 숫자 리스트(1. 2.) 대신 사람의 호흡으로 서술하세요.\n\n"
                 "반드시 아래 형식을 지켜서 출력해:\n\n"
                 "[제목]\n"
-                "(위 전략이 반영된 매력적인 제목)\n\n"
+                "(따옴표 없이, 뉴스/날씨 + 주제를 결합하여 호기심을 자극하는 제목)\n\n"
                 "[본문]\n"
-                "(1문단: 뉴스/날씨 훅 + 키워드 -> 2문단부터: 본론 + 가독성 장치 -> 마지막: 소통 질문)\n\n"
-                "주의: 시간대 인사(좋은 아침 등)는 사용하지 마세요.\n"
+                "(도입: 양양 현지 이야기 -> 본문: 전문 정보 + 쉬운 설명 -> 결론: 부모님을 위한 실천 팁)\n\n"
             )
         elif platform == 'drive_auto':
             # 🟢 드라이브 자동포스팅 + 수동주제포스팅 전용
@@ -1203,23 +1215,24 @@ class GPTHandler:
                 "[본문] 오늘 오전에 요가와 외발자전거 수업을 진행했어요. 요가로 몸의 유연성을 기르고 깊은 호흡으로 마음을 차분하게 다스렸습니다. 이어서 외발자전거로 균형감각과 하체 근력을 키우는 시간도 가졌어요. 두 가지 운동 모두 다이어트와 건강 유지에 효과적이랍니다. 꾸준히 하면 몸이 더욱 가벼워지는 것을 느낄 수 있어요. 건강한 하루 되세요! \n"
             )
         else:
+            # 🟢 일반적인 밴드/카페 포스팅 (주제 + 시간대별 훅)
             user_prompt = (
                 f"주제: {topic}\n\n"
-                "✅ 필수 규칙: 글의 첫 문단은 반드시 오늘의 뉴스 또는 날씨 이야기로 시작하세요.\n"
-                "그리고 '그래서/이럴 때일수록/이런 시기에' 등의 연결어로 자연스럽게 본론 주제로 넘어가세요.\n\n"
+                f"### [작성 규칙]\n"
+                "1. 도입부: 글의 첫 문단은 반드시 제공된 '뉴스' 또는 '날씨' 이야기로 자연스럽게 시작하세요.\n"
+                "2. 본론: '그래서/이럴 때일수록' 등의 연결어를 사용하여 본론 주제로 넘어가세요.\n"
+                f"3. 분량 준수: 상단 시스템 메시지에 명시된 {platform} 플랫폼 전용 글자 수 제한을 엄격히 지키세요.\n\n"
                 "반드시 아래 형식을 지켜서 출력해:\n\n"
                 "[제목]\n"
                 "(뉴스/날씨 + 주제를 결합한 클릭유도형 제목)\n\n"
                 "[본문]\n"
                 "(1문단: 뉴스/날씨 훅으로 시선 끌기 -> 2문단부터: 본론 주제)\n\n"
-                "중요: 시간대 지침을 반드시 지켜주세요! \n"
-                "- morning(오전) 유형이면 날씨 정보를 훅으로 활용\n"
-                "- regular(오후) 유형이면 뉴스/이슈를 훅으로 활용\n"
-                "- closing(마감/저녁) 유형이면 뉴스/이슈를 훅으로 활용\n\n"
-                f"주의: \"함께 공부하며 지식을 나누는 한국체대 라이온 블로거 입니다\" 문구는\n"
-                f"블로그 전용이므로, {platform}용 글에는 절대 포함하지 마세요.\n"
-
+                "중요: 아래 시간대별 인사 유형을 반드시 지켜주세요!\n"
+                "- morning(오전): 날씨 정보를 훅으로 활용\n"
+                "- regular/closing(오후/저녁): 뉴스/이슈를 훅으로 활용\n\n"
+                f"주의: {platform}용 글에는 블로그 전용 문구(한국체대 라이온 블로거 등)를 절대 포함하지 마세요.\n"
             )
+
 
         # 🟢 [Smart Context] 학기/방학 시즌 자동 감지 및 지침 주입
         semester_context = self._get_semester_context()
@@ -1638,6 +1651,7 @@ class GPTHandler:
         "원주": (76, 122), "원주시": (76, 122),
         "강릉": (92, 131), "강릉시": (92, 131),
         "속초": (87, 141), "속초시": (87, 141),
+        "양양": (88, 138), "양양군": (88, 138),
         # 충청
         "청주": (69, 107), "청주시": (69, 107),
         "천안": (63, 110), "천안시": (63, 110),
@@ -2218,7 +2232,95 @@ class GPTHandler:
             logger.warning(f"Brave Search 실패 (무시됨): {e}")
             return ""
 
+    def _check_is_forecast(self, target_time: str = None) -> bool:
+        """
+        예약 시간(target_time)을 기준으로 '내일' 발행용 포스팅인지 판단합니다.
+        
+        Args:
+            target_time: "HH:MM" 형식의 예약 시간
+            
+        Returns:
+            bool: 내일 발행용이면 True, 오늘 발행용이면 False
+        """
+        if not target_time:
+            return False
+            
+        try:
+            now = datetime.now()
+            target_hour, target_minute = map(int, target_time.split(':'))
+            target_dt = now.replace(hour=target_hour, minute=target_minute, second=0, microsecond=0)
+            
+            # 예약 시간이 현재보다 과거라면 '내일'로 간주 (Scheduler 로직과 동일)
+            if target_dt < now:
+                return True
+            return False
+        except Exception as e:
+            logger.warning(f"forecast 판단 실패: {e}")
+            return False
+
+    def _build_weather_hook_message(self, weather_loc, is_forecast, platform):
+        """오전 포스팅용 날씨 훅 메시지 생성"""
+        if not weather_loc:
+            return ""
+            
+        weather_info = self._get_kma_weather(weather_loc, forecast=is_forecast)
+        if not weather_info:
+            weather_info = self._get_naver_weather(weather_loc, forecast=is_forecast)
+            
+        if not weather_info:
+            return ""
+            
+        weather_label = "내일 오전 발행용 기상 예보" if is_forecast else "실시간 날씨 정보"
+        
+        # 계절 정보 및 가이드 추가
+        current_date = datetime.now() + timedelta(days=1 if is_forecast else 0)
+        month = current_date.month
+        
+        hook_msg = f"\n[System: {weather_label} ({weather_loc})]\n{weather_info}\n"
+        
+        if is_forecast:
+            hook_msg += (
+                f"(위 정보는 '내일' 발행용입니다. 구체적인 수치보다는 {month}월의 계절감과 "
+                "일상적인 날씨 변화를 언급하며 글을 시작하세요.)\n"
+            )
+        else:
+            hook_msg += "(위 실시간 날씨를 바탕으로 이웃들에게 인사를 건네며 자연스럽게 시작하세요.)\n"
+            
+        hook_msg += "[!!! 필수 !!!] 첫 문단(도입부)은 반드시 위 날씨 정보로 시작하고 본론으로 연결하세요.\n"
+        return hook_msg
+
+    def _build_news_hook_message(self, platform):
+        """오후/저녁 포스팅용 뉴스/이슈 훅 메시지 생성"""
+        trending_info = self._get_trending_topics(count=3)
+        if not trending_info:
+            return ""
+            
+        hook_msg = f"\n[System: 오늘의 뉴스/이슈/트렌드]\n{trending_info}\n"
+        hook_msg += (
+            "(위 이슈 중 하나를 선택해 '요즘 이런 소식이 화제인데요'와 같이 자연스럽게 언급하며 "
+            "글의 서두를 여세요.)\n"
+            "[!!! 필수 !!!] 첫 문단(도입부)은 반드시 위 뉴스/이슈 중 하나로 시작하세요.\n"
+        )
+        return hook_msg
+
+    def _build_closing_weather_message(self, weather_loc):
+        """저녁 포스팅 하단 가이드(내일 날씨 꿀팁) 생성"""
+        if not weather_loc:
+            return ""
+            
+        tomorrow_weather = self._get_kma_weather(weather_loc, forecast=True)
+        if not tomorrow_weather:
+            return ""
+            
+        hook_msg = f"\n[System: 내일의 준비 (배려 팁)]\n{tomorrow_weather}\n"
+        hook_msg += (
+            "(위 내일 날씨를 참고하여, 글 마무리에서 '내일은 비 소식이 있으니 우산을 챙기세요' 같은 "
+            "세심한 당부 멘트를 포함하세요.)\n"
+        )
+        return hook_msg
+
     def _get_semester_context(self):
+
         """
         현재 날짜를 기준으로 한국 학교 학사 일정(방학/개학) 시즌을 감지하여
         AI에게 적절한 지침(금지어/권장어)을 반환합니다.

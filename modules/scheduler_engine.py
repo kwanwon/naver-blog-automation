@@ -362,6 +362,30 @@ class SmartScheduler:
         self.daily_auto_enabled = enabled
         self.daily_start_time = start_time
         self.daily_random_range = random_range
+        
+        if enabled:
+            # 🆕 활성화 시점이 이미 시작 시간을 지났다면 오늘분은 건너뛰도록 설정
+            now = datetime.now()
+            today_str = now.strftime("%Y-%m-%d")
+            
+            # 자정 초기화도 오늘분은 이미 완료된 것으로 간주 (즉시 초기화 방지)
+            if not self._last_reset_date:
+                self._last_reset_date = today_str
+            
+            try:
+                # 시작 시간 파싱 및 오늘 시작 시간 계산
+                start_h, start_m = map(int, start_time.split(':'))
+                start_dt = now.replace(hour=start_h, minute=start_m, second=0, microsecond=0)
+                
+                # 만약 지금이 설정된 시간보다 늦다면, 오늘분은 시작한 것으로 간주하여 즉시 실행 방지
+                if now >= start_dt:
+                    self._today_started = True
+                    self._today_started_date = today_str
+                    self._today_random_delay_date = today_str
+                    print(f"   ℹ️ 오늘 시작 시간({start_time})이 이미 지났습니다. 내일부터 정상 작동합니다.")
+            except Exception as e:
+                print(f"⚠️ 매일 자동 시작 시간 계산 중 오류: {e}")
+
         print(f"📅 매일 자동 시작 설정: {'활성화' if enabled else '비활성화'} (시간: {start_time}, 랜덤: ±{random_range}분)")
     
     def start_daily_auto_monitor(self):

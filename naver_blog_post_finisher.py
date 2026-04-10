@@ -652,6 +652,19 @@ class NaverBlogPostFinisher:
             except Exception as e:
                 print(f"본문 포커스 재확보 중 오류: {str(e)}")
 
+            # 🧹 장소 추가 전: 남아있는 팝업 오버레이 제거
+            try:
+                self.driver.switch_to.default_content()
+                self.driver.execute_script("""
+                    document.querySelectorAll('.se-popup-dim, .se-popup-dim-transparent').forEach(function(el) {
+                        el.style.display = 'none';
+                        el.remove();
+                    });
+                """)
+                self.driver.switch_to.frame("mainFrame")
+            except:
+                pass
+
             # 장소 검색 및 지도 표시
             try:
                 print("\n==== 장소 정보 추가 시작 ====")
@@ -672,7 +685,8 @@ class NaverBlogPostFinisher:
                         btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
                         for btn in btns:
                             if btn.is_displayed() and btn.is_enabled():
-                                btn.click()
+                                # JS 클릭으로 오버레이 간섭 방지
+                                self.driver.execute_script("arguments[0].click();", btn)
                                 location_btn_clicked = True
                                 print(f"✅ 장소 버튼 클릭 성공: {selector}")
                                 break
@@ -682,15 +696,23 @@ class NaverBlogPostFinisher:
                         print(f"장소 버튼 선택자 {selector} 오류: {e}")
                 
                 if not location_btn_clicked:
-                    print("❌ 장소 버튼을 찾을 수 없습니다.")
+                    print("❌ 장소 버튼을 찾을 수 없습니다. 장소 추가를 건너뜁니다.")
+                    raise Exception("장소 버튼 클릭 실패")
                     
                 time.sleep(1)
                 print("장소 버튼 클릭 후 1초 대기 완료")
 
-                # 장소 검색창에 주소 및 상호 입력
-                print("장소 검색창 찾기...")
-                location_input = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "input.react-autosuggest__input"))
+                # 🎯 장소 검색창에 주소 및 상호 입력
+                print("장소 검색창 찾기 (프레이밍 확인)...")
+                # 프레임 재확인
+                try:
+                    self.driver.switch_to.default_content()
+                    self.driver.switch_to.frame("mainFrame")
+                except:
+                    pass
+                
+                location_input = WebDriverWait(self.driver, 15).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "input.react-autosuggest__input, input.location_search_input"))
                 )
                 # 검색어를 사용자 설정에서 정확히 가져오기
                 dojang_name = self.settings.get('dojang_name', '')
@@ -1055,16 +1077,6 @@ class NaverBlogPostFinisher:
                                     return true;
                                 }
                                 
-                                // 텍스트로 버튼 찾기
-                                const buttonsByText = Array.from(document.querySelectorAll('button')).filter(
-                                    btn => btn.innerText.trim() === '확인'
-                                );
-                                if (buttonsByText.length > 0) {
-                                    console.log('텍스트로 확인 버튼 발견');
-                                    buttonsByText[0].click();
-                                    return true;
-                                }
-                                
                                 // 클래스로 버튼 찾기
                                 const buttonsByClass = document.querySelectorAll(
                                     'button.confirm, button[class*="confirm"], button.se-popup-button'
@@ -1088,7 +1100,7 @@ class NaverBlogPostFinisher:
                                 break
                             else:
                                 print(f"확인 버튼을 찾을 수 없음 (시도 {attempt+1})")
-                                time.sleep(1)  # 다음 시도 전 대기
+                                time.sleep(1)
                         except Exception as e:
                             print(f"확인 버튼 클릭 시도 {attempt+1} 중 오류: {str(e)}")
                             time.sleep(1)
@@ -1097,211 +1109,375 @@ class NaverBlogPostFinisher:
                 except Exception as e:
                     print(f"확인 버튼 클릭 중 오류: {str(e)}")
             except Exception as e:
-                print(f"위치 정보 추가 중 오류 발생: {str(e)}")
-                traceback.print_exc()
-                success = False
+                print(f"⚠️ 위치 정보 추가 실패 (계속 진행): {str(e)}")
 
-            # 🎯 장소 정보 추가 완료 - '찾아 오는 길' 텍스트는 제거됨
-            print("✅ 장소 정보 추가 완료 - 추가 텍스트 없이 진행")
-
-            # 발행 버튼 클릭은 예약 모드가 아닐 때만 실행 (add_tags에서 처리)
-            # (예약 모드에서는 set_reservation_time 후에 click_final_publish_button 호출)
-            
-            print("푸터 정보 추가 완료" if success else "푸터 정보 일부 추가 실패")
-            return True  # 계속 진행하기 위해 True 반환
+            return True
             
         except Exception as e:
-            print(f"푸터 추가 중 오류 발생: {str(e)}")
-            traceback.print_exc()
-            return True  # 계속 진행하기 위해 True 반환
+            print(f"⚠️ 푸터 추가 중 오류 (계속 진행): {str(e)}")
+            return True
             
+    def _switch_to_main_frame_robust(self):
+        """에디터 버튼들이 보이는 최적의 프레임으로 지능적으로 전환합니다."""
+        try:
+            # 1. 현재 프레임에서 먼저 버튼 확인 (이미 들어가 있을 수 있음)
+            try:
+                btns = self.driver.find_elements(By.CSS_SELECTOR, "button")
+                visible_btns = [b for b in btns if b.is_displayed()]
+                if len(visible_btns) > 10:
+                    print(f"  ✅ 현재 프레임에 {len(visible_btns)}개의 버튼이 이미 보입니다. 전환을 생략합니다.")
+                    return True
+            except:
+                pass
+
+            # 2. 기본 컨텍스트로 이동하여 다시 시작
+            self.driver.switch_to.default_content()
+            time.sleep(0.3)
+            
+            # 3. 버튼이 밖(default_content)에 있는지 확인
+            try:
+                btns = self.driver.find_elements(By.CSS_SELECTOR, "button")
+                visible_btns = [b for b in btns if b.is_displayed()]
+                if len(visible_btns) > 10:
+                    print(f"  ✅ 기본 페이지(default)에 {len(visible_btns)}개의 버튼이 보입니다. 그대로 진행합니다.")
+                    return True
+            except:
+                pass
+            
+            # 4. mainFrame 찾기 및 전환 시도
+            frame_selectors = ["#mainFrame", "iframe#mainFrame", "frame#mainFrame"]
+            frame_found = False
+            
+            for selector in frame_selectors:
+                try:
+                    frames = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    if frames:
+                        self.driver.switch_to.frame(frames[0])
+                        # 전환 후 버튼이 실제로 있는지 검증
+                        btns = self.driver.find_elements(By.CSS_SELECTOR, "button")
+                        visible_btns = [b for b in btns if b.is_displayed()]
+                        if len(visible_btns) > 0:
+                            print(f"  ✅ {selector} 프레임 전환 성공 (버튼 {len(visible_btns)}개 발견)")
+                            frame_found = True
+                            break
+                        else:
+                            print(f"  ⚠️ {selector} 프레임 내에 버튼이 없습니다. 다시 나갑니다.")
+                            self.driver.switch_to.default_content()
+                except:
+                    continue
+            
+            if not frame_found:
+                # 5. 최후의 수단: 인덱스로 시도
+                try:
+                    self.driver.switch_to.default_content()
+                    self.driver.switch_to.frame(0)
+                    btns = self.driver.find_elements(By.CSS_SELECTOR, "button")
+                    if len(btns) > 0:
+                        print("  ✅ 인덱스(0)로 프레임 전환 성공")
+                        frame_found = True
+                    else:
+                        self.driver.switch_to.default_content()
+                except:
+                    pass
+            
+            if not frame_found:
+                print("  ⚠️ 발행용 최적 컨텍스트를 찾지 못했습니다. 기본 페이지로 시도합니다.")
+                self.driver.switch_to.default_content()
+                return False
+            
+            return True
+        except Exception as e:
+            print(f"  ❌ 프레임 관리 중 오류: {str(e)}")
+            self.driver.switch_to.default_content()
+            return False
+
     def _open_publish_panel_robust(self):
         """발행 옵션 패널을 안전하게 엽니다 (재시도 로직 포함)"""
         try:
             print("  📋 발행 옵션 패널 확인 및 열기 시도 (Robust)...")
             
-            # 1. 예약 라디오 버튼이 이미 보이는지 확인 (패널 열림 상태)
+            # 🎯 프레임 내부로 진입 (에디터 버튼들은 주로 mainFrame 안에 있음)
+            if not self._switch_to_main_frame_robust():
+                print("  ⚠️ 프레임 진입에 실패했지만 계속 진행을 시도합니다.")
+            
+            # 🧹 Step 0: 장소/링크 팝업 잔여물 제거
             try:
-                # 빠른 확인을 위해 0.5초 대기
-                WebDriverWait(self.driver, 0.5).until(
-                    EC.visibility_of_element_located((By.CSS_SELECTOR, 'input#radio_time2, label[for="radio_time2"]'))
-                )
-                print("  ✅ 발행 패널이 이미 열려있음")
-                return True
+                actions = ActionChains(self.driver)
+                actions.send_keys(Keys.ESCAPE).perform()
+                time.sleep(0.3)
+                actions.send_keys(Keys.ESCAPE).perform()
+                time.sleep(0.3)
+                print("  🧹 ESC 키로 잔여 팝업 정리 완료")
             except:
                 pass
             
-            # 2. 발행 버튼 클릭하여 패널 열기
-            print("  🚀 발행 버튼 클릭하여 옵션 패널 열기 시도...")
+            try:
+                self.driver.execute_script("""
+                    document.querySelectorAll('.se-popup-dim, .se-popup-dim-transparent, .se-popup-background, .dimmed_layer').forEach(function(el) {
+                        el.style.display = 'none';
+                        el.remove();
+                    });
+                    // 장소 팝업이 남아있으면 닫기
+                    document.querySelectorAll('.se-popup.se-popup-map, .se-popup.se-popup-place').forEach(function(el) {
+                        el.style.display = 'none';
+                    });
+                """)
+                print("  🧹 JS로 오버레이/팝업 잔여물 제거 완료")
+            except:
+                pass
+
+            # 🛠 [Fix] 절대 switch_to.default_content()를 여기서 함부로 호출하지 않음
+            # _switch_to_main_frame_robust에서 이미 최적의 위치를 찾았음
+            time.sleep(0.5)
+            
+            # 패널 감지 선택자
+            panel_detect_selectors = '.publish_layer, .se-publish-layer, #tag-input, .layer_popup__i0QOY, [class*="is_show"], [class*="publish_setting"], [class*="publish_layer"], [class*="setting_layer"]'
+            
+            # Step 1: 이미 열려있는지 확인 (다중 컨텍스트 체크)
+            def check_panel_once():
+                try:
+                    panels = self.driver.find_elements(By.CSS_SELECTOR, panel_detect_selectors)
+                    visible_panels = [p for p in panels if p.is_displayed()]
+                    if visible_panels:
+                        print(f"  ✅ 발행 패널 감지됨 (컨텍스트: {'mainFrame' if 'mainFrame' in str(self.driver.current_url) else 'default'})")
+                        return True
+                except: pass
+                return False
+
+            # 먼저 현재 컨텍스트 체크
+            if check_panel_once(): return True
+            
+            # 다른 컨텍스트 체크 (스왑)
+            print("  🔍 다른 컨텍스트에서 패널 검색 중...")
+            if "mainFrame" in str(self.driver.current_url):
+                self.driver.switch_to.default_content()
+                if check_panel_once(): return True
+                # 못 찾았으면 다시 돌아와서 작업 준비
+                self._switch_to_main_frame_robust()
+            else:
+                if self._switch_to_main_frame_robust():
+                    if check_panel_once(): return True
+                # 못 찾았으면 다시 밖으로
+                self.driver.switch_to.default_content()
+
+            # Step 2: 발행 버튼 선택자 목록 (확장)
             publish_selectors = [
-                'button[class*="publish_btn"][class*="btn_green"]',  # 녹색 발행 버튼 클래스 우선
                 'button.publish_btn__m9KHH',
+                'button[class*="publish_btn"]',
+                'button[class*="publish_btn"][class*="btn_green"]',
+                'button.se-help-publish-button',
                 'button[data-testid="btn-publish"]',
-                '//button[normalize-space()="발행"]',  # 정확히 "발행"만 있는 버튼 (XPath)
-                '//button[contains(@class, "publish_btn") and not(contains(., "예약"))]' # '예약'이 없는 발행 버튼
+                'button[data-testid="scOnePublishBtn"]',
             ]
             
-            max_attempts = 5
-            for attempt in range(max_attempts):
-                # 버튼 클릭 시도
+            for attempt in range(7):
+                # 🛑 [Removed BUG] self.driver.switch_to.default_content() - 여기서 나가면 안 됨
                 clicked = False
+                
+                # CSS 선택자로 시도
                 for selector in publish_selectors:
                     try:
-                        if selector.startswith("//"):
-                            btns = self.driver.find_elements(By.XPATH, selector)
-                        else:
-                            btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                        
+                        btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
                         for btn in btns:
-                            if btn.is_displayed() and btn.is_enabled():
-                                # 🔍 추가 검증: '예약'이라는 단어가 포함된 버튼은 절대 클릭하지 않음
-                                btn_text = btn.text.strip()
-                                if "예약" in btn_text:
-                                    print(f"  ⚠️ '예약' 버튼 감지되어 스킵: {btn_text}")
-                                    continue
-                                    
-                                btn.click()
-                                print(f"  ✅ 발행 버튼 클릭: {selector} (텍스트: {btn_text})")
+                            if btn.is_displayed() and btn.is_enabled() and "예약" not in btn.text:
+                                print(f"  🔘 발행 버튼 발견 (시도 {attempt+1}): {selector}, 텍스트='{btn.text.strip()}'")
+                                try:
+                                    btn.click()
+                                except:
+                                    self.driver.execute_script("arguments[0].click();", btn)
                                 clicked = True
                                 break
-                    except:
-                        continue
-                    if clicked: break
+                        if clicked: break
+                    except: continue
+                
+                # XPath 텍스트 매칭으로 시도
+                if not clicked:
+                    try:
+                        btns = self.driver.find_elements(By.XPATH, '//button[contains(text(), "발행")]')
+                        for btn in btns:
+                            if btn.is_displayed() and btn.is_enabled() and "예약" not in btn.text:
+                                print(f"  🔘 발행 버튼 발견 (XPath, 시도 {attempt+1})")
+                                self.driver.execute_script("arguments[0].click();", btn)
+                                clicked = True
+                                break
+                    except: pass
+                
+                # JS 전체 탐색 fallback
+                if not clicked and attempt % 2 == 1:
+                    try:
+                        clicked = self.driver.execute_script("""
+                            const buttons = document.querySelectorAll('button');
+                            for (const btn of buttons) {
+                                const text = (btn.innerText || btn.textContent || '').trim();
+                                const isVisible = btn.offsetWidth > 0 && btn.offsetHeight > 0;
+                                if (isVisible && !btn.disabled && text === '발행') {
+                                    console.log('JS: 발행 버튼 클릭');
+                                    btn.click();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        """)
+                        if clicked:
+                            print(f"  🔘 JS로 발행 버튼 클릭 성공 (시도 {attempt+1})")
+                    except: pass
                 
                 if clicked:
-                    # 패널 열림 확인
+                    time.sleep(1.5)
+                    
+                    # 패널 열렸는지 확인 (확장된 선택자)
                     try:
-                        WebDriverWait(self.driver, 3).until(
-                            EC.visibility_of_element_located((By.CSS_SELECTOR, 'input#radio_time2, label[for="radio_time2"]'))
-                        )
-                        print("  ✅ 발행 패널 열기 확인됨")
-                        return True
-                    except:
-                        print(f"  ⚠️ 패널이 아직 열리지 않음 (시도 {attempt+1}/{max_attempts})")
-                        time.sleep(1)
+                        panels = self.driver.find_elements(By.CSS_SELECTOR, panel_detect_selectors)
+                        if any(l.is_displayed() for l in panels):
+                            print("  ✅ 발행 패널 열림 확인됨!")
+                            return True
+                    except: pass
+                    
+                    # tag-input을 직접 찾아보기 (패널 감지에 실패해도 실제로 열려있을 수 있음)
+                    try:
+                        tag_inputs = self.driver.find_elements(By.CSS_SELECTOR, 'input#tag-input, input[id="tag-input"], input[placeholder*="태그"], input[placeholder*="tag"]')
+                        if any(t.is_displayed() for t in tag_inputs):
+                            print("  ✅ 태그 입력창이 직접 확인됨! 패널이 열려있습니다.")
+                            return True
+                    except: pass
+                    
+                    # 버튼 텍스트가 바뀌었나 확인 (발행 -> 예약, 등 상태 변화)
+                    try:
+                        mode_check = self.driver.execute_script("""
+                            // 발행 설정 패널의 존재를 다양한 방법으로 확인
+                            const checks = [
+                                document.querySelector('#tag-input'),
+                                document.querySelector('[class*="tag_input"]'),
+                                document.querySelector('[class*="publish_setting"]'),
+                                document.querySelector('[class*="setting_layer"]'),
+                                document.querySelector('[class*="category"]'),
+                            ];
+                            for (const el of checks) {
+                                if (el && el.offsetWidth > 0) return true;
+                            }
+                            return false;
+                        """)
+                        if mode_check:
+                            print("  ✅ JS로 발행 설정 패널 존재 확인됨!")
+                            return True
+                    except: pass
+                    
+                    print(f"  ⏳ 패널이 아직 감지되지 않음 (시도 {attempt+1}/7)")
                 else:
-                    print(f"  ⚠️ 발행 버튼을 찾을 수 없음 (시도 {attempt+1}/{max_attempts})")
-                    time.sleep(1)
+                    # 🎯 [New] 버튼을 못 찾은 경우, 다른 컨텍스트(프레임)도 시도
+                    print(f"  ⏳ 현재 컨텍스트에서 발행 버튼을 찾지 못함 (시도 {attempt+1}/7). 컨텍스트 전환을 시도합니다.")
+                    if "mainFrame" in str(self.driver.current_url): # 단순 체크 (더 정교하게 가능)
+                        self.driver.switch_to.default_content()
+                        print("    ➡️ 기본 컨텍스트로 전환하여 시도")
+                    else:
+                        self._switch_to_main_frame_robust()
+                        print("    ➡️ mainFrame으로 전환하여 시도")
+                
+                time.sleep(1)
             
-            print("  ❌ 발행 옵션 패널을 열 수 없습니다.")
+            # 최후의 수단: 모든 버튼 정보 출력
+            try:
+                btn_info = self.driver.execute_script("""
+                    const result = [];
+                    document.querySelectorAll('button').forEach(btn => {
+                        const text = (btn.innerText || '').trim().substring(0, 30);
+                        const cls = btn.className.substring(0, 60);
+                        const visible = btn.offsetWidth > 0 && btn.offsetHeight > 0;
+                        if (visible && text) result.push({text, cls});
+                    });
+                    return result.slice(0, 15);
+                """)
+                print(f"  📊 현재 보이는 버튼들: {btn_info}")
+            except: pass
+            
+            print("  ❌ 발행 패널을 열 수 없습니다 (7회 시도 실패)")
             return False
-            
         except Exception as e:
-            print(f"  ❌ 발행 패널 열기 중 오류: {str(e)}")
+            print(f"  ❌ 발행 패널 열기 오류: {str(e)}")
+            traceback.print_exc()
             return False
 
     def add_tags(self, tags=None, skip_publish=False):
         """태그 추가"""
         try:
-            if not tags:
-                tags = self.settings.get('blog_tags', [])
-            
-            if not tags:
-                print("태그가 설정되지 않았습니다.")
-                return True  # 태그 없어도 계속 진행
-
+            if not tags: tags = self.settings.get('blog_tags', [])
+            if not tags: return True
             print("태그 입력을 시작합니다...")
-            time.sleep(1)
             
-            # 기본 프레임으로 전환
-            try:
-                self.driver.switch_to.default_content()
-                print("기본 프레임으로 전환")
-                time.sleep(0.5)
-            except Exception as e:
-                print(f"기본 프레임 전환 중 오류: {str(e)}")
+            # 🎯 프레임 내부로 진입 (백업 코드 로직 복구)
+            if not self._switch_to_main_frame_robust():
+                print("  ❌ 프레임 전환 실패로 태그 입력을 중단합니다.")
+                return False
+                
+            if not self._open_publish_panel_robust(): 
+                print("  ❌ 발행 패널을 열지 못해 태그 입력을 중단합니다.")
+                return False
+            
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+            
+            # 태그 입력 필드 찾기 (다양한 선택자)
+            tag_selectors = [
+                'input#tag-input', 
+                'input[id="tag-input"]',
+                'div[class*="tag_input"] input',
+                'input[placeholder*="태그"]',
+                '.se-tag-input'
+            ]
+            
+            tag_input = None
+            for selector in tag_selectors:
+                try:
+                    tag_input = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                    )
+                    if tag_input.is_displayed():
+                        print(f"  ✅ 태그 입력창 발견: {selector}")
+                        # 명시적 클릭으로 포커스
+                        try:
+                            tag_input.click()
+                        except:
+                            self.driver.execute_script("arguments[0].click();", tag_input)
+                        break
+                except: continue
+            
+            if not tag_input:
+                print("  ❌ 태그 입력창을 찾을 수 없습니다. (fallback 시도)")
+                # JS로 강제 포커스 시도
+                try:
+                    self.driver.execute_script("document.querySelector('input#tag-input').focus();")
+                    tag_input = self.driver.switch_to.active_element
+                except: pass
 
-            # mainFrame으로 전환
-            try:
-                print("mainFrame으로 전환 시도...")
-                frame = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.ID, "mainFrame"))
-                )
-                self.driver.switch_to.frame(frame)
-                print("mainFrame으로 전환 성공")
-                time.sleep(1)
-            except Exception as e:
-                print(f"mainFrame 전환 중 오류: {str(e)}")
-                return False
-            
-            # 🎯 발행 버튼을 클릭해서 발행 패널 열기
-            panel_opened = self._open_publish_panel_robust()
-            
-            if panel_opened:
-                print("✅ 발행 패널 열기 성공")
-                time.sleep(1)  # 발행 패널 로딩 대기
-            else:
-                print("⚠️ 발행 패널 열기 실패, 계속 진행...")
-            
-            # 태그 입력 필드 찾기 (발행 패널 안)
-            try:
-                print("태그 입력 필드 찾기...")
-                tag_input = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, 'input#tag-input'))
-                )
-                print("태그 입력 필드를 찾았습니다.")
-                
-                # 각 태그 입력
+            if tag_input:
                 for tag in tags:
-                    try:
-                        print(f"'{tag}' 태그 입력 시도...")
-                        tag_input.send_keys(tag)
-                        time.sleep(0.5)
-                        tag_input.send_keys(Keys.SPACE)
-                        time.sleep(0.5)
-                        print(f"태그 입력 완료: {tag}")
-                    except Exception as e:
-                        print(f"태그 '{tag}' 입력 중 오류: {str(e)}")
-                        continue
-                
-                print("모든 태그 입력이 완료되었습니다.")
-                
-                # 🎯 예약 모드에서는 발행 버튼 클릭 스킵
-                if skip_publish:
-                    print("⏰ 예약 모드: 태그 추가 후 발행 버튼 클릭 스킵")
-                    return True
-                
-                # 🎯 앱 설정에서 최종 발행 자동 완료 설정 확인
-                auto_final_publish = self._get_auto_final_publish_setting()
-                
-                if auto_final_publish:
-                    # 체크됨: 완전 자동 업로드 (5초 후 발행 버튼 클릭)
-                    print("🕐 태그 추가 완료 후 5초 대기...")
-                    time.sleep(5)
-                    
-                    # 🚀 발행 버튼 클릭 (녹색 발행 버튼)
-                    print("🚀 최종 발행 버튼 클릭 시도...")
-                    publish_success = self.click_final_publish_button()
-                    
-                    if publish_success:
-                        print("✅ 블로그 포스트 발행 완료!")
-                        return True
-                    else:
-                        print("⚠️ 발행 버튼 클릭 실패")
-                        return False
-                else:
-                    # 체크 해제됨: 수동 검토 모드 (발행 버튼 클릭 안함)
-                    print("🔍 수동 검토 모드: 태그 추가 완료 후 대기 상태")
-                    print("📝 사용자가 직접 내용을 확인하고 발행 버튼을 클릭해주세요.")
-                    return True
-                
-            except Exception as e:
-                print(f"태그 입력 필드를 찾을 수 없습니다: {str(e)}")
-                traceback.print_exc()
-                return False
+                    tag = tag.strip()
+                    if not tag: continue
+                    print(f"  ✍️ 태그 입력 중: {tag}")
+                    tag_input.send_keys(tag)
+                    time.sleep(0.3)
+                    # SPACE와 ENTER를 모두 사용하여 태그 등록 보장
+                    tag_input.send_keys(Keys.SPACE)
+                    time.sleep(0.2)
+                    tag_input.send_keys(Keys.ENTER)
+                    time.sleep(0.5)
             
+            if skip_publish: 
+                print("  ⏭️ skip_publish 설정으로 인해 최종 발행을 건너뜁니다.")
+                return True
+                
+            if self._get_auto_final_publish_setting():
+                print("  🚀 최종 발행 버튼 클릭 단계로 진입합니다...")
+                time.sleep(2)
+                return self.click_final_publish_button()
+            
+            print("  ℹ️ 자동 최종 발행이 설정되어 있지 않습니다.")
+            return True
         except Exception as e:
-            print(f"태그 입력 중 오류 발생: {str(e)}")
-            traceback.print_exc()
+            print(f"태그 입력 오류: {str(e)}")
             return False
         finally:
-            # 기본 프레임으로 복귀
-            try:
-                self.driver.switch_to.default_content()
-                print("기본 프레임으로 복귀")
-            except Exception as e:
-                print(f"기본 프레임 복귀 중 오류: {str(e)}")
-    
+            self.driver.switch_to.default_content()
     def _get_auto_final_publish_setting(self):
         """앱 설정에서 최종 발행 자동 완료 설정 읽기"""
         try:
@@ -1355,16 +1531,9 @@ class NaverBlogPostFinisher:
             print(f"⏰ 블로그 예약 시간 설정 시작: {reservation_time}")
             
             # 이미 mainFrame에 있어야 함 (add_tags에서 호출되므로)
-            # 필요 시 프레임 전환
-            try:
-                self.driver.switch_to.default_content()
-                frame = WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_element_located((By.ID, "mainFrame"))
-                )
-                self.driver.switch_to.frame(frame)
-                time.sleep(1)
-            except:
-                pass  # 이미 mainFrame에 있을 수 있음
+            # 🎯 지능형 프레임 관리 시도
+            if not self._switch_to_main_frame_robust():
+                print("  ⚠️ 프레임 진입 실패, 하지만 계속 시도합니다.")
             
             # 시간 파싱
             try:
@@ -1812,23 +1981,31 @@ class NaverBlogPostFinisher:
         try:
             print("🚀 최종 발행(또는 예약) 버튼 클릭 시도 (Robust)...")
             
+            # 🎯 프레임 내부 유지 (또는 재진입)
+            if not self._switch_to_main_frame_robust():
+                print("  ⚠️ 프레임 진입 실패, 하지만 계속 시도합니다.")
+            
             # 버튼 활성화 대기 및 클릭 시도 (최대 30초)
             publish_success = False
             max_retries = 30
             
-            # 확장된 선택자 목록
+            # 확장된 선택자 목록 (패널 내부 버튼 1순위 배치, 상단 토글 버튼 제거)
             publish_selectors = [
-                'button.publish_btn__m9KHH',
-                'button[data-testid="scOnePublishBtn"]',
+                'button.confirm_btn__WEaBq',  # 🎯 스크린샷에서 확인된 패널 내부 완료 버튼
                 'button.confirm_btn_WEaBq',
+                'button[class*="confirm_btn__"]', 
                 'button[class*="confirm_btn"]',
-                'button[class*="publish_btn"]',
-                '//button[contains(text(), "발행")]',
-                '//button[contains(text(), "예약")]' 
+                'button[data-testid="scOnePublishBtn"]',
+                '.publish_setting_layer button[class*="publish_btn"]', 
+                '//button[contains(text(), "발행") and not(contains(@class, "publish_btn__m9KHH"))]', # 상단 버튼 제외
+                '//button[contains(text(), "예약")]'
             ]
             
-            for i in range(max_retries):
-                # 1. CSS/XPath 선택자로 찾기
+            # --- 지능형 클릭 및 결과 검증 루프 시작 ---
+            for j in range(max_retries):
+                found_and_clicked = False
+                
+                # 1. 버튼 찾기 및 클릭
                 for selector in publish_selectors:
                     try:
                         if selector.startswith("//"):
@@ -1837,48 +2014,79 @@ class NaverBlogPostFinisher:
                             btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
                             
                         for btn in btns:
-                            if btn.is_displayed() and btn.is_enabled():
-                                print(f"✅ 발행 버튼 발견: {selector}")
-                                btn.click()
-                                publish_success = True
+                            btn_text = (btn.text or '').strip()
+                            if btn.is_displayed() and btn.is_enabled() and (btn_text in ['발행', '예약'] or '발행' in btn_text):
+                                # 발견 시 즉시 클릭 (JS 최우선)
+                                try:
+                                    self.driver.execute_script("arguments[0].style.border = '3px solid red'; arguments[0].click();", btn)
+                                except:
+                                    btn.click()
+                                
+                                found_and_clicked = True
+                                print(f"  🔘 최종 발행 버튼 클릭 시도 ({j+1}/{max_retries}): {selector} (텍스트: {btn_text})")
                                 break
                     except:
                         continue
-                    if publish_success: break
+                    if found_and_clicked: break
                 
-                if publish_success: break
-                
-                # 2. 텍스트 일치로 찾기 (JS fallback)
-                if i % 3 == 0: # 3번에 한 번만 JS 시도
+                # 2. JS Fallback (텍스트 기반)
+                if not found_and_clicked:
                     try:
-                        publish_success = self.driver.execute_script("""
+                        found_and_clicked = self.driver.execute_script("""
                             const buttons = document.querySelectorAll('button');
                             for (const btn of buttons) {
                                 const text = (btn.innerText || btn.textContent || '').trim();
                                 const isVisible = btn.offsetWidth > 0 && btn.offsetHeight > 0;
-                                if (isVisible && !btn.disabled && (text === '발행' || text === '예약')) {
-                                    console.log('JS: 발행/예약 버튼 클릭', text);
+                                if (isVisible && !btn.disabled && !btn.className.includes('publish_btn__m9KHH') && (text === '발행' || text === '예약' || (text.includes('발행') && text.length < 10))) {
+                                    btn.style.border = '3px solid blue';
                                     btn.click();
                                     return true;
                                 }
                             }
                             return false;
                         """)
+                        if found_and_clicked:
+                            print(f"  🔘 JS를 통해 최종 발행 버튼 클릭 시도 ({j+1}/{max_retries})")
                     except: pass
-                    
-                    if publish_success:
-                        print("✅ JS로 발행/예약 버튼 클릭 성공")
-                        break
+
+                # 3. 효과 검증 (버튼이 사라졌는지 확인)
+                time.sleep(1.5)
                 
-                print(f"  ⏳ 발행 버튼 대기 중... ({i+1}/{max_retries})")
-                time.sleep(1)
-            
+                # 버튼이 여전히 있는지 다시 확인
+                still_visible = False
+                try:
+                    for selector in publish_selectors:
+                        if selector.startswith("//"):
+                            btns = self.driver.find_elements(By.XPATH, selector)
+                        else:
+                            btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                        for btn in btns:
+                            if btn.is_displayed() and (('발행' in btn.text) or ('예약' in btn.text)):
+                                still_visible = True
+                                break
+                        if still_visible: break
+                except:
+                    still_visible = False # Exception 발생 시 버튼이 사라진 것(Stale)으로 간주
+
+                if not still_visible:
+                    # ✅ 성공: 버튼이 사라짐 (발행 완료 또는 로딩중)
+                    print("  ✅ 최종 발행 버튼이 화면에서 사라졌습니다. (발행 성공)")
+                    publish_success = True
+                    break
+                else:
+                    print("  ⏳ 버튼이 여전히 보입니다. 재시도합니다...")
+                    # 🎯 컨텍스트 매번 교체하여 시도 (프레임 꼬임 방지)
+                    if j % 2 == 0:
+                        self.driver.switch_to.default_content()
+                        time.sleep(0.5)
+                        self._switch_to_main_frame_robust()
+
             if not publish_success:
-                print("❌ 최종 발행 버튼을 찾을 수 없거나 클릭할 수 없습니다.")
+                print("  ❌ 30회 시도 후에도 최종 발행 버튼 클릭에 실패했습니다.")
                 return False
             
-            print("✅ 최종 발행 버튼 클릭 성공!")
-            time.sleep(3)  # 발행 완료 대기
+            print("  🚀 발행 절차가 성공적으로 시작되었습니다. 완료 대기 중...")
+            time.sleep(5)  
             return True
             
         except Exception as e:
@@ -1891,26 +2099,9 @@ class NaverBlogPostFinisher:
         try:
             print("발행 버튼 클릭 시도...")
             
-            # 기본 프레임으로 복귀
-            try:
-                self.driver.switch_to.default_content()
-                print("기본 프레임으로 복귀")
-                time.sleep(1)
-            except Exception as e:
-                print(f"기본 프레임 복귀 중 오류: {str(e)}")
-            
-            # mainFrame으로 전환
-            try:
-                print("mainFrame으로 전환 시도...")
-                frame = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.ID, "mainFrame"))
-                )
-                self.driver.switch_to.frame(frame)
-                print("mainFrame으로 전환 성공")
-                time.sleep(2)
-            except Exception as e:
-                print(f"mainFrame 전환 중 오류: {str(e)}")
-                return False
+            # 🎯 지능형 프레임 관리 시도
+            if not self._switch_to_main_frame_robust():
+                print("  ⚠️ 프레임 진입 실패, 하지만 계속 시도합니다.")
             
             # JavaScript로 발행 버튼 상태 확인
             button_info = self.driver.execute_script("""
@@ -2003,6 +2194,10 @@ class NaverBlogPostFinisher:
         """위치 정보 추가 (지도/장소)"""
         try:
             print("\n=== 위치 정보 추가 시작 ====")
+            
+            # 🎯 지능형 프레임 관리 시도 (에디터 내부에 위치 버튼이 있음)
+            if not self._switch_to_main_frame_robust():
+                print("  ⚠️ 프레임 진입 실패, 하지만 계속 시도합니다.")
             
             # 위치 정보 준비
             address = self.settings.get('address', '')

@@ -272,7 +272,8 @@ class IdleActivity:
                             print(f"  💬 댓글 완료: {comment_text[:30]}...")
                         
                         # 탭 닫고 원래 탭으로
-                        self.driver.close()
+                        if len(self.driver.window_handles) > 1:
+                            self.driver.close()
                         self.driver.switch_to.window(self.driver.window_handles[0])
                         time.sleep(1)
                         
@@ -388,6 +389,8 @@ class IdleActivity:
                 if len(self.driver.window_handles) > 1:
                     self.driver.close() # 현재 탭 닫기
                     self.driver.switch_to.window(self.driver.window_handles[0]) # 메인 탭 복귀
+                else:
+                    self.driver.switch_to.default_content()
             
             return success
 

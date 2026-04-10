@@ -49,7 +49,7 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 class NaverBlogAutomation:
-    def __init__(self, auto_mode=True, image_insert_mode="random", use_stickers=False, custom_images_folder=None, naver_id=None, media_position="middle", media_order="image_first"):
+    def __init__(self, auto_mode=True, image_insert_mode="random", use_stickers=False, custom_images_folder=None, naver_id=None):
         self.driver = None
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         
@@ -66,8 +66,6 @@ class NaverBlogAutomation:
         self.used_images = []
         self.auto_mode = auto_mode
         self.image_insert_mode = image_insert_mode
-        self.media_position = media_position
-        self.media_order = media_order
         self.use_stickers = False  # 스티커 사용 기능 비활성화
         self.image_inserter = None
         self.need_escape_key = True
@@ -169,10 +167,8 @@ class NaverBlogAutomation:
                         tags_str = settings_data['blog_tags']
                         settings['tags'] = [tag.strip() for tag in tags_str.split(',')]
                     
-                    # 슬로건 로드 (blog_slogan 우선)
-                    if 'blog_slogan' in settings_data:
-                        settings['slogan'] = settings_data['blog_slogan']
-                    elif 'slogan' in settings_data:
+                    # 슬로건 로드
+                    if 'slogan' in settings_data:
                         settings['slogan'] = settings_data['slogan']
                     
                     print(f"설정 파일 로드 성공: {config_path}")
@@ -694,20 +690,14 @@ class NaverBlogAutomation:
             # 이미지 삽입 핸들러 초기화
             if self.auto_mode:
                 print("이미지 삽입 핸들러 초기화 중...")
+                fallback_folder = self.custom_images_folder if self.custom_images_folder else self.default_images_folder
+                print(f"사용할 이미지 폴더: {fallback_folder}")
                 self.image_inserter = NaverBlogImageInserter(
                     driver=self.driver,
                     images_folder=self.images_folder,
                     insert_mode=self.image_insert_mode,
                     fallback_folder=fallback_folder
                 )
-                # 🆕 비디오 메타데이터 전달
-                self.image_inserter.video_metadata = {
-                    'title': self.get_setting('video_title', '네이버뉴스'),
-                    'info': self.get_setting('video_info', '네이버뉴스'),
-                    'tags': self.get_setting('video_tags', '양양합기도, 등등')
-                }
-                self.image_inserter.media_position = self.media_position
-                self.image_inserter.media_order = self.media_order
                 print("이미지 삽입 핸들러 초기화 완료")
             else:
                 print("자동 이미지 삽입이 비활성화되어 있습니다.")
@@ -1569,22 +1559,9 @@ class NaverBlogAutomation:
             
             # 본문 입력을 위한 변수 초기화
             current_line = 0
-            current_media_index = 0
+            current_image_index = 0
             consecutive_text_lines = 0
             
-            # 미디어 리스트 준비 (사진 + 영상)
-            media_list = []
-            if self.auto_mode and self.image_inserter:
-                image_files, video_files = self.image_inserter.get_media_files()
-                if self.media_order == "image_first":
-                    media_list = [(f, "image") for f in image_files] + [(f, "video") for f in video_files]
-                elif self.media_order == "video_first":
-                    media_list = [(f, "video") for f in video_files] + [(f, "image") for f in image_files]
-                else: # mixed
-                    temp_all = [(f, "image") for f in image_files] + [(f, "video") for f in video_files]
-                    random.shuffle(temp_all)
-                    media_list = temp_all
-                print(f"📊 삽입 대기 미디어: 총 {len(media_list)}개 (사진 {len(image_files)}, 영상 {len(video_files)})")
             def should_add_blank_line(current_text, next_text=None):
                 """줄바꿈이 필요한지 확인하는 함수"""
                 if not current_text:
@@ -1636,51 +1613,37 @@ class NaverBlogAutomation:
                 actions.perform()
                 time.sleep(0.05)  # 입력 사이 최소 대기 시간
                 
-                # 미디어 삽입 조건 확인 (미리 계산된 줄 번호에 도달했을 때)
+                # 이미지 삽입 조건 확인 (미리 계산된 줄 번호에 도달했을 때)
                 if (self.auto_mode and
                     self.image_inserter and
                     current_line in image_positions and 
-                    current_media_index < len(media_list)):
+                    current_image_index < len(self.image_inserter.get_image_files())):
                     
                     try:
-                        file_path, mtype = media_list[current_media_index]
-                        print(f"줄 {current_line}: {mtype} 삽입 시도... ({current_media_index + 1}/{len(media_list)})")
+                        print(f"줄 {current_line}: 이미지 삽입 시도...")
                         
-                        if mtype == "image":
-                            self.image_inserter.insert_single_image(file_path)
-                        else:
-                            # 동영상 삽입 시도
-                            success = self.image_inserter.insert_single_video(file_path)
-                            if not success:
-                                print(f"⚠️ 줄 {current_line}: 동영상 삽입 실패, 다음 단계로 강제 진행합니다.")
-                                # 강제 ESC 및 프레임 복구
-                                self.driver.switch_to.default_content()
-                                self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
-                                time.sleep(0.5)
-                                self.driver.switch_to.frame("mainFrame")
+                        image_files = self.image_inserter.get_image_files()
+                        if image_files and current_image_index < len(image_files):
+                            image_path = image_files[current_image_index]
+                            print(f"이미지 삽입 중: {os.path.basename(image_path)}")
+                            self.image_inserter.insert_single_image(image_path)
+                            print(f"줄 {current_line}: 이미지 삽입 성공!")
+                            current_image_index += 1
                             
-                        print(f"줄 {current_line}: {mtype} 삽입 처리 완료")
-                        current_media_index += 1
-                        
-                        # 본문 재포커스
-                        try:
-                            # 프레임 확실히 확인
-                            self.driver.switch_to.default_content()
-                            self.driver.switch_to.frame("mainFrame")
-                            body_areas = self.driver.find_elements(By.CSS_SELECTOR, 
-                                "div.se-component.se-text.se-l-default")
-                            if body_areas:
-                                self.driver.execute_script("arguments[0].click();", body_areas[-1])
-                                print("미디어 삽입 후 본문 재포커스 성공")
-                        except Exception as refocus_error:
-                            print(f"본문 재포커스 실패: {str(refocus_error)}")
+                            # 본문 재포커스
+                            try:
+                                body_areas = self.driver.find_elements(By.CSS_SELECTOR, 
+                                    "div.se-component.se-text.se-l-default")
+                                if body_areas:
+                                    self.driver.execute_script("arguments[0].click();", body_areas[-1])
+                                    print("이미지 삽입 후 본문 재포커스 성공")
+                            except Exception as refocus_error:
+                                print(f"본문 재포커스 실패: {str(refocus_error)}")
+                        else:
+                            print(f"줄 {current_line}: 삽입할 이미지가 없습니다.")
                     except Exception as e:
-                        print(f"미디어 삽입 중 중대 오류: {str(e)}")
-                        # 치명적 오류 시 프레임 초기화
-                        try:
-                            self.driver.switch_to.default_content()
-                            self.driver.switch_to.frame("mainFrame")
-                        except: pass
+                        print(f"이미지 삽입 중 오류: {str(e)}")
+                        traceback.print_exc()
 
             # 본문 영역 다시 클릭하여 포커스 확보
             try:
@@ -1693,21 +1656,20 @@ class NaverBlogAutomation:
             except Exception as refocus_error:
                 print(f"본문 재포커스 실패: {str(refocus_error)}")
 
-            # 남은 미디어들 마지막에 삽입
+            # 남은 이미지들 마지막에 삽입
             if self.auto_mode and self.image_inserter:
-                remaining_media = media_list[current_media_index:]
-                if remaining_media:
-                    print(f"마지막에 {len(remaining_media)}개의 미디어를 추가 삽입합니다.")
-                    for file_path, mtype in remaining_media:
+                image_files = self.image_inserter.get_image_files()
+                remaining_images = len(image_files) - current_image_index
+                if remaining_images > 0:
+                    print(f"마지막에 {remaining_images}개의 이미지를 삽입합니다.")
+                    for i in range(current_image_index, len(image_files)):
                         try:
-                            print(f"{mtype} 삽입 중: {os.path.basename(file_path)}")
-                            if mtype == "image":
-                                self.image_inserter.insert_single_image(file_path)
-                            else:
-                                self.image_inserter.insert_single_video(file_path)
-                            time.sleep(0.3)
+                            image_path = image_files[i]
+                            print(f"이미지 삽입 중: {os.path.basename(image_path)}")
+                            self.image_inserter.insert_single_image(image_path)
+                            time.sleep(0.3)  # 이미지 삽입 사이에 약간의 딜레이 추가
                         except Exception as e:
-                            print(f"미디어 삽입 중 오류: {str(e)}")
+                            print(f"이미지 삽입 중 오류: {str(e)}")
                             traceback.print_exc()
                     
                     # 마지막 이미지 삽입 후 본문 재포커스
@@ -1830,14 +1792,6 @@ class NaverBlogAutomation:
                 insert_mode=self.image_insert_mode,
                 fallback_folder=fallback_folder
             )
-            # 🆕 비디오 메타데이터 전달
-            self.image_inserter.video_metadata = {
-                'title': self.get_setting('video_title', '네이버뉴스'),
-                'info': self.get_setting('video_info', '네이버뉴스'),
-                'tags': self.get_setting('video_tags', '양양합기도, 등등')
-            }
-            self.image_inserter.media_position = self.media_position
-            self.image_inserter.media_order = self.media_order
             
             print(f"이미지 삽입 도우미 초기화 완료: {self.image_insert_mode} 모드")
             print(f"이미지 폴더: {image_folder}")

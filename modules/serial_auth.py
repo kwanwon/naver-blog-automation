@@ -16,9 +16,10 @@ import logging
 import socket
 import platform
 import subprocess
-from datetime import datetime, timedelta
-from typing import Dict, Tuple, Optional
+from typing import Optional, List, Dict, Any, Union, Tuple
+from datetime import datetime
 from utils.path_utils import get_config_dir
+from utils.security_utils import deobfuscate_dict_fields, obfuscate_dict_fields
 
 class BlogSerialAuth:
     """블로그자동화용 시리얼 인증 클래스"""
@@ -55,26 +56,36 @@ class BlogSerialAuth:
         self.logger = logging.getLogger(__name__)
     
     def _check_developer_mode(self) -> bool:
-        """개발자 모드 여부 확인"""
-        env_flag = os.getenv("DEVELOPER_MODE", "").lower() in ("1", "true", "yes", "on")
+        """개발자 모드 여부 확인 (강화된 체크)"""
+        # 1. 환경 변수 체크
+        env_flag = os.getenv("DEVELOPER_MODE_SECRET", "").lower() == "antigravity-dev-2026"
         
-        # 여러 경로에서 .developer_mode 파일 확인 (PyInstaller 빌드 환경 고려)
+        # 2. 특정 파일 존재 확인 (내용 검증 추가)
         possible_paths = [
-            os.path.join(self.base_dir, ".developer_mode"),  # modules/.developer_mode
-            os.path.join(os.path.dirname(self.base_dir), "modules", ".developer_mode"),  # 상위/modules/.developer_mode
+            os.path.join(self.base_dir, ".developer_mode"),
+            os.path.join(os.path.dirname(self.base_dir), "modules", ".developer_mode"),
         ]
         
-        # PyInstaller 빌드 환경에서 _MEIPASS 확인
         if hasattr(sys, '_MEIPASS'):
             meipass = getattr(sys, '_MEIPASS')
             possible_paths.append(os.path.join(meipass, "modules", ".developer_mode"))
             possible_paths.append(os.path.join(meipass, ".developer_mode"))
         
-        file_flag = any(os.path.exists(p) for p in possible_paths)
+        file_valid = False
+        for p in possible_paths:
+            if os.path.exists(p):
+                try:
+                    with open(p, 'r') as f:
+                        if f.read().strip() == "antigravity-dev-key-9988":
+                            file_valid = True
+                            break
+                except:
+                    pass
         
-        if env_flag or file_flag:
-            self.logger.info("개발자 모드 감지 - 시리얼 인증을 건너뜁니다.")
-        return env_flag or file_flag
+        if env_flag or file_valid:
+            self.logger.info("개발자 모드 활성화됨")
+            return True
+        return False
         
     def find_serial_db(self) -> Optional[str]:
         """시리얼관리 DB 파일 찾기"""
@@ -207,6 +218,10 @@ class BlogSerialAuth:
             try:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     config = json.load(f)
+                    
+                    # 🔐 민감 데이터 복호화 시도
+                    config = deobfuscate_dict_fields(config)
+                    
                     # 기본값으로 누락된 키 채우기
                     for key, value in default_config.items():
                         if key not in config:
@@ -218,11 +233,14 @@ class BlogSerialAuth:
         return default_config
     
     def save_config(self, config: Dict):
-        """설정 파일 저장"""
+        """설정 파일 저장 (민감 데이터 암호화 포함)"""
         try:
+            # 🔐 민감 데이터 암호화
+            save_data = obfuscate_dict_fields(config, ["serial_number"])
+            
             with open(self.config_file, 'w', encoding='utf-8') as f:
-                json.dump(config, f, ensure_ascii=False, indent=2)
-            self.logger.info("설정 파일 저장 완료")
+                json.dump(save_data, f, ensure_ascii=False, indent=2)
+            self.logger.info("설정 파일 저장 완료 (암호화 적용)")
         except Exception as e:
             self.logger.error(f"설정 파일 저장 오류: {e}")
     

@@ -278,6 +278,55 @@ class GoogleSheetsReader:
         print(f"ℹ️ 오늘({today_str}) 날짜의 데이터가 없습니다.")
         return None
     
+    def get_latest_content(self, content_column: str = None) -> Optional[str]:
+        """
+        날짜와 상관없이 가장 마지막으로 입력된 수련내용/주제를 가져오기 (블로그 전용)
+        """
+        if self.data is None:
+            if not self.fetch_data():
+                return None
+                
+        # 내용 컬럼 찾기 (우선순위: 지정 -> '수련내용' -> '주제' -> '내용' -> 2번째/3번째 열)
+        if content_column and content_column in self.data.columns:
+            content_col = content_column
+        elif '수련내용' in self.data.columns:
+            content_col = '수련내용'
+        elif '주제' in self.data.columns:
+            content_col = '주제'
+        elif '내용' in self.data.columns:
+            content_col = '내용'
+        elif len(self.data.columns) >= 2 and any(k in str(self.data.columns[1]).lower() for k in ['주제', '내용', 'content', 'topic']):
+            content_col = self.data.columns[1]
+        elif len(self.data.columns) >= 3:
+            content_col = self.data.columns[2]
+        else:
+            content_col = self.data.columns[0] # 첫 번째 컬럼 기본값
+            
+        print(f"   내용 컬럼: {content_col} (날짜 무시하고 가장 마지막 데이터 탐색)")
+        
+        # 마지막 행부터 역순으로 탐색하여 데이터가 있는 첫 번째 값 반환
+        for idx in range(len(self.data) - 1, -1, -1):
+            row = self.data.iloc[idx]
+            
+            # 1순위: 선택된 컬럼 확인
+            content = row[content_col]
+            if pd.notna(content) and str(content).strip():
+                result = str(content).strip()
+                print(f"✅ 최신 주제 발견 (지정 컬럼 '{content_col}'): {result[:50]}...")
+                return result
+            
+            # 2순위: 지정 컬럼에 없으면 모든 컬럼 탐색 (데이터가 하나뿐인 시트 대비)
+            for col in self.data.columns:
+                val = row[col]
+                if pd.notna(val) and str(val).strip():
+                    result = str(val).strip()
+                    if result != str(col): # 헤더값이 아닌 경우만
+                        print(f"✅ 최신 주제 발견 (자동 대체 컬럼 '{col}'): {result[:50]}...")
+                        return result
+                
+        print(f"ℹ️ 시트에 유효한 데이터가 없습니다. (전체 행 수: {len(self.data)})")
+        return None
+    
     def get_content_by_date(self, target_date: str) -> Optional[str]:
         """
         특정 날짜의 수련내용 가져오기

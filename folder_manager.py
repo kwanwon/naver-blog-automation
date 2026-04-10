@@ -41,7 +41,7 @@ class ImageFolderManager:
         """폴더에 이미지 파일이 있는지 확인"""
         try:
             for file in os.listdir(folder_path):
-                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.mov', '.avi', '.mkv', '.webm')):
                     return True
             return False
         except:
@@ -122,7 +122,7 @@ class ImageFolderManager:
         images = []
         try:
             for file in os.listdir(folder_path):
-                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.mov', '.avi', '.mkv', '.webm')):
                     full_path = os.path.join(folder_path, file)
                     images.append(full_path)
         except Exception as e:

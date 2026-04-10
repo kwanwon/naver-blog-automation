@@ -53,22 +53,15 @@ def process_image(image_path, output_dir):
         img = Image.new(original_img.mode, original_img.size)
         img.putdata(list(original_img.getdata()))
         
-        # 3. Random Transformation (Mirror OR Rotation)
+        # 3. Random Transformation (Only Rotation, Mirror removed per user request)
+        # Rotate weak (1~2 degrees, random direction)
+        angle = random.uniform(1.0, 2.0)
         if random.choice([True, False]):
-            # Mirror (Flip Left-Right)
-            img = ImageOps.mirror(img)
-            print("   👉 좌우 반전 적용됨")
-        else:
-            # Rotate weak (1~2 degrees, random direction)
-            angle = random.uniform(1.0, 2.0)
-            if random.choice([True, False]):
-                angle = -angle
-            
-            # fast rotation with expand=False (might crop corners slightly, but safer for upload size)
-            # or usage of white/black background. Let's use white background for expanded corners.
-            # actually for 1-2 degrees, cropping is minimal.
-            img = img.rotate(angle, resample=Image.BICUBIC, expand=False)
-            print(f"   👉 회전 적용됨 ({angle:.1f}도)")
+            angle = -angle
+        
+        # fast rotation with expand=False (might crop corners slightly, but safer for upload size)
+        img = img.rotate(angle, resample=Image.BICUBIC, expand=False)
+        print(f"   👉 회전 적용됨 ({angle:.1f}도)")
 
         # 4. Brightness Adjustment (±5%)
         enhancer = ImageEnhance.Brightness(img)

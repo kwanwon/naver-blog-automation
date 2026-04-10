@@ -15,6 +15,7 @@ from pathlib import Path
 from folder_manager import ImageFolderManager
 from utils.image_processor import process_image  # Import image processor
 from utils.path_utils import get_app_data_dir  # AppData 경로를 위해 import
+from os_file_picker import OSFilePicker  # 🆕 OS 파일 선택기 추가
 
 # 리소스 경로 처리 함수
 def resource_path(relative_path):
@@ -86,8 +87,20 @@ class NaverBlogImageInserter:
             
         self.used_images = []
         self.sentence_end_markers = ['. ', '다. ', '요. ', '죠. ', '!', '?']
-        self.insert_mode = insert_mode
+        self.insert_mode = insert_mode # 예: random, three_parts, five_parts, end
+        self.media_position = "middle" # start, middle, end, random
+        self.media_order = "image_first" # image_first, video_first, mixed
         self.current_line = 0
+        
+        # 🆕 OS 파일 선택기 초기화
+        self.os_picker = OSFilePicker()
+        
+        # 🆕 비디오 메타데이터 초기화
+        self.video_metadata = {
+            'title': '네이버뉴스',
+            'info': '네이버뉴스',
+            'tags': '양양합기도, 등등'
+        }
         
         # 폴더 관리자 초기화 (현재 파일 위치 기준)
         current_file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -100,45 +113,33 @@ class NaverBlogImageInserter:
         os.makedirs(self.temp_upload_dir, exist_ok=True)
         self.cleanup_temp_images()  # 초기화 시 기존 임시 파일 정리
 
-    def get_image_files(self):
-        """이미지 폴더에서 사용 가능한 이미지 파일 목록을 가져옵니다. (폴더별 순환 시스템)"""
-        # 단일 폴더 사용 모드(포스팅 단위 고정 폴더)
+    def get_media_files(self):
+        """폴더에서 이미지와 동영상 파일 목록을 가져와 분류합니다."""
+        all_files = []
         if self.use_single_folder:
             folder = self.fallback_folder
-            if not folder or not os.path.exists(folder):
-                print(f"❌ 지정된 이미지 폴더가 없거나 접근 불가: {folder}")
-                return []
-            valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
-            files = [
-                os.path.join(folder, f)
-                for f in os.listdir(folder)
-                if os.path.splitext(f)[1].lower() in valid_exts
-            ]
-            if files:
-                print(f"✅ 고정 폴더에서 {len(files)}개의 이미지를 사용합니다: {folder}")
-                return files
-            else:
-                print(f"ℹ️ 고정 폴더에 이미지가 없습니다: {folder}")
-                return []
-        
-        # 기존: 폴더 순환 시스템
-        print("📁 폴더 순환 시스템을 사용합니다.")
-        self.folder_manager.show_folder_status()
-        
-        current_folder = self.folder_manager.get_current_folder()
-        if not current_folder:
-            print("❌ 사용 가능한 이미지 폴더가 없습니다.")
-            return []
-        
-        current_images = self.folder_manager.get_images_from_folder(current_folder)
-        
-        if current_images:
-            print(f"✅ {current_folder}에서 {len(current_images)}개의 이미지를 찾았습니다.")
-            self.folder_manager.get_next_folder()
-            return current_images
+            if folder and os.path.exists(folder):
+                valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".mov", ".avi", ".mkv", ".webm"}
+                all_files = [
+                    os.path.join(folder, f)
+                    for f in os.listdir(folder)
+                    if os.path.splitext(f)[1].lower() in valid_exts
+                ]
         else:
-            print(f"❌ {current_folder}에 이미지가 없습니다.")
-            return []
+            current_folder = self.folder_manager.get_current_folder()
+            if current_folder:
+                all_files = self.folder_manager.get_images_from_folder(current_folder)
+                self.folder_manager.get_next_folder()
+        
+        images = [f for f in all_files if os.path.splitext(f)[1].lower() in {".jpg", ".jpeg", ".png", ".webp", ".gif"}]
+        videos = [f for f in all_files if os.path.splitext(f)[1].lower() in {".mp4", ".mov", ".avi", ".mkv", ".webm"}]
+        
+        return images, videos
+
+    def get_image_files(self):
+        """하위 호환성을 위해 유지"""
+        images, _ = self.get_media_files()
+        return images
 
     def find_file_button(self):
         """파일 선택 버튼을 찾는 메서드"""
@@ -178,68 +179,75 @@ class NaverBlogImageInserter:
             traceback.print_exc()
             return None
 
-    def insert_images_in_content(self, content_lines):
-        """본문 내용에 이미지 삽입"""
+    def insert_media_in_content(self, content_lines, media_position=None, media_order=None):
+        """본문 내용에 이미지와 동영상 삽입 (통합 제어)"""
         try:
-            image_files = self.get_image_files()
-            if not image_files:
-                print("삽입할 이미지가 없습니다.")
+            if media_position: self.media_position = media_position
+            if media_order: self.media_order = media_order
+
+            image_files, video_files = self.get_media_files()
+            if not image_files and not video_files:
+                print("삽입할 미디어가 없습니다.")
                 return False
                 
-            total_images = len(image_files)
-            print(f"총 {total_images}장의 이미지를 삽입합니다.")
+            print(f"총 {len(image_files)}장의 이미지와 {len(video_files)}개의 영상을 삽입합니다.")
             
-            # 저장된 위치 정보 로드
-            image_positions = self.load_image_positions()
-            
-            if image_positions and image_positions['mode'] == self.insert_mode:
-                print("저장된 이미지 위치 정보를 사용합니다.")
-                positions = [p['line'] for p in image_positions['positions']]
-            else:
-                print("새로운 이미지 위치를 계산합니다.")
+            # 미디어 믹싱 및 정렬 루틴
+            media_list = []
+            if self.media_order == "image_first":
+                media_list = [(f, "image") for f in image_files] + [(f, "video") for f in video_files]
+            elif self.media_order == "video_first":
+                media_list = [(f, "video") for f in video_files] + [(f, "image") for f in image_files]
+            elif self.media_order == "off":
+                # 사용자의 요청: '사용 안함'은 영상만 제외하고 사진은 정상 삽입
+                print("🚫 영상 삽입 제외 설정 (사진만 삽입)")
+                media_list = [(f, "image") for f in image_files]
+            else:  # mixed
+                temp_all = [(f, "image") for f in image_files] + [(f, "video") for f in video_files]
+                random.shuffle(temp_all)
+                media_list = temp_all
+
+            # 위치 계산
+            if self.media_position == "start":
+                self.move_cursor_to_line(0)
+                for f, mtype in media_list:
+                    self.insert_single_media(f, mtype)
+            elif self.media_position == "end":
+                self.move_cursor_to_end()
+                for f, mtype in media_list:
+                    self.insert_single_media(f, mtype)
+            elif self.media_position == "middle" or self.media_position == "random":
                 positions = self.calculate_image_positions(content_lines)
-            
-            if not positions and self.insert_mode != "end":
-                print("이미지 삽입 위치를 찾을 수 없습니다. 모든 이미지를 마지막에 삽입합니다.")
-                self.insert_mode = "end"
-            
-            if self.insert_mode == "end":
-                print("모든 이미지를 마지막에 삽입합니다.")
-                # 마지막 줄로 이동
-                self.move_cursor_to_end()
-                for image in image_files:
-                    if self.insert_single_image(image):
-                        # 이미지 삽입 간 딜레이 제거 
-                        pass
-                return True
-            
-            # 이미지 파일과 위치 매칭
-            image_insertions = list(zip(positions[:len(image_files)-1], image_files[:len(positions)]))
-            
-            # 위치별로 이미지 삽입
-            for pos, image in image_insertions:
-                print(f"이미지 삽입 - 위치: {pos}번째 줄")
-                # 해당 위치로 커서 이동
-                self.move_cursor_to_line(pos)
-                if self.insert_single_image(image):
-                    # 이미지 삽입 간 딜레이 제거
-                    pass
-            
-            # 남은 이미지들은 마지막에 삽입
-            remaining_images = image_files[len(positions):]
-            if remaining_images:
-                print(f"마지막에 {len(remaining_images)}장의 이미지를 삽입합니다.")
-                self.move_cursor_to_end()
-                for image in remaining_images:
-                    if self.insert_single_image(image):
-                        pass  # 딜레이 완전 제거
+                if not positions:
+                    self.move_cursor_to_end()
+                    for f, mtype in media_list:
+                        self.insert_single_media(f, mtype)
+                else:
+                    # 위치별로 분산 배치
+                    pos_idx = 0
+                    for f, mtype in media_list:
+                        target_pos = positions[pos_idx % len(positions)]
+                        self.move_cursor_to_line(target_pos)
+                        self.insert_single_media(f, mtype)
+                        pos_idx += 1
             
             return True
-            
         except Exception as e:
-            print(f"이미지 삽입 중 오류 발생: {str(e)}")
+            print(f"미디어 삽입 중 오류 발생: {str(e)}")
             traceback.print_exc()
             return False
+
+    def insert_images_in_content(self, content_lines):
+        """기존 코드와의 호환성 유지"""
+        return self.insert_media_in_content(content_lines)
+
+    def insert_single_media(self, file_path, media_type):
+        """단일 미디어 삽입 (타입 자동 판별 등 처리)"""
+        if media_type == "image":
+            return self.insert_single_image(file_path)
+        elif media_type == "video":
+            return self.insert_single_video(file_path)
+        return False
 
     def handle_image_popups(self):
         """이미지 삽입 과정에서 발생하는 팝업 처리"""
@@ -310,232 +318,280 @@ class NaverBlogImageInserter:
         except Exception as e:
             print(f"이미지 팝업 처리 중 오류: {str(e)}")
 
-    def insert_single_image(self, image_path):
-        """단일 이미지 삽입"""
-        try:
-            print(f"이미지 삽입 시도: {os.path.basename(image_path)}")
-            
-            # 🖼️ 이미지 전처리 (Pillow 적용)
-            processed_image_path = None
-            try:
-                processed_image_path = process_image(image_path, self.temp_upload_dir)
-            except Exception as e:
-                print(f"이미지 전처리 실패 (원본 사용): {e}")
+    def _intercept_file_input(self):
+        """input[type=file]의 click()을 가로채서 Finder가 열리지 않게 설정"""
+        self.driver.execute_script("""
+            window.__fileInputIntercepted = null;
+            var origClick = HTMLInputElement.prototype.click;
+            window.__origInputClick = origClick;
+            HTMLInputElement.prototype.click = function() {
+                if (this.type === 'file') {
+                    window.__fileInputIntercepted = this;
+                    return;
+                }
+                return origClick.apply(this, arguments);
+            };
+        """)
 
-            # 전처리 성공 시 교체, 실패 시 원본 사용
-            final_image_path = processed_image_path if processed_image_path else image_path
-            
-            # 먼저 팝업 처리
-            self.handle_image_popups()
-            
-            # 파일 선택 버튼을 클릭하지 않고 직접 파일 입력 요소에 접근
-            try:
-                # 자바스크립트로 파일 입력 요소 확인
-                js_script = """
-                // 기존의 파일 입력 요소가 있는지 확인
-                var fileInputs = document.querySelectorAll('input[type="file"]');
-                if (fileInputs.length > 0) {
-                    return true;
-                }
-                
-                // 없으면 이미지 버튼 클릭하여 요소 생성
-                var imgButtons = document.querySelectorAll('button.se-image-toolbar-button, button[title*="이미지"]');
-                if (imgButtons.length > 0) {
-                    imgButtons[0].click();
-                    return true;
-                }
-                return false;
-                """
-                
-                input_ready = self.driver.execute_script(js_script)
-                if not input_ready:
-                    print("파일 입력 요소를 찾거나 생성할 수 없습니다.")
-                    return False
-                
-                time.sleep(0.05)  # 요소 생성 대기 시간 단축
-                
-                # 파일 입력 요소 직접 찾기 (생성된 요소 또는 기존 요소)
-                file_input = None
-                try:
-                    # 여러 가능한 선택자 시도
-                    selectors = [
-                        'input[type="file"]',
-                        'input.se-file-selector-button',
-                        '.se-toolbar-item-image input[type="file"]'
-                    ]
-                    
-                    for selector in selectors:
-                        try:
-                            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                            if elements:
-                                file_input = elements[0]
-                                print(f"파일 입력 요소 발견: {selector}")
-                                break
-                        except:
-                            continue
-                    
-                    if not file_input:
-                        # 자바스크립트로 모든 파일 입력 요소 찾기
-                        js_script = """
-                        return document.querySelectorAll('input[type="file"]').length;
-                        """
-                        input_count = self.driver.execute_script(js_script)
-                        print(f"JS로 확인된 파일 입력 요소 수: {input_count}")
-                        
-                        if input_count > 0:
-                            file_input = self.driver.find_elements(By.CSS_SELECTOR, 'input[type="file"]')[0]
-                            print("JS로 파일 입력 요소 발견")
-                except Exception as e:
-                    print(f"파일 입력 요소 검색 중 오류: {str(e)}")
-                
-                if not file_input:
-                    print("파일 입력 요소를 찾을 수 없습니다. 이미지 버튼을 먼저 클릭합니다.")
-                    file_button = self.find_file_button()
-                    if file_button:
-                        file_button.click()
-                        time.sleep(0.05)
-                        # 다시 파일 입력 요소 찾기
-                        file_input = WebDriverWait(self.driver, 3).until(
-                            EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="file"]'))
-                        )
-                
-                if not file_input:
-                    print("파일 입력 요소를 찾을 수 없습니다.")
-                    return False
-                
-                # 절대 경로 확인
-                abs_image_path = os.path.abspath(final_image_path)
-                print(f"전송할 파일 경로: {abs_image_path}")
-                
-                # 자바스크립트로 파일 경로 설정 시도
-                try:
-                    js_set_file = f"""
-                    arguments[0].style.display = 'block';
-                    arguments[0].style.visibility = 'visible';
-                    arguments[0].style.opacity = '1';
-                    return true;
-                    """
-                    self.driver.execute_script(js_set_file, file_input)
-                    # 불필요한 대기 시간 완전 제거
-                except Exception as e:
-                    print(f"JS로 파일 입력 요소 표시 중 오류: {str(e)}")
-                
-                # 파일 경로 전송
-                file_input.clear()
-                file_input.send_keys(abs_image_path)
-                print("파일 경로 전송 완료")
-                
-                # 이미지 업로드 완료 대기 (1.5초로 변경)
-                WebDriverWait(self.driver, 1.5, poll_frequency=0.05).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "div.se-image-container img[src*='http']"))
-                )
-                print("이미지 업로드 확인됨")
-                
-                # 이미지 레이아웃 선택 대기 및 처리
-                try:
-                    # 레이아웃 선택과 확인 버튼 클릭을 하나의 JavaScript 함수로 통합
-                    js_complete_upload = """
-                    function autoCompleteImageUpload() {
-                        // 1. 레이아웃 목록 찾기
-                        const layoutList = document.querySelector('ul.se-image-type-list');
-                        if (!layoutList) {
-                            console.log('레이아웃 목록을 찾을 수 없습니다.');
-                            return false;
-                        }
-                        
-                        // 2. 레이아웃 옵션 선택 (중앙 정렬 선호)
-                        const layoutOptions = layoutList.querySelectorAll('label.se-image-type-label');
-                        if (layoutOptions.length > 0) {
-                            // 중앙 정렬 선택 (3번째 옵션이 있으면 사용)
-                            const targetOption = layoutOptions.length >= 3 ? layoutOptions[2] : layoutOptions[0];
-                            targetOption.click();
-                            console.log('레이아웃 선택 완료');
-                            
-                            // 3. 즉시 확인 버튼 클릭
-                            setTimeout(() => {
-                                // 확인 버튼 찾기 시도
-                                const confirmSelectors = [
-                                    'button.se-image-dialog-btn-submit',
-                                    'button.se-dialog-btn-submit',
-                                    'button.se-btn-confirm'
-                                ];
-                                
-                                let confirmClicked = false;
-                                for (const selector of confirmSelectors) {
-                                    const confirmBtn = document.querySelector(selector);
-                                    if (confirmBtn) {
-                                        confirmBtn.click();
-                                        confirmClicked = true;
-                                        console.log('확인 버튼 클릭 성공: ' + selector);
-                                        break;
-                                    }
-                                }
-                                
-                                if (!confirmClicked) {
-                                    // 모든 버튼 검색
-                                    const buttons = document.querySelectorAll('button');
-                                    for (const btn of buttons) {
-                                        if ((btn.innerText && (btn.innerText.includes('확인') || btn.innerText.includes('적용'))) || 
-                                            (btn.title && (btn.title.includes('확인') || btn.title.includes('적용'))) ||
-                                            (btn.className && (btn.className.includes('submit') || btn.className.includes('confirm')))) {
-                                            btn.click();
-                                            confirmClicked = true;
-                                            console.log('확인 버튼 발견 및 클릭!');
-                                            break;
-                                        }
-                                    }
-                                }
-                                
-                                return confirmClicked;
-                            }, 100);
-                            
-                            return true;
-                        } else {
-                            console.log('레이아웃 옵션을 찾을 수 없습니다.');
-                            return false;
-                        }
-                    }
-                    
-                    return autoCompleteImageUpload();
-                    """
-                    layout_result = self.driver.execute_script(js_complete_upload)
-                    if layout_result:
-                        print("JavaScript로 레이아웃 선택 및 확인 프로세스 통합 실행")
-                    else:
-                        print("JavaScript 레이아웃/확인 자동화 실패")
-                    
-                    # 성공 이벤트 후 대기 - 이미 업로드는 완료됨
-                    # 대기 시간 최소화
-                    time.sleep(0.05)
-                    
-                    # 이미지 업로드 창 무시 전략 - 이미지는 이미 삽입되었으므로 계속 진행
-                    print("이미지는 이미 삽입되었습니다. 창이 닫히지 않아도 계속 진행합니다.")
-                    
-                    # 이미지 창 닫기 시도를 제거 - 진행에 방해되지 않으므로 불필요
-                    print("이미지가 삽입되었으므로, 대화창 닫기 시도 없이 계속 진행합니다.")
-                
-                except Exception as e:
-                    print(f"레이아웃 선택 중 오류: {str(e)}")
-                    traceback.print_exc()
-                    
-                    # 레이아웃 선택 오류 발생 시에도 계속 진행
-                    print("레이아웃 선택 중 오류가 발생했지만, 이미지는 이미 업로드되었으므로 계속 진행합니다.")
-                
-                # 이미지 사용 목록에 추가
+    def _get_intercepted_input(self, max_wait=10):
+        """가로챈 input[type=file] 요소를 가져오고 원래 click 복원"""
+        file_input = None
+        for _ in range(max_wait):
+            file_input = self.driver.execute_script("return window.__fileInputIntercepted;")
+            if file_input:
+                break
+            time.sleep(0.3)
+        # 원래 click 복원
+        self.driver.execute_script("""
+            if (window.__origInputClick) {
+                HTMLInputElement.prototype.click = window.__origInputClick;
+            }
+        """)
+        return file_input
+
+    def _send_file_to_input(self, file_input, file_path):
+        """input[type=file]에 파일 경로를 send_keys로 전달"""
+        self.driver.execute_script("""
+            var el = arguments[0];
+            el.style.display = 'block';
+            el.style.visibility = 'visible';
+            el.style.opacity = '1';
+            el.style.width = '1px';
+            el.style.height = '1px';
+            el.style.position = 'absolute';
+        """, file_input)
+        file_input.send_keys(file_path)
+
+    def insert_single_image(self, image_path):
+        """단일 이미지 삽입 (Finder 열지 않음 - input click 가로채기 방식)"""
+        try:
+            abs_path = os.path.abspath(image_path)
+            print(f"📸 이미지 삽입 시도: {os.path.basename(image_path)}")
+
+            # 1. mainFrame 전환
+            self.driver.switch_to.default_content()
+            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID, "mainFrame")))
+            self.driver.switch_to.frame("mainFrame")
+
+            # 2. input[type=file] click 가로채기 설정
+            self._intercept_file_input()
+
+            # 3. 이미지 버튼 클릭 (input 생성되지만 Finder 안 열림)
+            self.driver.execute_script("document.querySelector('button.se-image-toolbar-button')?.click();")
+            time.sleep(0.5)
+
+            # 4. 가로챈 input 가져오기
+            file_input = self._get_intercepted_input()
+
+            if not file_input:
+                # 폴백: DOM에서 직접 검색
+                print("⚠️ click 가로채기 실패, DOM에서 직접 검색...")
+                inputs = self.driver.find_elements(By.CSS_SELECTOR, 'input[type="file"]')
+                if inputs:
+                    file_input = inputs[-1]
+
+            if file_input:
+                self._send_file_to_input(file_input, abs_path)
+                print(f"✅ 이미지 파일 전송 성공 (Finder 없이)")
+                time.sleep(2)
                 self.used_images.append(image_path)
-                print(f"이미지 삽입 완료: {os.path.basename(image_path)}")
-                # 작업 완료 후 대기 시간 대폭 감소
-                time.sleep(0.05)
                 return True
-                
-            except Exception as e:
-                print(f"이미지 파일 업로드 중 오류: {str(e)}")
-                traceback.print_exc()
+            else:
+                print("❌ input[type=file]을 찾을 수 없습니다")
+                try:
+                    ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+                except:
+                    pass
                 return False
-                
+
         except Exception as e:
-            print(f"이미지 삽입 중 오류: {str(e)}")
+            print(f"이미지 삽입 중 오류: {e}")
             traceback.print_exc()
+            return False
+
+    def insert_single_video(self, video_path):
+        """단일 동영상 삽입 (Finder 열지 않음 - input click 가로채기 방식)"""
+        try:
+            abs_path = os.path.abspath(video_path)
+            print(f"🎬 동영상 삽입 시도: {os.path.basename(video_path)}")
+
+            # 1. 동영상 툴바 버튼 클릭 (mainFrame 내부)
+            try:
+                self.driver.switch_to.default_content()
+                WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.ID, "mainFrame")))
+                self.driver.switch_to.frame("mainFrame")
+                self.driver.execute_script("document.querySelector('button.se-video-toolbar-button')?.click();")
+                time.sleep(1.5)
+            except Exception as e:
+                print(f"동영상 버튼 클릭 실패: {e}")
+                return False
+
+            # 2. 동영상 팝업은 default_content에 열림
+            self.driver.switch_to.default_content()
+
+            # 3. input[type=file] click 가로채기 설정
+            self._intercept_file_input()
+
+            # 4. '동영상 추가' 버튼 클릭 (Finder 대신 input이 가로채어짐)
+            self.driver.execute_script("""
+                var selectors = ['.se-video-dialog-btn-upload', '.se-video-dialog-content-upload-button', '.se-popup-button-upload'];
+                for (var i = 0; i < selectors.length; i++) {
+                    var btn = document.querySelector(selectors[i]);
+                    if (btn) { btn.click(); return true; }
+                }
+                var buttons = Array.from(document.querySelectorAll('button')).filter(function(b) {
+                    return b.innerText.indexOf('추가') >= 0 || b.innerText.indexOf('파일') >= 0;
+                });
+                if (buttons.length > 0) { buttons[0].click(); return true; }
+                return false;
+            """)
+            time.sleep(1)
+
+            # 5. 가로챈 input 가져오기
+            file_input = self._get_intercepted_input()
+
+            if not file_input:
+                inputs = self.driver.find_elements(By.CSS_SELECTOR, 'input[type="file"]')
+                if inputs:
+                    file_input = inputs[-1]
+
+            if file_input:
+                self._send_file_to_input(file_input, abs_path)
+                print(f"✅ 동영상 파일 전송 성공 (Finder 없이)")
+                time.sleep(3)
+
+                # 6. 메타데이터 입력
+                print("📝 동영상 제목 및 태그 입력 중...")
+                self.driver.execute_script("""
+                    var titleInput = document.querySelector('input[class*="title"], input[placeholder*="제목"]');
+                    var descInput = document.querySelector('textarea[class*="description"], textarea[placeholder*="설명"]');
+                    var tagInput = document.querySelector('input[class*="tag"], input[placeholder*="태그"]');
+                    if (titleInput) { titleInput.value = arguments[0]; titleInput.dispatchEvent(new Event('input', {bubbles:true})); }
+                    if (descInput) { descInput.value = arguments[1]; descInput.dispatchEvent(new Event('input', {bubbles:true})); }
+                    if (tagInput) { tagInput.value = arguments[2]; tagInput.dispatchEvent(new Event('input', {bubbles:true})); }
+                """, self.video_metadata.get('title', ''), self.video_metadata.get('info', ''), self.video_metadata.get('tags', ''))
+                time.sleep(1)
+
+                # 7. 완료 버튼 클릭
+                self.driver.execute_script("""
+                    var selectors = ['.se-video-dialog-btn-submit', '.se-popup-button-confirm', 'button[class*="submit"]'];
+                    for (var i = 0; i < selectors.length; i++) {
+                        var btn = document.querySelector(selectors[i]);
+                        if (btn && !btn.disabled) { btn.click(); return true; }
+                    }
+                    var buttons = Array.from(document.querySelectorAll('button')).filter(function(b) {
+                        return b.innerText.indexOf('완료') >= 0 || b.innerText.indexOf('올리기') >= 0;
+                    });
+                    if (buttons.length > 0) { buttons[0].click(); return true; }
+                    return false;
+                """)
+                print("✅ 동영상 업로드 완료")
+                self.used_images.append(video_path)
+                return True
+            else:
+                print("❌ 동영상 input[type=file]을 찾을 수 없습니다")
+                return False
+            
+        finally:
+            # 🎯 중요: 실패하든 성공하든 무조건 팝업을 닫고 mainFrame으로 복귀해야 함!
+            try:
+                print("🧹 남아있는 팝업 정리 시도...")
+                self.driver.switch_to.default_content()
+                
+                # 강제 닫기 버튼 클릭
+                self.driver.execute_script("""
+                    document.querySelectorAll('.se-popup-button-cancel, .se-popup-close-button, button[class*="close"], button[title*="닫기"], .se-video-dialog-btn-close').forEach(btn => {
+                        try { btn.click(); } catch(e) {}
+                    });
+                """)
+                
+                # ESC 키 입력
+                for _ in range(3):
+                    self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+                    time.sleep(0.2)
+                    
+                # mainFrame으로 복귀
+                frame = WebDriverWait(self.driver, 3).until(
+                    EC.presence_of_element_located((By.ID, "mainFrame"))
+                )
+                self.driver.switch_to.frame(frame)
+                print("✅ 팝업 정리 완료 및 mainFrame 복귀 성공")
+            except Exception as e:
+                print(f"팝업 정리 및 프레임 복귀 중 오류 (무시됨): {str(e)}")
+
+    def _simulate_video_drop(self, video_path):
+        """드래그 앤 드롭 시뮬레이션을 통한 동영상 삽입"""
+        try:
+            print("🖱️ 드래그 앤 드롭 시뮬레이션 시작...")
+            
+            target = None
+            
+            # 1. 다이얼로그 안의 드롭존을 먼저 찾습니다 (default_content에 있음)
+            dropzone_selectors = [".se-video-dialog-dropzone", ".se-video-dialog-content", ".se-video-dialog", ".se-popup"]
+            for sel in dropzone_selectors:
+                try:
+                    el = self.driver.find_element(By.CSS_SELECTOR, sel)
+                    if el.is_displayed():
+                        target = el
+                        print(f"✅ 다이얼로그 안의 드롭존( {sel} ) 발견")
+                        break
+                except:
+                    continue
+            
+            # 2. 다이얼로그 드롭존이 없으면 에디터 본문(mainFrame 안)에 직접 드롭 시도!
+            if not target:
+                print("⚠️ 팝업 드롭존을 찾지 못했습니다. 에디터 본문에 직접 드롭을 시도합니다.")
+                try:
+                    self.driver.switch_to.frame("mainFrame")
+                    target = self.driver.find_element(By.CSS_SELECTOR, ".se-main-container, body")
+                    print("✅ 에디터 본문 드롭존 발견")
+                except:
+                    print("❌ 어떤 드롭존도 찾을 수 없습니다.")
+                    return False
+
+            js_drop_script = """
+                var target = arguments[0];
+                var offsetX = 0;
+                var offsetY = 0;
+                var document = target.ownerDocument || document;
+                var window = document.defaultView || window;
+
+                var input = document.createElement('input');
+                input.type = 'file';
+                input.style.display = 'none';
+                input.onchange = function () {
+                    var rect = target.getBoundingClientRect();
+                    var x = rect.left + (offsetX || (rect.width >> 1));
+                    var y = rect.top + (offsetY || (rect.height >> 1));
+                    var dataTransfer = { files: this.files };
+
+                    ['dragenter', 'dragover', 'drop'].forEach(function (name) {
+                        var evt = document.createEvent('MouseEvent');
+                        evt.initMouseEvent(name, true, true, window, 0, 0, 0, x, y, false, false, false, false, 0, null);
+                        evt.dataTransfer = dataTransfer;
+                        target.dispatchEvent(evt);
+                    });
+
+                    setTimeout(function () { document.body.removeChild(input); }, 20);
+                };
+                document.body.appendChild(input);
+                return input;
+            """
+            fake_input = self.driver.execute_script(js_drop_script, target)
+            fake_input.send_keys(video_path)
+            print("✅ 드롭 시뮬레이션 이벤트 발송 완료")
+            
+            # 다시 default_content로 돌아와 업로드 화면 대기
+            self.driver.switch_to.default_content()
+            time.sleep(3)
+            
+            self.driver.execute_script("""
+                const btn = document.querySelector('.se-video-dialog-btn-submit, .se-popup-button-confirm');
+                if (btn) btn.click();
+            """)
+            return True
+        except Exception as e:
+            print(f"❌ 드롭 시뮬레이션 실패: {e}")
             return False
             
     def cleanup_temp_images(self):

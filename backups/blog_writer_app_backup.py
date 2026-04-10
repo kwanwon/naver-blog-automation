@@ -375,11 +375,6 @@ class BlogWriterApp:
         try:
             from naver_band_auto import NaverBandAutomation
             
-            # 🔒 브라우저 락 - 동시 실행 방지
-            self.browser_lock.acquire()
-            self.is_browser_busy = True
-            
-            print("📤 [나폴라] 밴드 자동 포스팅 시작...")
             driver = self.get_or_create_driver()
             band_url = self.settings.get('band_url', '')
             
@@ -397,10 +392,6 @@ class BlogWriterApp:
         except Exception as e:
             print(f"❌ 밴드 포스팅 오류: {e}")
             return False
-        finally:
-            self.is_browser_busy = False
-            self.browser_lock.release()
-            print("🔓 [나폴라] 밴드 자동 포스팅 대기열 해제")
     
     def _drive_on_success(self, folder_name: str, file_count: int):
         """드라이브 자동 포스팅 성공 콜백"""
@@ -568,9 +559,7 @@ class BlogWriterApp:
                     auto_mode=True, 
                     image_insert_mode=self.settings.get('blog_image_position', 'random'),
                     custom_images_folder=folder_path,
-                    naver_id=naver_id,
-                    media_position=self.settings.get('blog_media_position', 'middle'),
-                    media_order=self.settings.get('blog_media_order', 'image_first')
+                    naver_id=naver_id
                 )
                 blog_auto.driver = driver
                 
@@ -615,8 +604,10 @@ class BlogWriterApp:
             try:
                 from modules.sheets_reader import GoogleSheetsReader
                 reader = GoogleSheetsReader(sheet_url=sheet_url)
-                # 카페 감시 모드: 날짜 무관 가장 마지막 주제 가져오기 (사용자 요청 반영)
-                sheet_content = reader.get_latest_content()
+                period = "오후" if "오후" in folder_name or "시부" in folder_name else "오전"
+                sheet_content = reader.get_combined_content_by_period(period=period)
+                if not sheet_content:
+                    sheet_content = reader.get_today_content()
             except Exception as e:
                 print(f"⚠️ 카페 구글 시트 연동 오류: {e}")
                 
@@ -2590,9 +2581,7 @@ class BlogWriterApp:
                             image_insert_mode=self.settings.get('blog_image_position', 'random'),
                             use_stickers=False,
                             custom_images_folder=custom_images_folder,
-                            naver_id=self.settings.get('naver_id', ''),
-                            media_position=self.settings.get('blog_media_position', 'middle'),
-                            media_order=self.settings.get('blog_media_order', 'image_first')
+                            naver_id=self.settings.get('naver_id', '')
                         )
                         
                         # 기본 디렉토리 및 설정
@@ -2612,8 +2601,6 @@ class BlogWriterApp:
                                 insert_mode=blog_auto.image_insert_mode,
                                 fallback_folder=fallback_folder
                             )
-                            blog_auto.image_inserter.media_position = self.settings.get('blog_media_position', 'middle')
-                            blog_auto.image_inserter.media_order = self.settings.get('blog_media_order', 'image_first')
                             print("    ✅ 이미지 삽입 핸들러 초기화 완료")
                         else:
                             blog_auto.image_inserter = None
@@ -2800,9 +2787,7 @@ class BlogWriterApp:
                             image_insert_mode=self.settings.get('blog_image_position', 'random'),
                             use_stickers=False,
                             custom_images_folder=custom_images_folder,
-                            naver_id=naver_id,
-                            media_position=self.settings.get('blog_media_position', 'middle'),
-                            media_order=self.settings.get('blog_media_order', 'image_first')
+                            naver_id=naver_id # 🆕 네이버 ID 전달
                         )
                         
                         blog_auto.base_dir = self.base_dir
@@ -2819,8 +2804,6 @@ class BlogWriterApp:
                                 insert_mode=blog_auto.image_insert_mode,
                                 fallback_folder=fallback_folder
                             )
-                            blog_auto.image_inserter.media_position = self.settings.get('blog_media_position', 'middle')
-                            blog_auto.image_inserter.media_order = self.settings.get('blog_media_order', 'image_first')
                         else:
                             blog_auto.image_inserter = None
                         
@@ -5824,8 +5807,7 @@ class BlogWriterApp:
         def on_auto_image_change(e):
             is_on = e.control.value
             self.blog_image_mode_dropdown.disabled = not is_on
-            self.blog_media_position_dropdown.disabled = not is_on
-            self.blog_media_order_dropdown.disabled = not is_on
+            self.blog_image_position_dropdown.disabled = not is_on
             if not is_on:
                 self.blog_drive_settings_row.visible = False
                 if hasattr(self, 'blog_manual_settings_row'):
@@ -5833,10 +5815,8 @@ class BlogWriterApp:
             else:
                 if hasattr(self, 'on_blog_image_mode_change'):
                     self.on_blog_image_mode_change(type('obj', (object,), {'control': self.blog_image_mode_dropdown}))
-            
             self.blog_image_mode_dropdown.update()
-            self.blog_media_position_dropdown.update()
-            self.blog_media_order_dropdown.update()
+            self.blog_image_position_dropdown.update()
             self._save_setting('auto_image', is_on)
 
         auto_image_checkbox = ft.Checkbox(
@@ -5932,12 +5912,7 @@ class BlogWriterApp:
             multiline=True,
             min_lines=2,
             max_lines=4,
-            expand=True,
-            value="""[Strict Style Rules: Anti-AI Filter]
-No Quotes: 제목과 본문에 따옴표(" ", ' ') 사용 금지. 강조는 **[대괄호]**나 볼드체로 하세요.
-Human-like List: 숫자(1. 2. 3.) 대신 '첫 번째는', '둘째는', '하나. 둘.' 처럼 사람의 호흡으로 쓰세요.
-Forbidden Words: 최고, 최선, 소중한, 놀라운, 발전하는, 결론적으로, 요약하자면 (AI가 즐겨 쓰는 단어 제외).
-Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자연스럽게 언급하세요."""
+            expand=True
         )
         
         persona_help_text = ft.Text(
@@ -5953,12 +5928,7 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
             multiline=True,
             min_lines=3,
             max_lines=5,
-            expand=True,
-            value="""[Content Structure: Quality over Quantity]
-Target Length: 1,200 ~ 1,300 characters. (모바일 가독성과 정보성을 모두 잡는 최적의 길이)
-Intro (Local & Emotional): 양양의 풍경이나 날씨로 시작해 부모님의 고민을 건드리세요.
-Body (Expertise): 전문 용어(예: 근방추, 성장판, 코어)를 반드시 포함하되, **"쉽게 말해 ~라는 뜻입니다"**라는 설명을 덧붙이세요. 여기서 '전문성'이 판가름 납니다.
-Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려나 신체 활동을 제안하세요."""
+            expand=True
         )
         
         instructions_help_text = ft.Text(
@@ -5974,12 +5944,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             multiline=True,
             min_lines=2,
             max_lines=4,
-            expand=True,
-            value="""[Strict Style Rules: Anti-AI Filter]
-No Quotes: 제목과 본문에 따옴표(" ", ' ') 사용 금지. 강조는 **[대괄호]**나 볼드체로 하세요.
-Human-like List: 숫자(1. 2. 3.) 대신 '첫 번째는', '둘째는', '하나. 둘.' 처럼 사람의 호흡으로 쓰세요.
-Forbidden Words: 최고, 최선, 소중한, 놀라운, 발전하는, 결론적으로, 요약하자면 (AI가 즐겨 쓰는 단어 제외).
-Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자연스럽게 언급하세요."""
+            expand=True
         )
         
         style_help_text = ft.Text(
@@ -6127,30 +6092,15 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
             on_change=on_blog_image_mode_change
         )
         
-        self.blog_media_position_dropdown = ft.Dropdown(
+        self.blog_image_position_dropdown = ft.Dropdown(
             label="삽입 위치",
             options=[
-                ft.dropdown.Option("start", "글 시작 부분"),
-                ft.dropdown.Option("middle", "문단 사이 분산"),
-                ft.dropdown.Option("end", "맨 아래 일괄"),
-                ft.dropdown.Option("random", "무작위"),
+                ft.dropdown.Option("random", "문단 사이 분산 삽입"),
+                ft.dropdown.Option("end", "맨 아래 일괄 삽입"),
             ],
-            value=self.settings.get('blog_media_position', 'middle'),
+            value=self.settings.get('blog_image_position', 'random'),
             width=180,
-            on_change=lambda e: self._save_setting('blog_media_position', e.control.value)
-        )
-
-        self.blog_media_order_dropdown = ft.Dropdown(
-            label="사진/영상 순서",
-            options=[
-                ft.dropdown.Option("image_first", "사진 우선"),
-                ft.dropdown.Option("video_first", "영상 우선"),
-                ft.dropdown.Option("mixed", "무작위"),
-                ft.dropdown.Option("off", "사용 안함"),
-            ],
-            value=self.settings.get('blog_media_order', 'image_first'),
-            width=180,
-            on_change=lambda e: self._save_setting('blog_media_order', e.control.value)
+            on_change=lambda e: self._save_setting('blog_image_position', e.control.value)
         )
         
         # 📂 구글 드라이브 감지 설정 (기본 숨김)
@@ -6310,8 +6260,6 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
                     # 블로그 이미지 설정
                     "auto_image": auto_image_checkbox.value,
                     "blog_image_mode": self.blog_image_mode_dropdown.value,
-                    "blog_media_position": self.blog_media_position_dropdown.value,
-                    "blog_media_order": self.blog_media_order_dropdown.value,
                     "blog_drive_folder": self.blog_drive_folder_path.value,
                     
                     # 카페 이미지 설정
@@ -6362,8 +6310,6 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
                         if saved_blog_img_mode == 'detect':
                             saved_blog_img_mode = 'auto'  # detect는 독립 섹션으로 분리됨
                         self.blog_image_mode_dropdown.value = saved_blog_img_mode
-                        self.blog_media_position_dropdown.value = app_settings.get('blog_media_position', 'middle')
-                        self.blog_media_order_dropdown.value = app_settings.get('blog_media_order', 'image_first')
                         self.blog_drive_folder_path.value = app_settings.get('blog_drive_folder', '')
                         auto_image_checkbox.value = app_settings.get('auto_image', True)
                         
@@ -6600,27 +6546,6 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
             max_lines=4
         )
 
-        video_title = ft.TextField(
-            label="🎬 동영상 업로드 제목",
-            hint_text="동영상 업로드 시 사용할 기본 제목",
-            value="네이버뉴스"
-        )
-
-        video_info = ft.TextField(
-            label="🎬 동영상 업로드 정보(설명)",
-            hint_text="동영상 업로드 시 사용할 기본 설명",
-            value="네이버뉴스",
-            multiline=True,
-            min_lines=2,
-            max_lines=3
-        )
-
-        video_tags = ft.TextField(
-            label="🎬 동영상 업로드 태그 (쉼표 구분)",
-            hint_text="예: 양양합기도, 태권도, 운동",
-            value="양양합기도, 등등"
-        )
-
         # 🟢 종목에 따른 기본 주제어 치환 로직
         gym_sport = self.settings.get('gym_sport', '합기도')
         primary_sport = gym_sport.split(',')[0].strip() or '합기도'
@@ -6671,40 +6596,34 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
         blog_slogan = ft.TextField(
             label="블로그 마지막 슬로건",
             hint_text="블로그 글 마지막 슬로건",
-            multiline=True, min_lines=2, max_lines=4,
-            on_blur=lambda e: _save_user_setting_individual('blog_slogan', e.control.value)
+            multiline=True, min_lines=2, max_lines=4
         )
         cafe_slogan = ft.TextField(
             label="카페 마지막 슬로건",
             hint_text="카페 글 마지막 슬로건",
-            multiline=True, min_lines=2, max_lines=4,
-            on_blur=lambda e: _save_user_setting_individual('cafe_slogan', e.control.value)
+            multiline=True, min_lines=2, max_lines=4
         )
         band_slogan = ft.TextField(
             label="밴드 마지막 슬로건",
             hint_text="밴드 글 마지막 슬로건",
-            multiline=True, min_lines=2, max_lines=4,
-            on_blur=lambda e: _save_user_setting_individual('band_slogan', e.control.value)
+            multiline=True, min_lines=2, max_lines=4
         )
 
         # 본문 첫 문장 설정 필드 추가
         blog_first_sentence = ft.TextField(
             label="블로그 본문 첫 문장",
             hint_text="블로그 포스팅 첫 문장 (예: 안녕하세요...)",
-            multiline=True, min_lines=2, max_lines=3,
-            on_blur=lambda e: _save_user_setting_individual('blog_first_sentence', e.control.value)
+            multiline=True, min_lines=2, max_lines=3
         )
         cafe_first_sentence = ft.TextField(
             label="카페 본문 첫 문장",
             hint_text="카페 포스팅 첫 문장",
-            multiline=True, min_lines=2, max_lines=3,
-            on_blur=lambda e: _save_user_setting_individual('cafe_first_sentence', e.control.value)
+            multiline=True, min_lines=2, max_lines=3
         )
         band_first_sentence = ft.TextField(
             label="밴드 본문 첫 문장",
             hint_text="밴드 포스팅 첫 문장",
-            multiline=True, min_lines=2, max_lines=3,
-            on_blur=lambda e: _save_user_setting_individual('band_first_sentence', e.control.value)
+            multiline=True, min_lines=2, max_lines=3
         )
         
         # 답글 지침 커스터마이징 필드
@@ -6948,15 +6867,6 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
                     "band_sheet_url": self.band_sheet_url.value,
                     "blog_drive_folder": self.user_blog_drive_folder.value,
                     "cafe_drive_folder": self.user_cafe_drive_folder.value,
-                    "video_title": video_title.value,
-                    "video_info": video_info.value,
-                    "video_tags": video_tags.value,
-                    "blog_slogan": blog_slogan.value,
-                    "cafe_slogan": cafe_slogan.value,
-                    "band_slogan": band_slogan.value,
-                    "blog_first_sentence": blog_first_sentence.value,
-                    "cafe_first_sentence": cafe_first_sentence.value,
-                    "band_first_sentence": band_first_sentence.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 
@@ -6978,25 +6888,6 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
                 page.snack_bar = ft.SnackBar(content=ft.Text(f"저장 중 오류 발생: {str(e)}"))
                 page.snack_bar.open = True
                 page.update()
-
-        def _save_user_setting_individual(key, value):
-            """사용자 설정 개별 항목 자동 저장 (on_blur 용)"""
-            try:
-                user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
-                settings = {}
-                if os.path.exists(user_settings_path):
-                    with open(user_settings_path, 'r', encoding='utf-8') as f:
-                        settings = json.load(f)
-                
-                # 값 변경 시만 저장
-                if settings.get(key) != value:
-                    settings[key] = value
-                    settings["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    with open(user_settings_path, 'w', encoding='utf-8') as f:
-                        json.dump(settings, f, ensure_ascii=False, indent=2)
-                    print(f"✅ 사용자 설정 자동 저장됨: {key} -> {value}")
-            except Exception as ex:
-                print(f"⚠️ 사용자 설정 개별 저장 오류: {ex}")
 
         def load_user_settings():
             try:
@@ -7044,9 +6935,6 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
                         band_first_sentence.value = settings.get('band_first_sentence', '')
                         reply_instruction.value = settings.get('reply_instruction', '- 댓글 내용에 공감하며 감사 표현\n- 15~30자 이내로 짧게 작성\n- 이모지 1개만 포함')
                         default_reply.value = settings.get('default_reply', '감사합니다😊,좋은 말씀 감사해요💕,응원 감사합니다🙏,행복한 하루 되세요✨,방문 감사합니다🌻')
-                        video_title.value = settings.get('video_title', '네이버뉴스')
-                        video_info.value = settings.get('video_info', '네이버뉴스')
-                        video_tags.value = settings.get('video_tags', '양양합기도, 등등')
                         page.update()
             except Exception as e:
                 print(f"사용자 설정 로드 중 오류 발생: {str(e)}")
@@ -7559,16 +7447,14 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
                      # 🆕 네이버 ID 설정 가져오기
                     naver_id = self.settings.get('naver_id', '')
                     
-                    insert_position = self.blog_media_position_dropdown.value
+                    insert_position = self.blog_image_position_dropdown.value
                     
                     blog_auto = NaverBlogAutomation(
                         auto_mode=auto_image_enabled,  # 포스트 단위 이미지 사용 여부
                         image_insert_mode=insert_position,  # 'random' 또는 'end'
                         use_stickers=False,
                         custom_images_folder=custom_images_folder,  # 포스트별 단일 폴더 고정
-                        naver_id=naver_id, # 🆕 네이버 ID 전달
-                        media_position=self.blog_media_position_dropdown.value,
-                        media_order=self.blog_media_order_dropdown.value
+                        naver_id=naver_id # 🆕 네이버 ID 전달
                     )
                     
                     # 기본 디렉토리를 현재 작업 디렉토리로 설정하여 설정 파일 경로 보정
@@ -7594,8 +7480,6 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
                             insert_mode=blog_auto.image_insert_mode,
                             fallback_folder=fallback_folder
                         )
-                        blog_auto.image_inserter.media_position = self.blog_media_position_dropdown.value
-                        blog_auto.image_inserter.media_order = self.blog_media_order_dropdown.value
                         print("✅ 이미지 삽입 핸들러 수동 초기화 완료")
                     else:
                         print("ℹ️ 이미지 자동 삽입이 비활성화되어 있습니다.")
@@ -7823,8 +7707,7 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
                         ], spacing=5),
                         ft.Row([
                             self.blog_image_mode_dropdown,
-                            self.blog_media_position_dropdown,
-                            self.blog_media_order_dropdown,
+                            self.blog_image_position_dropdown,
                         ], spacing=10),
                         blog_image_help_text,
                         self.blog_manual_settings_row,
@@ -8148,12 +8031,6 @@ Local Touch: 본문에 양양의 특정 장소(양양초, 남대천 등)를 자�
                     blog_tags,
                     blog_topics,
                     cafe_topics,
-                    
-                    ft.Divider(),
-                    ft.Text("🎞️ 동영상 업로드 설정", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700),
-                    video_title,
-                    video_info,
-                    video_tags,
                     
                     ft.Divider(),
                     ft.Text("📊 밴드 주제 설정", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_700),

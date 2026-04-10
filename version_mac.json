@@ -1,13 +1,16 @@
 {
-  "version": "1.2.117",
-  "updated_at": "2026-03-24T00:00:00",
-  "release_date": "2026-03-24",
+  "version": "1.2.119",
+  "updated_at": "2026-04-10T12:00:00",
+  "release_date": "2026-04-10",
   "changelog": [
     "✨ [Fix] Windows 빌드 아이콘 누락 수정 및 인스톨러 호환성 개선",
     "🚀 [Critical Fix] 블로그 이미지 업로드 시 AppData 경로 TypeError 버그 수정 (맥/윈도우 공통)",
     "💊 [Fix] Windows 버전 버그 수정 및 안정성 향상",
     "✨ [New] 초보자를 위한 상세 가이드 및 인앱 도움말 버튼 추가 (API 키/주소 설정)",
     "🐛 [Windows] 설치형 앱 실행 시 권한 문제(WinError 5) 해결 (데이터를 AppData에 저장)",
+    "✅ [Fix] 설치형 앱 로그 뷰어 충돌 원인(logging 라이브러리 Noconsole 환경 충돌) 해결",
+    "✅ [Fix] 예약 포스팅 설정 시 내일 아침 날씨가 오늘 날씨로 들어가는 시간 연산 버그 수정",
+    "🐛 [Windows] 블로그 예약 발행 버튼 인식 오류 수정 (Robust Click 적용)",
     "✨ [Feature] 스마트 학기/방학 감지 로직 적용 (Smart Semester Context)",
     "💡 [Improvement] 방학 중 '등하교', '급식' 등 학교 관련 주제 입력 시 '새학기 준비'로 자동 우회(Smart Detour)",
     "🚑 [Hotfix] 예약글 존재 시 발행 버튼 대신 예약확인 버튼이 클릭되는 문제 수정 (정확한 선택자 적용)",
@@ -85,7 +88,13 @@
     "🐛 알림 내용 미출력 문제 해결: 'Click-and-Capture' 방식 도입",
     "✨ 답글 인식 로직 고도화: '답글' 단어 없이도 문맥으로 답글 인식",
     "🐛 WebDriver 오류 수정: Tuple 반환 문제 해결",
-    "🚀 내 글 댓글 제외 및 순수 답글(소통)만 필터링 기능 추가"
+    "🚀 내 글 댓글 제외 및 순수 답글(소통)만 필터링 기능 추가",
+    "🚑 [Critical Hotfix] gpt_handler.py 내 target_time 미정의로 인한 앱 시작 오류 해결",
+    "🚑 [Critical Hotfix] naver_cafe_auto.py 내 title_input, submit_btn 미정의 오류 해결",
+    "✨ [Feature] 밴드 포스팅 시간대별 다중화 적용 (오전: 상세 날씨 + 확률적 새학기, 오후/저녁: 뉴스 중심)",
+    "🚀 [Stability] 브라우저 꺼짐 방지 로직 고도화 (작업 중 메인 창 유지 및 세션 리로드 최적화)",
+    "📝 [Fix] 밴드 포스팅 글자 수(300~400자) 최적화 및 UI 지침 연동 버그 수정",
+    "🔍 [New] 드라이브 자동 감지 모드 확장: 밴드 외 블로그, 카페 자동 포스팅 지원 추가"
   ],
   "min_requirements": {
     "python": "3.8+",
