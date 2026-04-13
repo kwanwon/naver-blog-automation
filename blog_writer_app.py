@@ -5956,7 +5956,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             expand=True,
             value="""[Content Structure: Quality over Quantity]
 Target Length: 1,200 ~ 1,300 characters. (모바일 가독성과 정보성을 모두 잡는 최적의 길이)
-Intro (Local & Emotional): 양양의 풍경이나 날씨로 시작해 부모님의 고민을 건드리세요.
+Intro (Local & Emotional): 우리 지역의 풍경이나 날씨로 시작해 부모님의 고민을 건드리세요.
 Body (Expertise): 전문 용어(예: 근방추, 성장판, 코어)를 반드시 포함하되, **"쉽게 말해 ~라는 뜻입니다"**라는 설명을 덧붙이세요. 여기서 '전문성'이 판가름 납니다.
 Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려나 신체 활동을 제안하세요."""
         )
@@ -10443,7 +10443,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                             value=self.settings.get('gym_sport', '합기도'),
                             on_blur=lambda e: self._save_setting('gym_sport', e.control.value)
                         ),
-                        ft.Text("💡 AI가 이 종목에 맞는 용어로 글을 작성합니다. (예: 합기도 → 낙법, 호신술 / 태권도 → 품새, 격파)", size=11, color=ft.Colors.GREY_600),
+                        ft.Text("💡 AI가 이 종목에 맞는 용어로 글을 작성합니다. (예: 합기도 → 낙법, 발차기 / 태권도 → 품새, 격파)", size=11, color=ft.Colors.GREY_600),
                         
                         ft.Divider(height=15),
                         

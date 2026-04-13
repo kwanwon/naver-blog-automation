@@ -274,7 +274,7 @@ class NaverBlogPostFinisher:
             print("카카오톡 링크 추가 전 줄바꿈 완료")
             
             # 도장 이름 확인 - 설정에 없을 경우 기본값 사용
-            dojang_name = self.settings.get('dojang_name', '라이온태권도')
+            dojang_name = self.settings.get('dojang_name', '라이온짐')
             print(f"푸터에 사용할 도장 이름: {dojang_name}")
             
             # 슬로건은 GPT 생성 본문에 이미 포함되어 있으므로 여기서는 추가하지 않음
