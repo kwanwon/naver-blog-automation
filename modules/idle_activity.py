@@ -118,7 +118,7 @@ class IdleActivity:
 - 상대방이 나에게 해준 게 없는데 "감사합니다"라고 말하기 (나는 방문자임)
 
 📌 예시:
-"오늘 [수련내용/활동] 하시는 모습 보니 정말 열정이 대단하시네요! 저도 같은 지도자로서 많이 배우고 갑니다. 앞으로도 자주 소통하며 지내요~"
+"오늘 [수련내용/활동] 하시는 모습 보니 정말 열정이 대단하시네요! 아이들 표정에서 즐거움이 느껴져서 저까지 기분이 좋아집니다. 앞으로도 자주 소통하며 지내요~"
 """
             result = self.gpt_handler.generate_platform_content(
                 topic=prompt,
@@ -129,13 +129,15 @@ class IdleActivity:
             # 정리
             if len(comment) > 120: 
                 comment = comment[:120]
-            if len(comment) < 10 or "작성" in comment or "[" in comment:
-                return self._get_next_comment_phrase() + " 제 블로그에도 놀러오세요^^"
             
-            # 초대 문구가 없으면 추가
-            invite_phrases = ["블로그", "놀러오", "구경오", "방문"]
-            if not any(p in comment for p in invite_phrases):
-                comment += " 제 블로그에도 놀러오세요^^"
+            # [삭제] 강제 방문 유도 로직 제거 (사용자 요청)
+            # if len(comment) < 10 or "작성" in comment or "[" in comment:
+            #     return self._get_next_comment_phrase() + " 제 블로그에도 놀러오세요^^"
+            
+            # [삭제] 초대 문구 강제 추가 로직 제거
+            # invite_phrases = ["블로그", "놀러오", "구경오", "방문"]
+            # if not any(p in comment for p in invite_phrases):
+            #     comment += " 제 블로그에도 놀러오세요^^"
             
             return comment.strip()
         except Exception:
