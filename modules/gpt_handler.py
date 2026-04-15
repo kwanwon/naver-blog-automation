@@ -306,6 +306,8 @@ class GPTHandler:
         if platform == 'idle':
             rules += "6. 소통 진정성: 반드시 상대방 포스팅의 본문 내용 중 핵심 키워드나 상황을 언급하여 '정성스럽게 읽고 쓴 댓글'임을 증명하세요.\n"
             rules += "7. 홍보 금지: 본인의 비즈니스 홍보나 방문 유도 멘트를 절대 사용하지 마세요.\n"
+            rules += "8. 날씨 언급 절대 금지: '오늘 날씨가 화창하네요' 등 날씨 관련 표현을 절대 사용하지 마세요. 지역마다 날씨가 다르기 때문입니다.\n"
+            rules += "9. 계절감 규칙: 계절 표현이 꼭 필요한 경우에만 글의 주제와 직접 연관된 간접적 표현만 허용합니다. (예: 봄나들이 글 → '봄에 딱 맞는 글이네요'는 OK, '오늘 날씨가 맑아서'는 금지)\n"
         
         return rules
 
@@ -845,8 +847,8 @@ class GPTHandler:
             )
         }
         
-        # 🟢 블로그/드라이브 자동포스팅/수동주제포스팅은 시간대 인사 불필요
-        if platform in ['blog', 'drive_auto', 'manual_topic']:
+        # 🟢 블로그/드라이브 자동포스팅/수동주제포스팅/이웃소통은 시간대 인사 불필요
+        if platform in ['blog', 'drive_auto', 'manual_topic', 'idle']:
             time_instruction = ""  # 시간대 인사 없음
         else:
             time_instruction = task_instructions.get(task_type, task_instructions['regular'])

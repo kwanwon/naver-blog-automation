@@ -126,22 +126,21 @@ class IdleActivity:
             )
             comment = result.get('content', '')
             
-            # 정리
-            if len(comment) > 120: 
-                comment = comment[:120]
-            
-            # [삭제] 강제 방문 유도 로직 제거 (사용자 요청)
-            # if len(comment) < 10 or "작성" in comment or "[" in comment:
-            #     return self._get_next_comment_phrase() + " 제 블로그에도 놀러오세요^^"
-            
-            # [삭제] 초대 문구 강제 추가 로직 제거
-            # invite_phrases = ["블로그", "놀러오", "구경오", "방문"]
-            # if not any(p in comment for p in invite_phrases):
-            #     comment += " 제 블로그에도 놀러오세요^^"
+            # 정리: 문장 단위로 자르기 (중인 잘림 방지)
+            if len(comment) > 150:
+                # 마침표(。. ! ?) 기준으로 안전하게 자르기
+                cut = comment[:150]
+                for end_char in ['^^', '~', '!', '?', '.', '。']:
+                    last_idx = cut.rfind(end_char)
+                    if last_idx > 60:  # 적어도 60자 이상이어야 자르기
+                        comment = cut[:last_idx + len(end_char)]
+                        break
+                else:
+                    comment = cut  # 마침 문자 못 찾으면 그대로
             
             return comment.strip()
         except Exception:
-            return self._get_next_comment_phrase() + " 제 블로그에도 놀러오세요^^"
+            return self._get_next_comment_phrase()
     
     def visit_and_interact(self, count=3, do_like=True, use_ai=False, min_interval=300, max_interval=600):
         print(f"🤝 이웃 소통 활동 시작... (목표: {count}회)")
