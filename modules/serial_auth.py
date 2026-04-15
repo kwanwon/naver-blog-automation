@@ -613,52 +613,102 @@ class BlogSerialAuth:
         return False
     
     def is_serial_required(self) -> bool:
-        """시리얼 입력이 필요한지 확인 (실제 유효성 검증 포함)"""
-        # 개발자 모드에서도 활성화 횟수는 기록함
+        """
+        시리얼 입력이 필요한지 확인 (v1.2.123 개선)
+        
+        검증 흐름:
+        1. 개발자 모드 체크
+        2. 시리얼 번호 없으면 입력 요청
+        3. [NEW] 로컬 만료일 먼저 체크 (서버 없이도 만료 즉시 차단)
+        4. 서버 검증 시도
+           - 서버 명시적 거부(만료/블랙리스트/비활성) → 즉시 차단
+           - 서버 연결 불가(슬립/네트워크 오류) → 오프라인 모드 검토
+        5. [개선] 오프라인 모드: 마지막 인증 14일 이내면 통과 (7일→14일 연장)
+        """
+        # 1. 개발자 모드
         if self.developer_mode:
             config = self.load_config()
             serial_number = config.get("serial_number")
             if serial_number:
-                # 개발자 모드에서도 활성화 횟수 업데이트
                 self.logger.info(f"개발자 모드 - 활성화 횟수 업데이트: {serial_number}")
                 self.update_device_info_and_usage(serial_number)
-            return False  # 개발자 모드에서는 시리얼 불필요
+            return False
         
         config = self.load_config()
-        
-        # 시리얼이 없으면 필요
         serial_number = config.get("serial_number")
+        
+        # 2. 시리얼 없으면 입력 요청
         if not serial_number:
+            self.logger.info("시리얼 번호 없음 → 입력 필요")
             return True
         
-        # 🔐 앱 시작 시 항상 서버 검증 (블랙리스트 즉시 적용)
-        # 이전: 7일 캐시 → 현재: 항상 검증
+        # 3. ✨ [NEW] 로컬 만료일 먼저 체크 (서버 없이도 만료 즉시 차단)
+        #    만료일은 서버 인증 성공 시 로컬에 저장되는 서버 공식 데이터
+        expiry_str = config.get("expiry_date", "")
+        if expiry_str:
+            try:
+                local_expiry = datetime.fromisoformat(expiry_str)
+                if local_expiry < datetime.now():
+                    self.logger.info(f"로컬 만료일 체크: 만료됨 ({expiry_str}) → 재입력 필요")
+                    return True  # 만료 → 서버 없이도 즉시 차단
+                self.logger.info(f"로컬 만료일 체크: 유효 (만료: {local_expiry.strftime('%Y-%m-%d')})")
+            except Exception as e:
+                self.logger.warning(f"로컬 만료일 파싱 오류 (무시하고 계속): {e}")
+        
+        # 4. 서버 검증 시도
+        server_explicitly_rejected = False
+        server_unreachable = False
+        
         try:
             valid, message, expiry_date = self.check_serial(serial_number)
-            if not valid:
-                self.logger.info(f"시리얼이 무효하므로 재입력 필요: {message}")
-                return True
             
-            # 검증 성공 시 마지막 검증일 업데이트 및 활성화 횟수 증가
-            config["last_validation"] = datetime.now().isoformat()
-            self.save_config(config)
-            
-            # 일반 모드에서도 활성화 횟수 업데이트 (앱 실행 시마다)
-            self.update_device_info_and_usage(serial_number)
-            
+            if valid:
+                # ✅ 서버 검증 성공
+                self.logger.info(f"서버 검증 성공: {message}")
+                config["last_validation"] = datetime.now().isoformat()
+                if expiry_date:
+                    config["expiry_date"] = expiry_date.isoformat()
+                self.save_config(config)
+                self.update_device_info_and_usage(serial_number)
+                return False
+            else:
+                # 서버 연결 실패(슬립) vs 서버 명시적 거부 구분
+                offline_keywords = ["연결 실패", "오프라인", "서버 연결", "인터넷", "timeout", "Timeout"]
+                if any(kw in message for kw in offline_keywords):
+                    server_unreachable = True
+                    self.logger.info(f"서버 연결 불가 → 오프라인 모드 검토: {message}")
+                else:
+                    # 만료됨 / 블랙리스트 / 비활성 등 명시적 거부
+                    server_explicitly_rejected = True
+                    self.logger.info(f"서버가 시리얼 명시적 거부: {message}")
+                    
         except Exception as e:
-            self.logger.error(f"시리얼 검증 중 오류: {e}")
-            # 서버 연결 실패 시 오프라인 모드 허용 (마지막 검증 후 7일 이내일 경우)
-            try:
-                last_validation = datetime.fromisoformat(config.get("last_validation", ""))
-                if (datetime.now() - last_validation).days < 7:
-                    self.logger.info("오프라인 모드: 최근 검증 이력으로 허용")
-                    return False
-            except:
-                pass
+            server_unreachable = True
+            self.logger.error(f"시리얼 검증 중 예외 발생 → 오프라인 모드 검토: {e}")
+        
+        # 서버가 명시적으로 거부한 경우 → 오프라인 통과 없이 즉시 차단
+        if server_explicitly_rejected:
             return True
         
-        return False
+        # 5. ✨ [개선] 오프라인 모드: 서버 연결 불가 시 14일 이내면 통과
+        if server_unreachable:
+            try:
+                last_validation_str = config.get("last_validation", "")
+                if last_validation_str:
+                    last_validation = datetime.fromisoformat(last_validation_str)
+                    days_since = (datetime.now() - last_validation).days
+                    if days_since < 14:
+                        self.logger.info(f"✅ 오프라인 모드 통과: 마지막 인증 {days_since}일 전 (14일 이내)")
+                        return False
+                    else:
+                        self.logger.info(f"오프라인 기간 초과: {days_since}일 전 (14일 초과) → 재인증 필요")
+                else:
+                    self.logger.info("마지막 인증 기록 없음 → 오프라인 모드 불가")
+            except Exception as e:
+                self.logger.error(f"오프라인 모드 체크 오류: {e}")
+        
+        self.logger.info("모든 검증 실패 → 시리얼 재입력 필요")
+        return True
     
     def save_validation(self, serial_number: str, expiry_date: Optional[datetime] = None):
         """검증 성공 정보 저장 및 디바이스 정보 업데이트"""
