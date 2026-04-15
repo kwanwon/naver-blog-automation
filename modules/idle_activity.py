@@ -248,64 +248,69 @@ class IdleActivity:
                         "한달월세", "임대사업", "수익인증", "손실보전", "보험리유"
                     ]
                     combined_text = post_title + " " + post_content
-                    if any(kw in combined_text for kw in COMMERCIAL_KEYWORDS):
-                        print(f"  ⛔ 상업/광고성 글 스킵: {post_title[:30]}")
-                        continue  # 좋아요/댓글 없이 넘어감
+                    is_commercial = any(kw in combined_text for kw in COMMERCIAL_KEYWORDS)
                     
-                    # [좋아요]
-                    if do_like:
-                        try:
-                            like_btn = target_item.find_element(By.CSS_SELECTOR, ".u_likeit_button")
-                            self.driver.execute_script("arguments[0].click();", like_btn)
-                            print("  ❤️ 좋아요 클릭")
-                            time.sleep(1)
-                        except Exception as e:
-                            print(f"  ⚠️ 좋아요 실패: {e}")
-                    
-                    # [댓글] - 댓글 링크 클릭하여 해당 글로 이동
-                    comment_text = ""
-                    if use_ai:
-                        ai_comment = self._generate_ai_comment(post_title, post_content)
-                        comment_text = ai_comment if ai_comment else self._get_next_comment_phrase()
+                    if is_commercial:
+                        print(f"  ⛔ 상업/광고성 글 스킵 (좋아요/댓글 없이 넘어감): {post_title[:30]}")
+                        # processed_posts에 이미 추가됐으므로 다음 글로 넘어갈 수 있음
+                        # interaction_count를 올리지 않고 그냥 다음 반복으로
                     else:
-                        comment_text = self._get_next_comment_phrase()
+                        # [좋아요]
+                        if do_like:
+                            try:
+                                like_btn = target_item.find_element(By.CSS_SELECTOR, ".u_likeit_button")
+                                self.driver.execute_script("arguments[0].click();", like_btn)
+                                print("  ❤️ 좋아요 클릭")
+                                time.sleep(1)
+                            except Exception as e:
+                                print(f"  ⚠️ 좋아요 실패: {e}")
+                        
+                        # [댓글] - 댓글 링크 클릭하여 해당 글로 이동
+                        comment_text = ""
+                        if use_ai:
+                            ai_comment = self._generate_ai_comment(post_title, post_content)
+                            comment_text = ai_comment if ai_comment else self._get_next_comment_phrase()
+                        else:
+                            comment_text = self._get_next_comment_phrase()
+
 
                     
-                    # 댓글 링크 찾기 (copen=1 포함)
-                    try:
-                        comment_link = target_item.find_element(By.CSS_SELECTOR, "a[href*='copen=1']")
-                        link_url = comment_link.get_attribute("href")
-                        
-                        # 새 탭에서 열기
-                        self.driver.execute_script(f"window.open('{link_url}', '_blank');")
-                        time.sleep(3)
-                        
-                        # 탭 전환
-                        self.driver.switch_to.window(self.driver.window_handles[-1])
-                        
-                        # 댓글 작성
-                        if self._write_comment_internal(comment_text):
-                            print(f"  💬 댓글 완료: {comment_text[:30]}...")
-                        
-                        # 탭 닫고 원래 탭으로
-                        if len(self.driver.window_handles) > 1:
-                            self.driver.close()
-                        self.driver.switch_to.window(self.driver.window_handles[0])
-                        time.sleep(1)
-                        
-                    except Exception as e:
-                        print(f"  ⚠️ 댓글 링크 없음 또는 실패: {e}")
-                    
-                    interaction_count += 1
-                    
-                    # 대기
-                    if interaction_count < count and self.is_running:
-                        wait_time = random.randint(min_interval, max_interval)
-                        print(f"  ⏰ {wait_time}초 대기...")
-                        for i in range(wait_time):
-                            if not self.is_running:
-                                break
+                        # 댓글 링크 찾기 (copen=1 포함)
+                        try:
+                            comment_link = target_item.find_element(By.CSS_SELECTOR, "a[href*='copen=1']")
+                            link_url = comment_link.get_attribute("href")
+                            
+                            # 새 탭에서 열기
+                            self.driver.execute_script(f"window.open('{link_url}', '_blank');")
+                            time.sleep(3)
+                            
+                            # 탭 전환
+                            self.driver.switch_to.window(self.driver.window_handles[-1])
+                            
+                            # 댓글 작성
+                            if self._write_comment_internal(comment_text):
+                                print(f"  💬 댓글 완료: {comment_text[:30]}...")
+                            
+                            # 탭 닫고 원래 탭으로
+                            if len(self.driver.window_handles) > 1:
+                                self.driver.close()
+                            self.driver.switch_to.window(self.driver.window_handles[0])
                             time.sleep(1)
+                            
+                        except Exception as e:
+                            print(f"  ⚠️ 댓글 링크 없음 또는 실패: {e}")
+                        
+                        interaction_count += 1
+                        
+                        # 대기 (실제 소통한 경우에만)
+                        if interaction_count < count and self.is_running:
+                            wait_time = random.randint(min_interval, max_interval)
+                            print(f"  ⏰ {wait_time}초 대기...")
+                            for i in range(wait_time):
+                                if not self.is_running:
+                                    break
+                                time.sleep(1)
+
                     
                 except Exception as e:
                     print(f"  ⚠️ 오류 발생: {e}")
@@ -420,6 +425,28 @@ class IdleActivity:
                 pass
             return False
 
+     def _has_my_comment(self):
+        """현재 열린 글에 내 댓글이 이미 있는지 확인"""
+        try:
+            # 네이버 블로그 댓글 영역에서 내 댓글 확인
+            # 내 댓글에는 수정/삭제 버튼이 있거나, is-mine 또는 u_cbox_mine 클래스가 있음
+            my_comment_selectors = [
+                ".u_cbox_comment.u_cbox_mine",        # 내 댓글 클래스
+                ".cbox_comment_box.is_mine",           # 다른 형태
+                ".u_cbox_info_delete",                 # 삭제 버튼 = 내 댓글 증거
+                "button.u_cbox_btn_delete",            # 삭제 버튼
+                ".coment_box .u_cbox_btn_moderate",    # 관리 버튼 = 내 댓글
+            ]
+            for sel in my_comment_selectors:
+                elements = self.driver.find_elements(By.CSS_SELECTOR, sel)
+                if elements:
+                    print(f"  ℹ️ 이미 내 댓글 있음 (감지: {sel}) → 스킵")
+                    return True
+            return False
+        except Exception as e:
+            print(f"  ⚠️ 내 댓글 확인 중 오류 (무시): {e}")
+            return False  # 확인 불가 시 댓글 달기 시도
+
     def _write_comment_internal(self, text):
         """현재 활성화된 페이지(탭)에서 공감 클릭 + 댓글 작성"""
         try:
@@ -436,7 +463,13 @@ class IdleActivity:
             except:
                 pass
             
+            # ✅ [NEW] 내 댓글 이미 있는지 확인 → 있으면 바로 종료
+            if self._has_my_comment():
+                self.driver.switch_to.default_content()
+                return False  # 댓글 안 달고 정상 종료
+            
             # 1️⃣ 공감(좋아요) 클릭 - 'off' 상태면 클릭
+
             try:
                 like_btn = self.driver.find_element(By.CSS_SELECTOR, ".u_likeit_button")
                 btn_class = like_btn.get_attribute("class") or ""
