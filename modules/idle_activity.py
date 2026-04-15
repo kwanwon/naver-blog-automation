@@ -240,6 +240,18 @@ class IdleActivity:
                         pass
                     print(f"  📄 글: {post_title[:40]}...")
                     
+                    # ⛔ 상업/광고성 글 필터링 (제목+내용에 해당 단어 포함 시 스킵)
+                    COMMERCIAL_KEYWORDS = [
+                        "담보대출", "의류신용대출", "케시론대출", "사업자대출",
+                        "주택담보대출", "자동차담보대출", "대출상품", "대출광고", "금융광고",
+                        "수익나는 방법", "월부수입", "재테크", "누리집크", "누리호테크",
+                        "한달월세", "임대사업", "수익인증", "손실보전", "보험리유"
+                    ]
+                    combined_text = post_title + " " + post_content
+                    if any(kw in combined_text for kw in COMMERCIAL_KEYWORDS):
+                        print(f"  ⛔ 상업/광고성 글 스킵: {post_title[:30]}")
+                        continue  # 좋아요/댓글 없이 넘어감
+                    
                     # [좋아요]
                     if do_like:
                         try:
@@ -254,9 +266,10 @@ class IdleActivity:
                     comment_text = ""
                     if use_ai:
                         ai_comment = self._generate_ai_comment(post_title, post_content)
-                        comment_text = ai_comment if ai_comment else self._get_next_comment_phrase() + " 제 블로그에도 놀러오세요^^"
+                        comment_text = ai_comment if ai_comment else self._get_next_comment_phrase()
                     else:
-                        comment_text = self._get_next_comment_phrase() + " 제 블로그에도 놀러오세요^^"
+                        comment_text = self._get_next_comment_phrase()
+
                     
                     # 댓글 링크 찾기 (copen=1 포함)
                     try:
