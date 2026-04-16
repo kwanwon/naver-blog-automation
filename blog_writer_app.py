@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import flet as ft # type: ignore
 from modules.gpt_handler import GPTHandler
 from modules.serial_auth import BlogSerialAuth

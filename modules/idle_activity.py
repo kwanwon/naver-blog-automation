@@ -425,7 +425,7 @@ class IdleActivity:
                 pass
             return False
 
-     def _has_my_comment(self):
+    def _has_my_comment(self):
         """현재 열린 글에 내 댓글이 이미 있는지 확인"""
         try:
             # 네이버 블로그 댓글 영역에서 내 댓글 확인
