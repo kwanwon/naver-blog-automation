@@ -890,30 +890,29 @@ class BlogWriterApp:
             
             def run_scan():
                 try:
-                    result = self.gpt_handler.scan_and_learn_image_folders(base_dir=self.base_dir, force_rescan=True)
+                    # 🆕 gpt_handler 대신 AI 전문가 Facade 시스템인 AIHandler를 가져와 스캔
+                    from modules.ai_handler import AIHandler
+                    ai_handler = AIHandler(use_dummy=self.use_dummy)
+                    result = ai_handler.scan_and_learn_image_folders(base_dir=self.base_dir, force_rescan=True)
                     count = len(result)
                     
-                    def update_ui():
-                        self.page.snack_bar = ft.SnackBar(
-                            content=ft.Text(f"🎉 성공! 총 {count}개의 이미지 폴더 스캔 및 스마트 AI 학습이 완벽히 완료되었습니다!"),
-                            bgcolor=ft.Colors.GREEN_700,
-                            duration=5000
-                        )
-                        self.page.snack_bar.open = True
-                        self.page.update()
-                        
-                    self.page.run_task(update_ui)
+                    # 🆕 UI 스레드 안전성을 위해 직접 SnackBar 띄우고 page.update() 처리
+                    self.page.snack_bar = ft.SnackBar(
+                        content=ft.Text(f"🎉 성공! 총 {count}개의 이미지 폴더 스캔 및 스마트 AI 학습이 완벽히 완료되었습니다!"),
+                        bgcolor=ft.Colors.GREEN_700,
+                        duration=5000
+                    )
+                    self.page.snack_bar.open = True
+                    self.page.update()
                 except Exception as err:
                     print(f"❌ 스마트 이미지 폴더 스캔 오류: {err}")
-                    def show_error():
-                        self.page.snack_bar = ft.SnackBar(
-                            content=ft.Text(f"❌ 스마트 폴더 스캔 중 실패: {err}"),
-                            bgcolor=ft.Colors.RED,
-                            duration=4000
-                        )
-                        self.page.snack_bar.open = True
-                        self.page.update()
-                    self.page.run_task(show_error)
+                    self.page.snack_bar = ft.SnackBar(
+                        content=ft.Text(f"❌ 스마트 폴더 스캔 중 실패: {err}"),
+                        bgcolor=ft.Colors.RED,
+                        duration=4000
+                    )
+                    self.page.snack_bar.open = True
+                    self.page.update()
             
             threading.Thread(target=run_scan, daemon=True).start()
         except Exception as err:
@@ -11722,7 +11721,52 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         # [체육관 프로필]
         gym_name_tf = ft.TextField(label="🏢 체육관 이름", value=gym_profile.get("gym_name", ""), expand=True)
         sport_tf = ft.TextField(label="🥋 수련 종목", value=gym_profile.get("sport", ""), expand=True)
-        concept_tf = ft.TextField(label="💡 교육 컨셉", value=gym_profile.get("concept", ""), multiline=True, min_lines=2, expand=True)
+        
+        # 💡 교육 컨셉 드롭다운화 및 직접 입력 텍스트필드 연동
+        presets = [
+            "🧸 놀이 및 유아 신체 활동 중심",
+            "🥋 품새 및 정통 태권도(기본기) 위주",
+            "🥊 실전 호신술 및 겨루기 기술 중심",
+            "🏃 기초체력 향상 및 학교체육 위주",
+            "🎯 인성 예절 및 정신 교육 강조",
+            "🤾 레크레이션 및 에너지 발산 위주"
+        ]
+        
+        current_concept = gym_profile.get("concept", "")
+        initial_dropdown_val = "✍️ 직접 입력"
+        initial_tf_val = current_concept
+        initial_tf_visible = True
+        
+        if current_concept in presets:
+            initial_dropdown_val = current_concept
+            initial_tf_val = ""
+            initial_tf_visible = False
+            
+        concept_tf = ft.TextField(
+            label="💡 직접 입력 컨셉 (✍️ 직접 입력 선택 시 활성화)", 
+            value=initial_tf_val, 
+            multiline=True, 
+            min_lines=2, 
+            expand=True,
+            visible=initial_tf_visible
+        )
+        
+        def on_concept_dropdown_change(e):
+            if concept_dropdown.value == "✍️ 직접 입력":
+                concept_tf.visible = True
+            else:
+                concept_tf.visible = False
+                concept_tf.value = ""
+            self.page.update()
+            
+        concept_dropdown = ft.Dropdown(
+            label="💡 교육 컨셉 선택",
+            options=[ft.dropdown.Option(p) for p in presets] + [ft.dropdown.Option("✍️ 직접 입력")],
+            value=initial_dropdown_val,
+            on_change=on_concept_dropdown_change,
+            expand=True
+        )
+        
         instructor_tf = ft.TextField(label="👨‍🏫 대표 지도자(관장)명", value=gym_profile.get("instructor_name", ""), expand=True)
         
         routine_1_tf = ft.TextField(label="1단계 (몸풀기/기본기 등)", value=gym_profile.get("routine_1", ""), expand=True)
@@ -11764,48 +11808,160 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         
         files_to_learn_text = ft.Text("📁 선택된 파일: 없음", size=12, color=ft.Colors.GREY_600)
         
-        def on_file_pick_result(e: ft.FilePickerResultEvent):
-            if e.files:
-                nonlocal selected_files
-                selected_files = [f.path for f in e.files]
-                files_to_learn_text.value = f"📁 선택된 파일: {', '.join([os.path.basename(f) for f in selected_files])}"
-                self.page.update()
+        # 💡 macOS 샌드박스 및 Flet overlay.append 버그 우회용 100% 실행 보장형 네이티브 파일 피커 엔진
+        import subprocess
+        import threading
+        import unicodedata
+        
+        # selected_files 안전 공유를 위해 인스턴스 변수로 전환
+        self.selected_files = []
+        
+        def run_native_file_picker(allowed_exts=None, is_excel=False, is_save=False, default_name="라이온짐_수련계획표.xlsx", on_select=None):
+            try:
+                file_path = None
+                if sys.platform == 'darwin':  # macOS 네이티브 AppleScript choose file / choose file name 강제 호출
+                    if is_excel:
+                        if is_save:  # 💡 [저장 경로 선택 모드] 엑셀을 저장할 위치와 파일명 커스텀 선택
+                            script = f'''
+                            tell application "System Events"
+                                activate
+                            end tell
+                            try
+                                set filePath to POSIX path of (choose file name default name "{default_name}" with prompt "📅 생성된 수련계획표를 저장할 파일명과 위치를 지정하세요")
+                                return filePath
+                            on error
+                                return ""
+                            end try
+                            '''
+                        else:  # 💡 [파일 선택 모드] 엑셀 템플릿의 위치를 선택 (반드시 기존 파일 존재해야 함)
+                            script = '''
+                            tell application "System Events"
+                                activate
+                            end tell
+                            try
+                                set filePath to POSIX path of (choose file with prompt "📅 수련계획표 기존 엑셀 템플릿 파일을 선택하세요" of type {"org.openxmlformats.spreadsheetml.sheet", "com.microsoft.excel.xls"})
+                                return filePath
+                            on error
+                                return ""
+                            end try
+                            '''
+                    else:  # [파일 선택 모드] PDF 등의 자료 파일 선택
+                        ext_str = ""
+                        if allowed_exts:
+                            exts = ", ".join([f'"{ext}"' for ext in allowed_exts])
+                            ext_str = f' of type {{{exts}}}'
+                        script = f'''
+                        tell application "System Events"
+                            activate
+                        end tell
+                        try
+                            set filePath to POSIX path of (choose file with prompt "📂 학습할 연간 계획표 PDF 파일을 선택하세요"{ext_str})
+                            return filePath
+                        on error
+                            return ""
+                        end try
+                        '''
+                    result = subprocess.run(
+                        ['osascript', '-e', script],
+                        capture_output=True,
+                        text=True,
+                        timeout=120
+                    )
+                    if result.returncode == 0 and result.stdout.strip():
+                        file_path = result.stdout.strip()
+                else:  # Windows/Linux용 네이티브 tkinter 대화상자 호출
+                    from tkinter import Tk, filedialog
+                    root = Tk()
+                    root.withdraw()
+                    if is_excel:
+                        if is_save:  # 💡 [저장 경로 선택 모드] 엑셀을 저장할 위치와 파일명 커스텀 선택
+                            file_path = filedialog.asksaveasfilename(
+                                title="수련계획표 엑셀 파일 저장 위치 및 파일명 입력",
+                                defaultextension=".xlsx",
+                                filetypes=[("Excel Files", "*.xlsx")],
+                                initialfile=default_name
+                            )
+                        else:  # [파일 선택 모드] 엑셀 템플릿 위치 선택
+                            file_path = filedialog.askopenfilename(
+                                title="수련계획표 기존 엑셀 템플릿 파일을 선택하세요",
+                                filetypes=[("Excel Files", "*.xlsx;*.xls")]
+                            )
+                    else:
+                        file_path = filedialog.askopenfilename(
+                            title="PDF/텍스트 파일을 선택하세요",
+                            filetypes=[("PDF Files", "*.pdf"), ("All Supported Files", "*.pdf;*.txt;*.xlsx;*.hwp")]
+                        )
+                    root.destroy()
                 
-        file_picker = ft.FilePicker(on_result=on_file_pick_result)
-        self.page.overlay.append(file_picker)
+                if file_path:
+                    normalized_path = unicodedata.normalize('NFC', file_path)
+                    
+                    # 💡 저장 경로 선택 모드인 경우 확장자 안전 보정
+                    if is_excel:
+                        if not normalized_path.lower().endswith('.xlsx'):
+                            normalized_path += '.xlsx'
+                        print(f"✅ 네이티브 엑셀 경로 선택 성공 (저장={is_save}): {normalized_path}")
+                        if not is_save:
+                            excel_path_tf.value = normalized_path
+                    else:
+                        print(f"✅ 네이티브 파일 선택 성공: {normalized_path}")
+                        self.selected_files = [normalized_path]
+                        files_to_learn_text.value = f"📁 선택된 파일: {os.path.basename(normalized_path)}"
+                    
+                    try:
+                        self.page.update()
+                    except Exception as ui_err:
+                        print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                        
+                    if on_select:
+                        on_select(normalized_path)
+                else:
+                    if on_select:
+                        on_select(None)
+            except Exception as ex:
+                print(f"❌ 네이티브 파일 피커 에러: {ex}")
+                import traceback
+                traceback.print_exc()
+                if on_select:
+                    on_select(None)
+                
+        def on_pdf_picker_click(e):
+            print("🚀 PDF 파일 선택 버튼 클릭됨 (네이티브 스레드 기동)")
+            threading.Thread(target=lambda: run_native_file_picker(allowed_exts=["pdf", "txt", "xlsx"], is_excel=False), daemon=True).start()
+            
+        def on_excel_picker_click(e):
+            print("🚀 엑셀 템플릿 선택 버튼 클릭됨 (네이티브 스레드 기동)")
+            threading.Thread(target=lambda: run_native_file_picker(is_excel=True, is_save=False), daemon=True).start()
 
         # [수련계획표 자동 생성 옵션]
-        excel_path_tf = ft.TextField(label="📅 엑셀 달력 템플릿 경로", value="", expand=True)
+        excel_path_tf = ft.TextField(label="📅 대상 엑셀 파일 경로 (연간/월간 적용)", value="", expand=True)
         special_note_tf = ft.TextField(label="📝 특별 지침 및 강조 사항 (AI 수련 반영)", hint_text="예: 이번 달은 격파 심사 위주로 짜주세요.", expand=True)
-        
+            
         year_dropdown = ft.Dropdown(
             label="연도",
             options=[ft.dropdown.Option(str(y)) for y in [2025, 2026, 2027]],
             value="2026",
-            width=100
+            width=120
         )
         
         month_dropdown = ft.Dropdown(
             label="월",
             options=[ft.dropdown.Option(str(m)) for m in range(1, 13)],
             value="6",
-            width=100
+            width=120
         )
-        
-        def on_excel_pick_result(e: ft.FilePickerResultEvent):
-            if e.files:
-                excel_path_tf.value = e.files[0].path
-                self.page.update()
-                
-        excel_picker = ft.FilePicker(on_result=on_excel_pick_result)
-        self.page.overlay.append(excel_picker)
 
         # 3. 비즈니스 로직 이벤트 핸들러
         def save_profile_click(e):
             nonlocal gym_profile
             gym_profile["gym_name"] = gym_name_tf.value
             gym_profile["sport"] = sport_tf.value
-            gym_profile["concept"] = concept_tf.value
+            
+            if concept_dropdown.value == "✍️ 직접 입력":
+                gym_profile["concept"] = concept_tf.value
+            else:
+                gym_profile["concept"] = concept_dropdown.value
+                
             gym_profile["instructor_name"] = instructor_tf.value
             gym_profile["routine_1"] = routine_1_tf.value
             gym_profile["routine_2"] = routine_2_tf.value
@@ -11819,26 +11975,9 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             self.page.snack_bar.open = True
             self.page.update()
 
-        def save_categories_click(e):
-            nonlocal age_categories
-            cat_id = age_dropdown.value
-            for cat in age_categories:
-                if cat["id"] == cat_id:
-                    cat["training_style"] = style_tf.value
-                    try:
-                        cat["session_duration"] = int(duration_tf.value)
-                    except: pass
-            
-            if save_age_categories(age_categories):
-                self.page.snack_bar = ft.SnackBar(content=ft.Text("🎉 연령별 훈련 스타일이 완벽하게 저장되었습니다!"), bgcolor=ft.Colors.GREEN_700)
-            else:
-                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 훈련 스타일 저장 실패"), bgcolor=ft.Colors.RED)
-            self.page.snack_bar.open = True
-            self.page.update()
-
         def learn_files_click(e):
-            if not selected_files:
-                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 학습할 파일을 먼저 선택해주세요."), bgcolor=ft.Colors.RED)
+            if not self.selected_files:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 학습할 PDF 파일을 먼저 선택해주세요."), bgcolor=ft.Colors.RED)
                 self.page.snack_bar.open = True
                 self.page.update()
                 return
@@ -11848,32 +11987,43 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             self.page.update()
             
             def run_learning():
-                res = learn_from_files(selected_files, gym_profile)
+                res = learn_from_files(self.selected_files, gym_profile)
                 if res["success"]:
-                    def success_ui():
-                        nonlocal curriculum_status
-                        curriculum_status = get_curriculum_status()
-                        curriculum_status_text.value = f"📊 학습 상태: 학습 완료 | 크기: {curriculum_status['kb_size']}KB ({curriculum_status['item_count']}줄) | 갱신: {curriculum_status['last_updated']}"
-                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 성공! {res['summary']}"), bgcolor=ft.Colors.GREEN_700)
-                        self.page.snack_bar.open = True
+                    nonlocal curriculum_status
+                    curriculum_status = get_curriculum_status()
+                    curriculum_status_text.value = f"📊 학습 상태: 학습 완료 | 크기: {curriculum_status['kb_size']}KB ({curriculum_status['item_count']}줄) | 갱신: {curriculum_status['last_updated']}"
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 성공! {res['summary']}"), bgcolor=ft.Colors.GREEN_700)
+                    self.page.snack_bar.open = True
+                    try:
                         self.page.update()
-                    self.page.run_task(success_ui)
+                    except Exception as ui_err:
+                        print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
                 else:
-                    def fail_ui():
-                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 학습 실패: {res['summary']}"), bgcolor=ft.Colors.RED)
-                        self.page.snack_bar.open = True
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 학습 실패: {res['summary']}"), bgcolor=ft.Colors.RED)
+                    self.page.snack_bar.open = True
+                    try:
                         self.page.update()
-                    self.page.run_task(fail_ui)
+                    except Exception as ui_err:
+                        print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
             threading.Thread(target=run_learning, daemon=True).start()
 
         def generate_planner_click(e):
+            import os
+            import shutil
+            
             year = int(year_dropdown.value)
             month = int(month_dropdown.value)
-            excel_path = excel_path_tf.value
+            template_path = excel_path_tf.value
             cat_id = age_dropdown.value
             
-            if not excel_path:
-                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 계획을 기록할 대상 엑셀 파일 경로를 입력해주세요."), bgcolor=ft.Colors.RED)
+            if not template_path:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 계획을 기록할 대상 엑셀 템플릿 파일 경로를 입력해주세요."), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+                
+            if not os.path.exists(template_path):
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 선택된 엑셀 템플릿 파일이 실제로 존재하지 않습니다."), bgcolor=ft.Colors.RED)
                 self.page.snack_bar.open = True
                 self.page.update()
                 return
@@ -11885,53 +12035,169 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     break
                     
             if not selected_cat:
-                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 대상 연령대를 선택해주세요."), bgcolor=ft.Colors.RED)
+                if age_categories:
+                    selected_cat = age_categories[0]
+                else:
+                    selected_cat = {"id": "default", "name": "수련생", "session_duration": 50, "training_style": "일반 수련"}
+                
+            default_save_name = f"{year}년_{month}월_라이온짐_수련계획표.xlsx"
+            
+            # 저장 경로 선택 콜백
+            def start_monthly_generation(save_path):
+                if not save_path:
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text("⚠️ 저장 경로 선택이 취소되어 생성을 중단합니다."), bgcolor=ft.Colors.ORANGE_700)
+                    self.page.snack_bar.open = True
+                    self.page.update()
+                    return
+                    
+                self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🚀 {month}월 수련계획표를 '{os.path.basename(save_path)}' 이름으로 생성 및 기록 진행 중..."), bgcolor=ft.Colors.BLUE_700, duration=8000)
+                self.page.snack_bar.open = True
+                self.page.update()
+                
+                def run_generation():
+                    try:
+                        # 템플릿 복제
+                        shutil.copy(template_path, save_path)
+                        
+                        c_md = load_curriculum_md()
+                        from modules.training_planner.planner_engine import generate_plan_with_ai
+                        from modules.training_planner.calendar_writer import write_plan_to_excel
+                        
+                        plan_data = generate_plan_with_ai(
+                            ai_handler=self.gpt_handler,
+                            year=year,
+                            month=month,
+                            gym_profile=gym_profile,
+                            age_category=selected_cat,
+                            curriculum_md=c_md,
+                            special_note=special_note_tf.value
+                        )
+                        
+                        write_plan_to_excel(
+                            excel_path=save_path,
+                            month=month,
+                            plan_data=plan_data
+                        )
+                        
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 대성공! {month}월 AI 수련계획표가 '{os.path.basename(save_path)}'에 완벽하게 기입되었습니다!"), bgcolor=ft.Colors.GREEN_700, duration=6000)
+                        self.page.snack_bar.open = True
+                        try:
+                            self.page.update()
+                        except Exception as ui_err:
+                            print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                    except Exception as err:
+                        print(f"❌ 수련계획 자동 생성 오류: {err}")
+                        traceback.print_exc()
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 생성 및 기록 실패: {err}"), bgcolor=ft.Colors.RED, duration=5000)
+                        self.page.snack_bar.open = True
+                        try:
+                            self.page.update()
+                        except Exception as ui_err:
+                            print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                            
+                threading.Thread(target=run_generation, daemon=True).start()
+            
+            # 저장 경로 네이티브 피커 실행
+            threading.Thread(
+                target=lambda: run_native_file_picker(
+                    is_excel=True,
+                    is_save=True,
+                    default_name=default_save_name,
+                    on_select=start_monthly_generation
+                ),
+                daemon=True
+            ).start()
+
+        # 💡 연간 전체 일괄 생성 버튼 핸들러 (관장님 기획 반영!)
+        def generate_full_year_click(e):
+            import os
+            import shutil
+            
+            year = int(year_dropdown.value)
+            template_path = excel_path_tf.value
+            cat_id = age_dropdown.value
+            
+            if not template_path:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 연간 계획을 기록할 기존 엑셀 템플릿 파일 경로를 입력해주세요."), bgcolor=ft.Colors.RED)
                 self.page.snack_bar.open = True
                 self.page.update()
                 return
                 
-            self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🚀 AI와 협력하여 {month}월 수련계획표 자동 생성 및 엑셀 기록 진행 중... (약 20~40초 소요)"), bgcolor=ft.Colors.BLUE_700, duration=8000)
-            self.page.snack_bar.open = True
-            self.page.update()
+            if not os.path.exists(template_path):
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 선택된 엑셀 템플릿 파일이 실제로 존재하지 않습니다."), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+                
+            selected_cat = age_categories[0] if age_categories else {"id": "default", "name": "수련생", "session_duration": 50, "training_style": "일반 수련"}
+            default_save_name = f"{year}년_연간_라이온짐_수련계획표.xlsx"
             
-            def run_generation():
-                try:
-                    c_md = load_curriculum_md()
-                    # planner_engine 호출
-                    from modules.training_planner.planner_engine import generate_plan_with_ai
-                    from modules.training_planner.calendar_writer import write_plan_to_excel
+            # 저장 경로 선택 콜백
+            def start_full_year_generation(save_path):
+                if not save_path:
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text("⚠️ 저장 경로 선택이 취소되어 생성을 중단합니다."), bgcolor=ft.Colors.ORANGE_700)
+                    self.page.snack_bar.open = True
+                    self.page.update()
+                    return
                     
-                    # 1단계: AI 계획 생성
-                    plan_data = generate_plan_with_ai(
-                        ai_handler=self.gpt_handler,
-                        month=month,
-                        gym_profile=gym_profile,
-                        age_category=selected_cat,
-                        curriculum_md=c_md,
-                        special_note=special_note_tf.value
-                    )
-                    
-                    # 2단계: 엑셀 기록
-                    write_plan_to_excel(
-                        excel_path=excel_path,
-                        month=month,
-                        plan_data=plan_data
-                    )
-                    
-                    def success_ui():
-                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 대성공! {month}월 AI 수련계획표가 엑셀 파일에 완벽하게 기입되었습니다!"), bgcolor=ft.Colors.GREEN_700, duration=6000)
+                self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🚀 {year}년 전체(1~12월) AI 연간 캘린더 생성 및 기록 진행 중... (약 2~3분 소요)"), bgcolor=ft.Colors.PURPLE_700, duration=15000)
+                self.page.snack_bar.open = True
+                self.page.update()
+                
+                def run_full_year():
+                    try:
+                        # 템플릿 복제
+                        shutil.copy(template_path, save_path)
+                        
+                        c_md = load_curriculum_md()
+                        from modules.training_planner.planner_engine import generate_full_year_plan
+                        from modules.training_planner.calendar_writer import write_plan_to_excel
+                        
+                        # planner_engine을 사용하여 일괄 생성
+                        plan_entries = generate_full_year_plan(
+                            ai_handler=self.gpt_handler,
+                            year=year,
+                            gym_profile=gym_profile,
+                            age_category=selected_cat,
+                            curriculum_md=c_md,
+                            special_note="연간 기초 캘린더 일괄 생성",
+                            excel_path=save_path
+                        )
+                        
+                        # 생성된 전체 일정을 복제된 엑셀에 한 번에 기록
+                        write_res = write_plan_to_excel(excel_path=save_path, plan_entries=plan_entries)
+                        if not write_res.get("success"):
+                            raise Exception(f"엑셀 기록 실패: {write_res.get('error')}")
+                            
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 성공! {year}년 전체(1~12월) 수련 계획표가 '{os.path.basename(save_path)}'에 일괄 생성되었습니다!"), bgcolor=ft.Colors.GREEN_700, duration=8000)
                         self.page.snack_bar.open = True
-                        self.page.update()
-                    self.page.run_task(success_ui)
-                except Exception as err:
-                    print(f"❌ 수련계획 자동 생성 오류: {err}")
-                    traceback.print_exc()
-                    def fail_ui():
+                        try:
+                            self.page.update()
+                        except Exception as ui_err:
+                            print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                    except Exception as err:
+                        print(f"❌ 연간 캘린더 일괄 생성 오류: {err}")
+                        traceback.print_exc()
                         self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 생성 및 기록 실패: {err}"), bgcolor=ft.Colors.RED, duration=5000)
                         self.page.snack_bar.open = True
-                        self.page.update()
-                    self.page.run_task(fail_ui)
-            threading.Thread(target=run_generation, daemon=True).start()
+                        try:
+                            self.page.update()
+                        except Exception as ui_err:
+                            print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                            
+                threading.Thread(target=run_full_year, daemon=True).start()
+                
+            # 저장 경로 네이티브 피커 실행
+            threading.Thread(
+                target=lambda: run_native_file_picker(
+                    is_excel=True,
+                    is_save=True,
+                    default_name=default_save_name,
+                    on_select=start_full_year_generation
+                ),
+                daemon=True
+            ).start()
+                        
 
         # 4. 레이아웃 설계 및 반환
         return ft.Container(
@@ -11955,7 +12221,8 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                                 content=ft.Column([
                                     ft.Text("🏢 체육관의 핵심 정보와 단계별 수련 루틴을 기입합니다.", size=13, weight=ft.FontWeight.BOLD),
                                     ft.Row([gym_name_tf, sport_tf]),
-                                    ft.Row([instructor_tf, concept_tf]),
+                                    ft.Row([instructor_tf, concept_dropdown]),
+                                    ft.Row([concept_tf]),
                                     ft.Text("📋 수련 시간표 기본 4단계 교육 루틴 설정", size=13, weight=ft.FontWeight.BOLD),
                                     ft.Row([routine_1_tf, routine_2_tf]),
                                     ft.Row([routine_3_tf, routine_4_tf]),
@@ -11965,51 +12232,52 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                             )
                         ),
                         ft.Tab(
-                            text="2. 연령별 훈련 스타일",
-                            icon=ft.Icons.CHILD_CARE,
-                            content=ft.Container(
-                                content=ft.Column([
-                                    ft.Text("🧒 각 연령 카테고리별 특별 지침 및 수련 스타일을 조절합니다.", size=13, weight=ft.FontWeight.BOLD),
-                                    ft.Row([age_dropdown]),
-                                    ft.Row([style_tf, duration_tf]),
-                                    ft.ElevatedButton("💾 훈련 스타일 저장", icon=ft.Icons.SAVE, on_click=save_categories_click, bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE)
-                                ], spacing=15),
-                                padding=15
-                            )
-                        ),
-                        ft.Tab(
-                            text="3. 커리큘럼 AI 학습",
+                            text="2. 연간 계획표 PDF 학습 및 기초 생성",
                             icon=ft.Icons.MODEL_TRAINING,
                             content=ft.Container(
                                 content=ft.Column([
-                                    ft.Text("📂 기존 한글/PDF/엑셀 커리큘럼 계획안을 통째로 올리면 AI가 그 교육철학을 완전히 마스터합니다.", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Text("📂 도장의 연간 계획표(PDF, HWP, 엑셀 등)를 첨부하면 AI가 연간 행사를 완벽히 학습합니다.", size=13, weight=ft.FontWeight.BOLD),
                                     curriculum_status_text,
                                     ft.Row([
-                                        ft.ElevatedButton("📁 파일 선택", icon=ft.Icons.FILE_OPEN, on_click=lambda _: file_picker.pick_files(allow_multiple=True), bgcolor=ft.Colors.GREY_700, color=ft.Colors.WHITE),
+                                        ft.ElevatedButton("📁 PDF 파일 선택", icon=ft.Icons.FILE_OPEN, on_click=on_pdf_picker_click, bgcolor=ft.Colors.GREY_700, color=ft.Colors.WHITE),
                                         files_to_learn_text
                                     ]),
-                                    ft.ElevatedButton("🚀 자료 학습 및 AI 지식 베이스화", icon=ft.Icons.BOLT, on_click=learn_files_click, bgcolor=ft.Colors.PURPLE_700, color=ft.Colors.WHITE)
+                                    ft.ElevatedButton("🚀 자료 학습 및 AI 지식 베이스화", icon=ft.Icons.BOLT, on_click=learn_files_click, bgcolor=ft.Colors.PURPLE_700, color=ft.Colors.WHITE),
+                                    ft.Divider(),
+                                    ft.Text("📅 [1단계 일괄 빌드] PDF가 반영된 연간 캘린더 엑셀 생성", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([
+                                        excel_path_tf,
+                                        ft.IconButton(ft.Icons.FILE_OPEN, tooltip="엑셀 템플릿 파일 선택", on_click=on_excel_picker_click)
+                                    ]),
+                                    ft.Row([
+                                        year_dropdown,
+                                        ft.Text("년도 계획표로 일괄 생성 진행")
+                                    ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                                    ft.ElevatedButton(
+                                        "📅 연간 수련계획표 일괄 생성 (1~12월 엑셀 채우기)",
+                                        icon=ft.Icons.AUTO_AWESOME_MOTION,
+                                        on_click=generate_full_year_click,
+                                        bgcolor=ft.Colors.BLUE_900,
+                                        color=ft.Colors.WHITE,
+                                        height=45
+                                    )
                                 ], spacing=15),
                                 padding=15
                             )
                         ),
                         ft.Tab(
-                            text="4. 수련계획표 자동 생성",
+                            text="3. 수련계획표 월간 맞춤 변경",
                             icon=ft.Icons.AUTO_AWESOME,
                             content=ft.Container(
                                 content=ft.Column([
-                                    ft.Text("📅 AI 월간 수련계획표 자동 수립 및 엑셀 캘린더 기록", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Text("📅 특정 월에 관장님 취향과 특수요청을 더해 수련 계획을 맞춤 변경합니다.", size=13, weight=ft.FontWeight.BOLD),
                                     ft.Row([
                                         ft.Text("📅 대상 기간:", size=13, weight=ft.FontWeight.BOLD),
-                                        year_dropdown, ft.Text("년"), month_dropdown, ft.Text("월 수련계획 수립")
+                                        month_dropdown, ft.Text("월 수련계획 맞춤 생성")
                                     ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
-                                    ft.Row([
-                                        excel_path_tf,
-                                        ft.IconButton(ft.Icons.FILE_OPEN, tooltip="엑셀 템플릿 파일 선택", on_click=lambda _: excel_picker.pick_files(allowed_extensions=["xlsx"]))
-                                    ]),
                                     special_note_tf,
                                     ft.ElevatedButton(
-                                        "🚀 AI 월간 수련계획 자동 생성 및 엑셀 기록",
+                                        "🚀 해당 월 수련계획 자동 생성 및 엑셀 덮어쓰기",
                                         icon=ft.Icons.AUTO_MODE,
                                         on_click=generate_planner_click,
                                         bgcolor=ft.Colors.GREEN_700,

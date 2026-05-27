@@ -1,0 +1,479 @@
+diff --git a/blog_writer_app.py b/blog_writer_app.py
+index d2a1a7c5c..b1ba50d2f 100644
+--- a/blog_writer_app.py
++++ b/blog_writer_app.py
+@@ -1,6 +1,6 @@
+ # -*- coding: utf-8 -*-
+ import flet as ft # type: ignore
+-from modules.gpt_handler import GPTHandler
++from modules.ai_handler import AIHandler as GPTHandler
+ from modules.serial_auth import BlogSerialAuth
+ from modules.auto_updater import AutoUpdater  # 자동 업데이트 추가
+ from config.config import Config
+@@ -154,6 +154,7 @@ class BlogWriterApp:
+         self.gpt_handler = GPTHandler(use_dummy=self.use_dummy)
+         self.current_title = ""
+         self.current_content = ""
++        self.current_tags = []
+         self.last_save_content = None
+         self.browser_driver = None  # 브라우저 드라이버 인스턴스
+         self.temp_driver = None  # 임시 브라우저 드라이버 인스턴스
+@@ -356,22 +357,37 @@ class BlogWriterApp:
+             print(f"⚠️ 드라이브 자동 포스팅 시스템 초기화 실패: {e}")
+             self.drive_auto_post_system = None
+     
+-    def _drive_generate_content(self, topic: str, folder_name: str):
+-        """드라이브 자동 포스팅용 AI 글 생성"""
++    def _drive_generate_content(self, topic: str, folder_name: str, platform=None, **kwargs):
++        """드라이브 자동 포스팅용 AI 글 생성 (유형 2)"""
+         try:
+             full_topic = f"[{folder_name}] {topic}"
+-            # 🟢 드라이브 자동포스팅 전용 지침 사용 (band_instructions와 분리)
+             result = self.gpt_handler.generate_platform_content(
+                 full_topic,
+                 platform='drive_auto',  # 전용 플랫폼 타입
+                 task_type='regular'
+             )
++            if result and result.get('content'):
++                # 🟢 밴드 파이프라인 관통시켜 유형 2 물리적 조립 수행
++                from modules.pipelines.band_pipeline import BandPipeline
++                gpt_tags = result.get('tags', [])
++                ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
++                
++                formatted_content, merged_tags = BandPipeline.process(
++                    content=result['content'],
++                    ai_tags=ai_tags_str,
++                    app_data_dir=self._get_app_data_dir(),
++                    mode='drive_auto', # 유형 2 명시
++                    fallback_settings=self.settings,
++                    folder_name=folder_name # 폴더명 전달
++                )
++                result['content'] = formatted_content
++                result['tags'] = merged_tags
+             return result
+         except Exception as e:
+             print(f"❌ AI 글 생성 오류: {e}")
+             return None
+     
+-    def _drive_post_to_band(self, content: str, image_paths: list):
++    def _drive_post_to_band(self, content: str, image_paths: list, tags=None, **kwargs):
+         """드라이브 자동 포스팅용 밴드 포스팅"""
+         try:
+             from naver_band_auto import NaverBandAutomation
+@@ -578,15 +594,23 @@ class BlogWriterApp:
+                 # 이미지 핸들러 초기화 (감지된 폴더의 이미지들을 로드함)
+                 blog_auto.setup_image_inserter()
+                 
+-                # 태그 준비
+-                tags_str = self.settings.get('blog_tags', '')
+-                tags = [tag.strip() for tag in tags_str.split(',') if tag.strip()] if tags_str else []
++                # 태그 준비 및 BlogPipeline 연동
++                from modules.pipelines.blog_pipeline import BlogPipeline
++                
++                ai_tags = result.get('tags', [])
++                
++                processed_content, merged_tags = BlogPipeline.process(
++                    content=content,
++                    ai_tags=ai_tags,
++                    app_data_dir=self._get_app_data_dir(),
++                    fallback_settings=self.settings
++                )
+                 
+                 # 포스팅 실행 (write_post 사용)
+                 success = blog_auto.write_post(
+                     title=title,
+-                    content=content,
+-                    tags=tags
++                    content=processed_content,
++                    tags=merged_tags
+                 )
+                 
+                 if success:
+@@ -2642,18 +2666,16 @@ class BlogWriterApp:
+                         
+                         # 제목, 본문, 태그 준비
+                         title = result.get('title', topic)
+-                        content = result.get('content', '')
+                         
+-                        # 태그: GPT 태그 + 사용자 설정 태그 병합
+-                        gpt_tags = result.get('tags', [])
+-                        user_tags = []
+-                        try:
+-                            user_tags_str = self.settings.get('blog_tags', '')
+-                            if user_tags_str:
+-                                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
+-                        except:
+-                            pass
+-                        tags = list(set(gpt_tags + user_tags))  # 중복 제거
++                        from modules.pipelines.blog_pipeline import BlogPipeline
++                        processed_content, merged_tags = BlogPipeline.process(
++                            content=result.get('content', ''),
++                            ai_tags=result.get('tags', []),
++                            app_data_dir=self._get_app_data_dir(),
++                            fallback_settings=self.settings
++                        )
++                        content = processed_content
++                        tags = merged_tags
+                         
+                         # 글 작성 (이미지 포함) - write_post가 푸터+태그 추가까지 처리
+                         # 예약 모드: 최종 발행 버튼 클릭 스킵 (나중에 예약 설정 후 발행)
+@@ -2714,7 +2736,6 @@ class BlogWriterApp:
+                             
+                     except Exception as post_err:
+                         print(f"    ❌ 블로그 예약 중 오류: {post_err}")
+-                        import traceback
+                         traceback.print_exc()
+                         continue
+                 
+@@ -2846,16 +2867,16 @@ class BlogWriterApp:
+                         
+                         # 제목, 본문, 태그 준비
+                         title = result.get('title', topic)
+-                        content = result.get('content', '')
+-                        gpt_tags = result.get('tags', [])
+-                        user_tags = []
+-                        try:
+-                            user_tags_str = self.settings.get('blog_tags', '')
+-                            if user_tags_str:
+-                                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
+-                        except:
+-                            pass
+-                        tags = list(set(gpt_tags + user_tags))
++                        
++                        from modules.pipelines.blog_pipeline import BlogPipeline
++                        processed_content, merged_tags = BlogPipeline.process(
++                            content=result.get('content', ''),
++                            ai_tags=result.get('tags', []),
++                            app_data_dir=self._get_app_data_dir(),
++                            fallback_settings=self.settings
++                        )
++                        content = processed_content
++                        tags = merged_tags
+                         
+                         # 글 작성 (write_post가 푸터+태그 처리)
+                         # 예약 모드: 최종 발행 버튼 클릭 스킵 (나중에 예약 설정 후 발행)
+@@ -2901,7 +2922,6 @@ class BlogWriterApp:
+                         
+                     except Exception as e:
+                         print(f"    ❌ 블로그 예약 중 오류: {e}")
+-                        import traceback
+                         traceback.print_exc()
+                         task.last_status = 'failed'
+                 else:
+@@ -2917,13 +2937,14 @@ class BlogWriterApp:
+                  types = task.data.get('types', ['regular'] * len(times))  # 유형 목록 (기본값: regular)
+                  band_url = self.settings.get('band_url', '') or task.data.get('band_url', '')
+                  
+-                 print(f"📦 [밴드 일괄 예약] 시작: 총 {len(times)}건 ({', '.join(times)})")
++                 print(f"[Step 1] [BandScheduler] 밴드 예약 일괄 등록 시작 (상태: 시도) - 총 {len(times)}건 ({', '.join(times)})")
+                  
+                  if not times:
+-                     print("⚠️ 예약 시간이 없습니다.")
++                     print("[Step 1] [BandScheduler] 밴드 예약 일괄 등록 시작 (상태: 실패) - 예약 시간이 없습니다.")
+                      return
+                  
+                  band_auto = NaverBandAutomation(self.get_or_create_driver())
++                 print("[Step 2] [BandScheduler] 밴드 자동화 드라이버 및 인스턴스 준비 (상태: 성공)")
+                  
+                  success_cnt = 0
+                  
+@@ -2979,9 +3000,26 @@ class BlogWriterApp:
+                      
+                      # 주제 및 내용 생성 (유형에 따라 다른 스타일)
+                      topic = self.select_sequential_topic('band') or "체육관 일상"
++                     print(f"[Step 3] [BandScheduler] ({res_time}) AI 글 내용 및 날씨 연동 생성 시작 (상태: 시도) - 주제: {topic}")
++                     
++                     # 예약 시간에 따른 delta_days 계산
++                     delta_days = 0
++                     if res_time:
++                         try:
++                             from datetime import datetime
++                             now = datetime.now()
++                             h, m = map(int, res_time.split(':'))
++                             if (h, m) < (now.hour, now.minute):
++                                 delta_days = 1
++                             else:
++                                 delta_days = 0
++                         except Exception as ex:
++                             print(f"⚠️ [delta_days 계산 오류]: {ex}")
++                             delta_days = 0
++
+                      result = self.gpt_handler.generate_platform_content(
+                          topic, platform='band', task_type=task_type, target_time=res_time,
+-                         news_pool=news_pool, previous_news=previous_news_summary
++                         news_pool=news_pool, previous_news=previous_news_summary, delta_days=delta_days
+                      )
+                      
+                      # 🟢 방안 C: 이전 뉴스 기록 (다음 포스팅에서 중복 방지)
+@@ -2989,8 +3027,24 @@ class BlogWriterApp:
+                          previous_news_summary = news_pool
+                      
+                      if not result or not result.get('content'):
+-                         print(f"    ❌ 내용 생성 실패 ({res_time})")
++                         print(f"[Step 3] [BandScheduler] ({res_time}) AI 글 내용 생성 실패 (상태: 실패)")
+                          continue
++                     print(f"[Step 3] [BandScheduler] ({res_time}) AI 글 내용 생성 완료 (상태: 성공) - 모델: {result.get('model', '-')}")
++                         
++                     # 🟢 밴드 파이프라인 관통시켜 유형 1 물리적 조립 수행 (모바일 가독성 최적화)
++                     print(f"[Step 4] [BandScheduler] ({res_time}) 밴드 파이프라인 관통 조립 시작 (상태: 시도)")
++                     from modules.pipelines.band_pipeline import BandPipeline
++                     gpt_tags = result.get('tags', [])
++                     ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
++                     
++                     formatted_content, merged_tags = BandPipeline.process(
++                         content=result['content'],
++                         ai_tags=ai_tags_str,
++                         app_data_dir=self._get_app_data_dir(),
++                         mode='band', # 유형 1
++                         fallback_settings=self.settings
++                     )
++                     print(f"[Step 4] [BandScheduler] ({res_time}) 밴드 파이프라인 관통 조립 완료 (상태: 성공)")
+                          
+                      # 이미지 준비 (설정에 따름)
+                      images = []
+@@ -2998,16 +3052,17 @@ class BlogWriterApp:
+                         images = self.get_images_to_upload(platform='band')
+ 
+                      # 예약 포스팅 실행 (reservation_time 전달)
++                     print(f"[Step 5] [BandScheduler] ({res_time}) 밴드 예약 등록 업로드 시작 (상태: 시도)")
+                      res_success = band_auto.post_to_band(
+                          band_url, 
+-                         result.get('content', ''), 
++                         formatted_content, 
+                          image_paths=images, 
+                          reservation_time=res_time
+                      )
+                      
+                      if res_success:
+                          success_cnt += 1
+-                         print(f"    ✅ 예약 성공: {res_time}")
++                         print(f"[Step 5] [BandScheduler] ({res_time}) 밴드 예약 등록 완료 (상태: 성공)")
+                      else:
+                          print(f"    ❌ 예약 실패: {res_time}")
+                          
+@@ -3063,21 +3118,54 @@ class BlogWriterApp:
+             elif task.platform == 'band':
+                 # 밴드 포스팅 (단일)
+                 start_time = time.time()
++                print(f"[Step 1] [BandScheduler] 밴드 단일 예약 포스팅 시작 (상태: 시도) - 예약: {task.data.get('reservation_time', '즉시')}")
+                 band_auto = NaverBandAutomation(self.get_or_create_driver())
+                 band_url = self.settings.get('band_url', '') or task.data.get('band_url', '')
++                print("[Step 2] [BandScheduler] 밴드 자동화 드라이버 및 인스턴스 준비 (상태: 성공)")
+                 
+                 # 예약 시간 확인
+                 reservation_time = task.data.get('reservation_time')
+                 
++                # 예약 시간에 따른 delta_days 계산
++                delta_days = 0
++                if reservation_time:
++                    try:
++                        from datetime import datetime
++                        now = datetime.now()
++                        h, m = map(int, reservation_time.split(':'))
++                        if (h, m) < (now.hour, now.minute):
++                            delta_days = 1
++                        else:
++                            delta_days = 0
++                    except Exception as ex:
++                        print(f"⚠️ [delta_days 계산 오류]: {ex}")
++                        delta_days = 0
++
+                 # 내용 생성
+                 topic = self.select_sequential_topic('band') or "체육관 소개 및 일상"
+-                print(f"🤖 [밴드] '{topic}' 주제로 내용 생성 중... (예약: {reservation_time or '즉시'}, 타입: {task.task_type})")
+-                result = self.gpt_handler.generate_platform_content(topic, platform='band', task_type=task.task_type)
++                print(f"[Step 3] [BandScheduler] ({reservation_time or '즉시'}) AI 글 내용 및 날씨 연동 생성 시작 (상태: 시도) - 주제: {topic}")
++                result = self.gpt_handler.generate_platform_content(topic, platform='band', task_type=task.task_type, target_time=reservation_time, delta_days=delta_days)
+                 
+                 if not result or not result.get('content'):
+-                    print("❌ [밴드] AI 내용 생성에 실패했습니다.")
++                    print("[Step 3] [BandScheduler] AI 글 내용 생성 실패 (상태: 실패)")
+                     self.add_model_usage_log(topic=topic, model="-", status="실패", reason="내용 생성 실패", target="밴드")
+                     return False
++                print(f"[Step 3] [BandScheduler] AI 글 내용 생성 완료 (상태: 성공) - 모델: {result.get('model', '-')}")
++                
++                # 🟢 밴드 파이프라인 관통시켜 유형 1 물리적 조립 수행 (모바일 가독성 최적화)
++                print("[Step 4] [BandScheduler] 밴드 파이프라인 관통 조립 시작 (상태: 시도)")
++                from modules.pipelines.band_pipeline import BandPipeline
++                gpt_tags = result.get('tags', [])
++                ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
++                
++                formatted_content, merged_tags = BandPipeline.process(
++                    content=result['content'],
++                    ai_tags=ai_tags_str,
++                    app_data_dir=self._get_app_data_dir(),
++                    mode='band', # 유형 1
++                    fallback_settings=self.settings
++                )
++                print("[Step 4] [BandScheduler] 밴드 파이프라인 관통 조립 완료 (상태: 성공)")
+                 
+                 # 이미지 준비
+                 images = []
+@@ -3085,13 +3173,19 @@ class BlogWriterApp:
+                 if self.settings.get('band_auto_image', self.settings.get('auto_image', True)):
+                     images = self.get_images_to_upload(platform='band')
+                     
++                print(f"[Step 5] [BandScheduler] 밴드 단일 예약 업로드 시작 (상태: 시도) - 예약: {reservation_time or '즉시'}")
+                 success = band_auto.post_to_band(
+                     band_url, 
+-                    result.get('content', ''), 
++                    formatted_content, 
+                     image_paths=images,
+                     reservation_time=reservation_time
+                 )
+                 
++                if success:
++                    print(f"[Step 5] [BandScheduler] 밴드 단일 예약 업로드 완료 (상태: 성공)")
++                else:
++                    print(f"[Step 5] [BandScheduler] 밴드 단일 예약 업로드 실패 (상태: 실패)")
++                
+                 if success:
+                     task.last_status = 'success'
+                 else:
+@@ -7336,6 +7430,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
+                 duration = time.time() - start_time
+                 self.current_title = result["title"]
+                 self.current_content = result["content"]
++                self.current_tags = result.get("tags", [])
+                 current_model_text.value = f"현재 모델: {result.get('model','-')}"
+                 # AI 사용 로그 기록 (성공)
+                 self.add_model_usage_log(
+@@ -7501,8 +7596,19 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
+                     
+                     return formatted_content.strip()
+                 
+-                # 원본 내용을 모바일 친화적으로 포맷팅
+-                formatted_content = format_content_for_mobile(content_input.value)
++                # 원본 내용을 모바일 친화적으로 포맷팅 및 BlogPipeline 적용
++                from modules.pipelines.blog_pipeline import BlogPipeline
++                
++                ai_tags = getattr(self, 'current_tags', [])
++                
++                processed_content, merged_tags = BlogPipeline.process(
++                    content=content_input.value,
++                    ai_tags=ai_tags,
++                    app_data_dir=self._get_app_data_dir(),
++                    fallback_settings=self.settings
++                )
++                
++                formatted_content = processed_content
+                 
+                 # 임시 파일에 내용 저장 (AppData 기반으로 변경 — 퍼미션 에러 방지)
+                 today = datetime.now().strftime("%Y-%m-%d")
+@@ -7605,11 +7711,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
+                     dlg.content.controls[0].value = "블로그 포스팅 작성 중..."
+                     page.update()
+                     
+-                    user_settings_path = get_user_settings_path()
+-                    if os.path.exists(user_settings_path):
+-                        with open(user_settings_path, 'r', encoding='utf-8') as f:
+-                            settings = json.load(f)
+-                            tags = [tag.strip() for tag in settings.get('blog_tags', '').split(',') if tag.strip()]
++                    tags = merged_tags
+                     
+                     # 🆕 태그 완료 후 자동 발행 로직 적용 (체크 시 자동 발행, 해제 시 발행 직전 대기)
+                     blog_auto.skip_final_publish = not auto_final_publish_checkbox.value
+@@ -9613,8 +9715,22 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
+                 start_time = time.time()
+                 # 🟢 선택된 시간대 유형을 AI에 전달
+                 result = self.gpt_handler.generate_platform_content(selected_topic, platform='band', task_type=selected_time_type)
+-                band_title_input.value = result.get('title', '')
+-                band_content_input.value = result.get('content', '')
++                
++                # 🟢 밴드 파이프라인 관통시켜 유형 1 물리적 조립 수행 (Flet UI 미리보기용)
++                if result and result.get('content'):
++                    from modules.pipelines.band_pipeline import BandPipeline
++                    gpt_tags = result.get('tags', [])
++                    ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
++                    
++                    formatted_content, merged_tags = BandPipeline.process(
++                        content=result['content'],
++                        ai_tags=ai_tags_str,
++                        app_data_dir=self._get_app_data_dir(),
++                        mode='band', # 유형 1 명시
++                        fallback_settings=self.settings
++                    )
++                    band_title_input.value = result.get('title', '')
++                    band_content_input.value = formatted_content
+                 
+                 duration = time.time() - start_time
+                 self.add_model_usage_log(
+@@ -10173,12 +10289,14 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
+             
+             def run_manual_post():
+                 try:
++                    print(f"[Step 1] [BandManualPost] 수동 주제 포스팅 시작 (상태: 시도) - 카테고리: {category}, 주제: {topic}")
+                     driver = self.get_or_create_driver()
+                     band_url = self.settings.get('band_url', '')
+                     
+                     if not band_url:
+-                        print("❌ 밴드 URL이 설정되지 않았습니다.")
++                        print("[Step 1] [BandManualPost] 밴드 URL 미설정 오류 (상태: 실패)")
+                         return
++                    print("[Step 2] [BandManualPost] 밴드 드라이버 획득 완료 (상태: 성공)")
+                     
+                     # 이미지 수집 (수동 업로드 폴더에서)
+                     image_paths = []
+@@ -10190,10 +10308,10 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
+                             ext = os.path.splitext(f)[1].lower()
+                             if ext in valid_exts or ext in video_exts:
+                                 image_paths.append(os.path.join(folder_path, f))
+-                        print(f"🖼️ 수동 업로드 폴더에서 이미지/영상 {len(image_paths)}개 발견")
++                        print(f"[Step 3] [BandManualPost] 수동 폴더 이미지 수집 완료 (상태: 성공) - {len(image_paths)}개 발견")
+                     
+                     if not image_paths:
+-                        print(f"⚠️ 수동 업로드 폴더에 이미지가 없습니다.")
++                        print("[Step 3] [BandManualPost] 이미지 수집 실패 (상태: 실패) - 폴더가 비어있거나 없음")
+                         if page:
+                             page.snack_bar = ft.SnackBar(
+                                 content=ft.Text(f"⚠️ 수동 업로드 폴더에 이미지가 없습니다. 사진을 먼저 추가해주세요."), 
+@@ -10205,7 +10323,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
+                     
+                     # AI로 내용 생성
+                     full_topic = f"[{category}] {topic}" if category else topic
+-                    print(f"📝 AI로 포스팅 내용 생성 중: {full_topic}")
++                    print(f"[Step 4] [BandManualPost] AI 글 내용 생성 시작 (상태: 시도) - 토픽: {full_topic}")
+                     
+                     # 🟢 수동주제포스팅 전용 지침 사용 (사용자 입력 주제 기반)
+                     result = self.gpt_handler.generate_platform_content(
+@@ -10215,21 +10333,38 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
+                     )
+                     
+                     if not result or not result.get('content'):
+-                        print("❌ 내용 생성 실패")
++                        print("[Step 4] [BandManualPost] AI 글 내용 생성 실패 (상태: 실패)")
+                         # 실패 시 이미지 이동
+                         fail_folder = get_manual_fail_folder()
+                         moved = move_images_to_folder(image_paths, fail_folder)
+                         print(f"📦 실패 폴더로 이미지 {moved}개 이동")
+                         return
++                    print(f"[Step 4] [BandManualPost] AI 글 내용 생성 완료 (상태: 성공) - 모델: {result.get('model', '-')}")
+                     
+                     content = result.get('content', '')
++                    gpt_tags = result.get('tags', [])
++                    ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
++                    
++                    # 🟢 밴드 파이프라인 관통시켜 유형 2 물리적 조립 수행 (모바일 가독성 최적화)
++                    print("[Step 5] [BandManualPost] 밴드 파이프라인 관통 조립 시작 (상태: 시도)")
++                    from modules.pipelines.band_pipeline import BandPipeline
++                    formatted_content, merged_tags = BandPipeline.process(
++                        content=content,
++                        ai_tags=ai_tags_str,
++                        app_data_dir=self._get_app_data_dir(),
++                        mode='manual_topic',  # 유형 2 명시
++                        fallback_settings=self.settings,
++                        folder_name=category  # category 명을 folder_name으로 전달
++                    )
++                    print("[Step 5] [BandManualPost] 밴드 파이프라인 관통 조립 완료 (상태: 성공)")
+                     
+                     # 밴드에 포스팅
++                    print("[Step 6] [BandManualPost] 네이버 밴드 수동 업로드 포스팅 시작 (상태: 시도)")
+                     from naver_band_auto import NaverBandAutomation
+                     band_auto = NaverBandAutomation(driver)
+                     success = band_auto.post_to_band(
+                         band_url=band_url,
+-                        content=content,
++                        content=formatted_content,
+                         image_paths=image_paths if image_paths else None
+                     )
+                     

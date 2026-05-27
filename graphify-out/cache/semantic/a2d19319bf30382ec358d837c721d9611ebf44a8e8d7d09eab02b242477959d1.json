@@ -1,0 +1,1 @@
+{"nodes": [], "edges": [{"source": "test_serial_test_serial_validation", "target": "serial_client_serialclient", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "\uc2dc\ub9ac\uc5bc\uad00\ub9ac/serial_validator/test_serial.py"}], "hyperedges": []}

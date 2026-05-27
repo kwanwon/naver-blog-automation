@@ -1,0 +1,1 @@
+{"nodes": [{"id": "idle_activity_idleactivity", "label": "IdleActivity", "file_type": "code", "source_file": "modules/idle_activity.py"}], "edges": [{"source": "idle_activity_idleactivity", "target": "ai_handler_aihandler", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "modules/idle_activity.py"}], "hyperedges": []}

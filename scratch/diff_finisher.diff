@@ -1,0 +1,1089 @@
+diff --git a/naver_blog_post_finisher.py b/naver_blog_post_finisher.py
+index bf11203ed..a6e1ec443 100644
+--- a/naver_blog_post_finisher.py
++++ b/naver_blog_post_finisher.py
+@@ -251,872 +251,202 @@ class NaverBlogPostFinisher:
+ 
+     def add_footer(self):
+         """
+-        블로그 포스트에 푸터를 추가합니다:
+-        1. 줄바꿈으로 공간 확보
+-        2. 카카오톡 오픈채팅 링크 추가
+-        3. 도장 위치 추가
++        Add footer to the blog post:
++        1. Ensure space by adding newlines.
++        2. Add KakaoTalk Open Chat link (with graceful exception bypass).
++        3. Add Dojang location/map using the robust add_location method.
+         """
+         try:
+-            print("\n=== 푸터 추가 시작 ====")
+-            
++            print("\n=== [Footer] Starting footer addition ====")
+             success = True
+             
+-            # 줄바꿈 3번
+-            actions = ActionChains(self.driver)
+-            for _ in range(3):
+-                actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+-                time.sleep(0.2)
+-            print("줄바꿈 3번 완료")
+-
+-            # 카카오톡 링크 추가 전 줄바꿈
+-            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+-            time.sleep(0.2)
+-            print("카카오톡 링크 추가 전 줄바꿈 완료")
+-            
+-            # 도장 이름 확인 - 설정에 없을 경우 기본값 사용
+-            dojang_name = self.settings.get('dojang_name', '라이온짐')
+-            print(f"푸터에 사용할 도장 이름: {dojang_name}")
+-            
+-            # 슬로건은 GPT 생성 본문에 이미 포함되어 있으므로 여기서는 추가하지 않음
+-            # 바로 상담&문의 섹션으로 진행
+-            
+-            # 줄바꿈 2번
+-            actions = ActionChains(self.driver)
+-            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+-            time.sleep(0.2)
+-            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+-            time.sleep(0.2)
+-
+-            # -상담&문의- 텍스트 추가
+-            actions.send_keys("-상담&문의-").perform()
+-            time.sleep(0.2)
+-            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+-            time.sleep(0.2)
+-
+-            # 네이버 전화와 카카오톡 텍스트 추가
+-            actions.send_keys("네이버 전화와").perform()
+-            time.sleep(0.2)
+-            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+-            time.sleep(0.2)
+-            actions.send_keys("카톡 오픈채팅 상담 가능합니다^^").perform()
+-            time.sleep(0.2)
+-            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+-            time.sleep(0.2)
+-
+-            # 카카오톡 오픈채팅 링크 추가
++            # 1. Add 3 newlines
+             try:
+-                print("\n==== 카카오톡 링크 추가 시작 ====")
+-                kakao_url = self.settings.get('kakao_url')
+-                print(f"사용할 카카오 URL: '{kakao_url}'")
+-                
+-                if not kakao_url:
+-                    print("⚠️ 카카오 URL이 설정되지 않았습니다. 링크 추가를 건너뜁니다.")
+-                    return False
+-                
+-                # URL 형식이 올바른지 간단히 확인
+-                if not kakao_url.startswith('http'):
+-                    print(f"⚠️ 카카오 URL 형식이 올바르지 않습니다 (http로 시작해야 함): {kakao_url}")
+-                    # 계속 진행은 함 (사용자가 의도했을 수 있으므로)
+-                
+-                # 먼저 텍스트를 명확히 입력
+                 actions = ActionChains(self.driver)
+-                actions.send_keys("카카오톡 오픈채팅 바로가기 👉").perform()
+-                time.sleep(0.5)
++                for _ in range(3):
++                    actions.send_keys(Keys.ENTER).perform()
++                    time.sleep(0.3)
++                print("✅ [Footer] Added 3 spacing newlines")
++            except Exception as e:
++                print(f"⚠️ [Footer] Spacing newlines failed (skipping): {str(e)}")
++            
++            # 2. Add KakaoTalk link (Isolated & Bypassed)
++            try:
++                kakao_url = self.settings.get('kakao_url')
++                link_button_found = False
+                 
+-                # ESC 키를 눌러 혹시 열려있을 수 있는 팝업/파일 선택창 닫기
+-                try:
++                if kakao_url:
++                    print(f"[Footer] KakaoTalk URL detected: '{kakao_url}'")
++                    
++                    if not kakao_url.startswith('http'):
++                        print(f"⚠️ [Footer] Invalid Kakao URL format: {kakao_url}")
++                    
++                    # Enter KakaoTalk link guidance text
+                     actions = ActionChains(self.driver)
+-                    actions.send_keys(Keys.ESCAPE).perform()
++                    actions.send_keys("카카오톡 오픈채팅 바로가기 👉").perform()
+                     time.sleep(0.5)
+-                except Exception as e:
+-                    print(f"ESC 키 입력 중 오류: {str(e)}")
+-                
+-                # 1. 링크 버튼 찾기 및 클릭 (이미지에서 확인된 정확한 정보 사용)
+-                link_button_found = False
+-                
+-                # 이미지에서 확인된 정확한 선택자들
+-                link_button_selectors = [
+-                    "button.se-oglink-toolbar-button",  # 이미지에서 확인된 정확한 클래스
+-                    "button[data-log='dot.link']",      # 이미지에서 확인된 data-log
+-                    "button[data-role='button-container'][data-log='dot.link']"  # 더 구체적인 선택자
+-                ]
+-                
+-                print("🔗 링크 버튼 클릭 시도...")
+-                for selector in link_button_selectors:
++                    
+                     try:
+-                        print(f"링크 버튼 선택자 시도: {selector}")
+-                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+-                        
+-                        if elements:
+-                            print(f"발견된 요소 수: {len(elements)}")
+-                            for element in elements:
+-                                try:
+-                                    if element.is_displayed() and element.is_enabled():
+-                                        # 요소 정보 출력
+-                                        element_info = {
+-                                            'class': element.get_attribute("class"),
+-                                            'data-log': element.get_attribute("data-log"),
+-                                            'data-role': element.get_attribute("data-role"),
+-                                            'title': element.get_attribute("title")
+-                                        }
+-                                        print(f"클릭할 링크 버튼: {element_info}")
+-                                        
+-                                        # 클릭 시도
+-                                        element.click()
+-                                        print(f"✅ 링크 버튼 클릭 성공: {selector}")
+-                                        link_button_found = True
+-                                        break
+-                                except Exception as e:
+-                                    print(f"개별 요소 클릭 중 오류: {str(e)}")
+-                                    continue
+-                        
+-                        if link_button_found:
+-                            break
+-                            
++                        actions = ActionChains(self.driver)
++                        actions.send_keys(Keys.ESCAPE).perform()
++                        time.sleep(0.5)
+                     except Exception as e:
+-                        print(f"선택자 {selector} 시도 중 오류: {str(e)}")
+-                        continue
+-                
+-                if not link_button_found:
+-                    print("⚠️ CSS 선택자로 링크 버튼을 못 찾음. JavaScript로 재시도...")
+-                    link_button_found = self.driver.execute_script("""
+-                    const buttons = document.querySelectorAll('button');
+-                    for (const btn of buttons) {
+-                        const text = btn.innerText ? btn.innerText.trim() : '';
+-                        const title = btn.getAttribute('title') || '';
+-                        const dataLog = btn.getAttribute('data-log') || '';
+-                        
+-                        if (text === '링크' || title === '링크' || dataLog === 'dot.link') {
+-                            console.log('JS로 링크 버튼 발견:', btn);
+-                            btn.click();
+-                            return true;
+-                        }
+-                    }
+-                    return false;
+-                    """)
++                        print(f"[Footer] Error sending ESC: {str(e)}")
+                     
+-                if not link_button_found:
+-                    print("❌ 링크 버튼을 찾을 수 없습니다 (JS 검색 실패)")
+-                    return False
+-                
+-                # 링크 버튼 클릭 후 처리
+-                if link_button_found:
+-                    print("🔗 링크 버튼 클릭 후 링크 입력창 확인 중...")
++                    link_button_selectors = [
++                        "button.se-oglink-toolbar-button",
++                        "button[data-log='dot.link']",
++                        "button[data-role='button-container'][data-log='dot.link']"
++                    ]
+                     
+-                    # 링크 입력창이 나타날 때까지 대기 (최대 5초)
+-                    link_input_appeared = False
+-                    for attempt in range(30):  # 0.5초씩 30번 = 최대 15초
++                    print("[Footer] Clicking link button...")
++                    for selector in link_button_selectors:
+                         try:
+-                            # 링크 입력창 확인
+-                            link_input = self.driver.find_element(By.CSS_SELECTOR, 
+-                                "input.se-popup-oglink-input, input[placeholder*='URL'], input[placeholder*='url'], input[placeholder*='링크']")
+-                            if link_input.is_displayed():
+-                                print(f"✅ 링크 입력창 확인됨 ({attempt * 0.5}초 후)")
+-                                link_input_appeared = True
++                            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
++                            if elements:
++                                for element in elements:
++                                    if element.is_displayed() and element.is_enabled():
++                                        element.click()
++                                        print(f"✅ [Footer] Clicked link button: {selector}")
++                                        link_button_found = True
++                                        break
++                            if link_button_found:
+                                 break
+-                        except:
+-                            pass
+-                        time.sleep(0.5)
++                        except Exception as e:
++                            print(f"[Footer] Error trying selector {selector}: {str(e)}")
++                            continue
+                     
+-                    if link_input_appeared:
+-                        print("🔗 링크 입력창 확인 후 1초 대기...")
+-                        time.sleep(1)  # 링크 입력창 확인 후 1초 대기
+-                        
+-                        # 클립보드 권한 팝업 처리 제거 (불필요함)
+-                        
+-                        # 🎯 링크 입력 전 안전성 확보
+-                        print("🔒 링크 입력 전 안전성 확보 중...")
+-                        
+-                        # 모든 키보드 입력 차단 및 포커스 정리
+-                        self.driver.execute_script("""
+-                        // 모든 활성 요소에서 포커스 제거
+-                        if (document.activeElement) {
+-                            document.activeElement.blur();
++                    if not link_button_found:
++                        print("⚠️ [Footer] CSS selector failed. Attempting fallback via JS...")
++                        link_button_found = self.driver.execute_script("""
++                        const buttons = document.querySelectorAll('button');
++                        for (const btn of buttons) {
++                            const text = btn.innerText ? btn.innerText.trim() : '';
++                            const title = btn.getAttribute('title') || '';
++                            const dataLog = btn.getAttribute('data-log') || '';
++                            if (text === '링크' || title === '링크' || dataLog === 'dot.link') {
++                                btn.click();
++                                return true;
++                            }
+                         }
+-                        
+-                        // 키보드 이벤트 임시 차단
+-                        window.tempKeyboardBlocked = true;
+-                        
+-                        console.log('키보드 입력 차단 및 포커스 정리 완료');
++                        return false;
+                         """)
+-                        time.sleep(0.3)
++                    
++                    if link_button_found:
++                        print("[Footer] Link button clicked. Waiting for input window...")
++                        link_input_appeared = False
++                        for attempt in range(30):
++                            try:
++                                link_input = self.driver.find_element(By.CSS_SELECTOR, 
++                                    "input.se-popup-oglink-input, input[placeholder*='URL'], input[placeholder*='url'], input[placeholder*='링크']")
++                                if link_input.is_displayed():
++                                    link_input_appeared = True
++                                    break
++                            except:
++                                pass
++                            time.sleep(0.5)
+                         
+-                        # URL 입력
+-                        if self.fill_link_input(kakao_url):
+-                            print("✅ 카카오톡 링크 URL 입력 완료!")
+-                            
+-                            # 🎯 URL 입력 후 입력값 재확인
+-                            actual_url = self.driver.execute_script("""
+-                            const linkInputs = document.querySelectorAll('input.se-popup-oglink-input, .se-popup input[type="text"]');
+-                            for (const input of linkInputs) {
+-                                if (input.offsetWidth > 0 && input.offsetHeight > 0) {
+-                                    return input.value;
+-                                }
+-                            }
+-                            return null;
++                        if link_input_appeared:
++                            time.sleep(1)
++                            # Focus and fill
++                            self.driver.execute_script("""
++                            if (document.activeElement) document.activeElement.blur();
++                            window.tempKeyboardBlocked = true;
+                             """)
+-                            print(f"🔍 URL 입력 후 재확인된 값: {actual_url}")
+-                            
+-                            # 만약 잘못된 값이 입력되었다면 다시 정정
+-                            if actual_url and ("찾아" in actual_url or "길" in actual_url):
+-                                print("🚨 잘못된 텍스트가 감지됨! URL 재입력 시도...")
+-                                self.driver.execute_script(f"""
+-                                const linkInputs = document.querySelectorAll('input.se-popup-oglink-input, .se-popup input[type="text"]');
+-                                for (const input of linkInputs) {{
+-                                    if (input.offsetWidth > 0 && input.offsetHeight > 0) {{
+-                                        input.value = '';
+-                                        input.value = '{kakao_url}';
+-                                        input.dispatchEvent(new Event('input', {{ bubbles: true }}));
+-                                        console.log('URL 재입력 완료:', input.value);
+-                                        break;
+-                                    }}
+-                                }}
+-                                """)
+-                                time.sleep(0.5)
++                            time.sleep(0.3)
+                             
+-                            # 🎯 주소 입력 후 4초 대기 후 확인 버튼 클릭 (안정성 향상)
+-                            print("🕐 주소 입력 후 4초 대기...")
+-                            time.sleep(4)
+-                            
+-                            # 🎯 최강화된 확인 버튼 찾기 및 클릭
+-                            print("🔍 확인 버튼 찾기 시작...")
+-                            confirm_clicked = self.driver.execute_script("""
+-                            function findAndClickConfirmButton() {
+-                                console.log('=== 최강화된 확인 버튼 찾기 시작 ===');
+-                                
+-                                // 0. 먼저 현재 모든 버튼 상황 파악
+-                                console.log('현재 페이지의 모든 버튼 상황:');
+-                                const allBtns = document.querySelectorAll('button');
+-                                allBtns.forEach((btn, i) => {
+-                                    if (btn.offsetWidth > 0 && btn.offsetHeight > 0) {
+-                                        console.log(`버튼 ${i}:`, {
+-                                            text: btn.innerText?.trim(),
+-                                            className: btn.className,
+-                                            dataLog: btn.getAttribute('data-log'),
+-                                            disabled: btn.disabled
+-                                        });
+-                                    }
+-                                });
+-                                
+-                                // 1. 가장 정확한 선택자들로 시도 (확장됨)
+-                                const exactSelectors = [
+-                                    'button.se-popup-button-confirm',
+-                                    'button.se-popup-button.se-popup-button-confirm', 
+-                                    'button[data-log="pog.ok"]',
+-                                    '.se-popup-button-confirm',
+-                                    '.se-popup .se-popup-button-confirm',
+-                                    '.se-popup button[class*="confirm"]',
+-                                    'button[class*="se-popup"][class*="confirm"]'
+-                                ];
+-                                
+-                                console.log('1단계: 정확한 선택자로 시도...');
+-                                for (const selector of exactSelectors) {
+-                                    const btn = document.querySelector(selector);
+-                                    if (btn && btn.offsetWidth > 0 && btn.offsetHeight > 0 && !btn.disabled) {
+-                                        console.log('✅ 정확한 선택자로 확인 버튼 클릭:', selector);
+-                                        btn.click();
+-                                        return true;
+-                                    }
+-                                }
+-                                
+-                                // 2. 강제로 모든 보이는 버튼에서 '확인' 찾기 (조건 완화)
+-                                console.log('2단계: 모든 보이는 확인 버튼 찾기...');
+-                                const visibleButtons = Array.from(document.querySelectorAll('button')).filter(
+-                                    btn => btn.offsetWidth > 0 && btn.offsetHeight > 0 && !btn.disabled
+-                                );
++                            if self.fill_link_input(kakao_url):
++                                print("✅ [Footer] Kakao link URL filled.")
++                                time.sleep(4)
+                                 
+-                                for (const btn of visibleButtons) {
+-                                    const text = btn.innerText?.trim();
+-                                    if (text === '확인' || text === 'OK' || text === '삽입' || text === 'Insert') {
+-                                        console.log('✅ 강제 검색으로 확인 버튼 발견 및 클릭:', {
+-                                            text: text,
+-                                            className: btn.className,
+-                                            dataLog: btn.getAttribute('data-log')
+-                                        });
+-                                        btn.click();
+-                                        return true;
+-                                    }
+-                                }
+-                                
+-                                // 3. 클래스명에 'confirm'이 포함된 모든 버튼 시도
+-                                console.log('3단계: confirm 클래스명 버튼 찾기...');
+-                                const confirmButtons = document.querySelectorAll('button[class*="confirm"]');
+-                                for (const btn of confirmButtons) {
+-                                    if (btn.offsetWidth > 0 && btn.offsetHeight > 0 && !btn.disabled) {
+-                                        console.log('✅ confirm 클래스 버튼 클릭:', btn.className);
+-                                        btn.click();
+-                                        return true;
++                                confirm_clicked = self.driver.execute_script("""
++                                function findAndClickConfirmButton() {
++                                    console.log('=== Clicking Kakao Confirm Button ===');
++                                    const exactSelectors = [
++                                        'button.se-popup-button-confirm',
++                                        'button.se-popup-button.se-popup-button-confirm', 
++                                        'button[data-log="pog.ok"]',
++                                        '.se-popup-button-confirm',
++                                        '.se-popup .se-popup-button-confirm',
++                                        '.se-popup button[class*="confirm"]',
++                                        'button[class*="se-popup"][class*="confirm"]'
++                                    ];
++                                    for (const selector of exactSelectors) {
++                                        const btn = document.querySelector(selector);
++                                        if (btn && btn.offsetWidth > 0 && btn.offsetHeight > 0 && !btn.disabled) {
++                                            btn.click();
++                                            return true;
++                                        }
+                                     }
+-                                }
+-                                
+-                                // 4. data-log 속성에 'ok'가 포함된 버튼 찾기
+-                                console.log('4단계: data-log ok 버튼 찾기...');
+-                                const okButtons = document.querySelectorAll('button[data-log*="ok"]');
+-                                for (const btn of okButtons) {
+-                                    if (btn.offsetWidth > 0 && btn.offsetHeight > 0 && !btn.disabled) {
+-                                        console.log('✅ data-log ok 버튼 클릭:', btn.getAttribute('data-log'));
+-                                        btn.click();
+-                                        return true;
++                                    const visibleButtons = Array.from(document.querySelectorAll('button')).filter(
++                                        btn => btn.offsetWidth > 0 && btn.offsetHeight > 0 && !btn.disabled
++                                    );
++                                    for (const btn of visibleButtons) {
++                                        const text = btn.innerText?.trim();
++                                        if (text === '확인' || text === 'OK' || text === '삽입' || text === 'Insert') {
++                                            btn.click();
++                                            return true;
++                                        }
+                                     }
+-                                }
+-                                
+-                                // 5. 마지막 수단: 팝업 영역의 마지막 버튼 클릭
+-                                console.log('5단계: 팝업 마지막 버튼 시도...');
+-                                const popups = document.querySelectorAll('.se-popup, [class*="popup"]');
+-                                for (const popup of popups) {
+-                                    if (popup.offsetWidth > 0 && popup.offsetHeight > 0) {
+-                                        const popupButtons = popup.querySelectorAll('button');
+-                                        if (popupButtons.length > 0) {
+-                                            const lastBtn = popupButtons[popupButtons.length - 1];
+-                                            if (lastBtn.offsetWidth > 0 && lastBtn.offsetHeight > 0 && !lastBtn.disabled) {
+-                                                console.log('✅ 팝업 마지막 버튼 클릭:', lastBtn.innerText?.trim());
+-                                                lastBtn.click();
+-                                                return true;
++                                    
++                                    // 5. Fallback popup last button
++                                    console.log('5단계: 팝업 마지막 버튼 시도...');
++                                    const popups = document.querySelectorAll('.se-popup, [class*="popup"]');
++                                    for (const popup of popups) {
++                                        if (popup.offsetWidth > 0 && popup.offsetHeight > 0) {
++                                            const popupButtons = popup.querySelectorAll('button');
++                                            if (popupButtons.length > 0) {
++                                                const lastBtn = popupButtons[popupButtons.length - 1];
++                                                if (lastBtn.offsetWidth > 0 && lastBtn.offsetHeight > 0 && !lastBtn.disabled) {
++                                                    console.log('✅ 팝업 마지막 버튼 클릭:', lastBtn.innerText?.trim());
++                                                    lastBtn.click();
++                                                    return true;
++                                                }
+                                             }
+                                         }
+                                     }
++                                    
++                                    console.log('❌ 모든 방법으로도 확인 버튼을 찾을 수 없음');
++                                    return false;
+                                 }
+-                                
+-                                console.log('❌ 모든 방법으로도 확인 버튼을 찾을 수 없음');
+-                                return false;
+-                            }
+-                            
+-                            return findAndClickConfirmButton();
+-                            """)
+-                            
+-                            if confirm_clicked:
+-                                print("✅ 확인 버튼 클릭 성공! (본문에 삽입 완료)")
+-                                
+-                                # 🎯 2초 대기 후 다음 단계 진행
+-                                print("🕐 본문 삽입 후 2초 대기...")
+-                                time.sleep(2)
+-                                        
+-                            else:
+-                                print("⚠️ 확인 버튼 클릭 실패")
+-                                # 디버깅을 위해 현재 페이지의 버튼 정보 출력
+-                                self.driver.execute_script("""
+-                                console.log('=== 디버깅: 현재 페이지의 모든 버튼 정보 ===');
+-                                const buttons = document.querySelectorAll('button');
+-                                buttons.forEach((btn, index) => {
+-                                    if (btn.offsetWidth > 0 && btn.offsetHeight > 0) {
+-                                        console.log(`버튼 ${index}:`, {
+-                                            text: btn.innerText?.trim(),
+-                                            className: btn.className,
+-                                            id: btn.id,
+-                                            dataLog: btn.getAttribute('data-log'),
+-                                            disabled: btn.disabled
+-                                        });
+-                                    }
+-                                });
++                                return findAndClickConfirmButton();
+                                 """)
+                                 
++                                if confirm_clicked:
++                                    print("✅ [Footer] Kakao link inserted successfully!")
++                                    time.sleep(2)
++                                else:
++                                    print("⚠️ [Footer] Confirm button click failed for Kakao link")
++                            else:
++                                print("⚠️ [Footer] Failed to fill link input")
+                         else:
+-                            print("⚠️ URL 입력 실패")
++                            print("⚠️ [Footer] Link input window did not appear")
+                     else:
+-                        print("⚠️ 링크 입력창이 나타나지 않음")
+-                
+-                print("==== 카카오톡 링크 추가 완료 ====\n")
+-                
+-                # 줄바꿈 추가
+-                actions = ActionChains(self.driver)
+-                actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+-                time.sleep(0.2)
+-                
+-            except Exception as e:
+-                print(f"카카오톡 링크 추가 중 오류 발생: {str(e)}")
+-                traceback.print_exc()
+-                print("오류 발생 위치:")
+-                import inspect
+-                for frame in inspect.trace():
+-                    print(f"  파일: {frame.filename}, 줄: {frame.lineno}, 함수: {frame.function}")
+-                success = False
+-
+-            # 🎯 카카오 링크 삽입 완료 후 본문 포커스 재확보 및 키보드 입력 차단 해제
+-            print("🎯 카카오 링크 삽입 완료 - 본문 포커스 재확보 중...")
+-            try:
+-                # 키보드 입력 차단 해제
+-                self.driver.execute_script("""
+-                window.tempKeyboardBlocked = false;
+-                console.log('키보드 입력 차단 해제 완료');
+-                """)
+-                
+-                # 본문 영역 클릭하여 포커스 이동
+-                body_areas = self.driver.find_elements(By.CSS_SELECTOR, 
+-                    "div.se-component.se-text.se-l-default")
+-                if body_areas:
+-                    self.driver.execute_script("arguments[0].click();", body_areas[-1])
+-                    print("✅ 본문 영역 포커스 재확보 성공")
+-                    time.sleep(1)  # 포커스 안정화 대기
++                        print("⚠️ [Footer] Link button not found or clicked")
+                 else:
+-                    print("⚠️ 본문 영역을 찾을 수 없음")
++                    print("ℹ] [Footer] Kakao URL not configured. Skipping link insertion.")
++                    
+             except Exception as e:
+-                print(f"본문 포커스 재확보 중 오류: {str(e)}")
+-
+-            # 🧹 장소 추가 전: 남아있는 팝업 오버레이 제거
+-            try:
+-                self.driver.switch_to.default_content()
+-                self.driver.execute_script("""
+-                    document.querySelectorAll('.se-popup-dim, .se-popup-dim-transparent').forEach(function(el) {
+-                        el.style.display = 'none';
+-                        el.remove();
+-                    });
+-                """)
+-                self.driver.switch_to.frame("mainFrame")
+-            except:
+-                pass
+-
+-            # 장소 검색 및 지도 표시
++                # Bypass Kakao link insertion to prevent skipping location addition
++                print(f"⚠️ [Footer] Kakao link insertion failed: {str(e)}. Bypassing to location addition...")
++            
++            # 3. Add Location (Maps) using the robust separate method
++            print("[Footer] Proceeding to location/map addition...")
+             try:
+-                print("\n==== 장소 정보 추가 시작 ====")
+-                
+-                # 장소 버튼 클릭
+-                print("장소 버튼 찾기 및 클릭 시도...")
+-                location_button_selectors = [
+-                    "button.se-map-toolbar-button", 
+-                    "button[data-log='dot.map']",
+-                    "button.se-document-toolbar-basic-button.se-text-icon-toolbar-button[title='장소']",
+-                    "button[data-role='button-container'][data-log='dot.map']"
+-                ]
+-                
+-                location_btn_clicked = False
+-                for selector in location_button_selectors:
+-                    try:
+-                        print(f"장소 버튼 선택자 시도: {selector}")
+-                        btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
+-                        for btn in btns:
+-                            if btn.is_displayed() and btn.is_enabled():
+-                                # JS 클릭으로 오버레이 간섭 방지
+-                                self.driver.execute_script("arguments[0].click();", btn)
+-                                location_btn_clicked = True
+-                                print(f"✅ 장소 버튼 클릭 성공: {selector}")
+-                                break
+-                        if location_btn_clicked:
+-                            break
+-                    except Exception as e:
+-                        print(f"장소 버튼 선택자 {selector} 오류: {e}")
+-                
+-                if not location_btn_clicked:
+-                    print("❌ 장소 버튼을 찾을 수 없습니다. 장소 추가를 건너뜁니다.")
+-                    raise Exception("장소 버튼 클릭 실패")
+-                    
+-                time.sleep(1)
+-                print("장소 버튼 클릭 후 1초 대기 완료")
+-
+-                # 🎯 장소 검색창에 주소 및 상호 입력
+-                print("장소 검색창 찾기 (프레이밍 확인)...")
+-                # 프레임 재확인
+-                try:
+-                    self.driver.switch_to.default_content()
+-                    self.driver.switch_to.frame("mainFrame")
+-                except:
+-                    pass
+-                
+-                location_input = WebDriverWait(self.driver, 15).until(
+-                    EC.presence_of_element_located((By.CSS_SELECTOR, "input.react-autosuggest__input, input.location_search_input"))
+-                )
+-                # 검색어를 사용자 설정에서 정확히 가져오기
+-                dojang_name = self.settings.get('dojang_name', '')
+-                
+-                # [수정] 사용자 요청에 따라 주소는 제외하고 '상호명'만으로 검색
+-                search_text = dojang_name
+-                
+-                print(f"장소 검색창 발견, 검색어 입력: {search_text}")
+-                # 기존 입력 내용 삭제 후 새로 입력
+-                location_input.clear()
+-                location_input.send_keys(search_text)
+-                time.sleep(2)  # 0.5초에서 1초로, 다시 2초로 변경
+-                print("검색어 입력 완료, 2초 대기")
+-                
+-                # Enter 키 입력으로 검색 실행
+-                print("Enter 키 입력으로 검색 실행...")
+-                actions = ActionChains(self.driver)
+-                actions.send_keys(Keys.ENTER).perform()
+-                time.sleep(5)  # 검색 결과 로드를 위해 대기 시간 (5초로 증가)
+-                print("Enter 키 입력 완료, 5초 대기")
+-
+-                # 검색 결과 항목 선택자 출력 (디버깅용)
+-                print("페이지의 검색 결과 UI 정보 수집 중...")
+-                search_elements_debug = self.driver.execute_script("""
+-                // 검색 결과와 관련된 모든 요소 검사
+-                const searchResults = [];
+-                
+-                // li 태그 검사
+-                const liElements = document.querySelectorAll('li');
+-                for (const li of liElements) {
+-                    if (li.className && (li.className.includes('result') || li.className.includes('search'))) {
+-                        searchResults.push({
+-                            tagName: 'li',
+-                            className: li.className,
+-                            isVisible: li.offsetWidth > 0 && li.offsetHeight > 0,
+-                            text: li.textContent.substring(0, 50) + '...',
+-                            childCount: li.childNodes.length
+-                        });
+-                    }
+-                }
+-                
+-                // div 검색 결과 컨테이너 검사
+-                const divElements = document.querySelectorAll('div');
+-                for (const div of divElements) {
+-                    if (div.className && (div.className.includes('result') || div.className.includes('search'))) {
+-                        searchResults.push({
+-                            tagName: 'div',
+-                            className: div.className,
+-                            isVisible: div.offsetWidth > 0 && div.offsetHeight > 0,
+-                            text: div.textContent.substring(0, 50) + '...',
+-                            childCount: div.childNodes.length
+-                        });
+-                    }
+-                }
+-                
+-                return searchResults;
+-                """)
+-                print(f"발견된 검색 관련 요소: {len(search_elements_debug)}")
+-                for idx, element in enumerate(search_elements_debug):
+-                    print(f"검색 요소 {idx+1}: {element}")
+-
+-                # 검색 결과 항목 선택자 다양화
+-                print("다양한 검색 결과 항목 선택자로 시도 중...")
+-                search_result_selectors = [
+-                    "li.se-place-map-search-result-item",  # 이미지에서 확인된 클래스명
+-                    "li[class*='se-place-map-search-result-item']",
+-                    "li.se-place-map-search-result-item.se-is-highlight",  # 기존 선택자
+-                    "li.se-map-search-result-item",
+-                    "li.se-map-search-item",
+-                    "li[class*='search-result']",
+-                    "li[class*='result-item']",
+-                    ".se-map-search-result .se-map-search-item",
+-                    ".react-autosuggest__suggestions-list li"
+-                ]
+-                
+-                result_item = None
+-                used_selector = None
+-                dojang_name = self.settings.get('dojang_name', '')
+-                
+-                for selector in search_result_selectors:
+-                    try:
+-                        print(f"선택자 시도: {selector}")
+-                        items = self.driver.find_elements(By.CSS_SELECTOR, selector)
+-                        if items:
+-                            print(f"선택자 {selector}로 {len(items)}개 요소 발견")
+-                            
+-                            # 모든 항목을 출력 (디버깅용)
+-                            for idx, item in enumerate(items):
+-                                if item.is_displayed():
+-                                    item_text = item.text[:50] + "..." if len(item.text) > 50 else item.text
+-                                    print(f"결과 항목 #{idx+1}: {item_text}")
+-                            
+-                            # 도장 이름이 포함된 항목을 우선 찾기
+-                            dojang_found = False
+-                            for item in items:
+-                                if item.is_displayed() and dojang_name in item.text:
+-                                    result_item = item
+-                                    used_selector = selector
+-                                    dojang_found = True
+-                                    print(f"도장 이름({dojang_name})이 포함된 검색 결과 발견!")
+-                                    break
+-                            
+-                            # 도장 이름이 포함된 항목이 없으면 첫 번째 표시 항목 선택
+-                            if not dojang_found and not result_item:
+-                                for item in items:
+-                                    if item.is_displayed():
+-                                        result_item = item
+-                                        used_selector = selector
+-                                        print(f"도장 이름이 포함된 결과는 없어 첫 번째 표시 항목 선택")
+-                                        break
+-                            
+-                            if result_item:
+-                                break
+-                    except Exception as e:
+-                        print(f"선택자 {selector} 시도 중 오류: {str(e)}")
+-                
+-                # 선택자로 찾지 못한 경우 JavaScript로 검색
+-                if not result_item:
+-                    print("JavaScript로 검색 결과 항목 찾기...")
+-                    result_item_js = self.driver.execute_script("""
+-                    // 검색 결과 컨테이너 찾기 (여러 패턴 시도)
+-                    function findSearchResult() {
+-                        const dojangName = arguments[0];
+-                        console.log('찾을 도장 이름:', dojangName);
+-                        
+-                        // 1. 도장 이름이 포함된 결과 찾기
+-                        const allElements = document.querySelectorAll('*');
+-                        for (const el of allElements) {
+-                            if (el.innerText && el.innerText.includes(dojangName)) {
+-                                // 도장 이름을 포함하는 요소 찾기
+-                                const parent = el.closest('li') || el.closest('div[role="option"]') || el;
+-                                if (parent.offsetWidth > 0 && parent.offsetHeight > 0) {
+-                                    console.log('도장 이름이 포함된 검색 결과 발견!');
+-                                    return {
+-                                        element: parent,
+-                                        foundDojang: true
+-                                    };
+-                                }
+-                            }
+-                        }
+-                        
+-                        // 도장 이름이 없을 경우 일반 검색 결과 찾기
+-                        // 2. 클래스명에 'search-result'가 포함된 모든 요소
+-                        const resultsByClass = document.querySelectorAll('[class*="search-result"], [class*="result-item"]');
+-                        for (const item of resultsByClass) {
+-                            if (item.offsetWidth > 0 && item.offsetHeight > 0) {
+-                                return {
+-                                    element: item,
+-                                    foundDojang: false
+-                                };
+-                            }
+-                        }
+-                        
+-                        // 3. 검색 결과 목록 내부의 첫 번째 항목
+-                        const resultLists = document.querySelectorAll('.react-autosuggest__suggestions-list, [class*="search-list"]');
+-                        for (const list of resultLists) {
+-                            if (list.children.length > 0 && list.children[0].offsetWidth > 0) {
+-                                return {
+-                                    element: list.children[0],
+-                                    foundDojang: false
+-                                };
+-                            }
+-                        }
+-                        
+-                        // 4. 특정 텍스트 패턴이 있는 요소
+-                        for (const el of allElements) {
+-                            if (el.innerText && (el.innerText.includes('도로명') || el.innerText.includes('지번'))) {
+-                                // 검색 결과는 주로 주소 정보를 포함함
+-                                const parent = el.closest('li') || el.closest('div[role="option"]') || el;
+-                                if (parent.offsetWidth > 0 && parent.offsetHeight > 0) {
+-                                    return {
+-                                        element: parent,
+-                                        foundDojang: false
+-                                    };
+-                                }
+-                            }
+-                        }
+-                        
+-                        return null;
+-                    }
+-                    
+-                    const result = findSearchResult(arguments[0]);
+-                    if (result) {
+-                        // 결과 요소의 위치로 스크롤
+-                        result.element.scrollIntoView();
+-                        
+-                        // 요소 정보 반환
+-                        return {
+-                            found: true,
+-                            tagName: result.element.tagName,
+-                            className: result.element.className,
+-                            text: result.element.innerText.substring(0, 50),
+-                            foundDojang: result.foundDojang
+-                        };
+-                    }
+-                    return { found: false };
+-                    """, dojang_name)
+-                    
+-                    if result_item_js and result_item_js.get('found'):
+-                        print(f"JavaScript로 검색 결과 요소 발견: {result_item_js}")
+-                        if result_item_js.get('foundDojang'):
+-                            print(f"도장 이름({dojang_name})이 포함된 결과를 JavaScript로 찾았습니다!")
+-                        else:
+-                            print("도장 이름이 포함된 결과는 찾지 못했으나, 검색 결과를 선택합니다.")
+-                        
+-                        # 요소에 직접 클릭 이벤트 발생시키기
+-                        self.driver.execute_script("""
+-                        const resultItem = arguments[0];
+-                        
+-                        // 마우스 이벤트 시뮬레이션 (hover -> 우클릭)
+-                        resultItem.dispatchEvent(new MouseEvent('mouseover', {
+-                            bubbles: true,
+-                            cancelable: true,
+-                            view: window
+-                        }));
+-                        
+-                        setTimeout(() => {
+-                            resultItem.dispatchEvent(new MouseEvent('contextmenu', {
+-                                bubbles: true,
+-                                cancelable: true,
+-                                view: window,
+-                                button: 2
+-                            }));
+-                        }, 500);
+-                        """, result_item_js)
+-                        
+-                        time.sleep(1)
+-                        print("JavaScript로 요소에 마우스 오버 및 우클릭 이벤트 발생")
+-                
+-                # 선택자로 요소를 찾은 경우 마우스 이벤트 발생
+-                elif result_item:
+-                    print(f"검색 결과 항목 발견: {used_selector}")
+-                    print(f"검색 결과 텍스트: {result_item.text[:50]}...")
+-                    
+-                    # 스크린샷 캡처 시도 (디버깅용)
+-                    try:
+-                        result_item.screenshot('/tmp/search_result.png')
+-                        print("검색 결과 요소 스크린샷 저장: /tmp/search_result.png")
+-                    except:
+-                        print("스크린샷 저장 실패 (무시)")
+-                    
+-                    # 검색 결과에 마우스 이동 (hover)
+-                    print("검색 결과에 마우스 이동 중...")
+-                    hover = ActionChains(self.driver)
+-                    hover.move_to_element(result_item).perform()
+-                    time.sleep(1)
+-                    print("검색 결과에 마우스 이동 완료")
+-                    
+-                    # 마우스 좌클릭 시도
+-                    try:
+-                        print("마우스 좌클릭 시도...")
+-                        click_action = ActionChains(self.driver)
+-                        click_action.click(result_item).perform()
+-                        time.sleep(1)
+-                        print("마우스 좌클릭 완료, 1초 대기")
+-                    except Exception as e:
+-                        print(f"마우스 좌클릭 중 오류: {str(e)}")
++                location_success = self.add_location()
++                if location_success:
++                    print("✅ [Footer] Location information added successfully")
+                 else:
+-                    raise Exception("검색 결과 항목을 찾을 수 없습니다.")
+-                
+-                # (+추가) 버튼 클릭 시도 - 다양한 방법 동원
+-                try:
+-                    print("\n(+추가) 버튼 찾기 시도...")
+-                    
+-                    # 모든 버튼 정보 수집 (디버깅)
+-                    buttons_info = self.driver.execute_script("""
+-                    const buttons = document.querySelectorAll('button');
+-                    return Array.from(buttons).map(btn => ({
+-                        text: btn.innerText.trim(),
+-                        class: btn.className,
+-                        isVisible: btn.offsetWidth > 0 && btn.offsetHeight > 0,
+-                        hasPlus: btn.innerText.includes('+') || btn.innerText.includes('추가')
+-                    })).filter(info => info.isVisible);
+-                    """)
+-                    
+-                    print(f"화면에 표시된 버튼 수: {len(buttons_info)}")
+-                    for idx, btn in enumerate(buttons_info):
+-                        if btn.get('hasPlus'):
+-                            print(f"주목할 버튼 {idx+1}: {btn} - '+' 또는 '추가' 텍스트 포함")
+-                        elif idx < 5:  # 처음 5개 버튼만 출력
+-                            print(f"버튼 {idx+1}: {btn}")
+-                    
+-                    # JavaScript로 (+추가) 버튼 찾기 및 클릭 시도 - 1초 간격으로 5번 클릭
+-                    print("JavaScript로 (+추가) 버튼 찾기 및 5번 클릭 시도...")
+-                    add_button_clicked = self.driver.execute_script("""
+-                    // 이미지에서 확인된 클래스 사용하여 버튼 찾기
+-                    const findAddButton = () => {
+-                        // 정확한 클래스명으로 먼저 시도
+-                        const addButtonSpan = document.querySelector('span.se-place-map-search-add-button-text');
+-                        if (addButtonSpan) {
+-                            const clickableParent = addButtonSpan.closest('button') || addButtonSpan.parentElement;
+-                            if (clickableParent) return clickableParent;
+-                            return addButtonSpan;
+-                        }
+-                        
+-                        // 다른 방법으로 시도
+-                        const buttonsByText = Array.from(document.querySelectorAll('button')).filter(
+-                            btn => btn.innerText.includes('+') || btn.innerText.includes('추가')
+-                        );
+-                        if (buttonsByText.length > 0) return buttonsByText[0];
+-                        
+-                        // 클래스명으로 찾기
+-                        const buttonsByClass = document.querySelectorAll(
+-                            'button.se-place-add-button, button[class*="add-button"]'
+-                        );
+-                        if (buttonsByClass.length > 0) return buttonsByClass[0];
+-                        
+-                        return null;
+-                    };
+-                    
+-                    // 버튼 찾기
+-                    const addButton = findAddButton();
+-                    
+-                    if (!addButton) {
+-                        console.log('추가 버튼을 찾을 수 없습니다.');
+-                        return false;
+-                    }
+-                    
+-                    console.log('추가 버튼 발견, 5번 클릭 시도 시작...');
+-                    
+-                    // 1초 간격으로 5번 클릭
+-                    for (let i = 0; i < 5; i++) {
+-                        setTimeout(() => {
+-                            console.log(`${i+1}번째 클릭 시도...`);
+-                            addButton.click();
+-                        }, i * 1000);
+-                    }
+-                    
+-                    return true;
+-                    """)
+-                    
+-                    print(f"JavaScript로 (+추가) 버튼 클릭 시작: {add_button_clicked}")
+-                    
+-                    # 5번의 클릭이 완료될 때까지 5초 대기
+-                    print("5번 클릭 완료 대기 중 (5초)...")
+-                    time.sleep(5)
+-                    
+-                    # 확인 버튼 클릭 (기존 코드 유지)
+-                    
+-                except Exception as e:
+-                    print(f"(+추가) 버튼 찾기 및 클릭 중 오류: {str(e)}")
+-                
+-                # 확인 버튼 클릭 - 더 강력한 확인 버튼 클릭 로직으로 업데이트
+-                try:
+-                    print("\n확인 버튼 찾기 및 클릭 시도...")
+-                    # 여러번 시도 (버튼이 나타날 때까지 반복)
+-                    max_attempts = 3
+-                    confirm_clicked = False
+-                    
+-                    for attempt in range(max_attempts):
+-                        try:
+-                            print(f"확인 버튼 클릭 시도 {attempt+1}/{max_attempts}...")
+-                            
+-                            confirm_clicked = self.driver.execute_script("""
+-                            // 확인 버튼 찾는 함수
+-                            function findConfirmButton() {
+-                                // 명확한 선택자로 먼저 시도
+-                                const confirmBtn = document.querySelector('button.se-popup-button-confirm, button[data-log="pog.ok"]');
+-                                if (confirmBtn) {
+-                                    console.log('정확한 선택자로 확인 버튼 발견');
+-                                    confirmBtn.click();
+-                                    return true;
+-                                }
+-                                
+-                                // 클래스로 버튼 찾기
+-                                const buttonsByClass = document.querySelectorAll(
+-                                    'button.confirm, button[class*="confirm"], button.se-popup-button'
+-                                );
+-                                for (const btn of buttonsByClass) {
+-                                    if (btn.offsetWidth > 0 && btn.offsetHeight > 0) {
+-                                        console.log('클래스로 확인 버튼 발견');
+-                                        btn.click();
+-                                        return true;
+-                                    }
+-                                }
+-                                
+-                                return false;
+-                            }
+-                            
+-                            return findConfirmButton();
+-                            """)
+-                            
+-                            if confirm_clicked:
+-                                print(f"확인 버튼 클릭 성공 (시도 {attempt+1})")
+-                                break
+-                            else:
+-                                print(f"확인 버튼을 찾을 수 없음 (시도 {attempt+1})")
+-                                time.sleep(1)
+-                        except Exception as e:
+-                            print(f"확인 버튼 클릭 시도 {attempt+1} 중 오류: {str(e)}")
+-                            time.sleep(1)
+-                    
+-                    print("==== 장소 정보 추가 완료 ====\n" if confirm_clicked else "==== 장소 정보 추가 시도 완료 ====\n")
+-                except Exception as e:
+-                    print(f"확인 버튼 클릭 중 오류: {str(e)}")
+-            except Exception as e:
+-                print(f"⚠️ 위치 정보 추가 실패 (계속 진행): {str(e)}")
++                    print("⚠️ [Footer] Location addition returned False (non-blocking)")
++            except Exception as loc_err:
++                print(f"⚠️ [Footer] Location addition failed with exception (bypassed): {str(loc_err)}")
+ 
+             return True
+             
+         except Exception as e:
+-            print(f"⚠️ 푸터 추가 중 오류 (계속 진행): {str(e)}")
++            print(f"⚠️ [Footer] Critical error in add_footer (bypassed): {str(e)}")
+             return True
+-            
++
+     def _switch_to_main_frame_robust(self):
+         """에디터 버튼들이 보이는 최적의 프레임으로 지능적으로 전환합니다."""
+         try:
+@@ -2300,18 +1630,52 @@ class NaverBlogPostFinisher:
+             
+             for selector in search_input_selectors:
+                 try:
+-                    print(f"검색 입력 필드 선택자 시도: {selector}")
++                    print(f"[Step 2] [Finisher] Map search input selector attempt: {selector} (Status: Try)")
+                     search_input = WebDriverWait(self.driver, 5).until(
+                         EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                     )
+                     
++                    # Ensure physical click and focus to prevent key event drops
++                    search_input.click()
++                    time.sleep(0.3)
+                     search_input.clear()
+-                    time.sleep(0.5)
++                    time.sleep(0.3)
++                    
++                    # Send keys character by character or with a small pause
+                     search_input.send_keys(search_query)
+-                    time.sleep(0.5)
++                    time.sleep(0.8)  # Give enough time for the query to be fully registered in UI
++                    
++                    # Click input again and send ENTER key to trigger map search submit
++                    search_input.click()
++                    time.sleep(0.2)
+                     search_input.send_keys(Keys.ENTER)
++                    time.sleep(0.5)
++                    
++                    # Double-check ActionChains fallback for triggering the enter key
++                    try:
++                        actions = ActionChains(self.driver)
++                        actions.move_to_element(search_input).click().send_keys(Keys.ENTER).perform()
++                        print("[Step 2] [Finisher] ActionChains backup Enter key sent (Status: Success)")
++                    except Exception as action_err:
++                        print(f"⚠️ [Finisher] ActionChains Enter fallback ignored: {action_err}")
++                        
++                    # Proactive fallback: Attempt to find and click the map search button directly to handle UI lag
++                    try:
++                        search_buttons = self.driver.find_elements(
++                            By.CSS_SELECTOR, 
++                            "button.se-map-search-button, button[class*='search'], button.search-button, .se-map-search button"
++                        )
++                        for btn in search_buttons:
++                            if btn.is_displayed():
++                                btn.click()
++                                print("[Step 2] [Finisher] Found and clicked the search magnifying button directly (Status: Success)")
++                                time.sleep(0.5)
++                                break
++                    except Exception as btn_err:
++                        print(f"⚠️ [Finisher] Magnifying search button click fallback ignored: {btn_err}")
++                        
+                     search_input_found = True
+-                    print(f"검색어 입력 성공: {search_query}")
++                    print(f"[Step 2] [Finisher] Map search query input and Enter execution finished: {search_query} (Status: Success)")
+                     break
+                 except Exception as e:
+                     print(f"검색 입력 필드 선택자 {selector} 실패: {str(e)}")

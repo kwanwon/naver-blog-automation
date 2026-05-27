@@ -1,0 +1,1 @@
+{"nodes": [{"id": "device_info_registration", "label": "Device Registration Info", "file_type": "document", "source_file": "config/device_info.json"}], "edges": [{"source": "device_info_registration", "target": "programs_blog_automation", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "config/device_info.json"}], "hyperedges": []}

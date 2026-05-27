@@ -1,0 +1,1 @@
+{"nodes": [{"id": "programs_blog_automation", "label": "Naver Blog Automation Program", "file_type": "document", "source_file": "config/programs.json"}], "edges": [{"source": "programs_blog_automation", "target": "naver_api_config_settings", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.9, "source_file": "config/programs.json"}], "hyperedges": []}

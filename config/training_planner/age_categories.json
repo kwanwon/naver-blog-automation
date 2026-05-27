@@ -1,0 +1,67 @@
+[
+  {
+    "id": "infant",
+    "name": "🧒 유치부",
+    "description": "5~7세 (유아)",
+    "age_range": "5~7",
+    "training_style": "놀이 중심, 기초 체조, 집중력 게임, 15분 단위 활동 전환",
+    "ratio": {
+      "play": 50,
+      "basic": 30,
+      "physical": 20
+    },
+    "session_duration": 40
+  },
+  {
+    "id": "elem_low",
+    "name": "📚 초등 저학년",
+    "description": "1~3학년 (초등 저)",
+    "age_range": "7~10",
+    "training_style": "기본기 + 레크레이션, 성장 스트레칭, 순발력 게임",
+    "ratio": {
+      "basic": 30,
+      "technique": 30,
+      "play": 40
+    },
+    "session_duration": 50
+  },
+  {
+    "id": "elem_high",
+    "name": "💪 초등 고학년",
+    "description": "4~6학년 (초등 고)",
+    "age_range": "10~13",
+    "training_style": "기술 심화, 약속 대련, 체력 훈련, 대회 준비",
+    "ratio": {
+      "technique": 40,
+      "physical": 30,
+      "sparring": 30
+    },
+    "session_duration": 50
+  },
+  {
+    "id": "middle_up",
+    "name": "🔥 중등부 이상",
+    "description": "중학생 이상 (청소년·선수부)",
+    "age_range": "13+",
+    "training_style": "실전 대련, 고급 기술, 심판 교육, 리더십 훈련",
+    "ratio": {
+      "sparring": 50,
+      "physical": 30,
+      "theory": 20
+    },
+    "session_duration": 70
+  },
+  {
+    "id": "adult",
+    "name": "🏋️ 성인·노인",
+    "description": "성인 및 시니어",
+    "age_range": "18+",
+    "training_style": "건강 관리, 관절 보호, 낙상 예방, 단전호흡 위주",
+    "ratio": {
+      "health": 50,
+      "basic": 30,
+      "breathing": 20
+    },
+    "session_duration": 60
+  }
+]

@@ -1,6 +1,6 @@
 {
   "version": "1.2.126",
-  "updated_at": "2026-04-16T18:13:00",
+  "updated_at": "2026-05-27T12:02:45.012324",
   "release_date": "2026-04-16",
   "changelog": [
     "🚑 [Hotfix] v1.2.126: 맥/윈도우 앱 실행 불가 현상 (Syntax \\& Indentation Error) 긴급 수정",
