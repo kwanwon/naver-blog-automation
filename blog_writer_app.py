@@ -17,6 +17,13 @@ from modules.marketing.comment_poster import CommentPoster
 from modules.marketing.reply_crawler import ReplyCrawler
 from selenium.webdriver.common.by import By
 
+# 🥋 수련계획표 AI 자동 생성 엔진 모듈 임포트
+from modules.training_planner.curriculum_loader import (
+    load_gym_profile, save_gym_profile, load_age_categories, save_age_categories,
+    learn_from_files, get_curriculum_status, load_curriculum_md
+)
+from modules.training_planner.planner_engine import generate_full_year_plan
+
 import subprocess
 import os
 import asyncio
@@ -869,6 +876,48 @@ class BlogWriterApp:
             
         except Exception as ex:
             print(f"❌ 폴더 선택기 열기 실패: {ex}")
+
+    def _on_smart_image_scan_click(self, e):
+        """로컬 이미지 폴더를 스캔하고 AI 키워드를 자동 학습시킵니다."""
+        try:
+            self.page.snack_bar = ft.SnackBar(
+                content=ft.Text("🔄 로컬 이미지 폴더 스캔 및 AI 키워드 스마트 학습 진행 중... (약 10~20초 소요)"),
+                bgcolor=ft.Colors.BLUE_700,
+                duration=4000
+            )
+            self.page.snack_bar.open = True
+            self.page.update()
+            
+            def run_scan():
+                try:
+                    result = self.gpt_handler.scan_and_learn_image_folders(base_dir=self.base_dir, force_rescan=True)
+                    count = len(result)
+                    
+                    def update_ui():
+                        self.page.snack_bar = ft.SnackBar(
+                            content=ft.Text(f"🎉 성공! 총 {count}개의 이미지 폴더 스캔 및 스마트 AI 학습이 완벽히 완료되었습니다!"),
+                            bgcolor=ft.Colors.GREEN_700,
+                            duration=5000
+                        )
+                        self.page.snack_bar.open = True
+                        self.page.update()
+                        
+                    self.page.run_task(update_ui)
+                except Exception as err:
+                    print(f"❌ 스마트 이미지 폴더 스캔 오류: {err}")
+                    def show_error():
+                        self.page.snack_bar = ft.SnackBar(
+                            content=ft.Text(f"❌ 스마트 폴더 스캔 중 실패: {err}"),
+                            bgcolor=ft.Colors.RED,
+                            duration=4000
+                        )
+                        self.page.snack_bar.open = True
+                        self.page.update()
+                    self.page.run_task(show_error)
+            
+            threading.Thread(target=run_scan, daemon=True).start()
+        except Exception as err:
+            print(f"❌ 폴더 스캔 핸들러 오류: {err}")
 
     def _scan_drive_folders(self, page):
         """상위 폴더 스캔하여 하위 폴더 목록 표시"""
@@ -2577,9 +2626,9 @@ class BlogWriterApp:
                         if image_mode == "off":
                             print("    🚫 블로그 예약 이미지 모드: 사용 안함")
                         else: # "auto" or "manual" (예약 작업 시 manual은 auto로 처리)
-                            print(f"    🤖 블로그 예약 이미지 모드: {image_mode} (자동 선정)")
+                            print(f"    🤖 블로그 예약 이미지 모드: {image_mode} (자동 선정 - 스마트 매칭)")
                             try:
-                                folder_path = self.get_next_image_folder()
+                                folder_path = self.get_smart_image_folder(topic)
                                 if folder_path and os.path.exists(folder_path):
                                     custom_images_folder = folder_path
                                     images_available = True
@@ -2777,18 +2826,18 @@ class BlogWriterApp:
                         
                         driver = self.get_or_create_driver()
                         
-                        # 이미지 폴더 선택
+                        # 이미지 폴더 선택 (스마트 매칭 적용)
                         custom_images_folder = None
                         images_available = False
                         try:
-                            folder_path = self.get_next_image_folder()
+                            folder_path = self.get_smart_image_folder(topic)
                             if folder_path and os.path.exists(folder_path):
                                 valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
                                 files = [f for f in os.listdir(folder_path) if os.path.splitext(f)[1].lower() in valid_exts]
                                 if files:
                                     custom_images_folder = folder_path
                                     images_available = True
-                                    print(f"    🖼️ 이미지 폴더: {folder_path}")
+                                    print(f"    🖼️ 이미지 폴더 (스마트 매칭): {folder_path}")
                         except Exception as img_err:
                             print(f"    ⚠️ 이미지 폴더 오류: {img_err}")
                         
@@ -4041,6 +4090,47 @@ class BlogWriterApp:
             print(f"이미지 목록 가져오기 오류: {e}")
             return []
             
+    def get_smart_image_folder(self, title, platform='blog'):
+        """주제(title)를 기반으로 스마트 이미지 폴더 매칭을 수행합니다.
+           매칭되는 폴더가 없거나 이미지가 없는 경우, get_next_image_folder() 로 폴백합니다."""
+        if not title:
+            return self.get_next_image_folder(platform)
+            
+        try:
+            from folder_manager import ImageFolderManager
+            # folder_manager는 self.base_dir 기준으로 초기화
+            folder_manager = ImageFolderManager(base_dir=self.base_dir)
+            
+            # 1. 스마트 이미지 매칭 수행
+            matched_folder_name = folder_manager.find_matching_folder(text=title, title=title)
+            
+            if matched_folder_name:
+                import unicodedata
+                folder_path = folder_manager.get_folder_path(matched_folder_name)
+                # 매칭된 폴더가 존재하고 실제 이미지를 가지고 있는지 확인 (macOS NFC/NFD 정규화 양쪽 처리)
+                resolved_path = None
+                if folder_path:
+                    if os.path.exists(folder_path):
+                        resolved_path = folder_path
+                    else:
+                        nfc_path = unicodedata.normalize('NFC', folder_path)
+                        if os.path.exists(nfc_path):
+                            resolved_path = nfc_path
+                        else:
+                            nfd_path = unicodedata.normalize('NFD', folder_path)
+                            if os.path.exists(nfd_path):
+                                resolved_path = nfd_path
+                                
+                if resolved_path and folder_manager._has_images(resolved_path):
+                    print(f"🎯 [Smart Matching SUCCESS] 주제 '{title}' -> 매칭 폴더: '{matched_folder_name}' (실제경로: '{resolved_path}')")
+                    return resolved_path
+            
+            print(f"⚠️ [Smart Matching FAIL] 주제 '{title}' 에 적합한 폴더를 찾지 못했거나 폴더가 비어 있습니다. 순차 폴더 순환으로 전환합니다.")
+        except Exception as e:
+            print(f"⚠️ 스마트 이미지 매칭 중 오류 발생: {e}")
+            
+        return self.get_next_image_folder(platform)
+
     def get_next_image_folder(self, platform='blog'):
         """다음 이미지 폴더 경로를 반환하고 인덱스를 업데이트합니다.
            이미 사용된 폴더는 건너뛰고 다음 폴더를 선택합니다."""
@@ -7544,9 +7634,9 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                         else:
                             print(f"⚠️ 수동 폴더를 찾을 수 없습니다: {folder_path}")
                     else: # "auto"
-                        print("🤖 이미지 삽입 모드: 자동 (순차 폴더)")
+                        print("🤖 이미지 삽입 모드: 자동 (스마트 매칭)")
                         try:
-                            folder_path = self.get_next_image_folder()
+                            folder_path = self.get_smart_image_folder(raw_title)
                             if folder_path and os.path.exists(folder_path):
                                 custom_images_folder = folder_path
                                 images_available = True
@@ -7829,6 +7919,16 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                         ], spacing=10),
                         blog_image_help_text,
                         self.blog_manual_settings_row,
+                        ft.Row([
+                            ft.ElevatedButton(
+                                "🔄 로컬 사진 폴더 스마트 스캔 (AI 학습)",
+                                icon=ft.Icons.SYNC,
+                                on_click=self._on_smart_image_scan_click,
+                                bgcolor=ft.Colors.BLUE_700,
+                                color=ft.Colors.WHITE
+                            ),
+                            ft.Text("💡 새 폴더 생성 시 스캔하여 키워드를 AI에게 자동 학습시킵니다.", size=11, color=ft.Colors.GREY_600)
+                        ], spacing=10),
                         ft.Divider(height=1, color=ft.Colors.GREY_300),
                         auto_final_publish_checkbox, # 🆕 태그 완료 후 자동 발행
                         auto_final_publish_help_text,
@@ -11076,6 +11176,9 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         # 답글 관리 탭 생성 (New)
         reply_manager_tab = self._create_reply_manager_tab()
 
+        # 수련계획표 탭 생성
+        training_plan_tab = self._create_training_plan_tab()
+
         # 탭 컨트롤
         tabs = ft.Tabs(
             selected_index=0,
@@ -11095,6 +11198,11 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     text="상담 관리", # New Tab
                     icon=ft.Icons.SUPPORT_AGENT,
                     content=reply_manager_tab
+                ),
+                ft.Tab(
+                    text="수련계획표 생성",
+                    icon=ft.Icons.CALENDAR_MONTH,
+                    content=training_plan_tab
                 ),
                 ft.Tab(
                     text="밴드 포스팅",
@@ -11602,6 +11710,323 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         except Exception as e:
             print(f"❌ 재시작 실패: {e}")
             print("수동으로 프로그램을 재시작해주세요.")
+
+    def _create_training_plan_tab(self):
+        # 1. 상태 변수 및 파일 리스트 저장 변수
+        selected_files = []
+        gym_profile = load_gym_profile()
+        age_categories = load_age_categories()
+        curriculum_status = get_curriculum_status()
+
+        # 2. UI Controls 생성
+        # [체육관 프로필]
+        gym_name_tf = ft.TextField(label="🏢 체육관 이름", value=gym_profile.get("gym_name", ""), expand=True)
+        sport_tf = ft.TextField(label="🥋 수련 종목", value=gym_profile.get("sport", ""), expand=True)
+        concept_tf = ft.TextField(label="💡 교육 컨셉", value=gym_profile.get("concept", ""), multiline=True, min_lines=2, expand=True)
+        instructor_tf = ft.TextField(label="👨‍🏫 대표 지도자(관장)명", value=gym_profile.get("instructor_name", ""), expand=True)
+        
+        routine_1_tf = ft.TextField(label="1단계 (몸풀기/기본기 등)", value=gym_profile.get("routine_1", ""), expand=True)
+        routine_2_tf = ft.TextField(label="2단계 (기초체력 등)", value=gym_profile.get("routine_2", ""), expand=True)
+        routine_3_tf = ft.TextField(label="3단계 (본수련/기술 등)", value=gym_profile.get("routine_3", ""), expand=True)
+        routine_4_tf = ft.TextField(label="4단계 (정리운동 등)", value=gym_profile.get("routine_4", ""), expand=True)
+        
+        # [연령별 카테고리 설정]
+        age_dropdown = ft.Dropdown(
+            label="🧒 대상 연령대 선택",
+            options=[ft.dropdown.Option(cat["id"], cat["name"]) for cat in age_categories],
+            value=age_categories[0]["id"] if age_categories else "",
+            expand=True
+        )
+        
+        style_tf = ft.TextField(label="🔥 연령대별 수련 특징/스타일", value="", multiline=True, min_lines=2, expand=True)
+        duration_tf = ft.TextField(label="⏱️ 1회 수련 시간 (분)", value="", expand=True)
+        
+        def on_age_change(e):
+            cat_id = age_dropdown.value
+            for cat in age_categories:
+                if cat["id"] == cat_id:
+                    style_tf.value = cat.get("training_style", "")
+                    duration_tf.value = str(cat.get("session_duration", 50))
+                    self.page.update()
+        
+        age_dropdown.on_change = on_age_change
+        if age_categories:
+            style_tf.value = age_categories[0].get("training_style", "")
+            duration_tf.value = str(age_categories[0].get("session_duration", 50))
+
+        # [AI 커리큘럼 자료 학습]
+        curriculum_status_text = ft.Text(
+            value=f"📊 학습 상태: {'학습 완료' if curriculum_status['exists'] else '학습 데이터 없음'} | 크기: {curriculum_status['kb_size']}KB ({curriculum_status['item_count']}줄) | 갱신: {curriculum_status['last_updated']}",
+            size=12,
+            italic=True,
+            color=ft.Colors.GREY_700
+        )
+        
+        files_to_learn_text = ft.Text("📁 선택된 파일: 없음", size=12, color=ft.Colors.GREY_600)
+        
+        def on_file_pick_result(e: ft.FilePickerResultEvent):
+            if e.files:
+                nonlocal selected_files
+                selected_files = [f.path for f in e.files]
+                files_to_learn_text.value = f"📁 선택된 파일: {', '.join([os.path.basename(f) for f in selected_files])}"
+                self.page.update()
+                
+        file_picker = ft.FilePicker(on_result=on_file_pick_result)
+        self.page.overlay.append(file_picker)
+
+        # [수련계획표 자동 생성 옵션]
+        excel_path_tf = ft.TextField(label="📅 엑셀 달력 템플릿 경로", value="", expand=True)
+        special_note_tf = ft.TextField(label="📝 특별 지침 및 강조 사항 (AI 수련 반영)", hint_text="예: 이번 달은 격파 심사 위주로 짜주세요.", expand=True)
+        
+        year_dropdown = ft.Dropdown(
+            label="연도",
+            options=[ft.dropdown.Option(str(y)) for y in [2025, 2026, 2027]],
+            value="2026",
+            width=100
+        )
+        
+        month_dropdown = ft.Dropdown(
+            label="월",
+            options=[ft.dropdown.Option(str(m)) for m in range(1, 13)],
+            value="6",
+            width=100
+        )
+        
+        def on_excel_pick_result(e: ft.FilePickerResultEvent):
+            if e.files:
+                excel_path_tf.value = e.files[0].path
+                self.page.update()
+                
+        excel_picker = ft.FilePicker(on_result=on_excel_pick_result)
+        self.page.overlay.append(excel_picker)
+
+        # 3. 비즈니스 로직 이벤트 핸들러
+        def save_profile_click(e):
+            nonlocal gym_profile
+            gym_profile["gym_name"] = gym_name_tf.value
+            gym_profile["sport"] = sport_tf.value
+            gym_profile["concept"] = concept_tf.value
+            gym_profile["instructor_name"] = instructor_tf.value
+            gym_profile["routine_1"] = routine_1_tf.value
+            gym_profile["routine_2"] = routine_2_tf.value
+            gym_profile["routine_3"] = routine_3_tf.value
+            gym_profile["routine_4"] = routine_4_tf.value
+            
+            if save_gym_profile(gym_profile):
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("🎉 체육관 프로필이 성공적으로 저장되었습니다!"), bgcolor=ft.Colors.GREEN_700)
+            else:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 프로필 저장 실패"), bgcolor=ft.Colors.RED)
+            self.page.snack_bar.open = True
+            self.page.update()
+
+        def save_categories_click(e):
+            nonlocal age_categories
+            cat_id = age_dropdown.value
+            for cat in age_categories:
+                if cat["id"] == cat_id:
+                    cat["training_style"] = style_tf.value
+                    try:
+                        cat["session_duration"] = int(duration_tf.value)
+                    except: pass
+            
+            if save_age_categories(age_categories):
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("🎉 연령별 훈련 스타일이 완벽하게 저장되었습니다!"), bgcolor=ft.Colors.GREEN_700)
+            else:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 훈련 스타일 저장 실패"), bgcolor=ft.Colors.RED)
+            self.page.snack_bar.open = True
+            self.page.update()
+
+        def learn_files_click(e):
+            if not selected_files:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 학습할 파일을 먼저 선택해주세요."), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+                
+            self.page.snack_bar = ft.SnackBar(content=ft.Text("🔄 AI 커리큘럼 스마트 학습 진행 중... (파일을 파싱하고 마크다운 변환 중)"), bgcolor=ft.Colors.BLUE_700)
+            self.page.snack_bar.open = True
+            self.page.update()
+            
+            def run_learning():
+                res = learn_from_files(selected_files, gym_profile)
+                if res["success"]:
+                    def success_ui():
+                        nonlocal curriculum_status
+                        curriculum_status = get_curriculum_status()
+                        curriculum_status_text.value = f"📊 학습 상태: 학습 완료 | 크기: {curriculum_status['kb_size']}KB ({curriculum_status['item_count']}줄) | 갱신: {curriculum_status['last_updated']}"
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 성공! {res['summary']}"), bgcolor=ft.Colors.GREEN_700)
+                        self.page.snack_bar.open = True
+                        self.page.update()
+                    self.page.run_task(success_ui)
+                else:
+                    def fail_ui():
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 학습 실패: {res['summary']}"), bgcolor=ft.Colors.RED)
+                        self.page.snack_bar.open = True
+                        self.page.update()
+                    self.page.run_task(fail_ui)
+            threading.Thread(target=run_learning, daemon=True).start()
+
+        def generate_planner_click(e):
+            year = int(year_dropdown.value)
+            month = int(month_dropdown.value)
+            excel_path = excel_path_tf.value
+            cat_id = age_dropdown.value
+            
+            if not excel_path:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 계획을 기록할 대상 엑셀 파일 경로를 입력해주세요."), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+                
+            selected_cat = None
+            for cat in age_categories:
+                if cat["id"] == cat_id:
+                    selected_cat = cat
+                    break
+                    
+            if not selected_cat:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 대상 연령대를 선택해주세요."), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+                
+            self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🚀 AI와 협력하여 {month}월 수련계획표 자동 생성 및 엑셀 기록 진행 중... (약 20~40초 소요)"), bgcolor=ft.Colors.BLUE_700, duration=8000)
+            self.page.snack_bar.open = True
+            self.page.update()
+            
+            def run_generation():
+                try:
+                    c_md = load_curriculum_md()
+                    # planner_engine 호출
+                    from modules.training_planner.planner_engine import generate_plan_with_ai
+                    from modules.training_planner.calendar_writer import write_plan_to_excel
+                    
+                    # 1단계: AI 계획 생성
+                    plan_data = generate_plan_with_ai(
+                        ai_handler=self.gpt_handler,
+                        month=month,
+                        gym_profile=gym_profile,
+                        age_category=selected_cat,
+                        curriculum_md=c_md,
+                        special_note=special_note_tf.value
+                    )
+                    
+                    # 2단계: 엑셀 기록
+                    write_plan_to_excel(
+                        excel_path=excel_path,
+                        month=month,
+                        plan_data=plan_data
+                    )
+                    
+                    def success_ui():
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 대성공! {month}월 AI 수련계획표가 엑셀 파일에 완벽하게 기입되었습니다!"), bgcolor=ft.Colors.GREEN_700, duration=6000)
+                        self.page.snack_bar.open = True
+                        self.page.update()
+                    self.page.run_task(success_ui)
+                except Exception as err:
+                    print(f"❌ 수련계획 자동 생성 오류: {err}")
+                    traceback.print_exc()
+                    def fail_ui():
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 생성 및 기록 실패: {err}"), bgcolor=ft.Colors.RED, duration=5000)
+                        self.page.snack_bar.open = True
+                        self.page.update()
+                    self.page.run_task(fail_ui)
+            threading.Thread(target=run_generation, daemon=True).start()
+
+        # 4. 레이아웃 설계 및 반환
+        return ft.Container(
+            content=ft.Column([
+                # 헤더
+                ft.Row([
+                    ft.Icon(ft.Icons.CALENDAR_MONTH, color=ft.Colors.BLUE_800, size=24),
+                    ft.Text("🥋 AI 스마트 수련계획표 자동 생성기", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_800),
+                ], alignment=ft.MainAxisAlignment.START),
+                
+                ft.Text("AI를 활용하여 프로페셔널한 월간 수련계획표를 자동 수립하고, 기존 엑셀 월간 달력의 빈칸에 맞추어 자동 기록하는 시스템입니다.", size=12, color=ft.Colors.GREY_700),
+                ft.Divider(height=10),
+                
+                ft.Tabs(
+                    selected_index=0,
+                    tabs=[
+                        ft.Tab(
+                            text="1. 체육관 프로필",
+                            icon=ft.Icons.BUSINESS,
+                            content=ft.Container(
+                                content=ft.Column([
+                                    ft.Text("🏢 체육관의 핵심 정보와 단계별 수련 루틴을 기입합니다.", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([gym_name_tf, sport_tf]),
+                                    ft.Row([instructor_tf, concept_tf]),
+                                    ft.Text("📋 수련 시간표 기본 4단계 교육 루틴 설정", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([routine_1_tf, routine_2_tf]),
+                                    ft.Row([routine_3_tf, routine_4_tf]),
+                                    ft.ElevatedButton("💾 프로필 저장", icon=ft.Icons.SAVE, on_click=save_profile_click, bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE)
+                                ], spacing=15),
+                                padding=15
+                            )
+                        ),
+                        ft.Tab(
+                            text="2. 연령별 훈련 스타일",
+                            icon=ft.Icons.CHILD_CARE,
+                            content=ft.Container(
+                                content=ft.Column([
+                                    ft.Text("🧒 각 연령 카테고리별 특별 지침 및 수련 스타일을 조절합니다.", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([age_dropdown]),
+                                    ft.Row([style_tf, duration_tf]),
+                                    ft.ElevatedButton("💾 훈련 스타일 저장", icon=ft.Icons.SAVE, on_click=save_categories_click, bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE)
+                                ], spacing=15),
+                                padding=15
+                            )
+                        ),
+                        ft.Tab(
+                            text="3. 커리큘럼 AI 학습",
+                            icon=ft.Icons.MODEL_TRAINING,
+                            content=ft.Container(
+                                content=ft.Column([
+                                    ft.Text("📂 기존 한글/PDF/엑셀 커리큘럼 계획안을 통째로 올리면 AI가 그 교육철학을 완전히 마스터합니다.", size=13, weight=ft.FontWeight.BOLD),
+                                    curriculum_status_text,
+                                    ft.Row([
+                                        ft.ElevatedButton("📁 파일 선택", icon=ft.Icons.FILE_OPEN, on_click=lambda _: file_picker.pick_files(allow_multiple=True), bgcolor=ft.Colors.GREY_700, color=ft.Colors.WHITE),
+                                        files_to_learn_text
+                                    ]),
+                                    ft.ElevatedButton("🚀 자료 학습 및 AI 지식 베이스화", icon=ft.Icons.BOLT, on_click=learn_files_click, bgcolor=ft.Colors.PURPLE_700, color=ft.Colors.WHITE)
+                                ], spacing=15),
+                                padding=15
+                            )
+                        ),
+                        ft.Tab(
+                            text="4. 수련계획표 자동 생성",
+                            icon=ft.Icons.AUTO_AWESOME,
+                            content=ft.Container(
+                                content=ft.Column([
+                                    ft.Text("📅 AI 월간 수련계획표 자동 수립 및 엑셀 캘린더 기록", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([
+                                        ft.Text("📅 대상 기간:", size=13, weight=ft.FontWeight.BOLD),
+                                        year_dropdown, ft.Text("년"), month_dropdown, ft.Text("월 수련계획 수립")
+                                    ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                                    ft.Row([
+                                        excel_path_tf,
+                                        ft.IconButton(ft.Icons.FILE_OPEN, tooltip="엑셀 템플릿 파일 선택", on_click=lambda _: excel_picker.pick_files(allowed_extensions=["xlsx"]))
+                                    ]),
+                                    special_note_tf,
+                                    ft.ElevatedButton(
+                                        "🚀 AI 월간 수련계획 자동 생성 및 엑셀 기록",
+                                        icon=ft.Icons.AUTO_MODE,
+                                        on_click=generate_planner_click,
+                                        bgcolor=ft.Colors.GREEN_700,
+                                        color=ft.Colors.WHITE,
+                                        height=50
+                                    )
+                                ], spacing=15),
+                                padding=15
+                            )
+                        )
+                    ],
+                    expand=True
+                )
+            ], spacing=10),
+            padding=15,
+            expand=True
+        )
 
 if __name__ == "__main__":
     # Windows PyInstaller 빌드 필수! (무한 재귀 방지)
