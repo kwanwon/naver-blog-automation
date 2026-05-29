@@ -1587,26 +1587,7 @@ class NaverBlogAutomation:
                 print(f"📊 삽입 대기 미디어: 총 {len(media_list)}개 (사진 {len(image_files)}, 영상 {len(video_files)})")
             def should_add_blank_line(current_text, next_text=None):
                 """줄바꿈이 필요한지 확인하는 함수"""
-                if not current_text:
-                    return False
-                    
-                # 특수 문자(⸻) 앞뒤로 빈 줄 추가
-                if '⸻' in current_text:
-                    return True
-                    
-                # 리스트 항목 앞뒤로 빈 줄 추가
-                if current_text.strip().startswith('•') or (next_text and next_text.strip().startswith('•')):
-                    return True
-                    
-                # 긴 문단(3줄 이상) 후에 빈 줄 추가
-                if consecutive_text_lines >= 3:
-                    return True
-                    
-                # 문장 끝에 마침표가 있고, 다음 줄이 새로운 문단의 시작인 경우
-                if current_text.strip().endswith(('.', '?', '!', '다.', '요.', '죠.')) and next_text:
-                    if not next_text.strip().startswith('•'):
-                        return True
-                        
+                # AI와 설정에서 이미 완벽하게 줄바꿈을 계산해서 넘겨주므로, 셀레니움 단에서는 원본 그대로 입력하도록 강제합니다.
                 return False
             
             # 본문 내용 입력

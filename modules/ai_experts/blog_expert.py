@@ -423,7 +423,7 @@ class BlogExpert(BaseAIExpert):
 - [제목]: 독자의 깊은 공감과 유익한 가치를 제공하는 독창적이고 매력적인 제목
   (구조 참고용 예시: "하루 10분 주제상황 속 내 몸을 지키는 3가지 기본 법칙", "틀어진 골반을 바로잡는 운동법의 척추 정렬 효과", "오늘 주제 운동의 진짜 신체 변화와 건강 효과의 생리학적 의미" 등)
 - [본문]: 주제('{topic}')를 운동생리학적/생활건강학적으로 다정하고 신뢰감 있게 풀어내며 공감을 일으키는 본문 칼럼 내용{hometip_user_instruction}
-- [태그]: 글과 유기적으로 긴밀히 매칭되는 태그 5개 이상 10개 이하 (예: 주제 관련 단어, 운동 명칭, 건강 정보 등)
+- [태그]: 글과 유기적으로 긴밀히 매칭되는 태그 정확히 15개 (예: 주제 관련 단어, 운동 명칭, 건강 정보 등)
 
 {closing_instruction}
 """
@@ -474,7 +474,7 @@ class BlogExpert(BaseAIExpert):
                         title = title[:47] + "..."
                         
                     body = self._apply_stability_filter(body, 'blog')
-                    body = self._apply_readability_filter(body)
+                    body = self._apply_blog_readability_filter(body)
                     
                     # ⚠️ [지침 유출 방지 락(Lock)] 지침 대괄호 텍스트 및 맺음말 타이틀 노출 잔재 완전 제거
                     body = re.sub(r'\[\s*(?:고품격|고풀겨|정보제공형|맺음말|작성지침|지침)[^\]]*\]\s*:?', '', body)
@@ -497,3 +497,30 @@ class BlogExpert(BaseAIExpert):
                 continue
 
         return self._get_dummy_content(topic)
+
+    def _apply_blog_readability_filter(self, text: str) -> str:
+        """네이버 블로그 전용 가독성 필터: 마침표마다 무조건 줄바꿈 두 번(엔터 2번) 적용하여 모바일 가독성 극대화"""
+        if not text: return text
+        
+        # 1. 기존 줄바꿈을 공백으로 임시 치환 (문장별 재조립을 위해)
+        text = text.replace('\n', ' ')
+        
+        # 2. 마침표(.), 느낌표(!), 물음표(?) 등을 기준으로 확실하게 쪼개기
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        
+        processed_sentences = []
+        for s in sentences:
+            s_strip = s.strip()
+            if not s_strip: continue
+            processed_sentences.append(s_strip)
+            
+        # 3. 모든 문장 사이에 무조건 2번의 줄바꿈(\n\n) 적용
+        final_text = '\n\n'.join(processed_sentences).strip()
+        
+        # 4. [본문] 마커 등 기타 마커 사이의 불필요한 공백 정리
+        final_text = re.sub(r'\n{3,}', '\n\n', final_text)
+        
+        # [홈 케어 팁]과 같은 특정 섹션 앞에는 명확히 띄워주기
+        final_text = re.sub(r'([^\n])\s*(\[(?:홈\s*케어(?:\s*팁)?|홈케어)\])', r'\1\n\n\2', final_text)
+        
+        return final_text
