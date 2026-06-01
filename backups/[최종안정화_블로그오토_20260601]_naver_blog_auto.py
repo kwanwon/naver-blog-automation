@@ -1587,31 +1587,17 @@ class NaverBlogAutomation:
                 print(f"📊 삽입 대기 미디어: 총 {len(media_list)}개 (사진 {len(image_files)}, 영상 {len(video_files)})")
             def should_add_blank_line(current_text, next_text=None):
                 """줄바꿈이 필요한지 확인하는 함수"""
-                if not current_text:
-                    return False
-                    
-                # 특수 문자(⸻) 앞뒤로 빈 줄 추가
-                if '⸻' in current_text:
-                    return True
-                    
-                # 리스트 항목 앞뒤로 빈 줄 추가
-                if current_text.strip().startswith('•') or (next_text and next_text.strip().startswith('•')):
-                    return True
-                    
-                # 긴 문단(3줄 이상) 후에 빈 줄 추가
-                if consecutive_text_lines >= 3:
-                    return True
-                    
-                # 문장 끝에 마침표가 있고, 다음 줄이 새로운 문단의 시작인 경우
-                if current_text.strip().endswith(('.', '?', '!', '다.', '요.', '죠.')) and next_text:
-                    if not next_text.strip().startswith('•'):
-                        return True
-                        
+                # AI와 설정에서 이미 완벽하게 줄바꿈을 계산해서 넘겨주므로, 셀레니움 단에서는 원본 그대로 입력하도록 강제합니다.
                 return False
             
             # 본문 내용 입력
             content_lines = content.split('\n')
+            is_slogan_mode = False
             for i, line in enumerate(content_lines):
+                if line.strip() == "[SLOGAN_START]":
+                    is_slogan_mode = True
+                    continue
+                
                 current_line = i
                 
                 # 현재 줄이 실제 텍스트를 포함하는지 확인
@@ -1625,13 +1611,20 @@ class NaverBlogAutomation:
                 
                 # 줄바꿈 추가 여부 확인
                 next_line = content_lines[i + 1] if i + 1 < len(content_lines) else None
-                if should_add_blank_line(line, next_line):
-                    actions = ActionChains(self.driver)
-                    actions.send_keys(line + Keys.ENTER + Keys.ENTER)
-                    consecutive_text_lines = 0
+                actions = ActionChains(self.driver)
+                
+                if is_slogan_mode:
+                    # 슬로건은 문단 띄어쓰기(ENTER) 대신 좁은 간격의 줄바꿈(SHIFT+ENTER) 적용
+                    if is_text_line:
+                        actions.send_keys(line).key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT)
+                    else:
+                        actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT)
                 else:
-                    actions = ActionChains(self.driver)
-                    actions.send_keys(line + Keys.ENTER)
+                    if should_add_blank_line(line, next_line):
+                        actions.send_keys(line + Keys.ENTER + Keys.ENTER)
+                        consecutive_text_lines = 0
+                    else:
+                        actions.send_keys(line + Keys.ENTER)
                 
                 actions.perform()
                 time.sleep(0.05)  # 입력 사이 최소 대기 시간
@@ -1753,10 +1746,15 @@ class NaverBlogAutomation:
             actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
             print("줄바꿈 추가 완료")
             
-            # 푸터 추가 직접 호출
+            # 푸터 추가 직접 호출 (카카오링크 포함) - 순서: 카카오링크 먼저
             print("add_footer 메서드 호출 시작...")
             footer_result = post_finisher.add_footer()
             print(f"add_footer 메서드 결과: {footer_result}")
+            
+            # 장소 정보 추가 직접 호출 - 순서: 장소는 카카오링크 다음
+            print("add_location 메서드 호출 시작...")
+            location_result = post_finisher.add_location()
+            print(f"add_location 메서드 결과: {location_result}")
             
             # 예약 모드 여부 확인 (외부에서 설정됨)
             skip_final_publish = getattr(self, 'skip_final_publish', False)
