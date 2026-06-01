@@ -8,8 +8,8 @@ class SmartReply:
     상대방의 글/댓글 의도를 파악하고, 페르소나에 맞춰 적절한 반응을 생성합니다.
     """
     
-    def __init__(self, gpt_handler, persona_manager):
-        self.gpt_handler = gpt_handler
+    def __init__(self, ai_handler, persona_manager):
+        self.ai_handler = ai_handler
         self.persona_manager = persona_manager
         self.logger = logging.getLogger("SmartReply")
         
@@ -40,8 +40,8 @@ class SmartReply:
 
 출력 형식: 오직 대문자 카테고리명만 출력 (예: QUESTION)
 """
-            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
-                intent = self.gpt_handler.generate_reply(
+            if self.ai_handler and hasattr(self.ai_handler, 'generate_reply'):
+                intent = self.ai_handler.generate_reply(
                     system_prompt=system_msg,
                     user_text=text,
                     max_tokens=10,
@@ -76,8 +76,8 @@ class SmartReply:
             - GREETING: 단순 인사, 감사, 일반 소통일 경우
             """
             
-            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
-                result = self.gpt_handler.generate_reply(
+            if self.ai_handler and hasattr(self.ai_handler, 'generate_reply'):
+                result = self.ai_handler.generate_reply(
                     system_prompt=system_msg,
                     user_text=text,
                     max_tokens=10
@@ -121,8 +121,8 @@ class SmartReply:
             4. 맺음말
             """
 
-            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
-                return self.gpt_handler.generate_reply(
+            if self.ai_handler and hasattr(self.ai_handler, 'generate_reply'):
+                return self.ai_handler.generate_reply(
                     system_prompt=system_msg,
                     user_text=text,
                     max_tokens=300
@@ -153,8 +153,8 @@ class SmartReply:
             5. 길이는 1~2문장으로 간결하게.
             """
 
-            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
-                return self.gpt_handler.generate_reply(
+            if self.ai_handler and hasattr(self.ai_handler, 'generate_reply'):
+                return self.ai_handler.generate_reply(
                     system_prompt=system_msg,
                     user_text=text,
                     max_tokens=150
@@ -228,7 +228,7 @@ class SmartReply:
 - 광고성 멘트로 도배하지 말고, 진정성 있는 '사람'처럼 대화하세요.
 """
         try:
-            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
+            if self.ai_handler and hasattr(self.ai_handler, 'generate_reply'):
                 # Handle empty input (likely emoticon/sticker only)
                 if not target_text or not target_text.strip():
                     target_text = "[이모티콘 또는 사진만 있는 댓글]"
@@ -237,7 +237,7 @@ class SmartReply:
                 # Add variety instruction to prevent repetition
                 system_msg += "\n[중요 지침] 매번 똑같은 '감사합니다', '좋은 하루 되세요' 등의 반복적인 표현을 피하고, 다양하고 창의적인 표현을 사용하세요."
 
-                return self.gpt_handler.generate_reply(
+                return self.ai_handler.generate_reply(
                     system_prompt=system_msg,
                     user_text=target_text,
                     max_tokens=300,

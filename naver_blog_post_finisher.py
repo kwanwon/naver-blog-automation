@@ -652,465 +652,7 @@ class NaverBlogPostFinisher:
             except Exception as e:
                 print(f"본문 포커스 재확보 중 오류: {str(e)}")
 
-            # 🧹 장소 추가 전: 남아있는 팝업 오버레이 제거
-            try:
-                self.driver.switch_to.default_content()
-                self.driver.execute_script("""
-                    document.querySelectorAll('.se-popup-dim, .se-popup-dim-transparent').forEach(function(el) {
-                        el.style.display = 'none';
-                        el.remove();
-                    });
-                """)
-                self.driver.switch_to.frame("mainFrame")
-            except:
-                pass
-
-            # 장소 검색 및 지도 표시
-            try:
-                print("\n==== 장소 정보 추가 시작 ====")
-                
-                # 장소 버튼 클릭
-                print("장소 버튼 찾기 및 클릭 시도...")
-                location_button_selectors = [
-                    "button.se-map-toolbar-button", 
-                    "button[data-log='dot.map']",
-                    "button.se-document-toolbar-basic-button.se-text-icon-toolbar-button[title='장소']",
-                    "button[data-role='button-container'][data-log='dot.map']"
-                ]
-                
-                location_btn_clicked = False
-                for selector in location_button_selectors:
-                    try:
-                        print(f"장소 버튼 선택자 시도: {selector}")
-                        btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                        for btn in btns:
-                            if btn.is_displayed() and btn.is_enabled():
-                                # JS 클릭으로 오버레이 간섭 방지
-                                self.driver.execute_script("arguments[0].click();", btn)
-                                location_btn_clicked = True
-                                print(f"✅ 장소 버튼 클릭 성공: {selector}")
-                                break
-                        if location_btn_clicked:
-                            break
-                    except Exception as e:
-                        print(f"장소 버튼 선택자 {selector} 오류: {e}")
-                
-                if not location_btn_clicked:
-                    print("❌ 장소 버튼을 찾을 수 없습니다. 장소 추가를 건너뜁니다.")
-                    raise Exception("장소 버튼 클릭 실패")
-                    
-                time.sleep(1)
-                print("장소 버튼 클릭 후 1초 대기 완료")
-
-                # 🎯 장소 검색창에 주소 및 상호 입력
-                print("장소 검색창 찾기 (프레이밍 확인)...")
-                # 프레임 재확인
-                try:
-                    self.driver.switch_to.default_content()
-                    self.driver.switch_to.frame("mainFrame")
-                except:
-                    pass
-                
-                location_input = WebDriverWait(self.driver, 15).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "input.react-autosuggest__input, input.location_search_input"))
-                )
-                # 검색어를 사용자 설정에서 정확히 가져오기
-                dojang_name = self.settings.get('dojang_name', '')
-                
-                # [수정] 사용자 요청에 따라 주소는 제외하고 '상호명'만으로 검색
-                search_text = dojang_name
-                
-                print(f"장소 검색창 발견, 검색어 입력: {search_text}")
-                # 기존 입력 내용 삭제 후 새로 입력
-                location_input.clear()
-                location_input.send_keys(search_text)
-                time.sleep(2)  # 0.5초에서 1초로, 다시 2초로 변경
-                print("검색어 입력 완료, 2초 대기")
-                
-                # Enter 키 입력으로 검색 실행
-                print("Enter 키 입력으로 검색 실행...")
-                actions = ActionChains(self.driver)
-                actions.send_keys(Keys.ENTER).perform()
-                time.sleep(5)  # 검색 결과 로드를 위해 대기 시간 (5초로 증가)
-                print("Enter 키 입력 완료, 5초 대기")
-
-                # 검색 결과 항목 선택자 출력 (디버깅용)
-                print("페이지의 검색 결과 UI 정보 수집 중...")
-                search_elements_debug = self.driver.execute_script("""
-                // 검색 결과와 관련된 모든 요소 검사
-                const searchResults = [];
-                
-                // li 태그 검사
-                const liElements = document.querySelectorAll('li');
-                for (const li of liElements) {
-                    if (li.className && (li.className.includes('result') || li.className.includes('search'))) {
-                        searchResults.push({
-                            tagName: 'li',
-                            className: li.className,
-                            isVisible: li.offsetWidth > 0 && li.offsetHeight > 0,
-                            text: li.textContent.substring(0, 50) + '...',
-                            childCount: li.childNodes.length
-                        });
-                    }
-                }
-                
-                // div 검색 결과 컨테이너 검사
-                const divElements = document.querySelectorAll('div');
-                for (const div of divElements) {
-                    if (div.className && (div.className.includes('result') || div.className.includes('search'))) {
-                        searchResults.push({
-                            tagName: 'div',
-                            className: div.className,
-                            isVisible: div.offsetWidth > 0 && div.offsetHeight > 0,
-                            text: div.textContent.substring(0, 50) + '...',
-                            childCount: div.childNodes.length
-                        });
-                    }
-                }
-                
-                return searchResults;
-                """)
-                print(f"발견된 검색 관련 요소: {len(search_elements_debug)}")
-                for idx, element in enumerate(search_elements_debug):
-                    print(f"검색 요소 {idx+1}: {element}")
-
-                # 검색 결과 항목 선택자 다양화
-                print("다양한 검색 결과 항목 선택자로 시도 중...")
-                search_result_selectors = [
-                    "li.se-place-map-search-result-item",  # 이미지에서 확인된 클래스명
-                    "li[class*='se-place-map-search-result-item']",
-                    "li.se-place-map-search-result-item.se-is-highlight",  # 기존 선택자
-                    "li.se-map-search-result-item",
-                    "li.se-map-search-item",
-                    "li[class*='search-result']",
-                    "li[class*='result-item']",
-                    ".se-map-search-result .se-map-search-item",
-                    ".react-autosuggest__suggestions-list li"
-                ]
-                
-                result_item = None
-                used_selector = None
-                dojang_name = self.settings.get('dojang_name', '')
-                
-                for selector in search_result_selectors:
-                    try:
-                        print(f"선택자 시도: {selector}")
-                        items = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                        if items:
-                            print(f"선택자 {selector}로 {len(items)}개 요소 발견")
-                            
-                            # 모든 항목을 출력 (디버깅용)
-                            for idx, item in enumerate(items):
-                                if item.is_displayed():
-                                    item_text = item.text[:50] + "..." if len(item.text) > 50 else item.text
-                                    print(f"결과 항목 #{idx+1}: {item_text}")
-                            
-                            # 도장 이름이 포함된 항목을 우선 찾기
-                            dojang_found = False
-                            for item in items:
-                                if item.is_displayed() and dojang_name in item.text:
-                                    result_item = item
-                                    used_selector = selector
-                                    dojang_found = True
-                                    print(f"도장 이름({dojang_name})이 포함된 검색 결과 발견!")
-                                    break
-                            
-                            # 도장 이름이 포함된 항목이 없으면 첫 번째 표시 항목 선택
-                            if not dojang_found and not result_item:
-                                for item in items:
-                                    if item.is_displayed():
-                                        result_item = item
-                                        used_selector = selector
-                                        print(f"도장 이름이 포함된 결과는 없어 첫 번째 표시 항목 선택")
-                                        break
-                            
-                            if result_item:
-                                break
-                    except Exception as e:
-                        print(f"선택자 {selector} 시도 중 오류: {str(e)}")
-                
-                # 선택자로 찾지 못한 경우 JavaScript로 검색
-                if not result_item:
-                    print("JavaScript로 검색 결과 항목 찾기...")
-                    result_item_js = self.driver.execute_script("""
-                    // 검색 결과 컨테이너 찾기 (여러 패턴 시도)
-                    function findSearchResult() {
-                        const dojangName = arguments[0];
-                        console.log('찾을 도장 이름:', dojangName);
-                        
-                        // 1. 도장 이름이 포함된 결과 찾기
-                        const allElements = document.querySelectorAll('*');
-                        for (const el of allElements) {
-                            if (el.innerText && el.innerText.includes(dojangName)) {
-                                // 도장 이름을 포함하는 요소 찾기
-                                const parent = el.closest('li') || el.closest('div[role="option"]') || el;
-                                if (parent.offsetWidth > 0 && parent.offsetHeight > 0) {
-                                    console.log('도장 이름이 포함된 검색 결과 발견!');
-                                    return {
-                                        element: parent,
-                                        foundDojang: true
-                                    };
-                                }
-                            }
-                        }
-                        
-                        // 도장 이름이 없을 경우 일반 검색 결과 찾기
-                        // 2. 클래스명에 'search-result'가 포함된 모든 요소
-                        const resultsByClass = document.querySelectorAll('[class*="search-result"], [class*="result-item"]');
-                        for (const item of resultsByClass) {
-                            if (item.offsetWidth > 0 && item.offsetHeight > 0) {
-                                return {
-                                    element: item,
-                                    foundDojang: false
-                                };
-                            }
-                        }
-                        
-                        // 3. 검색 결과 목록 내부의 첫 번째 항목
-                        const resultLists = document.querySelectorAll('.react-autosuggest__suggestions-list, [class*="search-list"]');
-                        for (const list of resultLists) {
-                            if (list.children.length > 0 && list.children[0].offsetWidth > 0) {
-                                return {
-                                    element: list.children[0],
-                                    foundDojang: false
-                                };
-                            }
-                        }
-                        
-                        // 4. 특정 텍스트 패턴이 있는 요소
-                        for (const el of allElements) {
-                            if (el.innerText && (el.innerText.includes('도로명') || el.innerText.includes('지번'))) {
-                                // 검색 결과는 주로 주소 정보를 포함함
-                                const parent = el.closest('li') || el.closest('div[role="option"]') || el;
-                                if (parent.offsetWidth > 0 && parent.offsetHeight > 0) {
-                                    return {
-                                        element: parent,
-                                        foundDojang: false
-                                    };
-                                }
-                            }
-                        }
-                        
-                        return null;
-                    }
-                    
-                    const result = findSearchResult(arguments[0]);
-                    if (result) {
-                        // 결과 요소의 위치로 스크롤
-                        result.element.scrollIntoView();
-                        
-                        // 요소 정보 반환
-                        return {
-                            found: true,
-                            tagName: result.element.tagName,
-                            className: result.element.className,
-                            text: result.element.innerText.substring(0, 50),
-                            foundDojang: result.foundDojang
-                        };
-                    }
-                    return { found: false };
-                    """, dojang_name)
-                    
-                    if result_item_js and result_item_js.get('found'):
-                        print(f"JavaScript로 검색 결과 요소 발견: {result_item_js}")
-                        if result_item_js.get('foundDojang'):
-                            print(f"도장 이름({dojang_name})이 포함된 결과를 JavaScript로 찾았습니다!")
-                        else:
-                            print("도장 이름이 포함된 결과는 찾지 못했으나, 검색 결과를 선택합니다.")
-                        
-                        # 요소에 직접 클릭 이벤트 발생시키기
-                        self.driver.execute_script("""
-                        const resultItem = arguments[0];
-                        
-                        // 마우스 이벤트 시뮬레이션 (hover -> 우클릭)
-                        resultItem.dispatchEvent(new MouseEvent('mouseover', {
-                            bubbles: true,
-                            cancelable: true,
-                            view: window
-                        }));
-                        
-                        setTimeout(() => {
-                            resultItem.dispatchEvent(new MouseEvent('contextmenu', {
-                                bubbles: true,
-                                cancelable: true,
-                                view: window,
-                                button: 2
-                            }));
-                        }, 500);
-                        """, result_item_js)
-                        
-                        time.sleep(1)
-                        print("JavaScript로 요소에 마우스 오버 및 우클릭 이벤트 발생")
-                
-                # 선택자로 요소를 찾은 경우 마우스 이벤트 발생
-                elif result_item:
-                    print(f"검색 결과 항목 발견: {used_selector}")
-                    print(f"검색 결과 텍스트: {result_item.text[:50]}...")
-                    
-                    # 스크린샷 캡처 시도 (디버깅용)
-                    try:
-                        result_item.screenshot('/tmp/search_result.png')
-                        print("검색 결과 요소 스크린샷 저장: /tmp/search_result.png")
-                    except:
-                        print("스크린샷 저장 실패 (무시)")
-                    
-                    # 검색 결과에 마우스 이동 (hover)
-                    print("검색 결과에 마우스 이동 중...")
-                    hover = ActionChains(self.driver)
-                    hover.move_to_element(result_item).perform()
-                    time.sleep(1)
-                    print("검색 결과에 마우스 이동 완료")
-                    
-                    # 마우스 좌클릭 시도
-                    try:
-                        print("마우스 좌클릭 시도...")
-                        click_action = ActionChains(self.driver)
-                        click_action.click(result_item).perform()
-                        time.sleep(1)
-                        print("마우스 좌클릭 완료, 1초 대기")
-                    except Exception as e:
-                        print(f"마우스 좌클릭 중 오류: {str(e)}")
-                else:
-                    raise Exception("검색 결과 항목을 찾을 수 없습니다.")
-                
-                # (+추가) 버튼 클릭 시도 - 다양한 방법 동원
-                try:
-                    print("\n(+추가) 버튼 찾기 시도...")
-                    
-                    # 모든 버튼 정보 수집 (디버깅)
-                    buttons_info = self.driver.execute_script("""
-                    const buttons = document.querySelectorAll('button');
-                    return Array.from(buttons).map(btn => ({
-                        text: btn.innerText.trim(),
-                        class: btn.className,
-                        isVisible: btn.offsetWidth > 0 && btn.offsetHeight > 0,
-                        hasPlus: btn.innerText.includes('+') || btn.innerText.includes('추가')
-                    })).filter(info => info.isVisible);
-                    """)
-                    
-                    print(f"화면에 표시된 버튼 수: {len(buttons_info)}")
-                    for idx, btn in enumerate(buttons_info):
-                        if btn.get('hasPlus'):
-                            print(f"주목할 버튼 {idx+1}: {btn} - '+' 또는 '추가' 텍스트 포함")
-                        elif idx < 5:  # 처음 5개 버튼만 출력
-                            print(f"버튼 {idx+1}: {btn}")
-                    
-                    # JavaScript로 (+추가) 버튼 찾기 및 클릭 시도 - 1초 간격으로 5번 클릭
-                    print("JavaScript로 (+추가) 버튼 찾기 및 5번 클릭 시도...")
-                    add_button_clicked = self.driver.execute_script("""
-                    // 이미지에서 확인된 클래스 사용하여 버튼 찾기
-                    const findAddButton = () => {
-                        // 정확한 클래스명으로 먼저 시도
-                        const addButtonSpan = document.querySelector('span.se-place-map-search-add-button-text');
-                        if (addButtonSpan) {
-                            const clickableParent = addButtonSpan.closest('button') || addButtonSpan.parentElement;
-                            if (clickableParent) return clickableParent;
-                            return addButtonSpan;
-                        }
-                        
-                        // 다른 방법으로 시도
-                        const buttonsByText = Array.from(document.querySelectorAll('button')).filter(
-                            btn => btn.innerText.includes('+') || btn.innerText.includes('추가')
-                        );
-                        if (buttonsByText.length > 0) return buttonsByText[0];
-                        
-                        // 클래스명으로 찾기
-                        const buttonsByClass = document.querySelectorAll(
-                            'button.se-place-add-button, button[class*="add-button"]'
-                        );
-                        if (buttonsByClass.length > 0) return buttonsByClass[0];
-                        
-                        return null;
-                    };
-                    
-                    // 버튼 찾기
-                    const addButton = findAddButton();
-                    
-                    if (!addButton) {
-                        console.log('추가 버튼을 찾을 수 없습니다.');
-                        return false;
-                    }
-                    
-                    console.log('추가 버튼 발견, 5번 클릭 시도 시작...');
-                    
-                    // 1초 간격으로 5번 클릭
-                    for (let i = 0; i < 5; i++) {
-                        setTimeout(() => {
-                            console.log(`${i+1}번째 클릭 시도...`);
-                            addButton.click();
-                        }, i * 1000);
-                    }
-                    
-                    return true;
-                    """)
-                    
-                    print(f"JavaScript로 (+추가) 버튼 클릭 시작: {add_button_clicked}")
-                    
-                    # 5번의 클릭이 완료될 때까지 5초 대기
-                    print("5번 클릭 완료 대기 중 (5초)...")
-                    time.sleep(5)
-                    
-                    # 확인 버튼 클릭 (기존 코드 유지)
-                    
-                except Exception as e:
-                    print(f"(+추가) 버튼 찾기 및 클릭 중 오류: {str(e)}")
-                
-                # 확인 버튼 클릭 - 더 강력한 확인 버튼 클릭 로직으로 업데이트
-                try:
-                    print("\n확인 버튼 찾기 및 클릭 시도...")
-                    # 여러번 시도 (버튼이 나타날 때까지 반복)
-                    max_attempts = 3
-                    confirm_clicked = False
-                    
-                    for attempt in range(max_attempts):
-                        try:
-                            print(f"확인 버튼 클릭 시도 {attempt+1}/{max_attempts}...")
-                            
-                            confirm_clicked = self.driver.execute_script("""
-                            // 확인 버튼 찾는 함수
-                            function findConfirmButton() {
-                                // 명확한 선택자로 먼저 시도
-                                const confirmBtn = document.querySelector('button.se-popup-button-confirm, button[data-log="pog.ok"]');
-                                if (confirmBtn) {
-                                    console.log('정확한 선택자로 확인 버튼 발견');
-                                    confirmBtn.click();
-                                    return true;
-                                }
-                                
-                                // 클래스로 버튼 찾기
-                                const buttonsByClass = document.querySelectorAll(
-                                    'button.confirm, button[class*="confirm"], button.se-popup-button'
-                                );
-                                for (const btn of buttonsByClass) {
-                                    if (btn.offsetWidth > 0 && btn.offsetHeight > 0) {
-                                        console.log('클래스로 확인 버튼 발견');
-                                        btn.click();
-                                        return true;
-                                    }
-                                }
-                                
-                                return false;
-                            }
-                            
-                            return findConfirmButton();
-                            """)
-                            
-                            if confirm_clicked:
-                                print(f"확인 버튼 클릭 성공 (시도 {attempt+1})")
-                                break
-                            else:
-                                print(f"확인 버튼을 찾을 수 없음 (시도 {attempt+1})")
-                                time.sleep(1)
-                        except Exception as e:
-                            print(f"확인 버튼 클릭 시도 {attempt+1} 중 오류: {str(e)}")
-                            time.sleep(1)
-                    
-                    print("==== 장소 정보 추가 완료 ====\n" if confirm_clicked else "==== 장소 정보 추가 시도 완료 ====\n")
-                except Exception as e:
-                    print(f"확인 버튼 클릭 중 오류: {str(e)}")
-            except Exception as e:
-                print(f"⚠️ 위치 정보 추가 실패 (계속 진행): {str(e)}")
-
+            # 장소 정보 추가 로직 부분은 중복이므로 모두 제거됨
             return True
             
         except Exception as e:
@@ -1398,11 +940,44 @@ class NaverBlogPostFinisher:
             return False
 
     def add_tags(self, tags=None, skip_publish=False):
-        """태그 추가"""
+        """태그 추가 (고정 태그 15개 + AI 태그 15개 = 최대 30개 보장)"""
         try:
-            if not tags: tags = self.settings.get('blog_tags', [])
+            # 🎯 [Fix] 고정 태그 15개 + 전달받은 태그(AI 태그) 최대 15개 = 30개 병합
+            # load_settings()에서 'blog_tags'가 리스트 형태의 'tags' 키로 변환되어 저장됨
+            fixed_tags_raw = self.settings.get('tags', [])
+            if isinstance(fixed_tags_raw, list):
+                fixed_tags = [t.strip() for t in fixed_tags_raw if t.strip()]
+            elif isinstance(fixed_tags_raw, str):
+                fixed_tags = [t.strip() for t in fixed_tags_raw.split(',') if t.strip()]
+            else:
+                fixed_tags = []
+            
+            if not tags:
+                # 태그가 전혀 없으면 고정 태그만 사용
+                tags = fixed_tags
+            else:
+                # 전달받은 태그가 있으면: 고정 태그(최대15) + AI 태그(최대15) 병합
+                if isinstance(tags, str):
+                    tags = [t.strip() for t in tags.split(',') if t.strip()]
+                seen = set()
+                merged = []
+                # 고정 태그를 우선 최대 15개
+                for t in fixed_tags[:15]:
+                    if t and t not in seen:
+                        merged.append(t)
+                        seen.add(t)
+                # 전달받은 태그(AI 태그)에서 중복 제거 후 최대 15개 추가
+                ai_count = 0
+                for t in tags:
+                    if t and t not in seen and ai_count < 15 and len(merged) < 30:
+                        merged.append(t)
+                        seen.add(t)
+                        ai_count += 1
+                tags = merged
+            
             if not tags: return True
-            print("태그 입력을 시작합니다...")
+            print(f"태그 입력을 시작합니다... (총 {len(tags)}개: 고정 {min(len(fixed_tags),15)}개 + AI {len(tags)-min(len(fixed_tags),15)}개)")
+
             
             # 🎯 프레임 내부로 진입 (백업 코드 로직 복구)
             if not self._switch_to_main_frame_robust():
@@ -1997,8 +1572,7 @@ class NaverBlogPostFinisher:
                 'button[class*="confirm_btn"]',
                 'button[data-testid="scOnePublishBtn"]',
                 '.publish_setting_layer button[class*="publish_btn"]', 
-                '//button[contains(text(), "발행") and not(contains(@class, "publish_btn__m9KHH"))]', # 상단 버튼 제외
-                '//button[contains(text(), "예약")]'
+                '//button[text()="발행"]' # 정확히 "발행" 텍스트만 있는 버튼
             ]
             
             # --- 지능형 클릭 및 결과 검증 루프 시작 ---
@@ -2015,7 +1589,7 @@ class NaverBlogPostFinisher:
                             
                         for btn in btns:
                             btn_text = (btn.text or '').strip()
-                            if btn.is_displayed() and btn.is_enabled() and (btn_text in ['발행', '예약'] or '발행' in btn_text):
+                            if btn.is_displayed() and btn.is_enabled() and btn_text == '발행':
                                 # 발견 시 즉시 클릭 (JS 최우선)
                                 try:
                                     self.driver.execute_script("arguments[0].style.border = '3px solid red'; arguments[0].click();", btn)
@@ -2037,7 +1611,7 @@ class NaverBlogPostFinisher:
                             for (const btn of buttons) {
                                 const text = (btn.innerText || btn.textContent || '').trim();
                                 const isVisible = btn.offsetWidth > 0 && btn.offsetHeight > 0;
-                                if (isVisible && !btn.disabled && !btn.className.includes('publish_btn__m9KHH') && (text === '발행' || text === '예약' || (text.includes('발행') && text.length < 10))) {
+                                if (isVisible && !btn.disabled && !btn.className.includes('publish_btn__m9KHH') && text === '발행') {
                                     btn.style.border = '3px solid blue';
                                     btn.click();
                                     return true;
@@ -2061,7 +1635,7 @@ class NaverBlogPostFinisher:
                         else:
                             btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
                         for btn in btns:
-                            if btn.is_displayed() and (('발행' in btn.text) or ('예약' in btn.text)):
+                            if btn.is_displayed() and (btn.text or '').strip() == '발행':
                                 still_visible = True
                                 break
                         if still_visible: break
@@ -2283,9 +1857,71 @@ class NaverBlogPostFinisher:
             time.sleep(2)
             print("위치 버튼 클릭 성공, 지도 검색 모달 열림 대기")
             
-            # 2. 검색 입력 필드 찾기
+            # 🎯 [Fix] 검색어: 상호명 우선, 없으면 주소만 사용 (둘 다 넣으면 검색 실패)
+            if dojang_name:
+                search_query = dojang_name.strip()
+                print(f"검색할 쿼리: '{search_query}' (상호명 우선)")
+            else:
+                search_query = address.strip()
+                print(f"검색할 쿼리: '{search_query}' (상호 없음 → 주소 사용)")
+            
+            # 🎯 [Fix] 장소 팝업 오버레이 제거 (se-popup-dim-transparent가 클릭 차단)
+            try:
+                self.driver.execute_script("""
+                    const overlays = document.querySelectorAll('.se-popup-dim, .se-popup-dim-transparent');
+                    overlays.forEach(el => { el.style.display = 'none'; el.style.pointerEvents = 'none'; });
+                    console.log('장소 팝업 오버레이 제거 완료:', overlays.length, '개');
+                """)
+                time.sleep(0.3)
+                print("  -> 장소 팝업 오버레이 제거 완료")
+            except Exception as e:
+                print(f"  -> 오버레이 제거 시도 중 오류 (무시): {e}")
+            
+            # 🎯 [Fix] 국내/해외 드롭다운 처리 (해외로 되어 있을 때만 클릭해서 국내로 변경)
+            try:
+                domestic_handled = self.driver.execute_script("""
+                    const buttons = Array.from(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'))
+                        .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
+                    
+                    let selectedValueEl = null;
+                    
+                    // '해외'가 현재 선택값인지 확인 (리스트 항목이 아닌 버튼)
+                    for (const btn of buttons) {
+                        const text = (btn.innerText || '').trim();
+                        if (text === '해외' && !btn.closest('li')) {
+                            selectedValueEl = btn;
+                            break;
+                        }
+                    }
+                    
+                    if (selectedValueEl) {
+                        console.log('현재 해외로 설정되어 있어 국내로 변경 시도');
+                        selectedValueEl.click(); // 드롭다운 열기
+                        
+                        setTimeout(() => {
+                            const options = document.querySelectorAll('li, button, a, span');
+                            for (const opt of options) {
+                                if ((opt.innerText || '').trim() === '국내' && opt.offsetWidth > 0) {
+                                    opt.click();
+                                    console.log('드롭다운에서 국내 선택 성공');
+                                    break;
+                                }
+                            }
+                        }, 500);
+                        return true;
+                    }
+                    return false; // 국내이거나 찾을 수 없음
+                """)
+                time.sleep(1)
+                print(f"  -> 국내/해외 드롭다운 처리 완료: {domestic_handled}")
+            except Exception as e:
+                print(f"  -> 국내/해외 드롭다운 처리 오류 (무시): {e}")
+            
+            # 2. 검색 입력 필드 찾기 (react-autosuggest__input 선택자 최우선 추가)
             search_input_found = False
             search_input_selectors = [
+                "input.react-autosuggest__input",   # 🎯 [Fix] 장소 팝업 실제 입력창
+                "input[placeholder*='장소명']",
                 "input.se-map-search-input",
                 "input.place_search_input",
                 "input[placeholder*='검색']",
@@ -2293,11 +1929,7 @@ class NaverBlogPostFinisher:
                 ".se-map-search input",
                 "input[type='text'][class*='search']"
             ]
-            
-            # 주소와 상호를 조합한 검색어 생성
-            search_query = f"{address} {dojang_name}".strip()
-            print(f"검색할 쿼리: {search_query}")
-            
+
             for selector in search_input_selectors:
                 try:
                     print(f"검색 입력 필드 선택자 시도: {selector}")
@@ -2305,13 +1937,19 @@ class NaverBlogPostFinisher:
                         EC.presence_of_element_located((By.CSS_SELECTOR, selector))
                     )
                     
-                    search_input.clear()
-                    time.sleep(0.5)
-                    search_input.send_keys(search_query)
+                    # JS로 React value setter 사용하여 안전하게 입력
+                    self.driver.execute_script("""
+                        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                            window.HTMLInputElement.prototype, 'value'
+                        ).set;
+                        nativeInputValueSetter.call(arguments[0], arguments[1]);
+                        arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
+                        arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+                    """, search_input, search_query)
                     time.sleep(0.5)
                     search_input.send_keys(Keys.ENTER)
                     search_input_found = True
-                    print(f"검색어 입력 성공: {search_query}")
+                    print(f"검색어 입력 성공: {search_query} (선택자: {selector})")
                     break
                 except Exception as e:
                     print(f"검색 입력 필드 선택자 {selector} 실패: {str(e)}")
@@ -2354,13 +1992,14 @@ class NaverBlogPostFinisher:
             time.sleep(3)
             print("검색 완료, 결과 선택 대기")
             
-            # 4. 첫 번째 검색 결과 선택
+            # 4. 첫 번째 검색 결과 선택 (마우스 오버 -> 추가 버튼 클릭)
             result_selected = False
             result_selectors = [
                 ".se-map-search-result-list li:first-child",
                 ".se-map-search-result-item:first-child",
                 ".place_search_item:first-child",
-                ".se-map-search-results-list-view-item:first-child"
+                ".se-map-search-results-list-view-item:first-child",
+                "ul[class*='list'] li:first-child"
             ]
             
             for selector in result_selectors:
@@ -2369,76 +2008,143 @@ class NaverBlogPostFinisher:
                     result_item = WebDriverWait(self.driver, 5).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, selector))
                     )
-                    result_item.click()
-                    result_selected = True
-                    print("첫 번째 검색 결과 선택 성공")
-                    break
+                    
+                    # 1. 항목 직접 클릭 (호버가 안 먹힐 경우를 대비해 확실히 활성화)
+                    try:
+                        print("  -> 크롬 최상단으로 가져오기 및 항목 클릭 시도")
+                        import os
+                        os.system('''osascript -e 'tell application "Google Chrome" to activate' ''')
+                        time.sleep(0.5)
+                        
+                        result_item.click()
+                        time.sleep(0.5)
+                    except Exception as e:
+                        pass
+                        
+                    # 2. ActionChains를 통한 마우스 오버 시뮬레이션
+                    try:
+                        from selenium.webdriver.common.action_chains import ActionChains
+                        ActionChains(self.driver).move_to_element(result_item).perform()
+                        time.sleep(0.5)
+                    except Exception as e:
+                        pass
+                    
+                    # 3. Selenium 네이티브 방식(Trusted Event)으로 '추가' 버튼 탐색 및 클릭
+                    add_btn_found = False
+                    for attempt in range(15):
+                        try:
+                            # 팝업 내에서 '추가' 텍스트를 가진 요소를 모두 찾음
+                            elements = self.driver.find_elements(By.XPATH, "//div[contains(@class, 'se-popup-map')]//*[contains(text(), '추가')]")
+                            for el in elements:
+                                # 요소가 화면에 보이고, 배경 전체가 아닌 실제 버튼(크기가 작음)인지 확인
+                                if el.is_displayed() and 0 < el.size['width'] < 200:
+                                    print(f"  -> 네이티브 추가 버튼 발견! 텍스트: {el.text}")
+                                    # Selenium 물리 클릭
+                                    ActionChains(self.driver).move_to_element(el).click().perform()
+                                    add_btn_found = True
+                                    break
+                        except Exception as e:
+                            pass
+                            
+                        if add_btn_found:
+                            break
+                        time.sleep(0.2)
+                        
+                    # 4. Selenium 실패 시 과거에 성공했던 JS 직접 탐색/클릭 (Fallback)
+                    if not add_btn_found:
+                        print("  -> Selenium 네이티브 탐색 실패, JS 탐색으로 전환")
+                        js_result = self.driver.execute_script("""
+                            const clickables = document.querySelectorAll('.se-popup-map button, .se-popup-map a, .se-popup-map span, .se-popup-map div[role="button"], button, a, span');
+                            for (const el of clickables) {
+                                const text = (el.innerText || el.textContent || '').trim();
+                                const className = (el.className || '').toLowerCase();
+                                if (text === '✓ 추가' || text === '+ 추가' || text === '추가' || className.includes('se-place-add-button')) {
+                                    if (el.offsetWidth > 250) continue; 
+                                    el.click();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        """)
+                        if js_result:
+                            print("  -> JS 탐색으로 추가 버튼 클릭 성공!")
+                            add_btn_found = True
+                        else:
+                            print("  -> 추가 버튼을 찾지 못하여 최후의 수단으로 항목 재클릭 시도")
+                            try:
+                                result_item.click()
+                            except:
+                                pass
+                    
+                    print(f"  -> 추가 버튼 클릭 성공 여부: {add_btn_found}")
+                    if add_btn_found or result_item:
+                        result_selected = True
+                        print(f"첫 번째 검색 결과 선택 및 추가 성공: {selector}")
+                        break
+                        
                 except Exception as e:
                     print(f"검색 결과 선택자 {selector} 실패: {str(e)}")
             
             if not result_selected:
-                print("검색 결과를 선택할 수 없습니다. 스크립트로 시도합니다.")
-                # 스크립트로 첫 번째 결과 선택 시도
+                print("검색 결과를 선택할 수 없습니다. 전체 문서를 대상으로 다시 스크립트 탐색합니다.")
                 script = """
-                function selectFirstSearchResult() {
-                    const results = document.querySelectorAll('.se-map-search-result-list li, .se-map-search-result-item, .place_search_item, .se-map-search-results-list-view-item');
-                    if (results.length > 0) {
-                        results[0].click();
+                const results = document.querySelectorAll('.se-map-search-result-list li, .se-map-search-result-item');
+                if(results.length > 0) {
+                    const li = results[0];
+                    const addBtn = li.querySelector('button[class*="add"], button.se-place-add-button');
+                    if(addBtn) {
+                        addBtn.click();
+                        return true;
+                    } else {
+                        li.click();
                         return true;
                     }
-                    return false;
                 }
-                return selectFirstSearchResult();
+                return false;
                 """
-                result_selected = self.driver.execute_script(script)
-                print(f"스크립트 실행 결과: {result_selected}")
+                if self.driver.execute_script(script):
+                    result_selected = True
+                    print("  -> 전역 탐색 스크립트로 클릭 성공")
             
-            # 5. 선택 확인/완료 버튼 클릭
+            # 5. 선택 확인/완료 버튼 클릭 (우측 하단 확인 버튼)
+            # 장소가 '선택된 장소' 목록에 추가될 때까지 넉넉히 대기
             time.sleep(2)
             confirmation_clicked = False
-            confirmation_selectors = [
-                "button.se-map-save-button",
-                "button.place_confirm_btn",
-                "button[data-log='map.save']",
-                "button.se_map_apply_button",
-                "button:contains('등록')",
-                "button:contains('확인')",
-                "button:contains('적용')"
-            ]
             
-            for selector in confirmation_selectors:
-                try:
-                    print(f"확인 버튼 선택자 시도: {selector}")
-                    confirm_button = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
-                    confirm_button.click()
-                    confirmation_clicked = True
-                    print("위치 등록 확인 버튼 클릭 성공")
-                    break
-                except Exception as e:
-                    print(f"확인 버튼 선택자 {selector} 실패: {str(e)}")
-            
-            if not confirmation_clicked:
-                print("확인 버튼을 찾을 수 없습니다. 스크립트로 시도합니다.")
-                # 스크립트로 확인 버튼 클릭 시도
-                script = """
-                function clickConfirmButton() {
-                    const buttons = document.querySelectorAll('button');
-                    for (const btn of buttons) {
-                        const text = btn.textContent.toLowerCase();
-                        if (text.includes('등록') || text.includes('확인') || text.includes('적용') ||
-                            btn.className.includes('save') || btn.className.includes('confirm') || btn.className.includes('apply')) {
-                            btn.click();
-                            return true;
-                        }
+            print("확인 버튼(모달 우측 하단) 스크립트로 탐색 시작...")
+            script = """
+            function clickConfirmButton() {
+                // 1순위: '확인' 텍스트를 가진 팝업 내 버튼 찾기
+                const buttons = document.querySelectorAll('button');
+                for (const btn of buttons) {
+                    if (btn.offsetWidth === 0 || btn.offsetHeight === 0 || btn.disabled) continue;
+                    
+                    const text = (btn.textContent || '').trim();
+                    if (text === '확인' || text === '적용') {
+                        // se-place-add-button(리스트 항목 내부 추가버튼)은 제외
+                        if(btn.className.includes('se-place-add-button')) continue;
+                        
+                        btn.click();
+                        return true;
                     }
-                    return false;
                 }
-                return clickConfirmButton();
-                """
-                confirmation_clicked = self.driver.execute_script(script)
-                print(f"스크립트 실행 결과: {confirmation_clicked}")
+                
+                // 2순위: map 관련 클래스를 가진 버튼
+                for (const btn of buttons) {
+                    if (btn.offsetWidth === 0 || btn.offsetHeight === 0 || btn.disabled) continue;
+                    const className = (btn.className || '').toLowerCase();
+                    if (className.includes('map-save') || className.includes('place_confirm') || className.includes('map_apply')) {
+                        btn.click();
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+            return clickConfirmButton();
+            """
+            confirmation_clicked = self.driver.execute_script(script)
+            print(f"스크립트 실행 결과: {confirmation_clicked}")
             
             # 위치 추가 완료 확인
             time.sleep(3)
@@ -2543,12 +2249,27 @@ class NaverBlogPostFinisher:
                 )
                 
                 if link_input.is_displayed() and link_input.is_enabled():
-                    # 🎯 입력창 완전히 초기화 후 정확한 URL만 입력
+                    # 🎯 Native value setter를 사용해 확실하게 React 업데이트 보장
                     link_input.click()  # 포커스 확보
-                    link_input.clear()  # 기존 내용 삭제
-                    time.sleep(0.1)     # 삭제 완료 대기
-                    link_input.send_keys(url)  # 정확한 URL만 입력
-                    print(f"✅ 링크 입력창에 URL 입력 성공: {url}")
+                    time.sleep(0.1)
+                    
+                    self.driver.execute_script("""
+                        const input = arguments[0];
+                        const url = arguments[1];
+                        
+                        input.value = '';
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        
+                        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                            window.HTMLInputElement.prototype, 'value'
+                        ).set;
+                        nativeInputValueSetter.call(input, url);
+                        
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    """, link_input, url)
+                    
+                    print(f"✅ 링크 입력창에 Native setter로 URL 입력 완료: {url}")
                     
                     # 🎯 입력 값 확인 (디버깅용)
                     actual_value = link_input.get_attribute('value')
@@ -2592,6 +2313,7 @@ class NaverBlogPostFinisher:
                         name.indexOf('url') !== -1 ||
                         id.indexOf('url') !== -1 ||
                         className.indexOf('url') !== -1 ||
+                        className.indexOf('oglink') !== -1 ||
                         className.indexOf('link') !== -1
                     )) {
                         console.log('🎯 링크 입력창 발견!', {
@@ -2603,16 +2325,23 @@ class NaverBlogPostFinisher:
                         });
                         
                         try {
-                            // 🎯 입력창 완전히 초기화 후 정확한 URL만 입력
+                            // 🎯 [Fix] React controlled input 강제 업데이트
+                            // 단순 input.value 할당은 React 내부 state를 갱신하지 않으므로
+                            // HTMLInputElement.prototype의 nativeInputValueSetter를 사용해야 한다.
                             input.focus();
-                            input.value = '';
-                            input.value = url;  // arguments로 전달받은 정확한 URL만 입력
                             
-                            // 이벤트 발생
+                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                                window.HTMLInputElement.prototype, 'value'
+                            ).set;
+                            nativeInputValueSetter.call(input, url);
+                            
+                            // React synthetic event 발생 (React 내부 상태 업데이트 트리거)
                             input.dispatchEvent(new Event('input', { bubbles: true }));
                             input.dispatchEvent(new Event('change', { bubbles: true }));
                             
-                            // 🎯 Enter 키 이벤트 발생
+                            console.log('✅ React 강제 업데이트 후 값:', input.value);
+                            
+                            // 🎯 Enter 키 이벤트 발생 (확인 버튼 트리거)
                             const enterEvent = new KeyboardEvent('keydown', {
                                 key: 'Enter',
                                 code: 'Enter',
@@ -2622,7 +2351,7 @@ class NaverBlogPostFinisher:
                             });
                             input.dispatchEvent(enterEvent);
                             
-                            console.log('✅ JavaScript로 링크 입력 및 Enter 키 완료, 입력된 값:', input.value);
+                            console.log('✅ JavaScript로 React 링크 입력 완료, 최종 값:', input.value);
                             return true;
                         } catch (e) {
                             console.log('링크 입력 중 오류:', e.message);

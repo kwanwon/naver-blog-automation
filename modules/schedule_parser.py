@@ -117,6 +117,55 @@ def extract_text_from_pdf(pdf_path: str) -> str:
     return "\n".join(text_parts)
 
 
+def extract_text_from_file(file_path: str, openai_client) -> str:
+    """
+    파일 확장자에 따라 이미지(Vision) 또는 PDF 텍스트를 추출합니다.
+    """
+    ext = file_path.lower().split('.')[-1]
+    if ext in ['pdf']:
+        print(f"📄 PDF 텍스트 추출 중: {file_path}")
+        return extract_text_from_pdf(file_path)
+    elif ext in ['png', 'jpg', 'jpeg']:
+        print(f"🖼️ 이미지(Vision) 텍스트 추출 중: {file_path}")
+        import base64
+        try:
+            with open(file_path, "rb") as image_file:
+                base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "이 이미지에 적힌 모든 행사, 일정, 수련 계획표 텍스트를 하나도 빠짐없이 정확하게 텍스트로 추출해주세요."},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/{ext};base64,{base64_image}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=4000
+            )
+            extracted_text = response.choices[0].message.content
+            print(f"✅ 이미지 텍스트 추출 완료 ({len(extracted_text)}자)")
+            return extracted_text
+        except Exception as e:
+            print(f"❌ 이미지 텍스트 추출 오류: {e}")
+            return ""
+    else:
+        # 일반 텍스트 파일 읽기
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except Exception as e:
+            print(f"❌ 파일 읽기 오류: {e}")
+            return ""
+
+
 def parse_schedule_with_gpt(raw_text: str, year: int, mode: str, ai_handler=None, openai_client=None) -> list[dict]:
     """
     AI를 사용하여 PDF 텍스트에서 구조화된 일정 데이터를 추출합니다.
@@ -130,7 +179,7 @@ def parse_schedule_with_gpt(raw_text: str, year: int, mode: str, ai_handler=None
 
 [필수 규칙]
 1. 연도 설정: 문서 내에 명시된 연도(예: 2024년, 2025년)를 최우선으로 따르세요. 만약 문서에 연도 정보가 전혀 없다면 {year}년을 기준으로 삼으세요.
-2. 날짜 범위 처리: '3월 12~14일'과 같은 범위는 반드시 2026-03-12, 2026-03-13, 2026-03-14와 같이 개별 항목으로 모두 쪼개야 합니다.
+2. 날짜 범위 처리: '3월 12~15일'과 같은 범위는 마지막 종료 날짜(15일)를 절대 빼먹지 말고, 반드시 2026-03-12, 2026-03-13, 2026-03-14, 2026-03-15 처럼 시작일부터 종료일까지 하루도 빠짐없이 모든 개별 날짜를 분리해서 각각의 항목으로 생성해야 합니다.
 3. 날짜 형식: 반드시 'YYYY-MM-DD' 형식을 지키세요.
 4. 항목 누락 금지: 텍스트에 있는 모든 공식 일정을 빠짐없이 추출하세요.
 5. 수련단계(stage): 정보가 없으면 기본값인 3(기술)을 사용하세요. (1:준비, 2:체력, 3:기술, 4:마무리)
@@ -255,14 +304,12 @@ def write_annual_schedule_to_excel(excel_path: str, schedule_entries: list[dict]
 
         def get_event_color(title_text):
             if any(k in title_text for k in ["심사", "승급", "테스트"]):
-                return "8B00FF" # 보라색
+                return "FF8B00FF" # 보라색
             elif any(k in title_text for k in ["대회", "시합", "체전", "연습"]):
-                return "008000" # 녹색
-            elif any(k in title_text for k in ["특강", "세미나", "교육"]):
-                return "0000FF" # 파란색
-            elif any(k in title_text for k in ["캠프", "체험", "나들이", "합숙"]):
-                return "FF8C00" # 주황색
-            return "000000"
+                return "FF008000" # 녹색
+            elif any(k in title_text for k in ["특강", "세미나", "교육", "캠프", "체험", "나들이", "합숙", "[", "]"]):
+                return "FF0000FF" # 파란색
+            return "FF000000"
 
         for i, entry in enumerate(schedule_entries):
             row_num = start_row + i
@@ -322,20 +369,29 @@ def write_annual_schedule_to_excel(excel_path: str, schedule_entries: list[dict]
                             # 연간 행사는 기본적으로 '3단계 (기술)' 칸의 수식을 따라가서 본문에 기록
                             target_machine_cell = row[3] # 3단계 (D열)
                             
+                            def get_fs(text):
+                                l = len(str(text))
+                                if l < 10: return 12
+                                elif l < 20: return 10
+                                else: return 9
+                                
+                            fs = get_fs(title)
+                            
                             if target_machine_cell.value and str(target_machine_cell.value).startswith("="):
                                 target_address = str(target_machine_cell.value).replace("=", "").strip()
                                 try:
                                     target_cell = m_ws[target_address]
                                     # 데이터 보호: 빈칸일 때만 기록
                                     if not target_cell.value:
-                                        target_cell.value = formatted_val
-                                        target_cell.alignment = Alignment(wrapText=True, vertical='top', horizontal='center')
-                                        target_cell.font = Font(size=get_dynamic_font_size(formatted_val), bold=True, color="0000FF")
-                                except: pass
+                                        target_cell.value = title
+                                        target_cell.alignment = Alignment(wrapText=True, vertical='center', horizontal='center')
+                                        target_cell.font = Font(size=fs, bold=True, color=f_color)
+                                except Exception as e: 
+                                    print(f"달력 타겟 기록 실패: {e}")
                             else:
                                 if not target_machine_cell.value:
-                                    target_machine_cell.value = formatted_val
-                                    target_machine_cell.font = Font(size=get_dynamic_font_size(formatted_val), bold=True, color="0000FF")
+                                    target_machine_cell.value = title
+                                    target_machine_cell.font = Font(size=fs, bold=True, color=f_color)
                             break
 
         wb.save(excel_path)
@@ -416,9 +472,9 @@ def fix_layout_and_holidays(ws, year, month):
     from openpyxl.drawing.image import Image as XLImage
     import os
 
-    # 테두리 스타일 정의
-    thin_side = Side(style='thin', color='000000')
-    medium_side = Side(style='medium', color='000000')
+    # 테두리 스타일 정의 (구글 스프레드시트 호환을 위해 투명도 FF 추가)
+    thin_side = Side(style='thin', color='FF000000')
+    medium_side = Side(style='medium', color='FF000000')
     
     thin_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
     header_border = Border(left=thin_side, right=thin_side, top=medium_side, bottom=medium_side)
@@ -435,12 +491,12 @@ def fix_layout_and_holidays(ws, year, month):
     for col_letter in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
         ws.column_dimensions[col_letter].width = 22
 
-    # 1. 파스텔 테마 색상 정의
-    fill_sun = PatternFill("solid", fgColor="FFF0F5") # 연한 핑크
-    fill_sat = PatternFill("solid", fgColor="E6E6FA") # 연한 라벤더
-    fill_weekday = PatternFill("solid", fgColor="F0F8FF") # 연한 하늘
-    fill_empty = PatternFill("solid", fgColor="F5F5F5") # 연회색
-    fill_header = PatternFill("solid", fgColor="E0F2F1") # 연민트
+    # 1. 파스텔 테마 색상 정의 (구글 호환 AARRGGBB)
+    fill_sun = PatternFill("solid", fgColor="FFFFF0F5") # 연한 핑크
+    fill_sat = PatternFill("solid", fgColor="FFE6E6FA") # 연한 라벤더
+    fill_weekday = PatternFill("solid", fgColor="FFF0F8FF") # 연한 하늘
+    fill_empty = PatternFill("solid", fgColor="FFF5F5F5") # 연회색
+    fill_header = PatternFill("solid", fgColor="FFE0F2F1") # 연민트
     
     # 텍스트 이모지 매핑 (이미지 파일 없을 때 대비)
     holiday_emojis = {
@@ -592,19 +648,53 @@ def update_excel_with_ai_results(excel_path: str, month: int, schedule_entries: 
             _init_monthly_sheet(ws, year, month)
         else:
             ws = wb[sheet_name]
-            # 기존 시트도 레이아웃 보정 및 공휴일 색상 적용
-            fix_layout_and_holidays(ws, year, month)
 
-        # AI 결과물 기록
+        # --- [Step 1: 달력 초기화] ---
+        # AI 결과 및 수동 기록을 지우되 공휴일은 재적용으로 복구
+        for row in ws.iter_rows(min_row=31, max_row=ws.max_row):
+            target_machine_cell = row[3] 
+            if target_machine_cell.value and str(target_machine_cell.value).startswith("="):
+                target_address = str(target_machine_cell.value).replace("=", "").strip()
+                try:
+                    ws[target_address].value = ""
+                except: pass
+            else:
+                target_machine_cell.value = ""
+
+        # 기존/신규 시트 공통 레이아웃 보정 및 공휴일 색상/텍스트 적용 (초기화 후 복구)
+        fix_layout_and_holidays(ws, year, month)
+
+        # --- [Step 2: 연간계획표 데이터 추출 (1순위)] ---
+        all_entries = []
+        annual_sheet_name = "연간계획"
+        if annual_sheet_name in wb.sheetnames:
+            annual_ws = wb[annual_sheet_name]
+            for r in range(3, annual_ws.max_row + 1):
+                a_date = annual_ws.cell(row=r, column=1).value
+                a_title = annual_ws.cell(row=r, column=2).value
+                a_loc = annual_ws.cell(row=r, column=3).value
+                if a_date and a_title:
+                    try:
+                        if isinstance(a_date, datetime):
+                            a_d = a_date
+                        else:
+                            a_d = datetime.strptime(str(a_date).strip()[:10].replace(".", "-"), "%Y-%m-%d")
+                        if a_d.year == year and a_d.month == month:
+                            # 장소가 있으면 합침
+                            full_title = f"{a_title}\n{a_loc}" if a_loc else str(a_title)
+                            all_entries.append({"date": a_d.strftime("%Y-%m-%d"), "title": full_title, "is_annual": True})
+                    except: pass
+        
+        # --- [Step 3: AI 월간 진도 통합 (3순위)] ---
         for entry in schedule_entries:
+            entry["is_annual"] = False
+            all_entries.append(entry)
+
+        # AI 및 연간 결과물 기록
+        for entry in all_entries:
             date_str = entry.get("date", "")
             title = entry.get("title", entry.get("event", ""))
-            period = entry.get("period", "오후")
-
-            # Column A=0, B=1(Morning), C=2(Afternoon), D=3(Evening)
-            period_col_idx = 2
-            if period == "오전": period_col_idx = 1
-            elif period == "저녁": period_col_idx = 3
+            is_annual = entry.get("is_annual", False)
 
             try:
                 target_d = datetime.strptime(date_str, "%Y-%m-%d")
@@ -615,7 +705,6 @@ def update_excel_with_ai_results(excel_path: str, month: int, schedule_entries: 
             for row in ws.iter_rows(min_row=31, max_row=ws.max_row):
                 cell_val = row[0].value
                 
-                # [추가] 날짜 칸 자체가 수식(=...)인 경우 원본 날짜를 찾아감
                 if cell_val and str(cell_val).startswith("="):
                     try:
                         addr = str(cell_val).replace("=", "").strip()
@@ -629,7 +718,6 @@ def update_excel_with_ai_results(excel_path: str, month: int, schedule_entries: 
                         if isinstance(cell_val, datetime):
                             cell_d = cell_val
                         else:
-                            # 2026.01.01 -> 2026-01-01
                             cell_v_str = str(cell_val).strip()[:10].replace(".", "-")
                             cell_d = datetime.strptime(cell_v_str, "%Y-%m-%d")
                         cell_md = cell_d.strftime("%m-%d")
@@ -637,28 +725,53 @@ def update_excel_with_ai_results(excel_path: str, month: int, schedule_entries: 
                         cell_md = str(cell_val)
 
                 if cell_md == target_md and target_md is not None:
-                    # PDF 스캔 내용은 기본적으로 3단계(기술) 수식을 따라 본문에 기록
                     target_machine_cell = row[3] 
                     formatted_val = format_cell_text(title, "3단계")
                     text_for_style = formatted_val if isinstance(formatted_val, str) else title
                     smart_align = get_smart_alignment(text_for_style)
                     font_size = get_dynamic_font_size(text_for_style)
                     
+                    def _get_event_color(t_text):
+                        if any(k in t_text for k in ["심사", "승급", "테스트"]): return "8B00FF"
+                        elif any(k in t_text for k in ["대회", "시합", "체전", "연습"]): return "008000"
+                        elif any(k in t_text for k in ["특강", "세미나", "교육"]): return "0000FF"
+                        elif any(k in t_text for k in ["캠프", "체험", "나들이", "합숙"]): return "FF8C00"
+                        return "000000"
+                        
+                    f_color = _get_event_color(title) if is_annual else "000000"
+                    
                     if target_machine_cell.value and str(target_machine_cell.value).startswith("="):
                         target_address = str(target_machine_cell.value).replace("=", "").strip()
                         try:
                             target_cell = ws[target_address]
-                            # 데이터 보호: 비어있거나 휴일 이름만 있을 때 기록
-                            if not target_cell.value or (isinstance(target_cell.value, str) and len(target_cell.value) < 5):
-                                target_cell.value = formatted_val
+                            
+                            if is_annual:
+                                # 1순위: 연간계획은 공휴일 텍스트가 있다면 이어서 쓰고, 없다면 강제 기록
+                                existing = str(target_cell.value) if target_cell.value else ""
+                                holiday_keywords = ["신정", "설날", "삼일절", "어린이날", "부처님오신날", "현충일", "광복절", "추석", "개천절", "한글날", "성탄절", "대체공휴일", "선거"]
+                                if existing and len(existing) < 20 and any(h in existing for h in holiday_keywords):
+                                    target_cell.value = f"{existing}\n{formatted_val}"
+                                else:
+                                    target_cell.value = formatted_val
                                 target_cell.alignment = smart_align
-                                target_cell.font = Font(size=font_size)
+                                target_cell.font = Font(size=font_size, bold=True, color=f_color)
+                            else:
+                                # 3순위: AI 수련내용은 빈칸일 때만 기록 (데이터 보호)
+                                if not target_cell.value or (isinstance(target_cell.value, str) and len(target_cell.value) < 5):
+                                    target_cell.value = formatted_val
+                                    target_cell.alignment = smart_align
+                                    target_cell.font = Font(size=font_size)
                         except: pass
                     else:
-                        if not target_machine_cell.value:
+                        if is_annual:
                             target_machine_cell.value = formatted_val
                             target_machine_cell.alignment = smart_align
-                            target_machine_cell.font = Font(size=font_size)
+                            target_machine_cell.font = Font(size=font_size, bold=True, color=f_color)
+                        else:
+                            if not target_machine_cell.value:
+                                target_machine_cell.value = formatted_val
+                                target_machine_cell.alignment = smart_align
+                                target_machine_cell.font = Font(size=font_size)
                     break
 
         wb.save(excel_path)
@@ -784,6 +897,17 @@ def _init_monthly_sheet(ws, year: int, month: int):
     # 열 너비 설정
     for col in range(1, 8):
         ws.column_dimensions[chr(64 + col)].width = 15
+
+    # --- 인쇄 설정 (가로 방향, 1페이지 꽉 차게, 달력 영역만 인쇄) ---
+    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToPage = True
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 1
+    ws.print_options.horizontalCentered = True
+    ws.print_options.verticalCentered = True
+    # 달력 그리드 영역까지만 인쇄 영역 지정 (A1 ~ G15)
+    ws.print_area = "A1:G15"
 
 
 def sync_annual_sheet_to_monthly_tabs(excel_path: str, weekend_events: list = None, skip_annual: bool = False) -> bool:

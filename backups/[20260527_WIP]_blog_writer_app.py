@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import flet as ft # type: ignore
-from modules.ai_handler import AIHandler as GPTHandler
+from modules.ai_handler import AIHandler
 from modules.serial_auth import BlogSerialAuth
 from modules.auto_updater import AutoUpdater  # 자동 업데이트 추가
 from config.config import Config
@@ -17,8 +17,16 @@ from modules.marketing.comment_poster import CommentPoster
 from modules.marketing.reply_crawler import ReplyCrawler
 from selenium.webdriver.common.by import By
 
+# 🥋 수련계획표 AI 자동 생성 엔진 모듈 임포트
+from modules.training_planner.curriculum_loader import (
+    load_gym_profile, save_gym_profile, load_age_categories, save_age_categories,
+    learn_from_files, get_curriculum_status, load_curriculum_md
+)
+from modules.training_planner.planner_engine import generate_full_year_plan
+
 import subprocess
 import os
+import openpyxl
 import asyncio
 import sys  # sys 모듈 추가
 import io
@@ -43,7 +51,7 @@ import json
 from utils.folder_cleanup import FolderCleanup  # 추가
 from utils.path_utils import (
     get_app_data_dir, get_config_dir, get_data_dir, get_log_dir,
-    get_app_settings_path, get_gpt_settings_path, get_api_key_path,
+    get_app_settings_path, get_ai_settings_path, get_api_key_path,
     get_user_settings_path, get_custom_prompts_path
 )
 import random
@@ -53,49 +61,6 @@ import time
 import traceback
 
 from logger_utils import StreamLogger # 추가
-
-# 모바일 가독성 줄바꿈 헬퍼 함수 (25자 한글/단어 보존 스마트 행갈이)
-def format_content_for_mobile(content, max_chars=25):
-    if not content:
-        return ""
-    formatted_content = ""
-    paragraphs = content.split('\n')
-    
-    for paragraph in paragraphs:
-        if not paragraph.strip():
-            formatted_content += "\n"
-            continue
-            
-        words = paragraph.split()
-        current_line = ""
-        
-        for word in words:
-            # 단어 자체가 max_chars보다 길면 그대로 사용
-            if len(word) > max_chars:
-                if current_line:
-                    formatted_content += current_line + "\n"
-                    current_line = ""
-                formatted_content += word + "\n"
-                continue
-                
-            # 현재 줄에 단어를 추가했을 때 max_chars를 초과하는지 확인
-            if len(current_line) + len(word) + (1 if current_line else 0) > max_chars:
-                formatted_content += current_line + "\n"
-                current_line = word
-            else:
-                if current_line:
-                    current_line += " " + word
-                else:
-                    current_line = word
-        
-        # 마지막 줄 추가
-        if current_line:
-            formatted_content += current_line + "\n"
-        
-        # 문단 사이에 빈 줄 추가
-        formatted_content += "\n"
-    
-    return formatted_content.strip()
 
 class BlogWriterApp:
     def __init__(self):
@@ -194,10 +159,9 @@ class BlogWriterApp:
             print(f"⚠️ 주제 자동 수정 중 오류: {e}")
         self.use_dummy = self.settings.get('use_dummy', False)
         
-        self.gpt_handler = GPTHandler(use_dummy=self.use_dummy)
+        self.ai_handler = AIHandler(use_dummy=self.use_dummy)
         self.current_title = ""
         self.current_content = ""
-        self.current_tags = []
         self.last_save_content = None
         self.browser_driver = None  # 브라우저 드라이버 인스턴스
         self.temp_driver = None  # 임시 브라우저 드라이버 인스턴스
@@ -278,7 +242,7 @@ class BlogWriterApp:
         # 지역 마케팅 매니저
         self.persona_manager = PersonaManager(self.base_dir)
         self.target_finder = TargetFinder()
-        self.smart_reply = SmartReply(self.gpt_handler, self.persona_manager)
+        self.smart_reply = SmartReply(self.ai_handler, self.persona_manager)
         self.history_manager = HistoryManager(os.path.join(self.base_dir, 'data', 'marketing_history.json'))
         self.comment_poster = None # will be init in main or when driver is ready, but logic uses self.driver directly usually or passthrough
         # Actually CommentPoster needs driver, which changes. We can init it on demand.
@@ -400,37 +364,22 @@ class BlogWriterApp:
             print(f"⚠️ 드라이브 자동 포스팅 시스템 초기화 실패: {e}")
             self.drive_auto_post_system = None
     
-    def _drive_generate_content(self, topic: str, folder_name: str, platform=None, **kwargs):
-        """드라이브 자동 포스팅용 AI 글 생성 (유형 2)"""
+    def _drive_generate_content(self, topic: str, folder_name: str):
+        """드라이브 자동 포스팅용 AI 글 생성"""
         try:
             full_topic = f"[{folder_name}] {topic}"
-            result = self.gpt_handler.generate_platform_content(
+            # 🟢 드라이브 자동포스팅 전용 지침 사용 (band_instructions와 분리)
+            result = self.ai_handler.generate_platform_content(
                 full_topic,
                 platform='drive_auto',  # 전용 플랫폼 타입
                 task_type='regular'
             )
-            if result and result.get('content'):
-                # 🟢 밴드 파이프라인 관통시켜 유형 2 물리적 조립 수행
-                from modules.pipelines.band_pipeline import BandPipeline
-                gpt_tags = result.get('tags', [])
-                ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
-                
-                formatted_content, merged_tags = BandPipeline.process(
-                    content=result['content'],
-                    ai_tags=ai_tags_str,
-                    app_data_dir=self._get_app_data_dir(),
-                    mode='drive_auto', # 유형 2 명시
-                    fallback_settings=self.settings,
-                    folder_name=folder_name # 폴더명 전달
-                )
-                result['content'] = formatted_content
-                result['tags'] = merged_tags
             return result
         except Exception as e:
             print(f"❌ AI 글 생성 오류: {e}")
             return None
     
-    def _drive_post_to_band(self, content: str, image_paths: list, tags=None, **kwargs):
+    def _drive_post_to_band(self, content: str, image_paths: list):
         """드라이브 자동 포스팅용 밴드 포스팅"""
         try:
             from naver_band_auto import NaverBandAutomation
@@ -604,11 +553,11 @@ class BlogWriterApp:
         # 2. 내용 생성
         print(f"🤖 [DriveWatcher] 주제 '{topic}'으로 내용 생성 중...")
         try:
-            result = self.gpt_handler.generate_platform_content(topic, platform='blog')
+            result = self.ai_handler.generate_platform_content(topic, platform='blog')
             title = result.get('title', f"[{folder_name}] 일상 공유")
             content = result.get('content', '')
         except Exception as e:
-            print(f"❌ GPT 내용 생성 실패: {e}")
+            print(f"❌ AI 내용 생성 실패: {e}")
             return
         
         # 3. 업로드 (별도 스레드)
@@ -637,46 +586,28 @@ class BlogWriterApp:
                 # 이미지 핸들러 초기화 (감지된 폴더의 이미지들을 로드함)
                 blog_auto.setup_image_inserter()
                 
-                # 🟢 오리지널 단순 결합 복원
-                # 💡 [모바일 가독성 줄바꿈 적용]
-                raw_content = format_content_for_mobile(content)
-                
-                # 1. 첫문장(머리말) 결합
-                blog_intro = self.settings.get('blog_first_sentence', '').strip()
-                if blog_intro:
-                    processed_content = f"{blog_intro}\n{raw_content}"
-                else:
-                    processed_content = raw_content
-                
-                # 2. 슬로건 결합
-                blog_slogan = self.settings.get('blog_slogan', '').strip()
-                if blog_slogan and blog_slogan not in processed_content:
-                    processed_content = f"{processed_content}\n\n{blog_slogan}"
-                
-                # 3. 태그 병합 (고정 15개 + AI 15개 = 30개 규칙)
-                ai_tags = result.get('tags', [])
-                if isinstance(ai_tags, str):
-                    ai_tags = [t.strip() for t in ai_tags.split(',') if t.strip()]
-                    
-                user_tags_str = self.settings.get('blog_tags', '')
-                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()] if user_tags_str else []
-                
-                seen_tags = set()
+                # 태그 준비: 고정 태그(최대15) + AI 태그(최대15) 병합 = 최대 30개
+                tags_str = self.settings.get('blog_tags', '')
+                fixed_tags = [tag.strip() for tag in tags_str.split(',') if tag.strip()] if tags_str else []
+                ai_tags_raw = result.get('tags', [])
+                if isinstance(ai_tags_raw, str):
+                    ai_tags_raw = [t.strip() for t in ai_tags_raw.split(',') if t.strip()]
+                seen = set()
                 merged_tags = []
-                for t in user_tags[:15]:
-                    if t and t not in seen_tags:
-                        merged_tags.append(t)
-                        seen_tags.add(t)
-                for t in ai_tags[:15]:
-                    if t and t not in seen_tags and len(merged_tags) < 30:
-                        merged_tags.append(t)
-                        seen_tags.add(t)
+                for t in fixed_tags[:15]:
+                    if t and t not in seen:
+                        merged_tags.append(t); seen.add(t)
+                for t in ai_tags_raw:
+                    if t and t not in seen and len(merged_tags) < 30:
+                        merged_tags.append(t); seen.add(t)
+                tags = merged_tags
+                print(f"📌 태그 준비 완료: 고정 {min(len(fixed_tags),15)}개 + AI {len(tags)-min(len(fixed_tags),15)}개 = 총 {len(tags)}개")
                 
                 # 포스팅 실행 (write_post 사용)
                 success = blog_auto.write_post(
                     title=title,
-                    content=processed_content,
-                    tags=merged_tags
+                    content=content,
+                    tags=tags
                 )
                 
                 if success:
@@ -722,11 +653,11 @@ class BlogWriterApp:
         # 2. 내용 생성
         print(f"🤖 [DriveWatcher] 카페 주제 '{topic}'으로 내용 생성 중...")
         try:
-            result = self.gpt_handler.generate_platform_content(topic, platform='cafe')
+            result = self.ai_handler.generate_platform_content(topic, platform='cafe')
             title = result.get('title', f"[{folder_name}] 새로운 소식")
             content = result.get('content', '')
         except Exception as e:
-            print(f"❌ 카페 GPT 내용 생성 실패: {e}")
+            print(f"❌ 카페 AI 내용 생성 실패: {e}")
             return
         
         # 3. 업로드 (별도 스레드)
@@ -973,30 +904,29 @@ class BlogWriterApp:
             
             def run_scan():
                 try:
-                    result = self.gpt_handler.scan_and_learn_image_folders(base_dir=self.base_dir, force_rescan=True)
+                    # 🆕 gpt_handler 대신 AI 전문가 Facade 시스템인 AIHandler를 가져와 스캔
+                    from modules.ai_handler import AIHandler
+                    ai_handler = AIHandler(use_dummy=self.use_dummy)
+                    result = ai_handler.scan_and_learn_image_folders(base_dir=self.base_dir, force_rescan=True)
                     count = len(result)
                     
-                    async def update_ui():
-                        self.page.snack_bar = ft.SnackBar(
-                            content=ft.Text(f"🎉 성공! 총 {count}개의 이미지 폴더 스캔 및 스마트 AI 학습이 완벽히 완료되었습니다!"),
-                            bgcolor=ft.Colors.GREEN_700,
-                            duration=5000
-                        )
-                        self.page.snack_bar.open = True
-                        self.page.update()
-                        
-                    self.page.run_task(update_ui)
+                    # 🆕 UI 스레드 안전성을 위해 직접 SnackBar 띄우고 page.update() 처리
+                    self.page.snack_bar = ft.SnackBar(
+                        content=ft.Text(f"🎉 성공! 총 {count}개의 이미지 폴더 스캔 및 스마트 AI 학습이 완벽히 완료되었습니다!"),
+                        bgcolor=ft.Colors.GREEN_700,
+                        duration=5000
+                    )
+                    self.page.snack_bar.open = True
+                    self.page.update()
                 except Exception as err:
                     print(f"❌ 스마트 이미지 폴더 스캔 오류: {err}")
-                    async def show_error():
-                        self.page.snack_bar = ft.SnackBar(
-                            content=ft.Text(f"❌ 스마트 폴더 스캔 중 실패: {err}"),
-                            bgcolor=ft.Colors.RED,
-                            duration=4000
-                        )
-                        self.page.snack_bar.open = True
-                        self.page.update()
-                    self.page.run_task(show_error)
+                    self.page.snack_bar = ft.SnackBar(
+                        content=ft.Text(f"❌ 스마트 폴더 스캔 중 실패: {err}"),
+                        bgcolor=ft.Colors.RED,
+                        duration=4000
+                    )
+                    self.page.snack_bar.open = True
+                    self.page.update()
             
             threading.Thread(target=run_scan, daemon=True).start()
         except Exception as err:
@@ -1347,7 +1277,7 @@ class BlogWriterApp:
                 print("❌ 댓글 모니터링을 위한 브라우저를 시작할 수 없습니다.")
                 return
             
-            idle_module = IdleActivity(driver, self.gpt_handler, self.base_dir)
+            idle_module = IdleActivity(driver, self.ai_handler, self.base_dir)
             use_ai_reply = self.settings.get('idle_use_ai_reply', False)
             check_interval = self.settings.get('idle_comment_check_interval', 300)
             
@@ -1724,8 +1654,8 @@ class BlogWriterApp:
         """로그인 버튼 업데이트"""
         try:
             # 페이지 구조: [0] = header, [1] = tabs
-            # 첫 번째 탭(블로그 작성)의 첫 번째 컨트롤(로그인 버튼)을 업데이트
-            main_tab = page.controls[1].tabs[0].content  # 두 번째 컨트롤(탭)의 첫 번째 탭
+            # 두 번째 탭(블로그 시작)의 첫 번째 컨트롤(로그인 버튼)을 업데이트
+            main_tab = page.controls[1].tabs[1].content  # 두 번째 컨트롤(탭)의 두 번째 탭(블로그 시작)
             if isinstance(new_button, ft.Row):
                 # 새 버튼이 Row인 경우 (타이머 버튼들과 함께)
                 main_tab.controls[0] = ft.Container(
@@ -2688,11 +2618,22 @@ class BlogWriterApp:
                         # 🟢 시간대 자동 판별: 예약 시간 기준
                         blog_task_type = self._get_time_based_task_type(res_time)
                         print(f"    📊 시간대 판별: {res_time} → {blog_task_type}")
-                        result = self.gpt_handler.generate_platform_content(topic, platform='blog', task_type=blog_task_type, target_time=res_time)
+                        result = self.ai_handler.generate_platform_content(topic, platform='blog', task_type=blog_task_type, target_time=res_time)
                         
                         if not result or not result.get('content'):
                             print(f"    ❌ 내용 생성 실패 ({res_time})")
                             continue
+                        
+                        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입
+                        f_sent = self.settings.get('blog_first_sentence', self.settings.get('first_sentence', '')).strip()
+                        s_sent = self.settings.get('blog_slogan', self.settings.get('slogan', '')).strip()
+                        content_str = result.get('content', '')
+                        if f_sent and f_sent not in content_str:
+                            content_str = f"{f_sent}\n\n{content_str}"
+                        if s_sent and s_sent not in content_str:
+                            content_str = f"{content_str}\n\n{s_sent}"
+                        result['content'] = content_str
+
                         
                         # 2. 기존 브라우저 사용 또는 생성
                         driver = self.get_or_create_driver()
@@ -2709,7 +2650,7 @@ class BlogWriterApp:
                         if image_mode == "off":
                             print("    🚫 블로그 예약 이미지 모드: 사용 안함")
                         else: # "auto" or "manual" (예약 작업 시 manual은 auto로 처리)
-                            print(f"    🤖 블로그 예약 이미지 모드: {image_mode} (자동 선정)")
+                            print(f"    🤖 블로그 예약 이미지 모드: {image_mode} (자동 선정 - 스마트 매칭)")
                             try:
                                 folder_path = self.get_smart_image_folder(topic)
                                 if folder_path and os.path.exists(folder_path):
@@ -2774,49 +2715,30 @@ class BlogWriterApp:
                         
                         # 제목, 본문, 태그 준비
                         title = result.get('title', topic)
+                        content = result.get('content', '')
                         
-                        # 🟢 오리지널 단순 결합 복원 (파이프라인 제거)
-                        # 💡 [모바일 가독성 줄바꿈 적용]
-                        raw_content = format_content_for_mobile(result.get('content', ''))
-                        
-                        # 1. 첫문장(머리말) 결합
-                        blog_intro = self.settings.get('blog_first_sentence', '').strip()
-                        if blog_intro:
-                            processed_content = f"{blog_intro}\n{raw_content}"
-                        else:
-                            processed_content = raw_content
-                        
-                        # 2. 슬로건 결합
-                        blog_slogan = self.settings.get('blog_slogan', '').strip()
-                        if blog_slogan and blog_slogan not in processed_content:
-                            processed_content = f"{processed_content}\n\n{blog_slogan}"
-                        
-                        # 3. 태그 병합 (고정 15개 + AI 15개 = 30개 규칙)
+                        # 태그: GPT 태그 + 사용자 설정 태그 병합
                         ai_tags = result.get('tags', [])
                         if isinstance(ai_tags, str):
                             ai_tags = [t.strip() for t in ai_tags.split(',') if t.strip()]
-                            
-                        user_tags_str = self.settings.get('blog_tags', '')
-                        user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()] if user_tags_str else []
+                        user_tags = []
+                        try:
+                            user_tags_str = self.settings.get('blog_tags', '')
+                            if user_tags_str:
+                                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
+                        except:
+                            pass
                         
                         seen_tags = set()
                         merged_tags = []
-                        
-                        # 고정 태그 최대 15개 추가
-                        for tag in user_tags[:15]:
-                            if tag not in seen_tags:
-                                seen_tags.add(tag)
-                                merged_tags.append(tag)
-                                
-                        # AI 태그 최대 15개 추가
-                        for tag in ai_tags:
-                            if len(merged_tags) >= 30:
-                                break
-                            if tag not in seen_tags:
-                                seen_tags.add(tag)
-                                merged_tags.append(tag)
-                                
-                        content = processed_content
+                        for t in user_tags[:15]:
+                            if t and t not in seen_tags:
+                                merged_tags.append(t)
+                                seen_tags.add(t)
+                        for t in ai_tags[:15]:
+                            if t and t not in seen_tags and len(merged_tags) < 30:
+                                merged_tags.append(t)
+                                seen_tags.add(t)
                         tags = merged_tags
                         
                         # 글 작성 (이미지 포함) - write_post가 푸터+태그 추가까지 처리
@@ -2833,25 +2755,23 @@ class BlogWriterApp:
                             print(f"    ❌ 글 작성 실패: {write_err}")
                             continue
                         
-                        # 예약 모드: write_post()가 이미 푸터+태그+발행 처리했으므로 건너뜀
-                        # 발행 옵션 패널에서 예약 시간만 설정
                         finisher = NaverBlogPostFinisher(driver, self.settings)
+                        auto_publish = self.settings.get('blog_auto_publish', True)
+                        publish_success = False
+                        reservation_success = False
                         
-                        # 6. 예약 발행 설정
-                        reservation_success = finisher.set_reservation_time(res_time)
-                        publish_success = False  # 초기화
-                        
-                        if reservation_success:
-                            # 7. 발행 버튼 클릭
-                            publish_success = finisher.click_final_publish_button(is_reservation=True)
-                            
+                        if auto_publish:
+                            publish_success = finisher.click_final_publish_button(is_reservation=False)
                             if publish_success:
                                 success_cnt += 1
-                                print(f"    ✅ 블로그 예약 성공: {res_time}")
+                                print(f"    ✅ 블로그 자동 발행 성공")
                             else:
-                                print(f"    ❌ 발행 버튼 클릭 실패: {res_time}")
+                                print(f"    ❌ 발행 버튼 클릭 실패")
                         else:
-                            print(f"    ❌ 예약 시간 설정 실패: {res_time}")
+                            print("    ⏸️ '자동 발행'이 꺼져 있어 수동 발행을 위해 대기합니다.")
+                            success_cnt += 1
+                            publish_success = True
+                            reservation_success = True
                         
                         # 로그 기록
                         self.add_model_usage_log(
@@ -2878,6 +2798,7 @@ class BlogWriterApp:
                             
                     except Exception as post_err:
                         print(f"    ❌ 블로그 예약 중 오류: {post_err}")
+                        import traceback
                         traceback.print_exc()
                         continue
                 
@@ -2931,16 +2852,26 @@ class BlogWriterApp:
                         # 🟢 시간대 자동 판별: 예약 시간 기준
                         blog_task_type = self._get_time_based_task_type(reservation_time)
                         print(f"    📊 시간대 판별: {reservation_time} → {blog_task_type}")
-                        result = self.gpt_handler.generate_platform_content(topic, platform='blog', task_type=blog_task_type, target_time=reservation_time)
+                        result = self.ai_handler.generate_platform_content(topic, platform='blog', task_type=blog_task_type, target_time=reservation_time)
                         
                         if not result or not result.get('content'):
                             print(f"    ❌ 내용 생성 실패")
                             task.last_status = 'failed'
                             return
+                            
+                        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입
+                        f_sent = self.settings.get('blog_first_sentence', self.settings.get('first_sentence', '')).strip()
+                        s_sent = self.settings.get('blog_slogan', self.settings.get('slogan', '')).strip()
+                        content_str = result.get('content', '')
+                        if f_sent and f_sent not in content_str:
+                            content_str = f"{f_sent}\n\n{content_str}"
+                        if s_sent and s_sent not in content_str:
+                            content_str = f"{content_str}\n\n{s_sent}"
+                        result['content'] = content_str
                         
                         driver = self.get_or_create_driver()
                         
-                        # 이미지 폴더 선택
+                        # 이미지 폴더 선택 (스마트 매칭 적용)
                         custom_images_folder = None
                         images_available = False
                         try:
@@ -2951,7 +2882,7 @@ class BlogWriterApp:
                                 if files:
                                     custom_images_folder = folder_path
                                     images_available = True
-                                    print(f"    🖼️ 이미지 폴더: {folder_path}")
+                                    print(f"    🖼️ 이미지 폴더 (스마트 매칭): {folder_path}")
                         except Exception as img_err:
                             print(f"    ⚠️ 이미지 폴더 오류: {img_err}")
                         
@@ -3009,49 +2940,28 @@ class BlogWriterApp:
                         
                         # 제목, 본문, 태그 준비
                         title = result.get('title', topic)
-                        
-                        # 🟢 오리지널 단순 결합 복원 (파이프라인 제거)
-                        # 💡 [모바일 가독성 줄바꿈 적용]
-                        raw_content = format_content_for_mobile(result.get('content', ''))
-                        
-                        # 1. 첫문장(머리말) 결합
-                        blog_intro = self.settings.get('blog_first_sentence', '').strip()
-                        if blog_intro:
-                            processed_content = f"{blog_intro}\n{raw_content}"
-                        else:
-                            processed_content = raw_content
-                        
-                        # 2. 슬로건 결합
-                        blog_slogan = self.settings.get('blog_slogan', '').strip()
-                        if blog_slogan and blog_slogan not in processed_content:
-                            processed_content = f"{processed_content}\n\n{blog_slogan}"
-                        
-                        # 3. 태그 병합 (고정 15개 + AI 15개 = 30개 규칙)
+                        content = result.get('content', '')
                         ai_tags = result.get('tags', [])
                         if isinstance(ai_tags, str):
                             ai_tags = [t.strip() for t in ai_tags.split(',') if t.strip()]
-                            
-                        user_tags_str = self.settings.get('blog_tags', '')
-                        user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()] if user_tags_str else []
+                        user_tags = []
+                        try:
+                            user_tags_str = self.settings.get('blog_tags', '')
+                            if user_tags_str:
+                                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
+                        except:
+                            pass
                         
                         seen_tags = set()
                         merged_tags = []
-                        
-                        # 고정 태그 최대 15개 추가
-                        for tag in user_tags[:15]:
-                            if tag not in seen_tags:
-                                seen_tags.add(tag)
-                                merged_tags.append(tag)
-                                
-                        # AI 태그 최대 15개 추가
-                        for tag in ai_tags:
-                            if len(merged_tags) >= 30:
-                                break
-                            if tag not in seen_tags:
-                                seen_tags.add(tag)
-                                merged_tags.append(tag)
-                                
-                        content = processed_content
+                        for t in user_tags[:15]:
+                            if t and t not in seen_tags:
+                                merged_tags.append(t)
+                                seen_tags.add(t)
+                        for t in ai_tags[:15]:
+                            if t and t not in seen_tags and len(merged_tags) < 30:
+                                merged_tags.append(t)
+                                seen_tags.add(t)
                         tags = merged_tags
                         
                         # 글 작성 (write_post가 푸터+태그 처리)
@@ -3065,26 +2975,24 @@ class BlogWriterApp:
                         
                         print(f"    ✅ 글 작성 완료")
                         
-                        # 예약 모드: write_post()가 이미 푸터+태그 처리함
-                        # 발행 옵션 패널에서 예약 시간만 설정
+                        # 6. 자동 발행 설정 확인 후 즉시 발행 또는 대기
                         finisher = NaverBlogPostFinisher(driver, self.settings)
+                        auto_publish = self.settings.get('blog_auto_publish', True)
+                        publish_success = False
+                        reservation_success = True
                         
-                        # 예약 시간 설정
-                        reservation_success = finisher.set_reservation_time(reservation_time)
-                        publish_success = False  # 초기화
-                        
-                        if reservation_success:
-                            publish_success = finisher.click_final_publish_button(is_reservation=True)
-                            
+                        if auto_publish:
+                            publish_success = finisher.click_final_publish_button(is_reservation=False)
                             if publish_success:
-                                print(f"    ✅ 블로그 예약 성공: {reservation_time}")
+                                print(f"    ✅ 블로그 자동 발행 성공")
                                 task.last_status = 'success'
                             else:
                                 print(f"    ❌ 발행 버튼 클릭 실패")
                                 task.last_status = 'failed'
                         else:
-                            print(f"    ❌ 예약 시간 설정 실패")
-                            task.last_status = 'failed'
+                            print("    ⏸️ '자동 발행'이 꺼져 있어 수동 발행을 위해 대기합니다.")
+                            task.last_status = 'success'
+                            publish_success = True
                         
                         # 로그 기록
                         self.add_model_usage_log(
@@ -3098,6 +3006,7 @@ class BlogWriterApp:
                         
                     except Exception as e:
                         print(f"    ❌ 블로그 예약 중 오류: {e}")
+                        import traceback
                         traceback.print_exc()
                         task.last_status = 'failed'
                 else:
@@ -3113,14 +3022,13 @@ class BlogWriterApp:
                  types = task.data.get('types', ['regular'] * len(times))  # 유형 목록 (기본값: regular)
                  band_url = self.settings.get('band_url', '') or task.data.get('band_url', '')
                  
-                 print(f"[Step 1] [BandScheduler] 밴드 예약 일괄 등록 시작 (상태: 시도) - 총 {len(times)}건 ({', '.join(times)})")
+                 print(f"📦 [밴드 일괄 예약] 시작: 총 {len(times)}건 ({', '.join(times)})")
                  
                  if not times:
-                     print("[Step 1] [BandScheduler] 밴드 예약 일괄 등록 시작 (상태: 실패) - 예약 시간이 없습니다.")
+                     print("⚠️ 예약 시간이 없습니다.")
                      return
                  
                  band_auto = NaverBandAutomation(self.get_or_create_driver())
-                 print("[Step 2] [BandScheduler] 밴드 자동화 드라이버 및 인스턴스 준비 (상태: 성공)")
                  
                  success_cnt = 0
                  
@@ -3130,7 +3038,7 @@ class BlogWriterApp:
                  news_items = []
                  if news_type_count >= 2:
                      try:
-                         all_news = self.gpt_handler._get_trending_topics(count=6)
+                         all_news = self.ai_handler._get_trending_topics(count=6)
                          if all_news:
                              news_items = all_news.split('\n')
                              print(f"  📰 뉴스 {len(news_items)}건 사전 검색 완료 (분배 모드)")
@@ -3176,26 +3084,9 @@ class BlogWriterApp:
                      
                      # 주제 및 내용 생성 (유형에 따라 다른 스타일)
                      topic = self.select_sequential_topic('band') or "체육관 일상"
-                     print(f"[Step 3] [BandScheduler] ({res_time}) AI 글 내용 및 날씨 연동 생성 시작 (상태: 시도) - 주제: {topic}")
-                     
-                     # 예약 시간에 따른 delta_days 계산
-                     delta_days = 0
-                     if res_time:
-                         try:
-                             from datetime import datetime
-                             now = datetime.now()
-                             h, m = map(int, res_time.split(':'))
-                             if (h, m) < (now.hour, now.minute):
-                                 delta_days = 1
-                             else:
-                                 delta_days = 0
-                         except Exception as ex:
-                             print(f"⚠️ [delta_days 계산 오류]: {ex}")
-                             delta_days = 0
-
-                     result = self.gpt_handler.generate_platform_content(
+                     result = self.ai_handler.generate_platform_content(
                          topic, platform='band', task_type=task_type, target_time=res_time,
-                         news_pool=news_pool, previous_news=previous_news_summary, delta_days=delta_days
+                         news_pool=news_pool, previous_news=previous_news_summary
                      )
                      
                      # 🟢 방안 C: 이전 뉴스 기록 (다음 포스팅에서 중복 방지)
@@ -3203,24 +3094,8 @@ class BlogWriterApp:
                          previous_news_summary = news_pool
                      
                      if not result or not result.get('content'):
-                         print(f"[Step 3] [BandScheduler] ({res_time}) AI 글 내용 생성 실패 (상태: 실패)")
+                         print(f"    ❌ 내용 생성 실패 ({res_time})")
                          continue
-                     print(f"[Step 3] [BandScheduler] ({res_time}) AI 글 내용 생성 완료 (상태: 성공) - 모델: {result.get('model', '-')}")
-                         
-                     # 🟢 밴드 파이프라인 관통시켜 유형 1 물리적 조립 수행 (모바일 가독성 최적화)
-                     print(f"[Step 4] [BandScheduler] ({res_time}) 밴드 파이프라인 관통 조립 시작 (상태: 시도)")
-                     from modules.pipelines.band_pipeline import BandPipeline
-                     gpt_tags = result.get('tags', [])
-                     ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
-                     
-                     formatted_content, merged_tags = BandPipeline.process(
-                         content=result['content'],
-                         ai_tags=ai_tags_str,
-                         app_data_dir=self._get_app_data_dir(),
-                         mode='band', # 유형 1
-                         fallback_settings=self.settings
-                     )
-                     print(f"[Step 4] [BandScheduler] ({res_time}) 밴드 파이프라인 관통 조립 완료 (상태: 성공)")
                          
                      # 이미지 준비 (설정에 따름)
                      images = []
@@ -3228,17 +3103,16 @@ class BlogWriterApp:
                         images = self.get_images_to_upload(platform='band')
 
                      # 예약 포스팅 실행 (reservation_time 전달)
-                     print(f"[Step 5] [BandScheduler] ({res_time}) 밴드 예약 등록 업로드 시작 (상태: 시도)")
                      res_success = band_auto.post_to_band(
                          band_url, 
-                         formatted_content, 
+                         result.get('content', ''), 
                          image_paths=images, 
                          reservation_time=res_time
                      )
                      
                      if res_success:
                          success_cnt += 1
-                         print(f"[Step 5] [BandScheduler] ({res_time}) 밴드 예약 등록 완료 (상태: 성공)")
+                         print(f"    ✅ 예약 성공: {res_time}")
                      else:
                          print(f"    ❌ 예약 실패: {res_time}")
                          
@@ -3294,54 +3168,21 @@ class BlogWriterApp:
             elif task.platform == 'band':
                 # 밴드 포스팅 (단일)
                 start_time = time.time()
-                print(f"[Step 1] [BandScheduler] 밴드 단일 예약 포스팅 시작 (상태: 시도) - 예약: {task.data.get('reservation_time', '즉시')}")
                 band_auto = NaverBandAutomation(self.get_or_create_driver())
                 band_url = self.settings.get('band_url', '') or task.data.get('band_url', '')
-                print("[Step 2] [BandScheduler] 밴드 자동화 드라이버 및 인스턴스 준비 (상태: 성공)")
                 
                 # 예약 시간 확인
                 reservation_time = task.data.get('reservation_time')
                 
-                # 예약 시간에 따른 delta_days 계산
-                delta_days = 0
-                if reservation_time:
-                    try:
-                        from datetime import datetime
-                        now = datetime.now()
-                        h, m = map(int, reservation_time.split(':'))
-                        if (h, m) < (now.hour, now.minute):
-                            delta_days = 1
-                        else:
-                            delta_days = 0
-                    except Exception as ex:
-                        print(f"⚠️ [delta_days 계산 오류]: {ex}")
-                        delta_days = 0
-
                 # 내용 생성
                 topic = self.select_sequential_topic('band') or "체육관 소개 및 일상"
-                print(f"[Step 3] [BandScheduler] ({reservation_time or '즉시'}) AI 글 내용 및 날씨 연동 생성 시작 (상태: 시도) - 주제: {topic}")
-                result = self.gpt_handler.generate_platform_content(topic, platform='band', task_type=task.task_type, target_time=reservation_time, delta_days=delta_days)
+                print(f"🤖 [밴드] '{topic}' 주제로 내용 생성 중... (예약: {reservation_time or '즉시'}, 타입: {task.task_type})")
+                result = self.ai_handler.generate_platform_content(topic, platform='band', task_type=task.task_type)
                 
                 if not result or not result.get('content'):
-                    print("[Step 3] [BandScheduler] AI 글 내용 생성 실패 (상태: 실패)")
+                    print("❌ [밴드] AI 내용 생성에 실패했습니다.")
                     self.add_model_usage_log(topic=topic, model="-", status="실패", reason="내용 생성 실패", target="밴드")
                     return False
-                print(f"[Step 3] [BandScheduler] AI 글 내용 생성 완료 (상태: 성공) - 모델: {result.get('model', '-')}")
-                
-                # 🟢 밴드 파이프라인 관통시켜 유형 1 물리적 조립 수행 (모바일 가독성 최적화)
-                print("[Step 4] [BandScheduler] 밴드 파이프라인 관통 조립 시작 (상태: 시도)")
-                from modules.pipelines.band_pipeline import BandPipeline
-                gpt_tags = result.get('tags', [])
-                ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
-                
-                formatted_content, merged_tags = BandPipeline.process(
-                    content=result['content'],
-                    ai_tags=ai_tags_str,
-                    app_data_dir=self._get_app_data_dir(),
-                    mode='band', # 유형 1
-                    fallback_settings=self.settings
-                )
-                print("[Step 4] [BandScheduler] 밴드 파이프라인 관통 조립 완료 (상태: 성공)")
                 
                 # 이미지 준비
                 images = []
@@ -3349,18 +3190,12 @@ class BlogWriterApp:
                 if self.settings.get('band_auto_image', self.settings.get('auto_image', True)):
                     images = self.get_images_to_upload(platform='band')
                     
-                print(f"[Step 5] [BandScheduler] 밴드 단일 예약 업로드 시작 (상태: 시도) - 예약: {reservation_time or '즉시'}")
                 success = band_auto.post_to_band(
                     band_url, 
-                    formatted_content, 
+                    result.get('content', ''), 
                     image_paths=images,
                     reservation_time=reservation_time
                 )
-                
-                if success:
-                    print(f"[Step 5] [BandScheduler] 밴드 단일 예약 업로드 완료 (상태: 성공)")
-                else:
-                    print(f"[Step 5] [BandScheduler] 밴드 단일 예약 업로드 실패 (상태: 실패)")
                 
                 if success:
                     task.last_status = 'success'
@@ -3417,7 +3252,7 @@ class BlogWriterApp:
                 # 🟢 카페: 현재 시간 기준 시간대 자동 판별 (예약 없음)
                 cafe_task_type = self._get_time_based_task_type()
                 print(f"🤖 [카페] '{topic}' 주제로 내용 생성 중... (시간대: {cafe_task_type})")
-                result = self.gpt_handler.generate_platform_content(topic, platform='cafe', task_type=cafe_task_type)
+                result = self.ai_handler.generate_platform_content(topic, platform='cafe', task_type=cafe_task_type)
                 
                 if not result or not result.get('content'):
                     print("❌ [카페] AI 내용 생성에 실패했습니다.")
@@ -3466,7 +3301,7 @@ class BlogWriterApp:
             
             elif task.platform == 'idle':
                 # 유휴 활동 (방문소통 / 댓글소통 분리)
-                idle_module = IdleActivity(self.get_or_create_driver(), self.gpt_handler, self.base_dir)
+                idle_module = IdleActivity(self.get_or_create_driver(), self.ai_handler, self.base_dir)
                 
                 # 설정값 로드
                 do_like = self.settings.get('idle_do_like', True)
@@ -3493,7 +3328,7 @@ class BlogWriterApp:
                     try:
                         from naver_blog_comment_reply import NaverBlogCommentReply
                         driver = self.get_or_create_driver()
-                        reply_bot = NaverBlogCommentReply(driver=driver, gpt_handler=self.gpt_handler)
+                        reply_bot = NaverBlogCommentReply(driver=driver, ai_handler=self.ai_handler)
                         count = reply_bot.process_all_unanswered_comments(use_ai=use_ai_reply, limit=10)
                         print(f"✅ 블로그 댓글 답글 완료: {count}개")
                         if count > 0:
@@ -3513,7 +3348,7 @@ class BlogWriterApp:
                         else:
                             band_reply = NaverBandCommentReply(
                                 driver=driver,
-                                gpt_handler=self.gpt_handler,
+                                ai_handler=self.ai_handler,
                                 base_dir=self.base_dir,
                                 instruction=self.settings.get('reply_instruction')
                             )
@@ -3531,7 +3366,7 @@ class BlogWriterApp:
                 try:
                     from naver_blog_comment_reply import NaverBlogCommentReply
                     driver = self.get_or_create_driver()
-                    reply_bot = NaverBlogCommentReply(driver=driver, gpt_handler=self.gpt_handler)
+                    reply_bot = NaverBlogCommentReply(driver=driver, ai_handler=self.ai_handler)
                     limit_val = int(task.data.get('limit', 10)) if task.data else 10
                     count = reply_bot.process_all_unanswered_comments(use_ai=True, limit=limit_val)
                     print(f"✅ 블로그 댓글 답글 완료: {count}개")
@@ -3552,7 +3387,7 @@ class BlogWriterApp:
                     else:
                         band_reply = NaverBandCommentReply(
                             driver=driver,
-                            gpt_handler=self.gpt_handler,
+                            ai_handler=self.ai_handler,
                             base_dir=self.base_dir,
                             instruction=self.settings.get('reply_instruction')
                         )
@@ -3580,7 +3415,7 @@ class BlogWriterApp:
                     
                     print(f"📊 이웃방문 설정: 횟수={visit_count}, 좋아요={do_like}, AI={use_ai}")
                     
-                    idle_module = IdleActivity(driver, self.gpt_handler, self.base_dir)
+                    idle_module = IdleActivity(driver, self.ai_handler, self.base_dir)
                     success = idle_module.visit_and_interact(
                         count=visit_count,
                         do_like=do_like,
@@ -3646,10 +3481,35 @@ class BlogWriterApp:
             
             # Use ChromeDriverManager to install/manage driver
             service = Service(ChromeDriverManager().install())
-            self.browser_driver = webdriver.Chrome(service=service, options=options)
-            return self.browser_driver
-        except Exception as e:
-            print(f"Driver Creation Failed: {e}")
+            try:
+                self.browser_driver = webdriver.Chrome(service=service, options=options)
+                return self.browser_driver
+            except Exception as e:
+                print(f"⚠️ Driver Creation Failed (1st attempt): {e}")
+                print("🔄 고정 프로필을 점유하고 있는 좀비 크롬 프로세스 강제 종료 후 재시도합니다...")
+                import subprocess, time, platform
+                
+                try:
+                    if platform.system() == "Windows":
+                        subprocess.run(["taskkill", "/f", "/im", "chromedriver.exe"], capture_output=True)
+                    else:
+                        subprocess.run(["pkill", "-f", "chromedriver"], capture_output=True)
+                        # 해당 고정 프로필을 사용하는 크롬 프로세스만 정밀 강제 종료
+                        subprocess.run(["pkill", "-f", "naver_blog_automation_profile"], capture_output=True)
+                except Exception as kill_err:
+                    print(f"⚠️ 프로세스 종료 중 오류 (무시): {kill_err}")
+                
+                time.sleep(2)
+                
+                try:
+                    self.browser_driver = webdriver.Chrome(service=service, options=options)
+                    print("✅ 브라우저 드라이버 복구(재시도) 성공!")
+                    return self.browser_driver
+                except Exception as e2:
+                    print(f"❌ Driver Creation Failed (2nd attempt): {e2}")
+                    return None
+        except Exception as outer_e:
+            print(f"❌ Driver Setup Error: {outer_e}")
             return None
 
     def is_driver_alive(self, driver):
@@ -3661,8 +3521,23 @@ class BlogWriterApp:
 
     def generate_content(self, topic, platform, task_type='regular', return_title=False):
         """GPT를 사용하여 플랫폼별 스타일의 게시글 생성"""
-        result = self.gpt_handler.generate_platform_content(topic, platform=platform, task_type=task_type)
+        result = self.ai_handler.generate_platform_content(topic, platform=platform, task_type=task_type)
         
+        content_str = result.get('content', '')
+        
+        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입
+        if platform == 'blog':
+            user_settings = self.ai_handler._load_user_settings()
+            f_sent = user_settings.get('blog_first_sentence', user_settings.get('first_sentence', '')).strip()
+            s_sent = user_settings.get('blog_slogan', user_settings.get('slogan', '')).strip()
+            
+            if f_sent and f_sent not in content_str:
+                content_str = f"{f_sent}\n\n{content_str}"
+            if s_sent and s_sent not in content_str:
+                content_str = f"{content_str}\n\n{s_sent}"
+            
+            result['content'] = content_str
+            
         if return_title:
             return result.get('title', '제목 없음'), result.get('content', '')
         return result.get('content', '')
@@ -4213,9 +4088,14 @@ class BlogWriterApp:
     def create_image_folders(self):
         """10개의 이미지 폴더를 생성합니다."""
         try:
+            blog_photo_dir = os.path.join(self.base_dir, '블로그사진폴더')
+            if not os.path.exists(blog_photo_dir):
+                os.makedirs(blog_photo_dir)
+                print(f"블로그사진폴더 생성 완료: {blog_photo_dir}")
+                
             for i in range(1, 11):
                 folder_name = f"default_images_{i}"
-                folder_path = os.path.join(self.base_dir, folder_name)
+                folder_path = os.path.join(blog_photo_dir, folder_name)
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
                     print(f"이미지 폴더 생성 완료: {folder_path}")
@@ -4328,7 +4208,7 @@ class BlogWriterApp:
             if matched_folder_name:
                 import unicodedata
                 folder_path = folder_manager.get_folder_path(matched_folder_name)
-                # 매칭된 폴더가 존재하고 실제 이미지를 가지고 있는지 확인 (macOS NFC/NFD 정규화 양천 처리)
+                # 매칭된 폴더가 존재하고 실제 이미지를 가지고 있는지 확인 (macOS NFC/NFD 정규화 양쪽 처리)
                 resolved_path = None
                 if folder_path:
                     if os.path.exists(folder_path):
@@ -4351,7 +4231,7 @@ class BlogWriterApp:
             print(f"⚠️ 스마트 이미지 매칭 중 오류 발생: {e}")
             
         return self.get_next_image_folder(platform)
-            
+
     def get_next_image_folder(self, platform='blog'):
         """다음 이미지 폴더 경로를 반환하고 인덱스를 업데이트합니다.
            이미 사용된 폴더는 건너뛰고 다음 폴더를 선택합니다."""
@@ -4366,13 +4246,30 @@ class BlogWriterApp:
         # 현재 인덱스 로드
         current_index = self.load_folder_index(platform=platform)
         
+        def has_images(path):
+            if not os.path.exists(path): return False
+            try:
+                for f in os.listdir(path):
+                    if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.mov', '.avi')):
+                        return True
+            except:
+                pass
+            return False
+
+        # 기준 디렉토리 설정 (블로그는 '블로그사진폴더' 우선)
+        base_search_dir = self.base_dir
+        if platform == 'blog':
+            blog_photo_dir = os.path.join(self.base_dir, '블로그사진폴더')
+            if os.path.exists(blog_photo_dir):
+                base_search_dir = blog_photo_dir
+                
         # 모든 폴더 사용 여부 확인
         all_used = True
         for i in range(1, 11):
             folder_name = f"{prefix}_{i}"
             if folder_name not in used_folders:
-                # 실제로 폴더가 존재하는지 확인
-                if os.path.exists(os.path.join(self.base_dir, folder_name)):
+                # 실제로 폴더가 존재하고 사진이 있는지 확인
+                if has_images(os.path.join(base_search_dir, folder_name)):
                     all_used = False
                     break
                 
@@ -4386,13 +4283,13 @@ class BlogWriterApp:
         found = False
         next_index = current_index
         
-        for _ in range(10):  # 최대 10번 시도
+        for _ in range(10):  # 최대 10번 시도 (한번씩만 확인)
             next_index = (next_index % 10) + 1  # 1~10 순환
             folder_name = f"{prefix}_{next_index}"
-            folder_path = os.path.join(self.base_dir, folder_name)
+            folder_path = os.path.join(base_search_dir, folder_name)
             
-            # 폴더가 존재하고 아직 사용되지 않았으면 선택
-            if os.path.exists(folder_path) and folder_name not in used_folders:
+            # 폴더가 존재하고, 사진이 있으며, 아직 사용되지 않았으면 선택
+            if has_images(folder_path) and folder_name not in used_folders:
                 found = True
                 break
         
@@ -4413,7 +4310,7 @@ class BlogWriterApp:
         # 인덱스 업데이트 및 저장
         self.save_folder_index(next_index, platform=platform)
         
-        folder_path = os.path.join(self.base_dir, f"{prefix}_{next_index}")
+        folder_path = os.path.join(base_search_dir, f"{prefix}_{next_index}")
         print(f"이미지 폴더 선택: {folder_path} (사이클 {cycle_count}, 플랫폼: {platform})")
         return folder_path
 
@@ -4499,7 +4396,7 @@ class BlogWriterApp:
                     # 전용 모듈 인스턴스 생성 및 저장 (중지 기능용)
                     reply_bot = NaverBlogCommentReply(
                         driver=driver,
-                        gpt_handler=self.gpt_handler
+                        ai_handler=self.ai_handler
                     )
                     self.comment_reply_instance = reply_bot  # 인스턴스 저장
                     
@@ -6176,7 +6073,7 @@ class BlogWriterApp:
         )
         
         auto_upload_checkbox = ft.Checkbox(
-            label="GPT 글 생성 완료 후 자동 블로그 업로드",
+            label="AI 글 생성 완료 후 자동 블로그 업로드",
             value=self.settings.get('auto_upload', False)
         )
 
@@ -6290,9 +6187,9 @@ class BlogWriterApp:
         )
 
         # GPT 설정 탭 컴포넌트
-        gpt_persona = ft.TextField(
-            label="GPT 페르소나",
-            hint_text="GPT가 어떤 역할이나 정체성을 가지고 글을 작성할지 정의하세요...",
+        ai_persona = ft.TextField(
+            label="AI 페르소나",
+            hint_text="AI가 어떤 역할이나 정체성을 가지고 글을 작성할지 정의하세요...",
             multiline=True,
             min_lines=2,
             max_lines=4,
@@ -6311,8 +6208,8 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             italic=True
         )
         
-        gpt_instructions = ft.TextField(
-            label="GPT 지침",
+        ai_instructions = ft.TextField(
+            label="AI 지침",
             hint_text="글 작성 시 따라야 할 구체적인 지침이나 규칙을 정의하세요...",
             multiline=True,
             min_lines=3,
@@ -6332,7 +6229,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             italic=True
         )
         
-        gpt_style = ft.TextField(
+        ai_style = ft.TextField(
             label="글쓰기 스타일",
             hint_text="원하는 글쓰기 스타일을 설정하세요...",
             multiline=True,
@@ -6454,7 +6351,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         
         # 자동 업로드 설정 도움말
         auto_upload_help_text = ft.Text(
-            "이 옵션을 선택하면 GPT가 글을 생성한 후 자동으로 블로그에 업로드합니다.",
+            "이 옵션을 선택하면 AI가 글을 생성한 후 자동으로 블로그에 업로드합니다.",
             size=12,
             color=ft.Colors.GREY_600,
             italic=True
@@ -6538,7 +6435,8 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
 
         self.blog_drive_settings_row = ft.Row([
             self.blog_drive_folder_path,
-            ft.IconButton(ft.Icons.FOLDER_OPEN, on_click=lambda e: self._open_folder_picker_for(self.blog_drive_folder_path)),
+            # 폴더 선택 버튼 (템플릿 폴더)
+        ft.IconButton(ft.Icons.FOLDER_OPEN, on_click=lambda e: self._open_folder_picker_for(self.excel_folder_tf)),
             self.blog_drive_watcher_btn
         ], visible=True)  # 🆕 드라이브 감시는 드롭다운과 독립적으로 항상 표시
         
@@ -6754,12 +6652,12 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             except Exception as e:
                 print(f"앱 설정 로드 중 오류 발생: {str(e)}")
 
-        def save_gpt_settings(e):
+        def save_ai_settings(e):
             try:
                 settings = {
-                    "persona": gpt_persona.value,
-                    "instructions": gpt_instructions.value,
-                    "style": gpt_style.value,
+                    "persona": ai_persona.value,
+                    "instructions": ai_instructions.value,
+                    "style": ai_style.value,
                     "promotional_instructions": promotional_instructions.value,
                     "informational_instructions": informational_instructions.value,
                     "band_instructions": band_instructions.value,
@@ -6771,16 +6669,12 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     "api_key": api_key_field.value,
                     "gemini_api_key": gemini_api_key_field.value,
                     "brave_key": brave_api_key_field.value,
-                    "blog_persona_mode": self.blog_persona_dropdown.value,
-                    "blog_style_mode": self.blog_style_dropdown.value,
-                    "blog_theme": self.blog_theme_dropdown.value,
-                    "blog_hometip": self.blog_hometip_checkbox.value,
                     "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 # 🆕 글로벌 설정 경로 사용
-                gpt_settings_path = get_gpt_settings_path()
-                os.makedirs(os.path.dirname(gpt_settings_path), exist_ok=True)
-                with open(gpt_settings_path, 'w', encoding='utf-8') as f:
+                ai_settings_path = get_ai_settings_path()
+                os.makedirs(os.path.dirname(ai_settings_path), exist_ok=True)
+                with open(ai_settings_path, 'w', encoding='utf-8') as f:
                     json.dump(settings, f, ensure_ascii=False, indent=2)
                 
                 # API 키 저장 (환경 변수 파일에)
@@ -6793,7 +6687,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 
                 # GPT 핸들러 재초기화
                 self.use_dummy = not use_api_checkbox.value
-                self.gpt_handler = GPTHandler(use_dummy=self.use_dummy)
+                self.ai_handler = AIHandler(use_dummy=self.use_dummy)
                 
                 # 댓글 답글 설정을 user_settings.txt에 저장
                 try:
@@ -6818,7 +6712,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 # 앱 설정 저장
                 save_app_settings()
                 
-                page.snack_bar = ft.SnackBar(content=ft.Text("GPT 설정이 저장되었습니다."))
+                page.snack_bar = ft.SnackBar(content=ft.Text("AI 설정이 저장되었습니다."))
                 page.snack_bar.open = True
                 page.update()
             except Exception as e:
@@ -6829,11 +6723,11 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         def load_gpt_settings():
             try:
                 # 🆕 글로벌 설정 경로 사용
-                gpt_settings_path = get_gpt_settings_path()
-                if os.path.exists(gpt_settings_path):
-                    with open(gpt_settings_path, 'r', encoding='utf-8') as f:
+                ai_settings_path = get_ai_settings_path()
+                if os.path.exists(ai_settings_path):
+                    with open(ai_settings_path, 'r', encoding='utf-8') as f:
                         settings = json.load(f)
-                        gpt_persona.value = settings.get('persona', '')
+                        ai_persona.value = settings.get('persona', '')
                         
                         # 고정 검토 지침 제거 (UI에 표시하지 않음)
                         instructions = settings.get('instructions', '')
@@ -6847,11 +6741,11 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
 """
                         if instructions.startswith(fixed_review_prefix):
                             # 고정 검토 지침을 제외한 사용자 지침만 표시
-                            gpt_instructions.value = instructions[len(fixed_review_prefix):]
+                            ai_instructions.value = instructions[len(fixed_review_prefix):]
                         else:
-                            gpt_instructions.value = instructions
+                            ai_instructions.value = instructions
                             
-                        gpt_style.value = settings.get('style', '')
+                        ai_style.value = settings.get('style', '')
                         promotional_instructions.value = settings.get('promotional_instructions', '')
                         informational_instructions.value = settings.get('informational_instructions', '')
                         band_instructions.value = settings.get('band_instructions', '')
@@ -6865,11 +6759,6 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                             cb.value = mid in selected_models
                         gemini_api_key_field.value = settings.get('gemini_api_key', '')
                         brave_api_key_field.value = settings.get('brave_key', '')
-                        # 🆕 [지능형 AI 포스팅 옵션 복원]
-                        self.blog_persona_dropdown.value = settings.get('blog_persona_mode', 'expert_sport')
-                        self.blog_style_dropdown.value = settings.get('blog_style_mode', 'haeyo')
-                        self.blog_theme_dropdown.value = settings.get('blog_theme', 'none')
-                        self.blog_hometip_checkbox.value = settings.get('blog_hometip', False)
                 
                 # API 사용 여부 설정 로드
                 # 🆕 글로벌 설정 경로 사용
@@ -6976,13 +6865,13 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         video_title = ft.TextField(
             label="🎬 동영상 업로드 제목",
             hint_text="동영상 업로드 시 사용할 기본 제목",
-            value="네이버뉴스"
+            value=self.settings.get('video_title', '')
         )
 
         video_info = ft.TextField(
             label="🎬 동영상 업로드 정보(설명)",
             hint_text="동영상 업로드 시 사용할 기본 설명",
-            value="네이버뉴스",
+            value=self.settings.get('video_info', ''),
             multiline=True,
             min_lines=2,
             max_lines=3
@@ -6990,8 +6879,8 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
 
         video_tags = ft.TextField(
             label="🎬 동영상 업로드 태그 (쉼표 구분)",
-            hint_text="예: 양양합기도, 태권도, 운동",
-            value="양양합기도, 등등"
+            hint_text="예: 태그1, 태그2, 태그3",
+            value=self.settings.get('video_tags', '')
         )
 
         # 🟢 종목에 따른 기본 주제어 치환 로직
@@ -7670,7 +7559,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             progress_dlg = ft.AlertDialog(
                 title=ft.Text("처리 중..."),
                 content=ft.Column([
-                    ft.Text("GPT가 글을 생성하고 있습니다. 잠시만 기다려주세요."),
+                    ft.Text("AI가 글을 생성하고 있습니다. 잠시만 기다려주세요."),
                     ft.ProgressBar(width=400)
                 ], tight=True),
             )
@@ -7700,11 +7589,26 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     "selected_models": [mid for mid, cb in model_checkboxes.items() if cb.value],
                     "gemini_api_key": gemini_api_key_field.value
                 }
-                result = self.gpt_handler.generate_content(
+                result = self.ai_handler.generate_content(
                     topic_input.value,
                     post_order=self.daily_post_count + 1,
                     post_type_config=post_type_config
                 )
+                
+                # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입 (타 플랫폼 영향 없음)
+                f_sent = blog_first_sentence.value.strip()
+                s_sent = blog_slogan.value.strip()
+                
+                content_str = result.get("content", "")
+                
+                if f_sent and f_sent not in content_str:
+                    content_str = f"{f_sent}\n\n{content_str}"
+                    
+                if s_sent and s_sent not in content_str:
+                    content_str = f"{content_str}\n\n{s_sent}"
+                    
+                result["content"] = content_str
+
                 duration = time.time() - start_time
                 self.current_title = result["title"]
                 self.current_content = result["content"]
@@ -7833,43 +7737,49 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 dlg.open = True
                 page.update()
 
-                # 원본 내용을 모바일 친화적으로 포맷팅 및 오리지널 단순 결합 복원
-                raw_title = title_input.value
-                # 💡 [모바일 가독성 줄바꿈 적용]
-                raw_content = format_content_for_mobile(content_input.value)
-                
-                # 1. 첫문장(머리말) 결합
-                blog_intro = self.settings.get('blog_first_sentence', '').strip()
-                if blog_intro:
-                    # 첫문장 보호를 위해 단일 줄바꿈(\n)으로 지능형 연결
-                    formatted_content = f"{blog_intro}\n{raw_content}"
-                else:
-                    formatted_content = raw_content
-                
-                # 2. 슬로건 결합
-                blog_slogan = self.settings.get('blog_slogan', '').strip()
-                if blog_slogan and blog_slogan not in formatted_content:
-                    formatted_content = f"{formatted_content}\n\n{blog_slogan}"
-                
-                # 3. 태그 병합 (고정 15개 + AI 15개 = 30개 규칙 보장)
-                gpt_tags = getattr(self, 'current_tags', [])
-                if isinstance(gpt_tags, str):
-                    gpt_tags = [t.strip() for t in gpt_tags.split(',') if t.strip()]
+                # 줄바꿈 처리 (한 줄이 25자를 넘지 않도록, 단어가 잘리지 않게)
+                def format_content_for_mobile(content, max_chars=25):
+                    formatted_content = ""
+                    paragraphs = content.split('\n')
                     
-                user_tags_str = self.settings.get('blog_tags', '')
-                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()] if user_tags_str else []
+                    for paragraph in paragraphs:
+                        if not paragraph.strip():
+                            formatted_content += "\n"
+                            continue
+                            
+                        words = paragraph.split()
+                        current_line = ""
+                        
+                        for word in words:
+                            # 단어 자체가 max_chars보다 길면 그대로 사용
+                            if len(word) > max_chars:
+                                if current_line:
+                                    formatted_content += current_line + "\n"
+                                    current_line = ""
+                                formatted_content += word + "\n"
+                                continue
+                                
+                            # 현재 줄에 단어를 추가했을 때 max_chars를 초과하는지 확인
+                            if len(current_line) + len(word) + (1 if current_line else 0) > max_chars:
+                                formatted_content += current_line + "\n"
+                                current_line = word
+                            else:
+                                if current_line:
+                                    current_line += " " + word
+                                else:
+                                    current_line = word
+                        
+                        # 마지막 줄 추가
+                        if current_line:
+                            formatted_content += current_line + "\n"
+                        
+                        # 문단 사이에 빈 줄 추가
+                        formatted_content += "\n"
+                    
+                    return formatted_content.strip()
                 
-                # 중복을 방지하며 최대 30개 조율
-                seen_tags = set()
-                merged_tags = []
-                for t in user_tags[:15]:
-                    if t and t not in seen_tags:
-                        merged_tags.append(t)
-                        seen_tags.add(t)
-                for t in gpt_tags[:15]:
-                    if t and t not in seen_tags and len(merged_tags) < 30:
-                        merged_tags.append(t)
-                        seen_tags.add(t)
+                # 원본 내용을 모바일 친화적으로 포맷팅
+                formatted_content = format_content_for_mobile(content_input.value)
                 
                 # 임시 파일에 내용 저장 (AppData 기반으로 변경 — 퍼미션 에러 방지)
                 today = datetime.now().strftime("%Y-%m-%d")
@@ -7911,7 +7821,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                         else:
                             print(f"⚠️ 수동 폴더를 찾을 수 없습니다: {folder_path}")
                     else: # "auto"
-                        print("🤖 이미지 삽입 모드: 자동 (순차 폴더)")
+                        print("🤖 이미지 삽입 모드: 자동 (스마트 매칭)")
                         try:
                             folder_path = self.get_smart_image_folder(raw_title)
                             if folder_path and os.path.exists(folder_path):
@@ -7972,8 +7882,32 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     dlg.content.controls[0].value = "블로그 포스팅 작성 중..."
                     page.update()
                     
-                    tags = merged_tags
+                    user_settings_path = get_user_settings_path()
+                    user_tags = []
+                    if os.path.exists(user_settings_path):
+                        with open(user_settings_path, 'r', encoding='utf-8') as f:
+                            settings = json.load(f)
+                            user_tags_str = settings.get('blog_tags', '')
+                            if user_tags_str:
+                                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
                     
+                    gpt_tags = getattr(self, 'current_tags', [])
+                    if isinstance(gpt_tags, str):
+                        gpt_tags = [t.strip() for t in gpt_tags.split(',') if t.strip()]
+                        
+                    seen_tags = set()
+                    merged_tags = []
+                    for t in user_tags[:15]:
+                        if t and t not in seen_tags:
+                            merged_tags.append(t)
+                            seen_tags.add(t)
+                    for t in gpt_tags[:15]:
+                        if t and t not in seen_tags and len(merged_tags) < 30:
+                            merged_tags.append(t)
+                            seen_tags.add(t)
+                    
+                    tags = merged_tags
+
                     # 🆕 태그 완료 후 자동 발행 로직 적용 (체크 시 자동 발행, 해제 시 발행 직전 대기)
                     blog_auto.skip_final_publish = not auto_final_publish_checkbox.value
                     print(f"📊 최종 발행 설정: {'자동 발행' if not blog_auto.skip_final_publish else '발행 전 대기'}")
@@ -8091,9 +8025,9 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
 
         # GPT 설정 저장 버튼
         save_gpt_button = ft.ElevatedButton(
-            text="GPT 설정 저장",
+            text="AI 설정 저장",
             icon=ft.Icons.SAVE,
-            on_click=save_gpt_settings
+            on_click=save_ai_settings
         )
 
         # 사용자 설정 저장 버튼
@@ -8251,11 +8185,11 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     ], spacing=10),
                     self.blog_hometip_checkbox,
                     ft.Divider(height=1, color=ft.Colors.GREY_300),
-                    gpt_persona,
+                    ai_persona,
                     persona_help_text,
-                    gpt_instructions,
+                    ai_instructions,
                     instructions_help_text,
-                    gpt_style,
+                    ai_style,
                     style_help_text,
                     ft.Divider(),
                     ft.Text("모델 선택 및 비용 안내", size=16, weight=ft.FontWeight.BOLD),
@@ -9993,23 +9927,9 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             try:
                 start_time = time.time()
                 # 🟢 선택된 시간대 유형을 AI에 전달
-                result = self.gpt_handler.generate_platform_content(selected_topic, platform='band', task_type=selected_time_type)
-                
-                # 🟢 밴드 파이프라인 관통시켜 유형 1 물리적 조립 수행 (Flet UI 미리보기용)
-                if result and result.get('content'):
-                    from modules.pipelines.band_pipeline import BandPipeline
-                    gpt_tags = result.get('tags', [])
-                    ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
-                    
-                    formatted_content, merged_tags = BandPipeline.process(
-                        content=result['content'],
-                        ai_tags=ai_tags_str,
-                        app_data_dir=self._get_app_data_dir(),
-                        mode='band', # 유형 1 명시
-                        fallback_settings=self.settings
-                    )
-                    band_title_input.value = result.get('title', '')
-                    band_content_input.value = formatted_content
+                result = self.ai_handler.generate_platform_content(selected_topic, platform='band', task_type=selected_time_type)
+                band_title_input.value = result.get('title', '')
+                band_content_input.value = result.get('content', '')
                 
                 duration = time.time() - start_time
                 self.add_model_usage_log(
@@ -10091,7 +10011,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 try:
                     self.band_comment_reply_instance = NaverBandCommentReply(
                         driver=self.get_or_create_driver(),
-                        gpt_handler=self.gpt_handler,
+                        ai_handler=self.ai_handler,
                         base_dir=self.base_dir,
                         instruction=self.settings.get('reply_instruction')
                     )
@@ -10568,14 +10488,12 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             
             def run_manual_post():
                 try:
-                    print(f"[Step 1] [BandManualPost] 수동 주제 포스팅 시작 (상태: 시도) - 카테고리: {category}, 주제: {topic}")
                     driver = self.get_or_create_driver()
                     band_url = self.settings.get('band_url', '')
                     
                     if not band_url:
-                        print("[Step 1] [BandManualPost] 밴드 URL 미설정 오류 (상태: 실패)")
+                        print("❌ 밴드 URL이 설정되지 않았습니다.")
                         return
-                    print("[Step 2] [BandManualPost] 밴드 드라이버 획득 완료 (상태: 성공)")
                     
                     # 이미지 수집 (수동 업로드 폴더에서)
                     image_paths = []
@@ -10587,10 +10505,10 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                             ext = os.path.splitext(f)[1].lower()
                             if ext in valid_exts or ext in video_exts:
                                 image_paths.append(os.path.join(folder_path, f))
-                        print(f"[Step 3] [BandManualPost] 수동 폴더 이미지 수집 완료 (상태: 성공) - {len(image_paths)}개 발견")
+                        print(f"🖼️ 수동 업로드 폴더에서 이미지/영상 {len(image_paths)}개 발견")
                     
                     if not image_paths:
-                        print("[Step 3] [BandManualPost] 이미지 수집 실패 (상태: 실패) - 폴더가 비어있거나 없음")
+                        print(f"⚠️ 수동 업로드 폴더에 이미지가 없습니다.")
                         if page:
                             page.snack_bar = ft.SnackBar(
                                 content=ft.Text(f"⚠️ 수동 업로드 폴더에 이미지가 없습니다. 사진을 먼저 추가해주세요."), 
@@ -10602,48 +10520,31 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     
                     # AI로 내용 생성
                     full_topic = f"[{category}] {topic}" if category else topic
-                    print(f"[Step 4] [BandManualPost] AI 글 내용 생성 시작 (상태: 시도) - 토픽: {full_topic}")
+                    print(f"📝 AI로 포스팅 내용 생성 중: {full_topic}")
                     
                     # 🟢 수동주제포스팅 전용 지침 사용 (사용자 입력 주제 기반)
-                    result = self.gpt_handler.generate_platform_content(
+                    result = self.ai_handler.generate_platform_content(
                         full_topic,
                         platform='manual_topic',  # 수동 주제 전용 플랫폼 사용
                         task_type='regular'
                     )
                     
                     if not result or not result.get('content'):
-                        print("[Step 4] [BandManualPost] AI 글 내용 생성 실패 (상태: 실패)")
+                        print("❌ 내용 생성 실패")
                         # 실패 시 이미지 이동
                         fail_folder = get_manual_fail_folder()
                         moved = move_images_to_folder(image_paths, fail_folder)
                         print(f"📦 실패 폴더로 이미지 {moved}개 이동")
                         return
-                    print(f"[Step 4] [BandManualPost] AI 글 내용 생성 완료 (상태: 성공) - 모델: {result.get('model', '-')}")
                     
                     content = result.get('content', '')
-                    gpt_tags = result.get('tags', [])
-                    ai_tags_str = ",".join(gpt_tags) if isinstance(gpt_tags, list) else str(gpt_tags)
-                    
-                    # 🟢 밴드 파이프라인 관통시켜 유형 2 물리적 조립 수행 (모바일 가독성 최적화)
-                    print("[Step 5] [BandManualPost] 밴드 파이프라인 관통 조립 시작 (상태: 시도)")
-                    from modules.pipelines.band_pipeline import BandPipeline
-                    formatted_content, merged_tags = BandPipeline.process(
-                        content=content,
-                        ai_tags=ai_tags_str,
-                        app_data_dir=self._get_app_data_dir(),
-                        mode='manual_topic',  # 유형 2 명시
-                        fallback_settings=self.settings,
-                        folder_name=category  # category 명을 folder_name으로 전달
-                    )
-                    print("[Step 5] [BandManualPost] 밴드 파이프라인 관통 조립 완료 (상태: 성공)")
                     
                     # 밴드에 포스팅
-                    print("[Step 6] [BandManualPost] 네이버 밴드 수동 업로드 포스팅 시작 (상태: 시도)")
                     from naver_band_auto import NaverBandAutomation
                     band_auto = NaverBandAutomation(driver)
                     success = band_auto.post_to_band(
                         band_url=band_url,
-                        content=formatted_content,
+                        content=content,
                         image_paths=image_paths if image_paths else None
                     )
                     
@@ -10878,7 +10779,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                         ft.TextField(
                             label="🏷️ 해시태그 (글 마지막에 추가, 8개씩 순환)",
                             hint_text="#태권도 #한국체대 #라이온짐 #수련",
-                            value=self.settings.get('band_hashtags', '#한국체대 #라이온체육관 #합기도 #태권도 #줄넘기 #전문체육 #생활체육 #어린이건강 #청소년건강 #성인건강 #어린이운동 #청소년운동 #성인운동 #건강다이어트 #체력단련 #무도교육 #인성교육 #자기방어 #호신술 #운동습관'),
+                            value=self.settings.get('band_hashtags', ''),
                             multiline=True,
                             min_lines=2,
                             max_lines=3,
@@ -11130,7 +11031,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             
             try:
                 start_time = time.time()
-                result = self.gpt_handler.generate_platform_content(selected_topic, platform='cafe')
+                result = self.ai_handler.generate_platform_content(selected_topic, platform='cafe')
                 cafe_title_input.value = result.get('title', '')
                 cafe_content_input.value = result.get('content', '')
                 
@@ -11254,7 +11155,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 print("🔓 [이웃 방문] 락 획득 완료")
                 
                 try:
-                    idle_module = IdleActivity(self.get_or_create_driver(), self.gpt_handler, self.base_dir)
+                    idle_module = IdleActivity(self.get_or_create_driver(), self.ai_handler, self.base_dir)
                     
                     # 실행 상태 전달을 위해 idle_module에 플래그 설정
                     idle_module.is_running = True
@@ -11380,7 +11281,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                                 ]),
                                 ft.Row([
                                     ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN_600, size=16),
-                                    ft.Text("GPT로 맞춤형 답글 생성 (선택)", size=12)
+                                    ft.Text("AI로 맞춤형 답글 생성 (선택)", size=12)
                                 ]),
                             ], spacing=8),
                             padding=10,
@@ -11437,7 +11338,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 ),
                 # ========== 댓글 자동 답글 섹션 끝 ==========
                 
-                ft.Text("※ AI 지침은 [GPT 설정] 탭의 '소통 지침' 필드에서 수정 가능합니다.", size=12, color=ft.Colors.GREY_600, italic=True),
+                ft.Text("※ AI 지침은 [AI 설정] 탭의 '소통 지침' 필드에서 수정 가능합니다.", size=12, color=ft.Colors.GREY_600, italic=True),
             ], scroll=ft.ScrollMode.AUTO, spacing=15),
             padding=20,
             expand=True
@@ -11490,11 +11391,22 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         # 답글 관리 탭 생성 (New)
         reply_manager_tab = self._create_reply_manager_tab()
 
+        # 수련계획표 탭 생성
+        training_plan_tab = self._create_training_plan_tab()
+
+        # 날씨/뉴스 탭 생성 (New)
+        weather_news_tab = self._create_weather_news_tab()
+
         # 탭 컨트롤
         tabs = ft.Tabs(
             selected_index=0,
             animation_duration=300,
             tabs=[
+                ft.Tab(
+                    text="날씨/뉴스",
+                    icon=ft.Icons.CLOUD_QUEUE,
+                    content=weather_news_tab
+                ),
                 ft.Tab(
                     text="블로그 시작",
                     icon=ft.Icons.EDIT_NOTE,
@@ -11509,6 +11421,11 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     text="상담 관리", # New Tab
                     icon=ft.Icons.SUPPORT_AGENT,
                     content=reply_manager_tab
+                ),
+                ft.Tab(
+                    text="수련계획표 생성",
+                    icon=ft.Icons.CALENDAR_MONTH,
+                    content=training_plan_tab
                 ),
                 ft.Tab(
                     text="밴드 포스팅",
@@ -11536,7 +11453,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     content=timer_settings_tab
                 ),
                 ft.Tab(
-                    text="GPT 설정",
+                    text="AI 설정",
                     icon=ft.Icons.SETTINGS_APPLICATIONS,
                     content=gpt_settings_tab
                 ),
@@ -11631,6 +11548,10 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         load_timer_settings()
         load_usage_stats()  # 사용 통계 로드 추가
         load_draft()
+
+        # 백그라운드 날씨/뉴스 갱신 타이머 시작
+        import threading
+        threading.Thread(target=self._weather_news_auto_updater, daemon=True).start()
 
         # auto_topic_checkbox 변경 이벤트 처리
         def on_auto_topic_change(e):
@@ -12016,6 +11937,1041 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         except Exception as e:
             print(f"❌ 재시작 실패: {e}")
             print("수동으로 프로그램을 재시작해주세요.")
+
+    def _weather_news_auto_updater(self):
+        """백그라운드에서 기상청 및 뉴스를 갱신하는 루프 (발표시간 + 30분)"""
+        import time
+        from datetime import datetime
+        from modules.weather_cache_manager import WeatherCacheManager
+        kma_base_hours = [2, 5, 8, 11, 14, 17, 20, 23]
+        last_updated_hour = -1
+        
+        while True:
+            try:
+                now = datetime.now()
+                # 30분 이상일 때 업데이트 트리거
+                if now.minute >= 30:
+                    current_hour = now.hour
+                    nearest_base_hour = max([h for h in kma_base_hours if h <= current_hour] + [-1])
+                    if nearest_base_hour == -1: 
+                        nearest_base_hour = 23 # 이전 날짜의 마지막 발표시간
+                        
+                    if nearest_base_hour != last_updated_hour:
+                        print(f"🔄 백그라운드 날씨/뉴스 업데이트 시작 (기준시: {nearest_base_hour}시)")
+                        self._force_update_weather_news()
+                        last_updated_hour = nearest_base_hour
+            except Exception as e:
+                print(f"⚠️ 날씨/뉴스 백그라운드 업데이트 오류: {e}")
+            
+            # 5분마다 체크
+            time.sleep(300)
+
+    def _update_weather_hourly_container(self, row_control, day_forecasts):
+        """시간대별 날씨 카드를 생성하여 Row 컨트롤에 바인딩합니다."""
+        import flet as ft
+        row_control.controls.clear()
+        
+        if not day_forecasts:
+            row_control.controls.append(
+                ft.Container(
+                    content=ft.Text("상세 예보 데이터가 준비 중입니다. (강제 업데이트를 눌러주세요)", color=ft.Colors.GREY_500, size=12),
+                    padding=10
+                )
+            )
+            return
+            
+        # 시간순 정렬 (02, 05, 08 ... 등)
+        sorted_hours = sorted(day_forecasts.keys())
+        
+        for hour in sorted_hours:
+            metrics = day_forecasts[hour]
+            temp = metrics.get('temp', '?')
+            desc = metrics.get('weather_desc', '')
+            pop = metrics.get('pop', '0')
+            pty = metrics.get('pty', '0')
+            
+            # 날씨 상태에 맞춘 센스 있는 아이콘 및 색상 매핑
+            icon = ft.Icons.WB_SUNNY
+            icon_color = ft.Colors.ORANGE_500
+            
+            if "비" in desc or pty in ['1', '2', '4']:
+                icon = ft.Icons.UMBRELLA
+                icon_color = ft.Colors.BLUE_700
+            elif "눈" in desc or pty == '3':
+                icon = ft.Icons.AC_UNIT
+                icon_color = ft.Colors.LIGHT_BLUE_200
+            elif "흐림" in desc or "구름많음" in desc:
+                icon = ft.Icons.CLOUD
+                icon_color = ft.Colors.BLUE_GREY_400
+                
+            card = ft.Container(
+                content=ft.Column([
+                    ft.Text(f"{hour}시", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_700),
+                    ft.Icon(icon, color=icon_color, size=24),
+                    ft.Text(f"{temp}°C", size=14, weight=ft.FontWeight.BOLD),
+                    ft.Text(desc, size=11, color=ft.Colors.GREY_700, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                    ft.Row([
+                        ft.Icon(ft.Icons.OPACITY, size=9, color=ft.Colors.BLUE_400),
+                        ft.Text(f"{pop}%", size=9, color=ft.Colors.BLUE_600)
+                    ], spacing=2, alignment=ft.MainAxisAlignment.CENTER)
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4),
+                width=85,
+                padding=8,
+                border_radius=8,
+                bgcolor=ft.Colors.GREY_50,
+                border=ft.border.all(1, ft.Colors.GREY_200),
+                alignment=ft.alignment.center
+            )
+            row_control.controls.append(card)
+
+    def _force_update_weather_news(self, e=None):
+        """수동 및 자동 업데이트 실행"""
+        try:
+            from datetime import datetime, timedelta
+            from modules.weather_cache_manager import WeatherCacheManager
+            
+            if hasattr(self, 'weather_status_text'):
+                self.weather_status_text.value = "업데이트 진행 중..."
+                if getattr(self, 'page', None):
+                    self.page.update()
+                
+            location = self.ai_handler.settings.get('weather_location', '서울')
+            api_key = self.ai_handler.settings.get('kma_api_key', '')
+            
+            # 1. 날씨 캐시 갱신 (로컬 기상 데이터를 가져오고 캐시 갱신)
+            WeatherCacheManager.update_weather_cache(location, api_key)
+            
+            # 2. 캐시 데이터 로드하여 오늘/내일 시간대별 예보 그리기
+            cache = WeatherCacheManager.load_cache()
+            refined_loc = cache.get('refined_location', location)
+            
+            now = datetime.now()
+            today_str = now.strftime("%Y%m%d")
+            tomorrow_str = (now + timedelta(days=1)).strftime("%Y%m%d")
+            
+            forecasts = cache.get('forecasts', {})
+            
+            # 오늘 시간대별 리스트 갱신
+            today_forecasts = forecasts.get(today_str, {})
+            self._update_weather_hourly_container(self.today_hourly_row, today_forecasts)
+            
+            # 내일 시간대별 리스트 갱신
+            tomorrow_forecasts = forecasts.get(tomorrow_str, {})
+            self._update_weather_hourly_container(self.tomorrow_hourly_row, tomorrow_forecasts)
+            
+            # 현재 기온 및 요약 문구 업데이트
+            current_weather = WeatherCacheManager.get_cached_weather(location, delta_days=0)
+            if hasattr(self, 'current_weather_text'):
+                self.current_weather_text.value = current_weather if current_weather else "날씨 정보를 불러올 수 없습니다."
+            
+            # 3. 뉴스 갱신 (trending topics)
+            trending = self.ai_handler._get_trending_topics(count=6, force_refresh=True)
+            if hasattr(self, 'current_news_text'):
+                self.current_news_text.value = trending if trending else "최신 뉴스를 가져올 수 없습니다."
+            
+            if hasattr(self, 'weather_status_text'):
+                self.weather_status_text.value = f"지역: {refined_loc} | 마지막 업데이트: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                
+            if getattr(self, 'page', None):
+                self.page.update()
+        except Exception as ex:
+            import traceback
+            print(f"⚠️ 날씨/뉴스 갱신 실패: {ex}")
+            traceback.print_exc()
+            if hasattr(self, 'weather_status_text'):
+                from datetime import datetime
+                self.weather_status_text.value = f"업데이트 실패: {datetime.now().strftime('%H:%M:%S')}"
+                if getattr(self, 'page', None):
+                    self.page.update()
+
+    def _create_weather_news_tab(self):
+        """날씨/뉴스 대시보드 탭 생성"""
+        import flet as ft
+        import threading
+        import time
+        
+        self.current_weather_text = ft.Text("날씨 정보를 불러오는 중...", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_800)
+        self.current_news_text = ft.Text("최신 뉴스를 불러오는 중...\n(설정 탭에서 API를 확인하세요)", size=14)
+        self.weather_status_text = ft.Text("마지막 업데이트: 대기 중", size=12, color=ft.Colors.GREY_600)
+        
+        # 시간대별 날씨 카드 Row 생성 (가로 스크롤 가능)
+        self.today_hourly_row = ft.Row(scroll=ft.ScrollMode.ALWAYS, spacing=10)
+        self.tomorrow_hourly_row = ft.Row(scroll=ft.ScrollMode.ALWAYS, spacing=10)
+        
+        refresh_btn = ft.ElevatedButton(
+            "강제 업데이트", 
+            icon=ft.Icons.REFRESH,
+            on_click=self._force_update_weather_news,
+            style=ft.ButtonStyle(
+                color=ft.Colors.WHITE,
+                bgcolor=ft.Colors.BLUE_600,
+                shape=ft.RoundedRectangleBorder(radius=6)
+            )
+        )
+        
+        # 오늘 날씨 시간별 섹션
+        today_section = ft.Container(
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon(ft.Icons.CALENDAR_TODAY, color=ft.Colors.BLUE_600, size=15),
+                    ft.Text("오늘 시간대별 상세 예보", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_900)
+                ], spacing=6),
+                ft.Container(self.today_hourly_row, padding=2)
+            ], spacing=6),
+            padding=ft.padding.only(top=5, bottom=5)
+        )
+        
+        # 내일 날씨 시간별 섹션
+        tomorrow_section = ft.Container(
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon(ft.Icons.NEXT_PLAN, color=ft.Colors.GREEN_600, size=15),
+                    ft.Text("내일 시간대별 상세 예보", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_900)
+                ], spacing=6),
+                ft.Container(self.tomorrow_hourly_row, padding=2)
+            ], spacing=6),
+            padding=ft.padding.only(top=5, bottom=5)
+        )
+        
+        weather_card = ft.Card(
+            content=ft.Container(
+                content=ft.Column([
+                    ft.Row([
+                        ft.Icon(ft.Icons.CLOUD, color=ft.Colors.BLUE), 
+                        ft.Text("현재 지역 날씨 요약", size=16, weight=ft.FontWeight.BOLD)
+                    ], spacing=6),
+                    self.current_weather_text,
+                    ft.Divider(height=10, thickness=1, color=ft.Colors.GREY_100),
+                    today_section,
+                    ft.Divider(height=10, thickness=1, color=ft.Colors.GREY_100),
+                    tomorrow_section
+                ], spacing=10),
+                padding=20,
+            )
+        )
+        
+        news_card = ft.Card(
+            content=ft.Container(
+                content=ft.Column([
+                    ft.Row([
+                        ft.Icon(ft.Icons.ARTICLE, color=ft.Colors.GREEN), 
+                        ft.Text("최신 실시간 이슈/뉴스", size=16, weight=ft.FontWeight.BOLD)
+                    ], spacing=6),
+                    self.current_news_text,
+                ], spacing=10),
+                padding=20,
+            )
+        )
+        
+        layout = ft.Column([
+            ft.Row([
+                ft.Text("날씨 & 뉴스 대시보드", size=22, weight=ft.FontWeight.BOLD), 
+                refresh_btn
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            self.weather_status_text,
+            ft.Divider(height=1),
+            weather_card,
+            news_card
+        ], spacing=15, expand=True, scroll=ft.ScrollMode.AUTO)
+        
+        # 첫 생성 시 초기 데이터 로딩 시도 (UI 렌더링 이후)
+        def _initial_load():
+            time.sleep(1)  # UI 렌더링 대기
+            self._force_update_weather_news()
+            
+        threading.Thread(target=_initial_load, daemon=True).start()
+        
+        return layout
+
+    def _create_training_plan_tab(self):
+        # 1. 상태 변수 및 파일 리스트 저장 변수
+        selected_files = []
+        gym_profile = load_gym_profile()
+        age_categories = load_age_categories()
+        curriculum_status = get_curriculum_status()
+
+        # 2. UI Controls 생성
+        # [체육관 프로필]
+        gym_name_tf = ft.TextField(label="🏢 체육관 이름", value=gym_profile.get("gym_name", ""), expand=True)
+        sport_tf = ft.TextField(label="🥋 수련 종목", value=gym_profile.get("sport", ""), expand=True)
+        
+        # 💡 교육 컨셉 드롭다운화 및 직접 입력 텍스트필드 연동
+        presets = [
+            "🧸 놀이 및 유아 신체 활동 중심",
+            "🥋 품새 및 정통 태권도(기본기) 위주",
+            "🥊 실전 호신술 및 겨루기 기술 중심",
+            "🏃 기초체력 향상 및 학교체육 위주",
+            "🎯 인성 예절 및 정신 교육 강조",
+            "🤾 레크레이션 및 에너지 발산 위주"
+        ]
+        
+        current_concept = gym_profile.get("concept", "")
+        initial_dropdown_val = "✍️ 직접 입력"
+        initial_tf_val = current_concept
+        initial_tf_visible = True
+        
+        if current_concept in presets:
+            initial_dropdown_val = current_concept
+            initial_tf_val = ""
+            initial_tf_visible = False
+            
+        concept_tf = ft.TextField(
+            label="💡 직접 입력 컨셉 (✍️ 직접 입력 선택 시 활성화)", 
+            value=initial_tf_val, 
+            multiline=True, 
+            min_lines=2, 
+            expand=True,
+            visible=initial_tf_visible
+        )
+        
+        def on_concept_dropdown_change(e):
+            if concept_dropdown.value == "✍️ 직접 입력":
+                concept_tf.visible = True
+            else:
+                concept_tf.visible = False
+                concept_tf.value = ""
+            self.page.update()
+            
+        concept_dropdown = ft.Dropdown(
+            label="💡 교육 컨셉 선택",
+            options=[ft.dropdown.Option(p) for p in presets] + [ft.dropdown.Option("✍️ 직접 입력")],
+            value=initial_dropdown_val,
+            on_change=on_concept_dropdown_change,
+            expand=True
+        )
+        
+        instructor_tf = ft.TextField(label="👨‍🏫 대표 지도자(관장)명", value=gym_profile.get("instructor_name", ""), expand=True)
+        
+        routine_1_tf = ft.TextField(label="1단계 (몸풀기,워밍업)", value=gym_profile.get("routine_1", ""), multiline=True, min_lines=3, max_lines=5, expand=True)
+        routine_2_tf = ft.TextField(label="2단계 (체력및 기본기)", value=gym_profile.get("routine_2", ""), multiline=True, min_lines=3, max_lines=5, expand=True)
+        routine_3_tf = ft.TextField(label="3단계 (기술및 반복)", value=gym_profile.get("routine_3", ""), multiline=True, min_lines=3, max_lines=5, expand=True)
+        routine_4_tf = ft.TextField(label="4단계 (회복및 해소)", value=gym_profile.get("routine_4", ""), multiline=True, min_lines=3, max_lines=5, expand=True)
+        
+        # 주간 고정 루틴(20칸 UI)
+        weekly_routine = gym_profile.get("weekly_routine", {})
+        weekdays_list = ["월", "화", "수", "목", "금"]
+        
+        weekly_grid_cells = {}
+        for wd in weekdays_list:
+            weekly_grid_cells[wd] = []
+            # 기존 저장값이 배열(길이 4)이라고 가정
+            wd_vals = weekly_routine.get(wd, ["", "", "", ""])
+            for i in range(1, 5):
+                val = wd_vals[i-1] if len(wd_vals) >= i else ""
+                tf = ft.TextField(label=f"{wd} {i}단계", value=val, expand=True, text_size=12, content_padding=5)
+                weekly_grid_cells[wd].append(tf)
+                
+        # 화면 구성을 위한 컨테이너 (월~금 열)
+        weekly_columns = []
+        for wd in weekdays_list:
+            col = ft.Column([ft.Text(f"[{wd}요일]", weight="bold", size=13)] + weekly_grid_cells[wd], expand=True)
+            weekly_columns.append(col)
+        weekly_routine_ui = ft.Row(weekly_columns, expand=True)
+        
+        # 주말 행사 텍스트를 리스트로 복원하기 위함 (기존 weekend_events가 있다면 쉼표로 조인)
+        existing_weekends = gym_profile.get("weekend_events", [])
+        initial_weekend_text = ", ".join([w.get("name", "") for w in existing_weekends]) if isinstance(existing_weekends, list) else ""
+        weekend_events_tf = ft.TextField(label="🎉 주말 정기 행사/특강 (쉼표로 구분. 예: 야외수련, 승급심사)", value=initial_weekend_text, expand=True)
+        
+        # [연령별 카테고리 설정]
+        age_dropdown = ft.Dropdown(
+            label="🧒 대상 연령대 선택",
+            options=[ft.dropdown.Option(cat["id"], cat["name"]) for cat in age_categories],
+            value=age_categories[0]["id"] if age_categories else "",
+            expand=True
+        )
+        
+        style_tf = ft.TextField(label="🔥 연령대별 수련 특징/스타일", value="", multiline=True, min_lines=2, expand=True)
+        duration_tf = ft.TextField(label="⏱️ 1회 수련 시간 (분)", value="", expand=True)
+        
+        def on_age_change(e):
+            cat_id = age_dropdown.value
+            for cat in age_categories:
+                if cat["id"] == cat_id:
+                    style_tf.value = cat.get("training_style", "")
+                    duration_tf.value = str(cat.get("session_duration", 50))
+                    self.page.update()
+        
+        age_dropdown.on_change = on_age_change
+        if age_categories:
+            style_tf.value = age_categories[0].get("training_style", "")
+            duration_tf.value = str(age_categories[0].get("session_duration", 50))
+
+        # [AI 커리큘럼 자료 학습]
+        curriculum_status_text = ft.Text(
+            value=f"📊 학습 상태: {'학습 완료' if curriculum_status['exists'] else '학습 데이터 없음'} | 크기: {curriculum_status['kb_size']}KB ({curriculum_status['item_count']}줄) | 갱신: {curriculum_status['last_updated']}",
+            size=12,
+            italic=True,
+            color=ft.Colors.GREY_700
+        )
+        
+        curriculum_initial_text = f"📁 선택된 파일: {os.path.basename(gym_profile['selected_files'][0])}" if gym_profile.get("selected_files") else "📁 선택된 파일: 없음"
+        files_to_learn_text = ft.Text(curriculum_initial_text, size=12, color=ft.Colors.GREY_600)
+        
+        def clear_selected_file(e=None):
+            self.selected_files = []
+            files_to_learn_text.value = "📁 선택된 파일: 없음"
+            auto_save_profile_internal()
+            try:
+                self.page.update()
+            except:
+                pass
+                
+        annual_initial_text = f"📁 선택된 연간계획표: {os.path.basename(gym_profile['annual_selected_files'][0])}" if gym_profile.get("annual_selected_files") else "📁 선택된 연간계획표: 없음"
+        annual_file_text = ft.Text(annual_initial_text, size=12, color=ft.Colors.BLUE_600)
+        
+        def clear_annual_file(e=None):
+            self.annual_selected_files = []
+            annual_file_text.value = "📁 선택된 연간계획표: 없음"
+            auto_save_profile_internal()
+            try:
+                self.page.update()
+            except:
+                pass
+        
+        # 💡 macOS 샌드박스 및 Flet overlay.append 버그 우회용 100% 실행 보장형 네이티브 파일 피커 엔진
+        import subprocess
+        import threading
+        import unicodedata
+        
+        # selected_files 안전 공유를 위해 인스턴스 변수로 전환
+        self.selected_files = gym_profile.get("selected_files", [])
+        self.annual_selected_files = gym_profile.get("annual_selected_files", [])
+        
+        def run_native_file_picker(allowed_exts=None, is_excel=False, is_save=False, is_folder=False, default_name="라이온짐_수련계획표.xlsx", on_select=None):
+            try:
+                file_path = None
+                if sys.platform == 'darwin':  # macOS 네이티브 AppleScript choose file / choose file name 강제 호출
+                    if is_folder:
+                        script = '''
+                        tell application "System Events"
+                            activate
+                        end tell
+                        try
+                            set filePath to POSIX path of (choose folder with prompt "📂 엑셀 템플릿 폴더를 선택하세요")
+                            return filePath
+                        on error
+                            return ""
+                        end try
+                        '''
+                    elif is_excel:
+                        if is_save:  # 💡 [저장 경로 선택 모드] 엑셀을 저장할 위치와 파일명 커스텀 선택
+                            script = f'''
+                            tell application "System Events"
+                                activate
+                            end tell
+                            try
+                                set filePath to POSIX path of (choose file name default name "{default_name}" with prompt "📅 생성된 수련계획표를 저장할 파일명과 위치를 지정하세요")
+                                return filePath
+                            on error
+                                return ""
+                            end try
+                            '''
+                        else:  # 💡 [파일 선택 모드] 엑셀 템플릿의 위치를 선택 (반드시 기존 파일 존재해야 함)
+                            script = '''
+                            tell application "System Events"
+                                activate
+                            end tell
+                            try
+                                set filePath to POSIX path of (choose file with prompt "📅 수련계획표 기존 엑셀 템플릿 파일을 선택하세요" of type {"org.openxmlformats.spreadsheetml.sheet", "com.microsoft.excel.xls"})
+                                return filePath
+                            on error
+                                return ""
+                            end try
+                            '''
+                    else:  # [파일 선택 모드] PDF 등의 자료 파일 선택
+                        ext_str = ""
+                        if allowed_exts:
+                            exts = ", ".join([f'"{ext}"' for ext in allowed_exts])
+                            ext_str = f' of type {{{exts}}}'
+                        script = f'''
+                        tell application "System Events"
+                            activate
+                        end tell
+                        try
+                            set filePath to POSIX path of (choose file with prompt "📂 학습할 연간 계획표 PDF 파일을 선택하세요"{ext_str})
+                            return filePath
+                        on error
+                            return ""
+                        end try
+                        '''
+                    result = subprocess.run(
+                        ['osascript', '-e', script],
+                        capture_output=True,
+                        text=True,
+                        timeout=120
+                    )
+                    if result.returncode == 0 and result.stdout.strip():
+                        file_path = result.stdout.strip()
+                else:  # Windows/Linux용 네이티브 tkinter 대화상자 호출
+                    from tkinter import Tk, filedialog
+                    root = Tk()
+                    root.withdraw()
+                    if is_excel:
+                        if is_save:  # 💡 [저장 경로 선택 모드] 엑셀을 저장할 위치와 파일명 커스텀 선택
+                            file_path = filedialog.asksaveasfilename(
+                                title="수련계획표 엑셀 파일 저장 위치 및 파일명 입력",
+                                defaultextension=".xlsx",
+                                filetypes=[("Excel Files", "*.xlsx")],
+                                initialfile=default_name
+                            )
+                        else:  # [파일 선택 모드] 엑셀 템플릿 위치 선택
+                            file_path = filedialog.askopenfilename(
+                                title="수련계획표 기존 엑셀 템플릿 파일을 선택하세요",
+                                filetypes=[("Excel Files", "*.xlsx;*.xls")]
+                            )
+                    else:
+                        file_path = filedialog.askopenfilename(
+                            title="연간계획표(이미지/PDF) 또는 텍스트 파일을 선택하세요",
+                            filetypes=[("Image/PDF Files", "*.png;*.jpg;*.jpeg;*.pdf"), ("All Supported Files", "*.png;*.jpg;*.jpeg;*.pdf;*.txt;*.xlsx;*.hwp")]
+                        )
+                    root.destroy()
+                
+                if file_path:
+                    normalized_path = unicodedata.normalize('NFC', file_path)
+                    
+                    # 💡 저장 경로 선택 모드인 경우 확장자 안전 보정
+                    if is_excel:
+                        if not normalized_path.lower().endswith('.xlsx'):
+                            normalized_path += '.xlsx'
+                        print(f"✅ 네이티브 엑셀 경로 선택 성공 (저장={is_save}): {normalized_path}")
+                        print(f"✅ 네이티브 파일 선택 성공: {normalized_path}")
+                    
+                    try:
+                        self.page.update()
+                    except Exception as ui_err:
+                        print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                        
+                    if on_select:
+                        on_select(normalized_path)
+                else:
+                    if on_select:
+                        on_select(None)
+            except Exception as ex:
+                print(f"❌ 네이티브 파일 피커 에러: {ex}")
+                import traceback
+                traceback.print_exc()
+                if on_select:
+                    on_select(None)
+                
+        def on_pdf_picker_click(e):
+            print("🚀 커리큘럼/학습용 파일 선택 버튼 클릭됨")
+            def handle_select(path):
+                if path:
+                    self.selected_files = [path]
+                    files_to_learn_text.value = f"📁 선택된 파일: {os.path.basename(path)}"
+                    auto_save_profile_internal()
+                    try: self.page.update()
+                    except: pass
+            threading.Thread(target=lambda: run_native_file_picker(allowed_exts=["pdf", "txt", "xlsx", "hwp"], is_excel=False, on_select=handle_select), daemon=True).start()
+
+        def on_annual_picker_click(e):
+            print("🚀 연간계획표(이미지/PDF) 파일 선택 버튼 클릭됨")
+            def handle_select(path):
+                if path:
+                    self.annual_selected_files = [path]
+                    annual_file_text.value = f"📁 선택된 연간계획표: {os.path.basename(path)}"
+                    auto_save_profile_internal()
+                    try: self.page.update()
+                    except: pass
+            threading.Thread(target=lambda: run_native_file_picker(allowed_exts=["png", "jpg", "jpeg", "pdf", "xlsx"], is_excel=False, on_select=handle_select), daemon=True).start()
+            
+        def on_excel_picker_click(e):
+            print("🚀 엑셀 템플릿 선택 버튼 클릭됨 (네이티브 스레드 기동)")
+            threading.Thread(target=lambda: run_native_file_picker(is_folder=True), daemon=True).start()
+
+        # [수련계획표 자동 생성 옵션]
+        self.excel_folder_tf = ft.TextField(label="📂 엑셀 템플릿 폴더 경로", value=gym_profile.get("excel_folder", ""), expand=True)
+        special_note_tf = ft.TextField(label="📝 특별 지침 및 강조 사항 (AI 수련 반영)", value=gym_profile.get("special_note", ""), hint_text="예: 이번 달은 격파 심사 위주로 짜주세요.", expand=True)
+            
+        year_dropdown = ft.Dropdown(
+            label="연도",
+            options=[ft.dropdown.Option(str(y)) for y in [2025, 2026, 2027]],
+            value=gym_profile.get("plan_year", "2026"),
+            width=120
+        )
+        
+        month_opts = [ft.dropdown.Option(str(m)) for m in range(1, 13)]
+        month_opts.append(ft.dropdown.Option("1~12월 전체"))
+        month_dropdown = ft.Dropdown(
+            label="월",
+            options=month_opts,
+            value=gym_profile.get("plan_month", "6"),
+            width=120
+        )
+
+        # 3. 비즈니스 로직 이벤트 핸들러
+        def auto_save_profile_internal():
+            nonlocal gym_profile
+            gym_profile["gym_name"] = gym_name_tf.value
+            gym_profile["sport"] = sport_tf.value
+            if concept_dropdown.value == "✍️ 직접 입력":
+                gym_profile["concept"] = concept_tf.value
+            else:
+                gym_profile["concept"] = concept_dropdown.value
+            gym_profile["instructor_name"] = instructor_tf.value
+            gym_profile["routine_1"] = routine_1_tf.value
+            gym_profile["routine_2"] = routine_2_tf.value
+            gym_profile["routine_3"] = routine_3_tf.value
+            gym_profile["routine_4"] = routine_4_tf.value
+            
+            # 주간 고정 루틴 파싱 저장
+            gym_profile["weekly_routine"] = {}
+            for wd in weekdays_list:
+                gym_profile["weekly_routine"][wd] = [tf.value.strip() for tf in weekly_grid_cells[wd]]
+            
+            # 주말 행사 파싱하여 weekend_events 형식으로 저장
+            def parse_weekend_event(text):
+                import re
+                name = re.sub(r'\(.*?\)', '', text).strip()
+                cycle = 1
+                count = 1
+                m = re.search(r'\((.*?)\)', text)
+                if m:
+                    inst = m.group(1).replace(" ", "")
+                    c_match = re.search(r'(매달|월|매월)(\d+)(회|번)', inst)
+                    if c_match:
+                        count = int(c_match.group(2))
+                    else:
+                        cy_match = re.search(r'(\d+)(달|개월)에(\d+)(회|번)', inst)
+                        if cy_match:
+                            cycle = int(cy_match.group(1))
+                            count = int(cy_match.group(3))
+                        elif "세달" in inst or "석달" in inst: cycle = 3
+                        elif "두달" in inst or "격월" in inst: cycle = 2
+                        elif "네달" in inst: cycle = 4
+                        elif "여섯달" in inst or "반년" in inst: cycle = 6
+                        
+                        if not c_match and not cy_match:
+                            cnt_match = re.search(r'(\d+)(회|번)', inst)
+                            if cnt_match: count = int(cnt_match.group(1))
+                return {"name": name, "cycle": cycle, "count": count}
+
+            w_text = weekend_events_tf.value.strip()
+            if w_text:
+                gym_profile["weekend_events"] = [parse_weekend_event(n) for n in w_text.split(",") if n.strip()]
+            else:
+                gym_profile["weekend_events"] = []
+                
+            gym_profile["excel_folder"] = self.excel_folder_tf.value
+            gym_profile["special_note"] = special_note_tf.value
+            gym_profile["plan_year"] = year_dropdown.value
+            gym_profile["plan_month"] = month_dropdown.value
+            gym_profile["selected_files"] = self.selected_files
+            gym_profile["annual_selected_files"] = self.annual_selected_files
+            save_gym_profile(gym_profile)
+
+        self.excel_folder_tf.on_change = lambda e: auto_save_profile_internal()
+        special_note_tf.on_change = lambda e: auto_save_profile_internal()
+        year_dropdown.on_change = lambda e: auto_save_profile_internal()
+        month_dropdown.on_change = lambda e: auto_save_profile_internal()
+        gym_name_tf.on_change = lambda e: auto_save_profile_internal()
+        sport_tf.on_change = lambda e: auto_save_profile_internal()
+        concept_tf.on_change = lambda e: auto_save_profile_internal()
+        concept_dropdown.on_change = lambda e: auto_save_profile_internal()
+        instructor_tf.on_change = lambda e: auto_save_profile_internal()
+        routine_1_tf.on_change = lambda e: auto_save_profile_internal()
+        routine_2_tf.on_change = lambda e: auto_save_profile_internal()
+        routine_3_tf.on_change = lambda e: auto_save_profile_internal()
+        routine_4_tf.on_change = lambda e: auto_save_profile_internal()
+        weekend_events_tf.on_change = lambda e: auto_save_profile_internal()
+
+        def save_profile_click(e):
+            auto_save_profile_internal()
+            self.page.snack_bar = ft.SnackBar(content=ft.Text("🎉 체육관 프로필이 성공적으로 저장되었습니다!"), bgcolor=ft.Colors.GREEN_700)
+            self.page.snack_bar.open = True
+            self.page.update()
+
+        def learn_files_click(e):
+            if not self.selected_files:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 학습할 PDF 파일을 먼저 선택해주세요."), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+                
+            self.page.snack_bar = ft.SnackBar(content=ft.Text("🔄 AI 커리큘럼 스마트 학습 진행 중... (파일을 파싱하고 마크다운 변환 중)"), bgcolor=ft.Colors.BLUE_700)
+            self.page.snack_bar.open = True
+            self.page.update()
+            
+            def run_learning():
+                res = learn_from_files(self.selected_files, gym_profile)
+                if res["success"]:
+                    nonlocal curriculum_status
+                    curriculum_status = get_curriculum_status()
+                    curriculum_status_text.value = f"📊 학습 상태: 학습 완료 | 크기: {curriculum_status['kb_size']}KB ({curriculum_status['item_count']}줄) | 갱신: {curriculum_status['last_updated']}"
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 성공! {res['summary']}"), bgcolor=ft.Colors.GREEN_700)
+                    self.page.snack_bar.open = True
+                    try:
+                        self.page.update()
+                    except Exception as ui_err:
+                        print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                else:
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 학습 실패: {res['summary']}"), bgcolor=ft.Colors.RED)
+                    self.page.snack_bar.open = True
+                    try:
+                        self.page.update()
+                    except Exception as ui_err:
+                        print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+            threading.Thread(target=run_learning, daemon=True).start()
+
+        def generate_planner_click(e):
+            import os
+            import shutil
+            
+            year = int(year_dropdown.value)
+            month_val = month_dropdown.value
+            is_all_months = (month_val == "1~12월 전체")
+            month_str = "1~12" if is_all_months else month_val
+            # 폴더 경로에서 템플릿 파일 생성/사용
+            folder_path = self.excel_folder_tf.value
+            template_path = os.path.join(folder_path, "annual_plan_template.xlsx")
+            cat_id = age_dropdown.value
+            
+            if not os.path.isdir(folder_path):
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 선택한 폴더 경로가 유효하지 않습니다."), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+            
+            if not os.path.exists(template_path):
+                # schedule_parser의 완전한 포맷 템플릿 자동 생성
+                try:
+                    from modules.schedule_parser import write_annual_schedule_to_excel
+                    write_annual_schedule_to_excel(template_path, [])  # 빈 일정으로 시트 구조만 생성
+                    self.page.snack_bar = ft.SnackBar(
+                        content=ft.Text(f"✅ 연간계획+1~12월 시트가 완전한 포맷으로 자동 생성됐습니다: {os.path.basename(template_path)}"),
+                        bgcolor=ft.Colors.GREEN_700
+                    )
+                    self.page.snack_bar.open = True
+                    self.page.update()
+                except Exception as e:
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 템플릿 자동 생성 실패: {e}"), bgcolor=ft.Colors.RED)
+                    self.page.snack_bar.open = True
+                    self.page.update()
+                    return
+                
+            # 연령별 자동 분할/기본 셋팅 제거 (관장님 요청: 알아서 하지 않도록 제거하여 충돌 예방)
+            selected_cat = {"id": "default", "name": "전체 관원", "session_duration": 50, "training_style": "일반 수련"}
+                
+            default_save_name = f"{year}년_{month_str}월_라이온짐_수련계획표.xlsx"
+            
+            # 저장 경로 선택 콜백
+            def start_monthly_generation(save_path):
+                if not save_path:
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text("⚠️ 저장 경로 선택이 취소되어 생성을 중단합니다."), bgcolor=ft.Colors.ORANGE_700)
+                    self.page.snack_bar.open = True
+                    self.page.update()
+                    return
+                    
+                self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🚀 {month_str}월 수련계획표를 '{os.path.basename(save_path)}'에 기록 진행 중... (시간이 다소 소요됩니다)"), bgcolor=ft.Colors.BLUE_700, duration=8000)
+                self.page.snack_bar.open = True
+                self.page.update()
+                
+                def run_generation():
+                    try:
+                        # 사용자가 선택한 기존 파일(save_path)에 직접 덮어쓰기 위해 템플릿 복제 단계 제거
+                        
+                        c_md = load_curriculum_md()
+                        from modules.training_planner.planner_engine import generate_plan_with_ai
+                        from modules.training_planner.calendar_writer import write_plan_to_excel
+                        
+                        months_to_gen = list(range(1, 13)) if is_all_months else [int(month_val)]
+                        
+                        for m in months_to_gen:
+                            # 진행 상황 표시
+                            if is_all_months:
+                                self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🔄 {m}월 수련계획표 AI 생성 중... ({m}/12)"), bgcolor=ft.Colors.BLUE_700, duration=3000)
+                                self.page.snack_bar.open = True
+                                try: self.page.update()
+                                except: pass
+                            
+                            from modules.ai_handler import AIHandler
+                            plan_data = generate_plan_with_ai(
+                                ai_handler=AIHandler(use_dummy=self.use_dummy),
+                                year=year,
+                                month=m,
+                                gym_profile=gym_profile,
+                                age_category=selected_cat,
+                                curriculum_md=c_md,
+                                special_note=special_note_tf.value
+                            )
+                            
+                            write_res = write_plan_to_excel(
+                                excel_path=save_path,
+                                plan_entries=plan_data
+                            )
+                            if not write_res.get("success"):
+                                raise Exception(f"{m}월 엑셀 기록 실패: {write_res.get('error')}")
+                        
+                        success_msg = f"🎉 대성공! 1~12월 전체 AI 수련계획표가 '{os.path.basename(save_path)}'에 완벽하게 기입되었습니다!" if is_all_months else f"🎉 대성공! {month_val}월 AI 수련계획표가 '{os.path.basename(save_path)}'에 완벽하게 기입되었습니다!"
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(success_msg), bgcolor=ft.Colors.GREEN_700, duration=6000)
+                        self.page.snack_bar.open = True
+                        try:
+                            self.page.update()
+                        except Exception as ui_err:
+                            print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                    except Exception as err:
+                        print(f"❌ 수련계획 자동 생성 오류: {err}")
+                        traceback.print_exc()
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 생성 및 기록 실패: {err}"), bgcolor=ft.Colors.RED, duration=5000)
+                        self.page.snack_bar.open = True
+                        try:
+                            self.page.update()
+                        except Exception as ui_err:
+                            print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                            
+                threading.Thread(target=run_generation, daemon=True).start()
+            
+            # 기존 파일 선택을 위한 네이티브 피커 실행 (Save As가 아닌 Open File)
+            threading.Thread(
+                target=lambda: run_native_file_picker(
+                    is_excel=True,
+                    is_save=False,
+                    default_name=default_save_name,
+                    on_select=start_monthly_generation
+                ),
+                daemon=True
+            ).start()
+
+        # 💡 연간 전체 일괄 생성 버튼 핸들러 (관장님 기획 반영!)
+        def generate_full_year_click(e):
+            import os
+            import shutil
+            
+            year = int(year_dropdown.value)
+            folder_path = self.excel_folder_tf.value
+            template_path = os.path.join(folder_path, "annual_plan_template.xlsx")
+            cat_id = age_dropdown.value
+            
+            if not os.path.isdir(folder_path):
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 선택한 폴더 경로가 유효하지 않습니다."), bgcolor=ft.Colors.RED)
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+            
+            # 연령별 자동 분할/기본 셋팅 제거 (관장님 요청: 알아서 하지 않도록 제거하여 충돌 예방)
+            selected_cat = {"id": "default", "name": "전체 관원", "session_duration": 50, "training_style": "일반 수련"}
+            default_save_name = f"{year}년_연간_라이온짐_수련계획표.xlsx"
+            
+            # 저장 경로 선택 콜백
+            def start_full_year_generation(save_path):
+                if not save_path:
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text("⚠️ 저장 경로 선택이 취소되어 생성을 중단합니다."), bgcolor=ft.Colors.ORANGE_700)
+                    self.page.snack_bar.open = True
+                    self.page.update()
+                    return
+                    
+                self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🚀 {year}년 전체(1~12월) AI 연간 캘린더 생성 및 기록 진행 중... (약 2~3분 소요)"), bgcolor=ft.Colors.PURPLE_700, duration=15000)
+                self.page.snack_bar.open = True
+                self.page.update()
+                
+                def run_full_year():
+                    try:
+                        annual_events = []
+                        if getattr(self, "annual_selected_files", None) and len(self.annual_selected_files) > 0:
+                            target_file = self.annual_selected_files[0]
+                            try:
+                                from modules.schedule_parser import extract_text_from_file, parse_schedule_with_gpt, write_annual_schedule_to_excel
+                                raw_text = extract_text_from_file(target_file, self.ai_handler.openai_client)
+                                if raw_text:
+                                    print(f"🔥 연간계획표 분석 중: {target_file}")
+                                    annual_events = parse_schedule_with_gpt(raw_text, year, "annual", self.ai_handler, self.ai_handler.openai_client)
+                                    if annual_events:
+                                        print(f"✅ 추출된 연간 행사: {len(annual_events)}개")
+                                        # 추출된 행사들을 1페이지(연간계획)에 작성
+                                        write_annual_schedule_to_excel(save_path, annual_events)
+                            except Exception as e:
+                                print(f"❌ 연간계획표 파일 추출 실패: {e}")
+                                traceback.print_exc()
+                        
+                        c_md = load_curriculum_md()
+                        
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 성공! 연간계획표 행사가 '{os.path.basename(save_path)}'의 연간계획 시트 및 월별 달력에 자동 배치되었습니다!"), bgcolor=ft.Colors.GREEN_700, duration=8000)
+                        self.page.snack_bar.open = True
+                        try:
+                            self.page.update()
+                        except Exception as ui_err:
+                            print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                    except Exception as err:
+                        print(f"❌ 연간 캘린더 일괄 생성 오류: {err}")
+                        traceback.print_exc()
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 생성 및 기록 실패: {err}"), bgcolor=ft.Colors.RED, duration=5000)
+                        self.page.snack_bar.open = True
+                        try:
+                            self.page.update()
+                        except Exception as ui_err:
+                            print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
+                            
+                threading.Thread(target=run_full_year, daemon=True).start()
+                
+            # 저장 경로 네이티브 피커 실행
+            threading.Thread(
+                target=lambda: run_native_file_picker(
+                    is_excel=True,
+                    is_save=True,
+                    default_name=default_save_name,
+                    on_select=start_full_year_generation
+                ),
+                daemon=True
+            ).start()
+
+        # 템플릿 생성 핸들러 (annual_plan_template.xlsx 완전 포맷으로 생성)
+        def on_create_template_click(e):
+            import os
+            import threading
+            folder_path = self.excel_folder_tf.value.strip()
+            if not folder_path or not os.path.isdir(folder_path):
+                self.page.snack_bar = ft.SnackBar(
+                    content=ft.Text("❌ 먼저 '엑셀 템플릿 폴더 경로'를 선택하세요."),
+                    bgcolor=ft.Colors.RED
+                )
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+            template_path = os.path.join(folder_path, "annual_plan_template.xlsx")
+            if os.path.exists(template_path):
+                self.page.snack_bar = ft.SnackBar(
+                    content=ft.Text(f"⚠️ 이미 템플릿이 존재합니다: {template_path}\n덮어쓰려면 파일을 먼저 삭제하세요."),
+                    bgcolor=ft.Colors.ORANGE_700
+                )
+                self.page.snack_bar.open = True
+                self.page.update()
+                return
+            def _create():
+                try:
+                    from modules.schedule_parser import write_annual_schedule_to_excel
+                    write_annual_schedule_to_excel(template_path, [])
+                    self.page.snack_bar = ft.SnackBar(
+                        content=ft.Text(f"🎉 템플릿 생성 완료! 연간계획 + 1~12월 시트 포함: {template_path}"),
+                        bgcolor=ft.Colors.GREEN_700,
+                        duration=6000
+                    )
+                    self.page.snack_bar.open = True
+                    try:
+                        self.page.update()
+                    except Exception:
+                        pass
+                except Exception as ex:
+                    self.page.snack_bar = ft.SnackBar(
+                        content=ft.Text(f"❌ 템플릿 생성 실패: {ex}"),
+                        bgcolor=ft.Colors.RED
+                    )
+                    self.page.snack_bar.open = True
+                    try:
+                        self.page.update()
+                    except Exception:
+                        pass
+            threading.Thread(target=_create, daemon=True).start()
+
+        # 4. 레이아웃 설계 및 반환
+        return ft.Container(
+            content=ft.Column([
+                # 헤더
+                ft.Row([
+                    ft.Icon(ft.Icons.CALENDAR_MONTH, color=ft.Colors.BLUE_800, size=24),
+                    ft.Text("🥋 AI 스마트 수련계획표 자동 생성기", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_800),
+                ], alignment=ft.MainAxisAlignment.START),
+                
+                ft.Text("AI를 활용하여 프로페셔널한 월간 수련계획표를 자동 수립하고, 기존 엑셀 월간 달력의 빈칸에 맞추어 자동 기록하는 시스템입니다.", size=12, color=ft.Colors.GREY_700),
+                ft.Divider(height=10),
+                
+                ft.Tabs(
+                    selected_index=0,
+                    tabs=[
+                        ft.Tab(
+                            text="1. 체육관 프로필",
+                            icon=ft.Icons.BUSINESS,
+                            content=ft.Container(
+                                content=ft.Column([
+                                    ft.Text("🏢 체육관의 핵심 정보와 단계별 수련 루틴을 기입합니다.", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([gym_name_tf, sport_tf]),
+                                    ft.Row([instructor_tf, concept_dropdown]),
+                                    ft.Row([concept_tf]),
+                                    ft.Text("📋 수련 시간표 기본 4단계 교육 루틴 설정", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([routine_1_tf, routine_2_tf]),
+                                    ft.Row([routine_3_tf, routine_4_tf]),
+                                    
+                                    ft.Text("📅 주간 요일별 고정 루틴 설정 (해당 칸에 입력된 내용만 고정되며, 비워두면 AI가 채웁니다)", size=13, weight=ft.FontWeight.BOLD),
+                                    weekly_routine_ui,
+                                    
+                                    ft.Divider(height=10),
+                                    ft.Text("🎈 주말 특별 행사 설정", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([weekend_events_tf]),
+                                    ft.ElevatedButton("💾 프로필 저장", icon=ft.Icons.SAVE, on_click=save_profile_click, bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE)
+                                ], spacing=15, scroll=ft.ScrollMode.AUTO),
+                                padding=15
+                            )
+                        ),
+                        ft.Tab(
+                            text="2. 연간 계획표 PDF 학습 및 기초 생성",
+                            icon=ft.Icons.MODEL_TRAINING,
+                            content=ft.Container(
+                                content=ft.Column([
+                                    ft.Text("📂 [1단계 커리큘럼 지식화] 도장의 평일 수련 매뉴얼(PDF, HWP 등)을 첨부하면 AI가 평일 수련 지침을 학습합니다.", size=13, weight=ft.FontWeight.BOLD),
+                                    curriculum_status_text,
+                                    ft.Row([
+                                        ft.ElevatedButton("📁 수련 매뉴얼(PDF 등) 선택", icon=ft.Icons.MENU_BOOK, on_click=on_pdf_picker_click, bgcolor=ft.Colors.GREY_700, color=ft.Colors.WHITE),
+                                        files_to_learn_text,
+                                        ft.IconButton(icon=ft.Icons.CANCEL, tooltip="선택 취소", icon_color=ft.Colors.RED_500, on_click=clear_selected_file)
+                                    ]),
+                                    ft.ElevatedButton("🚀 수련 매뉴얼 학습 및 AI 지식 베이스화", icon=ft.Icons.BOLT, on_click=learn_files_click, bgcolor=ft.Colors.PURPLE_700, color=ft.Colors.WHITE),
+                                    ft.Divider(),
+                                    ft.Text("📅 [2단계 연간행사 달력 배치] 연간계획표(이미지/PDF) 스캔 및 엑셀 생성", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([
+                                        ft.ElevatedButton("📁 연간계획표(이미지 등) 선택", icon=ft.Icons.IMAGE, on_click=on_annual_picker_click, bgcolor=ft.Colors.GREY_700, color=ft.Colors.WHITE),
+                                        annual_file_text,
+                                        ft.IconButton(icon=ft.Icons.CANCEL, tooltip="선택 취소", icon_color=ft.Colors.RED_500, on_click=clear_annual_file)
+                                    ]),
+                                    ft.Row([
+                                        self.excel_folder_tf,
+                                        ft.IconButton(ft.Icons.FOLDER_OPEN, tooltip="엑셀 템플릿 폴더 선택", on_click=lambda e: self._open_folder_picker_for(self.excel_folder_tf)),
+                                    ]),
+                                    ft.Row([
+                                        year_dropdown,
+                                        ft.Text("년도 달력에 연간 행사 적용 진행")
+                                    ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                                    ft.ElevatedButton(
+                                        "📅 연간계획표 엑셀 첫페이지 및 달력 배치 (상세일정 제외)",
+                                        icon=ft.Icons.AUTO_AWESOME_MOTION,
+                                        on_click=lambda e: [auto_save_profile_internal(), generate_full_year_click(e)],
+                                        bgcolor=ft.Colors.BLUE_900,
+                                        color=ft.Colors.WHITE,
+                                        height=45
+                                    )
+                                ], spacing=15, scroll=ft.ScrollMode.AUTO),
+                                padding=15
+                            )
+                        ),
+                        ft.Tab(
+                            text="3. 수련계획표 월간 맞춤 변경",
+                            icon=ft.Icons.AUTO_AWESOME,
+                            content=ft.Container(
+                                content=ft.Column([
+                                    ft.Text("📅 특정 월에 관장님 취향과 특수요청을 더해 수련 계획을 맞춤 변경합니다.", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Row([
+                                        ft.Text("📅 대상 기간:", size=13, weight=ft.FontWeight.BOLD),
+                                        month_dropdown, ft.Text("월 수련계획 맞춤 생성")
+                                    ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                                    special_note_tf,
+                                    ft.ElevatedButton(
+                                        "🚀 해당 월 수련계획 자동 생성 및 엑셀 덮어쓰기",
+                                        icon=ft.Icons.AUTO_MODE,
+                                        on_click=generate_planner_click,
+                                        bgcolor=ft.Colors.GREEN_700,
+                                        color=ft.Colors.WHITE,
+                                        height=50
+                                    )
+                                ], spacing=15),
+                                padding=15
+                            )
+                        )
+                    ],
+                    expand=True
+                )
+            ], spacing=10),
+            padding=15,
+            expand=True
+        )
 
 if __name__ == "__main__":
     # Windows PyInstaller 빌드 필수! (무한 재귀 방지)

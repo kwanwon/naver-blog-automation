@@ -63,8 +63,14 @@ def main():
         shutil.rmtree(build_dir)
     
     # PyInstaller 명령어 구성
+    pyinstaller_bin = 'pyinstaller'
+    # 가상환경의 pyinstaller 경로 자동 탐색
+    venv_pyinstaller = os.path.join(os.path.dirname(sys.executable), 'pyinstaller')
+    if os.path.exists(venv_pyinstaller):
+        pyinstaller_bin = venv_pyinstaller
+        
     pyinstaller_cmd = [
-        'pyinstaller',
+        pyinstaller_bin,
         '--onedir',
         '--windowed',
         '--name=블로그자동화-개발자',

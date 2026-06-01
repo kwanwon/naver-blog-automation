@@ -24,15 +24,19 @@ class ImageFolderManager:
         """사용 가능한 이미지 폴더 목록 반환"""
         folders = []
         
+        # '블로그사진폴더' 경로를 먼저 확인
+        blog_photo_dir = os.path.join(self.base_dir, '블로그사진폴더')
+        search_base = blog_photo_dir if os.path.exists(blog_photo_dir) else self.base_dir
+        
         # default_images 폴더 확인
-        default_folder = os.path.join(self.base_dir, 'default_images')
+        default_folder = os.path.join(search_base, 'default_images')
         if os.path.exists(default_folder) and self._has_images(default_folder):
             folders.append('default_images')
         
         # default_images_1부터 default_images_10까지 확인
         for i in range(1, 11):
             folder_name = f'default_images_{i}'
-            folder_path = os.path.join(self.base_dir, folder_name)
+            folder_path = os.path.join(search_base, folder_name)
             if os.path.exists(folder_path) and self._has_images(folder_path):
                 folders.append(folder_name)
         
@@ -266,20 +270,20 @@ class ImageFolderManager:
             priority = self.get_folder_priority(folder)
             keywords = [folder]  # Folder name is always a keyword
             
-            # Simple morphological breakdown fallback
-            if len(folder) > 1:
-                keywords.append(folder[:2])
-                keywords.append(folder[1:])
-                
+            # 단순 글자 쪼개기(morphological breakdown)는 '음악줄넘기' -> '음악' 등 
+            # 치명적인 오작동(음악학원 매칭)을 유발하므로 삭제합니다.
+            
             # If AI helper function is provided, fetch richer keyword context
             if ai_ask_fn:
                 prompt = (
-                    f"Gym marketing folder name: '{folder}'\n"
-                    f"Generate exactly 5 highly specific and intuitive synonyms/actions "
-                    f"that directly represent this folder. DO NOT output broad terms like "
-                    f"'체육관', '무술', '스포츠', '피트니스', '기본기', '교육', '훈련'.\n"
-                    f"Example for '호신술': '호신, 호신술, 셀프디펜스, 디펜스, 관절기, 던지기'\n"
-                    f"Format output strictly as a comma-separated single line containing exactly 5 clean terms."
+                    f"당신은 체육관(태권도, 합기도 등) 블로그 마케팅 전문가입니다.\n"
+                    f"주어진 폴더 이름: '{folder}'\n"
+                    f"이 폴더 이름과 '가장 직접적이고 직관적으로 일치하는' 단어 딱 1개~3개만 추출하세요.\n"
+                    f"절대 금지: '뛰기', '점핑', '음악', '학원', '훈련', '수업', '체육관', '스포츠' 처럼 다른 종목과 겹칠 수 있는 단어나 포괄적 명사는 절대 넣지 마세요. 사용자가 정확한 명칭을 쓸 때만 매칭되도록 극도로 보수적으로 뽑으세요.\n"
+                    f"[예시 1] 폴더가 '줄넘기'일 경우 -> 줄넘기 (O) / 음악줄넘기, 뛰기, 점핑 (X)\n"
+                    f"[예시 2] 폴더가 '호신술'일 경우 -> 호신술, 호신, 셀프디펜스 (O) / 방어, 기술, 실전 (X)\n"
+                    f"[예시 3] 폴더가 '발차기'일 경우 -> 발차기, 킥 (O) / 차기, 공격, 다리 (X)\n"
+                    f"출력 형식: 다른 설명 없이 콤마(,)로 구분된 1~3개의 단어만 한 줄로 출력하세요."
                 )
                 try:
                     ai_res = ai_ask_fn(prompt)
@@ -334,7 +338,7 @@ class ImageFolderManager:
             # Score matches based on NFC normalized keyword frequency
             for kw in keywords:
                 norm_kw = unicodedata.normalize('NFC', kw).strip().lower()
-                if not norm_kw:
+                if not norm_kw or len(norm_kw) < 2:
                     continue
                 
                 # Check for direct matches in search text

@@ -47,8 +47,12 @@ def get_app_settings_path() -> str:
     """Returns the path to the main application settings file."""
     return os.path.join(get_config_dir(), 'app_settings.json')
 
+def get_ai_settings_path() -> str:
+    """AI 설정 파일(ai_settings.txt)의 전체 경로를 반환합니다."""
+    return os.path.join(get_config_dir(), 'ai_settings.txt')
+
 def get_gpt_settings_path() -> str:
-    """Returns the path to the GPT settings file."""
+    """(Deprecated) 하위 호환성을 위해 유지"""
     return os.path.join(get_config_dir(), 'gpt_settings.txt')
 
 def get_api_key_path() -> str:

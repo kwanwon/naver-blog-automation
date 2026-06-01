@@ -1,0 +1,1 @@
+def add_footer(self):\"}\n{\"File\":\"/Users/gm2hapkido/Desktop/라이온개발자/naver_blog_post_finisher.py\",\"LineNumber\":280,\"LineContent\":\"            # 슬로건은 GPT 생성 본문에 이미 포함되어 있으므로 여기서는 추가하지 않음\"}"}

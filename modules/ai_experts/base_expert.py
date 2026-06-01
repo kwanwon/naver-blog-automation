@@ -14,7 +14,7 @@ import ssl
 import threading
 from datetime import datetime, timedelta
 from typing import Any, List
-from utils.path_utils import get_config_dir, get_log_dir, get_ai_settings_path, get_api_key_path, get_app_settings_path
+from utils.path_utils import get_config_dir, get_log_dir, get_api_key_path, get_app_settings_path
 from utils.security_utils import deobfuscate, deobfuscate_dict_fields
 
 # OpenAI 최신 SDK 대응
@@ -265,7 +265,7 @@ class BaseAIExpert:
 """
         # 1. ai_settings.txt 로드
         try:
-            settings_path = get_ai_settings_path()
+            settings_path = os.path.join(get_config_dir(), 'ai_settings.txt')
             if not os.path.exists(settings_path):
                 app_bundle_config = get_app_bundle_config_path()
                 if app_bundle_config:
@@ -1394,15 +1394,15 @@ class BaseAIExpert:
   오늘의 주제와 관련된 클릭 유발형 제목 1줄 작성 (⚠️ 날씨나 안부는 절대로 제목에 적지 마십시오. 100% 원천 전면 금지)
   
   [본문]
-  오늘 {refined_location}은 기온이 [상세 데이터 속 기온]도에 미세먼지는 [미세먼지 상태], 하늘이 [날씨 상태]이고 바람이 [풍속/바람 상태] 부는 {time_of_day}이라 [날씨에 따른 짧은 체감/조언]네요. (⚠️ 날씨 안부는 오직 여기에만, 본문 첫 문단 딱 1문장으로 작성되어야 합니다.)
+  오늘 {refined_location}은 기온이 [상세 데이터 속 기온]도에 미세먼지는 [미세먼지 상태], 하늘이 [날씨 상태]이고 바람이 [풍속 수치를 배제한 체감적인 자연스러운 묘사(예: 살랑살랑/다소 강하게)] 부는 {time_of_day}이라 [날씨에 따른 짧은 체감/조언]네요. (⚠️ 날씨 안부는 오직 여기에만, 본문 첫 문단 딱 1문장으로 작성되어야 합니다.)
   
   (여기에 빈 줄을 두고 두 번째 문단부터 독립적인 주제 시작...)
 
-1. **[첫 문단 - 구체적이고 자연스러운 날씨 정보 1문장 완성]**: 제공된 날씨 데이터 속의 실제 기온, 하늘상태, 미세먼지, 바람 정보를 모두 활용하여 자연스럽게 이어진 딱 1문장으로 깔끔하게 작성하십시오. 문장의 끝에는 날씨 데이터에 어울리는 매우 짧고 자연스러운 체감 느낌이나 조언(예: "살짝 추울수도 있어요", "활동하기 좋은 날씨네요" 등)을 덧붙여 마침표와 함께 첫 문단을 즉시 종결하십시오.
-   - 작성 예시: "오늘 {refined_location}은 기온이 [상세 데이터 속 기온]도에 미세먼지는 [미세먼지 상태], 하늘이 [상세 데이터 속 날씨 상태]이고 바람이 [풍속/바람 상태] 부는 {time_of_day}이라 살짝 추울수도 있어요."
+1. **[첫 문단 - 구체적이고 자연스러운 날씨 정보 1문장 완성]**: 제공된 날씨 데이터 속의 실제 기온, 하늘상태, 미세먼지, 바람 정보를 모두 활용하되, 풍속이나 수치 등은 기계적으로 숫자를 그대로 노출하지 말고 실생활에서 느껴지는 자연스러운 감각적 묘사(예: "살랑살랑 부는", "선선한 바람이 부는", "조금 강하게 부는" 등)로 반드시 변환하여 자연스럽게 이어진 딱 1문장으로 깔끔하게 작성하십시오. 문장의 끝에는 날씨 데이터에 어울리는 매우 짧고 자연스러운 체감 느낌이나 조언을 덧붙여 마침표와 함께 첫 문단을 즉시 종결하십시오.
+   - 작성 예시: "오늘 {refined_location}은 기온이 [상세 데이터 속 기온]도에 미세먼지는 [미세먼지 상태], 하늘이 [상세 데이터 속 날씨 상태]이고 바람이 [기분 좋게 선선히/다소 강하게 등] 부는 {time_of_day}이라 살짝 추울수도 있어요."
    - 🚨 [날씨 인사의 본문 강제 종속 락(Lock)]: 날씨 인사는 무조건 **`[본문]` 마커 바로 아래 첫 줄**에만 배치되어야 하며, `[제목]` 마커 안이나 제목보다 먼저(글의 맨 첫머리에) 작성되는 행위를 **100% 절대 원천 금지**합니다. (날씨 팩트가 제목이 되는 즉시 심각한 블로그 품질 훼손입니다.)
    - 🚨 [감성적 안부 및 상투어 100% 절대 금지]: 날씨에 대한 짧은 체감(예: 춥다, 덥다 등) 외에 "기분 좋은 하루 보내시길 바랍니다...", "건강 유의하시고...", "행복한 하루 되세요" 등 억지스러운 안부나 행복 기원 멘트는 **100% 원천 배제**하십시오. 오직 날씨 팩트와 그에 따른 체감 정보 1문장으로만 도입부를 종결하십시오.
-   - 🚨 [가짜 수치 날조 금지]: 예시의 괄호 부분은 반드시 상세 데이터에 제공된 실제 사실 수치(예: {weather_info} 에 적힌 수치)로 치환해야 하며, 임의의 가짜 수치(예: 15도, 19도 등)를 지어내어 날조하는 행위를 100% 절대 금지합니다. 단, 제공된 데이터에 특정 정보(바람 등)가 없다면 해당 부분만 자연스럽게 생략하십시오.
+   - 🚨 [가짜 수치 날조 금지 및 자연스러운 묘사]: 기온 등의 수치는 실제 제공된 데이터를 사용하되, 풍속(m/s)과 같은 수치는 절대 그대로 쓰지 말고 인간적인 체감 언어로 바꾸세요. 임의로 가짜 데이터를 지어내는 행위는 금지합니다. 데이터에 특정 정보(바람 등)가 없다면 해당 부분만 자연스럽게 생략하십시오.
 2. **[어색한 전개 및 억지 결합 원천 배제]**: 날씨 문단 내에서 혹은 본문 첫머리에서 특정 업종이나 활동 공간, 거창한 건강 멘트, 혹은 점퍼를 챙기라는 등의 상투적이고 인위적인 멘트를 작성하여 본문과 엮는 행위를 **100% 원천 전면 금지**합니다. 날씨 인사는 순수한 팩트 날씨 묘사와 짧은 체감으로만 짧게 문단을 끝내야 합니다.
 3. **[날씨-본문 완벽 분리 및 연결 단어/맥락 100% 완전 전면 금지 ⭐⭐⭐⭐⭐]**: 
    - 날씨 인사가 끝난 뒤 새로운 문단(본문)이 시작될 때, 이전의 날씨 인사와 본문을 자연스럽게 연결하려는 어떠한 징검다리 전개나 억지 맥락(예: "맑은 하늘 아래 가볍게 산책하기 참 좋은 날이네요. 오늘의 주제인..." 과 같은 인과관계식 전개)을 **100% 철저히 전면 차단 금지**합니다.
@@ -1425,9 +1425,98 @@ class BaseAIExpert:
             return "\n".join(results)
         except: return ""
 
-    def _get_trending_topics(self, count=3):
-        """실시간 트렌드 주제 (현재는 플레이스홀더)"""
-        return "[최신 이슈] 주제에 집중하여 작성해주세요."
+    def _filter_news_content(self, text: str) -> bool:
+        """뉴스 내용에 금칙어가 포함되어 있는지 확인"""
+        forbidden_keywords = [
+            '정치', '여당', '야당', '대통령', '의원', '선거', '투표', '탄핵', '시위', 
+            '종교', '교회', '성당', '불교', '기독교', '목사', '스님', '사이비',
+            '살인', '성범죄', '마약', '도박', '자살', '충격', '경악', '속보', '19금', '성인'
+        ]
+        
+        for keyword in forbidden_keywords:
+            if keyword in text:
+                return True
+        return False
+
+    def _get_trending_topics(self, count=3, force_refresh=False):
+        # 오후/저녁용: 최신 뉴스/이슈/트렌드 정보 수집
+        # count: 가져올 뉴스 수 (기본 3, 배치 분배용 6)
+        
+        # 0순위: 로컬 캐시 확인
+        cache_file = os.path.join("config", "news_cache.json")
+        try:
+            if not force_refresh and os.path.exists(cache_file):
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    cache_data = json.load(f)
+                
+                last_updated_str = cache_data.get('last_updated', '')
+                if last_updated_str:
+                    last_updated = datetime.strptime(last_updated_str, "%Y-%m-%d %H:%M:%S")
+                    if datetime.now() - last_updated < timedelta(hours=6):
+                        news_lines = cache_data.get('news', [])
+                        if news_lines:
+                            logger.info("로컬 뉴스 캐시를 사용합니다.")
+                            return "\n".join(news_lines[:count])
+        except Exception as e:
+            logger.warning(f"뉴스 캐시 읽기 실패 (무시됨): {e}")
+
+        try:
+            fetched_news = []
+            
+            # 1순위: Brave Search로 오늘의 핫이슈 검색
+            brave_result = self._search_brave("오늘 뉴스 이슈 트렌드", count=count * 2) # 필터링 고려해 더 많이 검색
+            if brave_result:
+                # 🟢 코드 레벨 필터링 적용
+                lines = brave_result.split('\n')
+                for line in lines:
+                    if line.strip() and not self._filter_news_content(line):
+                        fetched_news.append(line.strip())
+            
+            # 2순위: 네이버 실시간 검색어/인기 검색어 크롤링
+            if not fetched_news:
+                try:
+                    url = "https://search.naver.com/search.naver?query=" + urllib.parse.quote("오늘 뉴스")
+                    ctx = ssl.create_default_context()
+                    ctx.check_hostname = False
+                    ctx.verify_mode = ssl.CERT_NONE
+                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                    with urllib.request.urlopen(req, context=ctx, timeout=5) as response:
+                        html = response.read().decode('utf-8')
+                    
+                    # 뉴스 제목 추출
+                    news_titles = re.findall(r'class="news_tit"[^>]*>(.*?)<', html)
+                    if news_titles:
+                        idx = 1
+                        for title in news_titles:
+                            if not self._filter_news_content(title):
+                                fetched_news.append(f"{idx}. {title}")
+                                idx += 1
+                except Exception:
+                    pass
+            
+            # 검색 결과를 캐시에 저장
+            if fetched_news:
+                try:
+                    os.makedirs("config", exist_ok=True)
+                    with open(cache_file, 'w', encoding='utf-8') as f:
+                        json.dump({
+                            "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "news": fetched_news
+                        }, f, ensure_ascii=False, indent=4)
+                except Exception as e:
+                    logger.warning(f"뉴스 캐시 저장 실패: {e}")
+                
+                return "\n".join(fetched_news[:count])
+                
+            # 3순위: 기본 안내 (검색 실패 시)
+            return (
+                "[최신 이슈를 찾지 못했습니다]\n"
+                "최근 뉴스, 유행어, 생활 꿀팁, 재미있는 상식 중에서\n"
+                "하나를 선택하여 자유롭게 글을 시작해주세요."
+            )
+        except Exception as e:
+            logger.warning(f"트렌드 정보 수집 실패: {e}")
+            return None
 
     def _build_evening_hook_message(self):
         """저녁 포스팅용 명언 및 내일 날씨 예보 훅 메시지 생성"""

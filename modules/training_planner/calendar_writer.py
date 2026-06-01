@@ -88,8 +88,8 @@ def write_plan_to_excel(excel_path: str, plan_entries: list) -> dict:
                     
                     # 날짜 매칭 성공 시
                     if cell_date_str == date_str or cell_date_str.endswith(date_str[5:]):
-                        # AI 생성 내용을 4단계 루틴으로 분리 (\n 기준)
-                        lines = [line.strip() for line in title.split('\n') if line.strip()]
+                        # AI 생성 내용을 4단계 루틴으로 분리 (\n 기준) - 빈 줄 필터링 제거하여 정확한 단계 위치 유지
+                        lines = [line.strip() for line in title.split('\n')]
                         
                         # 각 단계를 1단계(B열) ~ 4단계(E열)에 분산 기록
                         for i, line in enumerate(lines[:4]):
@@ -132,6 +132,13 @@ def write_plan_to_excel(excel_path: str, plan_entries: list) -> dict:
                 # 현재 연도 추출 (계획 데이터의 날짜 기준)
                 y_num = datetime.strptime(entries[0]["date"], "%Y-%m-%d").year
                 fix_layout_and_holidays(ws, y_num, m_num)
+                
+                # 인쇄 설정 (한 페이지에 꽉 차게, 중앙 정렬)
+                ws.page_setup.fitToPage = True
+                ws.page_setup.fitToHeight = 1
+                ws.page_setup.fitToWidth = 1
+                ws.print_options.horizontalCentered = True
+                ws.print_options.verticalCentered = True
             except: pass
 
         wb.save(excel_path)
@@ -182,16 +189,15 @@ def get_existing_events_from_excel(excel_path: str, month_num: int) -> list:
 def _calc_font_size(text: str) -> int:
     """
     관장님 요청 사항 반영:
-    - 기본 10포인트 (20자까지 한 줄 표기 가능)
-    - 범위: 9 ~ 11포인트
+    - 범위: 최소 10 ~ 최대 12포인트
     - 글자 수에 따른 자동 조절
     """
-    if not text: return 10
+    if not text: return 12
     length = len(text)
     
-    if length <= 12:
-        return 11  # 아주 짧은 경우 가독성을 위해 11
-    elif length <= 22:
-        return 10  # 20자 내외(공백 포함 22자까지 여유)는 기준인 10
+    if length <= 15:
+        return 12
+    elif length <= 25:
+        return 11
     else:
-        return 9   # 그 이상 길어지는 경우 9로 축소하여 칸 넘침 방지
+        return 10

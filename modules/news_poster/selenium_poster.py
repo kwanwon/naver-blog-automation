@@ -144,23 +144,8 @@ class SeleniumPoster:
         
         if is_external_driver:
             self.driver = driver
-            print("[Step] [SeleniumPoster] Reusing active external ChromeDriver. Opening a NEW window...")
-            try:
-                # Open a new independent window instead of just a new tab to avoid messing up the main UI,
-                # while perfectly sharing the active login session.
-                self.driver.execute_script("window.open('about:blank', '_blank', 'width=1280,height=960,left=100,top=100,resizable=yes,scrollbars=yes');")
-                time.sleep(1.0)
-                # Switch focus to the newly opened window
-                self.driver.switch_to.window(self.driver.window_handles[-1])
-                print("[Step] [SeleniumPoster] Successfully opened and switched to a new window.")
-            except Exception as e:
-                print(f"[Warning] [SeleniumPoster] Failed to open new window, trying fallback to tab: {e}")
-                try:
-                    self.driver.execute_script("window.open('');")
-                    time.sleep(0.5)
-                    self.driver.switch_to.window(self.driver.window_handles[-1])
-                except Exception as tab_e:
-                    print(f"[Error] [SeleniumPoster] Fallback to tab also failed: {tab_e}")
+            print("[Step] [SeleniumPoster] Reusing active external ChromeDriver (Main Window).")
+            # 기존 메인 창을 그대로 사용 (새 창 띄우기 코드 제거됨)
         else:
             if not self._init_driver():
                 return False
@@ -474,14 +459,8 @@ class SeleniumPoster:
             if self.driver:
                 try:
                     if is_external_driver:
-                        # Close only the newly opened tab, leaving existing session intact
-                        if len(self.driver.window_handles) > 1:
-                            self.driver.close()
-                            # Return focus to original tab
-                            self.driver.switch_to.window(self.driver.window_handles[0])
-                            print("[Step] [SeleniumPoster] Closed the temporary news post tab and restored main tab focus.")
-                        else:
-                            print("[Step] [SeleniumPoster] Keep active window open as it is the only tab.")
+                        # 기존 메인 창을 그대로 사용했으므로 창을 닫지 않고 유지합니다.
+                        print("[Step] [SeleniumPoster] Main window kept open (no temporary tab to close).")
                     else:
                         self.driver.quit()
                         print("[Step] [SeleniumPoster] Isolated browser session closed.")

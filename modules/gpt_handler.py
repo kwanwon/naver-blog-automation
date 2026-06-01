@@ -1678,449 +1678,50 @@ class GPTHandler:
     }
 
     def _get_kma_weather(self, location="서울", forecast=False):
-        """기상청 단기예보 API를 사용한 날씨 정보 조회
+        """기상청 단기예보 API를 사용한 날씨 정보 조회 (로컬 캐시 우선)
         
         forecast=True: 내일 예보 / False: 현재(오늘) 날씨
-        1순위 날씨 소스. 실패 시 None 반환 → 네이버 폴백 사용
         """
-        settings = self._load_settings()
-        api_key = settings.get('kma_api_key', '')
-        if not api_key:
-            logger.info("기상청 API 키 미설정, 네이버 폴백 사용")
-            return None
-        
-        # 지역명 → 격자좌표 매핑
-        nx, ny = None, None
-        
-        # 정확한 매칭 시도
-        for key, coords in self.KMA_GRID_MAP.items():
-            if key in location or location in key:
-                nx, ny = coords
-                break
-        
-        # 부분 매칭 시도 (ex: "인천 부평구" → "부평구" 매칭)
-        if nx is None:
-            for part in location.split():
-                if part in self.KMA_GRID_MAP:
-                    nx, ny = self.KMA_GRID_MAP[part]
-                    break
-        
-        if nx is None:
-            logger.warning(f"기상청 격자좌표 매핑 실패: {location}, 네이버 폴백 즉시 사용")
-            return None
-        
         try:
-            now = datetime.now()
+            from modules.weather_cache_manager import WeatherCacheManager
+            delta = 1 if forecast else 0
             
-            # 발표 시각 계산 (단기예보: 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300)
-            base_times = ["0200", "0500", "0800", "1100", "1400", "1700", "2000", "2300"]
-            current_hhmm = now.strftime("%H%M")
+            # 캐시 매니저를 통해 포맷팅된 날씨 정보 가져오기
+            cached_weather = WeatherCacheManager.get_cached_weather(location, delta_days=delta)
             
-            # 가장 최근 발표 시각 찾기 (10분 여유)
-            base_time = "2300"  # 기본값
-            base_date = now.strftime("%Y%m%d")
+            if cached_weather:
+                logger.info(f"로컬 캐시에서 날씨 정보를 성공적으로 불러왔습니다: {location} (forecast={forecast})")
+                return cached_weather
             
-            for bt in reversed(base_times):
-                # API 발행시각보다 10분 이후에 데이터가 준비됨
-                adjusted_bt = str(int(bt) + 10).zfill(4)
-                if current_hhmm >= adjusted_bt:
-                    base_time = bt
-                    break
-            else:
-                # 자정~02:10 사이: 전날 23시 발표
-                base_date = (now - timedelta(days=1)).strftime("%Y%m%d")
-                base_time = "2300"
+            logger.warning(f"날씨 캐시 정보가 없거나 오래되었습니다. 즉시 캐시 업데이트를 시도합니다: {location}")
             
-            # forecast=True면 내일 예보
-            if forecast:
-                fcst_date = (now + timedelta(days=1)).strftime("%Y%m%d")
-            else:
-                fcst_date = now.strftime("%Y%m%d")
+            # 캐시가 없으면 즉시 한 번 업데이트를 시도합니다.
+            settings = self._load_settings()
+            api_key = settings.get('kma_api_key', '')
+            if api_key:
+                # KMA 업데이트 시도
+                success = WeatherCacheManager.update_weather_cache(location, api_key)
+                if success:
+                    cached_weather = WeatherCacheManager.get_cached_weather(location, delta_days=delta)
+                    if cached_weather:
+                        return cached_weather
             
-            # API 호출
-            api_url = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
-            params = {
-                "serviceKey": api_key,
-                "numOfRows": 300,
-                "pageNo": 1,
-                "dataType": "JSON",
-                "base_date": base_date,
-                "base_time": base_time,
-                "nx": nx,
-                "ny": ny
-            }
-            
-            query_string = urllib.parse.urlencode(params)
-            full_url = f"{api_url}?{query_string}"
-            
-            req = urllib.request.Request(full_url)
-            with urllib.request.urlopen(req, timeout=10) as response:
-                data = json.loads(response.read().decode('utf-8'))
-            
-            # 응답 검증
-            result_code = data.get('response', {}).get('header', {}).get('resultCode', '')
-            if result_code != '00':
-                result_msg = data.get('response', {}).get('header', {}).get('resultMsg', '')
-                logger.warning(f"기상청 API 오류: {result_code} - {result_msg}")
-                return None
-            
-            items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
-            if not items:
-                logger.warning("기상청 API: 데이터 없음")
-                return None
-            
-            # 필요한 필드 추출
-            # TMP: 기온, SKY: 하늘상태(1맑음,3구름많음,4흐림), POP: 강수확률, PTY: 강수형태
-            sky_map = {"1": "맑음", "3": "구름많음", "4": "흐림"}
-            pty_map = {"0": "없음", "1": "비", "2": "비/눈", "3": "눈", "4": "소나기"}
-            
-            # 날짜별 데이터 수집
-            weather_data = {}
-            for item in items:
-                cat = item.get('category', '')
-                fdate = item.get('fcstDate', '')
-                ftime = item.get('fcstTime', '')
-                fvalue = item.get('fcstValue', '')
-                
-                key = f"{fdate}_{ftime}"
-                if key not in weather_data:
-                    weather_data[key] = {}
-                weather_data[key][cat] = fvalue
-            
-            if forecast:
-                # --- 내일 예보 (예약 포스팅용) ---
-                tomorrow_temps = []
-                tomorrow_sky = ""
-                tomorrow_pop = ""
-                morning_temp = None
-                
-                # 06~09시 사이의 기온을 '아침 기온'으로 간주
-                target_morning_hours = ['0600', '0700', '0800', '0900']
-                
-                for key, vals in sorted(weather_data.items()):
-                    if not key.startswith(fcst_date):
-                        continue
+            # KMA 업데이트 실패 혹은 api_key 없으면 Naver 업데이트 시도
+            success = WeatherCacheManager.update_weather_cache_via_naver(location)
+            if success:
+                cached_weather = WeatherCacheManager.get_cached_weather(location, delta_days=delta)
+                if cached_weather:
+                    return cached_weather
                     
-                    ftime = key.split('_')[1]
-                    tmp = vals.get('TMP', vals.get('T1H', ''))
-                    
-                    if tmp:
-                        try:
-                            tomorrow_temps.append(float(tmp))
-                        except ValueError:
-                            pass
-                    
-                    # 오전 6~9시 기준 날씨
-                    if ftime in target_morning_hours:
-                        if tmp and morning_temp is None:
-                            morning_temp = float(tmp)
-                        sky_code = vals.get('SKY', '')
-                        if sky_code:
-                            morning_sky = sky_map.get(sky_code, sky_code)
-                        pop_val = vals.get('POP', '')
-                        if pop_val:
-                            tomorrow_pop = pop_val
-                
-                if tomorrow_temps:
-                    min_temp = min(tomorrow_temps)
-                    max_temp = max(tomorrow_temps)
-                    
-                    # 오전 날씨가 없으면 첫 번째 값 사용
-                    if not tomorrow_sky:
-                        for key, vals in sorted(weather_data.items()):
-                            if key.startswith(fcst_date):
-                                sky_code = vals.get('SKY', '')
-                                if sky_code:
-                                    tomorrow_sky = sky_map.get(sky_code, sky_code)
-                                    break
-                    
-                    result_text = (
-                        f"[{location} 내일 날씨 예보 (기상청)]\n"
-                        f"지역: {location}\n"
-                        f"날씨: {tomorrow_sky if tomorrow_sky else '확인중'}, "
-                        f"최저/최고: {min_temp:.0f}/{max_temp:.0f}도"
-                    )
-                    if morning_temp is not None:
-                        result_text += f", 오전 기온: {morning_temp:.1f}도"
-                    if tomorrow_pop:
-                        result_text += f", 강수확률: {tomorrow_pop}%"
-
-                    # 🟢 오늘(비교 대상) 아침 기온 구하기 (비교 로직)
-                    today_morning_temp = None
-                    try:
-                        for key, vals in sorted(weather_data.items()):
-                            if not key.startswith(compare_date): # 오늘 날짜
-                                continue
-                            ftime = key.split('_')[1]
-                            if ftime in target_morning_hours:
-                                t_tmp = vals.get('TMP', vals.get('T1H', ''))
-                                if t_tmp:
-                                    today_morning_temp = float(t_tmp)
-                                    break # 가장 빠른 아침 시간대 하나만 잡음
-                        
-                        if today_morning_temp is not None and morning_temp is not None:
-                            diff = morning_temp - today_morning_temp
-                            if diff > 0:
-                                result_text += f"\\n어제(오늘) 같은 아침보다 {abs(diff):.1f}도 높습니다 (↑상승)"
-                            elif diff < 0:
-                                result_text += f"\\n어제(오늘) 같은 아침보다 {abs(diff):.1f}도 낮습니다 (↓하강)"
-                            else:
-                                result_text += f"\\n어제(오늘) 아침과 비슷한 기온입니다"
-                    except Exception as e:
-                        logger.warning(f"내일 예보 비교 로직 실패: {e}")
-
-                    logger.info(f"기상청 내일 예보 성공: {location} (비교 포함)")
-                    return result_text
-                else:
-                    logger.warning("기상청 내일 예보: 기온 데이터 없음")
-                    return None
-            else:
-                # --- 오늘 날씨 ---
-                today_temps = []
-                current_sky = ""
-                current_temp = ""
-                current_pop = ""
-                
-                # 현재 시간에 가장 가까운 시간대 찾기
-                current_hour = now.strftime("%H00")
-                closest_key = None
-                first_future_key = None  # 현재 이후 가장 가까운 시간대 (폴백용)
-                
-                for key in sorted(weather_data.keys()):
-                    if key.startswith(fcst_date):
-                        ftime = key.split('_')[1]
-                        if ftime <= current_hour:
-                            closest_key = key
-                        elif first_future_key is None:
-                            first_future_key = key  # 현재 이후 첫 번째 시간대
-                        
-                        tmp = weather_data[key].get('TMP', weather_data[key].get('T1H', ''))
-                        if tmp:
-                            try:
-                                today_temps.append(float(tmp))
-                            except ValueError:
-                                pass
-                
-                # 현재/과거 시간대가 없으면 가장 가까운 미래 시간대 사용
-                if closest_key is None and first_future_key is not None:
-                    closest_key = first_future_key
-                
-                if closest_key and closest_key in weather_data:
-                    vals = weather_data[closest_key]
-                    current_temp = vals.get('TMP', vals.get('T1H', '?'))
-                    sky_code = vals.get('SKY', '')
-                    current_sky = sky_map.get(sky_code, sky_code) if sky_code else ""
-                    pty_code = vals.get('PTY', '0')
-                    if pty_code and pty_code != '0':
-                        current_sky = pty_map.get(pty_code, current_sky)
-                    current_pop = vals.get('POP', '')
-                
-                if today_temps:
-                    min_temp = min(today_temps)
-                    max_temp = max(today_temps)
-                else:
-                    min_temp = "?"
-                    max_temp = "?"
-                
-                # 🟢 어제 같은 시간대 기온 조회 (비교용)
-                yesterday_temp = None
-                try:
-                    yesterday = now - timedelta(days=1)
-                    yday_date = yesterday.strftime("%Y%m%d")
-                    # 어제 가장 가까운 발표 시각 사용
-                    yday_base_time = "0500"  # 어제 05시 발표 기준 (충분한 데이터)
-                    yday_params = {
-                        "serviceKey": api_key,
-                        "numOfRows": 300,
-                        "pageNo": 1,
-                        "dataType": "JSON",
-                        "base_date": yday_date,
-                        "base_time": yday_base_time,
-                        "nx": nx,
-                        "ny": ny
-                    }
-                    yday_url = f"{api_url}?{urllib.parse.urlencode(yday_params)}"
-                    yday_req = urllib.request.Request(yday_url)
-                    with urllib.request.urlopen(yday_req, timeout=8) as yday_response:
-                        yday_data = json.loads(yday_response.read().decode('utf-8'))
-                    
-                    yday_items = yday_data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
-                    
-                    # 어제 같은 시간대 기온 찾기
-                    target_hour = now.strftime("%H00")
-                    for item in yday_items:
-                        if (item.get('fcstDate') == yday_date and 
-                            item.get('fcstTime') == target_hour and 
-                            item.get('category') == 'TMP'):
-                            yesterday_temp = float(item.get('fcstValue', ''))
-                            break
-                    
-                    # 같은 시간대 못 찾으면 ±1시간 범위 탐색
-                    if yesterday_temp is None:
-                        hour_int = int(now.strftime("%H"))
-                        for offset in [-1, 1, -2, 2]:
-                            check_hour = f"{(hour_int + offset) % 24:02d}00"
-                            for item in yday_items:
-                                if (item.get('fcstDate') == yday_date and 
-                                    item.get('fcstTime') == check_hour and 
-                                    item.get('category') == 'TMP'):
-                                    yesterday_temp = float(item.get('fcstValue', ''))
-                                    break
-                            if yesterday_temp is not None:
-                                break
-                                
-                except Exception as e:
-                    logger.info(f"어제 기온 조회 실패 (무시): {e}")
-                
-                # 결과 텍스트 조립
-                result_text = (
-                    f"[{location} 현재 날씨 (기상청 단기예보)]\n"
-                    f"지역: {location}\n"
-                    f"현재 기온: {current_temp}도 ({current_sky})\n"
-                    f"최저/최고: {min_temp if isinstance(min_temp, str) else f'{min_temp:.0f}'}"
-                    f"/{max_temp if isinstance(max_temp, str) else f'{max_temp:.0f}'}도"
-                )
-                if current_pop:
-                    result_text += f"\n강수확률: {current_pop}%"
-                
-                # 🟢 어제 비교 추가
-                if yesterday_temp is not None and current_temp != '?':
-                    try:
-                        today_val = float(current_temp)
-                        diff = today_val - yesterday_temp
-                        if diff > 0:
-                            result_text += f"\n어제 같은 시간({yesterday_temp:.0f}도)보다 {abs(diff):.1f}도 높습니다 (↑상승)"
-                        elif diff < 0:
-                            result_text += f"\n어제 같은 시간({yesterday_temp:.0f}도)보다 {abs(diff):.1f}도 낮습니다 (↓하강)"
-                        else:
-                            result_text += f"\n어제 같은 시간과 동일한 기온입니다"
-                    except (ValueError, TypeError):
-                        pass
-                
-                logger.info(f"기상청 오늘 날씨 성공: {location} → nx={nx},ny={ny}")
-                return result_text
+            return None
             
         except Exception as e:
-            logger.warning(f"기상청 API 날씨 조회 실패: {e}")
+            logger.error(f"날씨 정보 로딩 실패: {e}")
             return None
 
     def _get_naver_weather(self, location="서울", forecast=False):
-        # 네이버 날씨 크롤링 (urllib 사용, SSL 무시)
-        # forecast=True: 내일 오전 예보 / False: 현재 날씨
-        try:
-            query = urllib.parse.quote(f"{location} 날씨")
-            url = f"https://search.naver.com/search.naver?query={query}"
-            
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-            
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, context=ctx, timeout=5) as response:
-                html = response.read().decode('utf-8')
-            
-            # --- 현재 날씨 (기본) ---
-            # 1. 현재 온도
-            temp_match = re.search(r'class="temperature_text">.*?<span class="blind">현재 온도</span>(.*?)(?:<span|\xb0)', html, re.DOTALL)
-            current_temp = temp_match.group(1).strip() if temp_match else "?"
-            
-            # 2. 날씨 상태 (흐림, 맑음 등)
-            status_match = re.search(r'class="weather before_slash">(.*?)<', html)
-            weather_status = status_match.group(1).strip() if status_match else ""
-
-            # 3. 미세먼지
-            dust_match = re.search(r'미세먼지.*?class="txt">(.*?)<', html, re.DOTALL)
-            fine_dust = dust_match.group(1).strip() if dust_match else "?"
-
-            # 4. 초미세먼지
-            ultra_dust_match = re.search(r'초미세먼지.*?class="txt">(.*?)<', html, re.DOTALL)
-            ultra_dust = ultra_dust_match.group(1).strip() if ultra_dust_match else "?"
-            
-            # 5. 최저/최고 기온
-            min_match = re.search(r'최저기온</span>(.*?)(?:\xb0|<)', html)
-            max_match = re.search(r'최고기온</span>(.*?)(?:\xb0|<)', html)
-            min_temp = min_match.group(1).strip() if min_match else "?"
-            max_temp = max_match.group(1).strip() if max_match else "?"
-            
-            # --- 어제 비교 크롤링 (현재/오전/오후 모든 경우에 유용) ---
-            yesterday_comp = ""
-            summary_match = re.search(r'class="summary"[^>]*>(.*?)</p>', html, re.DOTALL)
-            if summary_match:
-                text = re.sub(r'<[^>]+>', ' ', summary_match.group(1))
-                text = " ".join(text.split())
-                if "어제보다" in text:
-                    parts = text.split("어제보다")[1].strip().split()
-                    if len(parts) >= 2:
-                        yesterday_comp = f"어제보다 {parts[0]} {parts[1]}".replace("°", "도")
-                    else:
-                        yesterday_comp = text.replace("°", "도")
-            
-            yesterday_text = f" [{yesterday_comp}]" if yesterday_comp else ""
-            
-            if forecast:
-                # --- 내일 예보 추출 시도 ---
-                # 네이버 날씨 페이지에서 내일 최저/최고/상태 추출
-                tomorrow_min = "?"
-                tomorrow_max = "?"
-                tomorrow_status = ""
-                
-                # 내일 기온: 주간 예보 영역 활용
-                days = re.findall(r'<strong class="day">(.*?)</strong>.*?최저기온</span>(.*?)<.*?최고기온</span>(.*?)<', html, re.DOTALL)
-                for d in days:
-                    if d[0].strip() == "내일":
-                        tomorrow_min = d[1].strip().replace("°", "")
-                        tomorrow_max = d[2].strip().replace("°", "")
-                        break
-                        
-                t_stat_match = re.search(r'<strong class="day">내일</strong>.*?class="weather[^>]*>(.*?)<', html, re.DOTALL)
-                if t_stat_match:
-                    tomorrow_status = t_stat_match.group(1).strip()
-                
-                # 내일 예보가 파싱 안 되면 오늘 정보로 대체
-                if tomorrow_min == "?" and tomorrow_max == "?":
-                    return (
-                        f"[{location} 내일 예보 미확인 - 오늘 기준 참고]\n"
-                        f"현재: {current_temp}도 ({weather_status}){yesterday_text}, "
-                        f"최저/최고: {min_temp}/{max_temp}도, "
-                        f"미세먼지: {fine_dust}, 초미세먼지: {ultra_dust}"
-                    )
-                
-                # 오늘과 내일 기온 비교
-                tomorrow_comp = ""
-                if tomorrow_min != "?" and min_temp != "?":
-                    try:
-                        t_min_val = float(tomorrow_min)
-                        t_max_val = float(tomorrow_max)
-                        t_diff_min = t_min_val - float(min_temp)
-                        t_diff_max = t_max_val - float(max_temp)
-                        
-                        min_str = f"{abs(t_diff_min):.1f}도 높고" if t_diff_min > 0 else f"{abs(t_diff_min):.1f}도 낮고" if t_diff_min < 0 else "거의 비슷하고"
-                        max_str = f"{abs(t_diff_max):.1f}도 높습니다" if t_diff_max > 0 else f"{abs(t_diff_max):.1f}도 낮습니다" if t_diff_max < 0 else "거의 비슷합니다"
-                        
-                        tomorrow_comp = f"\n오늘 기온 대비 내일 최저기온은 {min_str}, 최고기온은 {max_str}."
-                    except (ValueError, TypeError):
-                        pass
-                
-                return (
-                    f"[{location} 내일 날씨 예보 (네이버)]\n"
-                    f"지역: {location}\n"
-                    f"날씨: {tomorrow_status if tomorrow_status else '확인중'}, "
-                    f"최저/최고: {tomorrow_min}/{tomorrow_max}도{tomorrow_comp}\n"
-                    f"[오늘 기준 대기질] 미세먼지: {fine_dust}, 초미세먼지: {ultra_dust}"
-                )
-            else:
-                # --- 현재 날씨 반환 ---
-                return (
-                    f"[{location} 실시간 날씨 (네이버)]\n"
-                    f"지역: {location}\n"
-                    f"현재 기온: {current_temp}도 ({weather_status}){yesterday_text}\n"
-                    f"최저/최고: {min_temp}/{max_temp}도\n"
-                    f"미세먼지: {fine_dust}, 초미세먼지: {ultra_dust}"
-                )
-            
-        except Exception as e:
-            logger.warning(f"날씨 크롤링 실패: {e}")
-            return None
+        # 이제 네이버 폴백 로직도 WeatherCacheManager에 통합되었으므로, KMA 로직을 재호출합니다.
+        return self._get_kma_weather(location, forecast=forecast)
     
     def _filter_news_content(self, text: str) -> bool:
         """뉴스 내용에 금칙어가 포함되어 있는지 확인"""
@@ -2135,50 +1736,76 @@ class GPTHandler:
                 return True
         return False
 
-    def _get_trending_topics(self, count=3):
+    def _get_trending_topics(self, count=3, force_refresh=False):
         # 오후/저녁용: 최신 뉴스/이슈/트렌드 정보 수집
         # count: 가져올 뉴스 수 (기본 3, 배치 분배용 6)
+        
+        # 0순위: 로컬 캐시 확인
+        cache_file = os.path.join("config", "news_cache.json")
         try:
+            if not force_refresh and os.path.exists(cache_file):
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    cache_data = json.load(f)
+                
+                last_updated_str = cache_data.get('last_updated', '')
+                if last_updated_str:
+                    last_updated = datetime.strptime(last_updated_str, "%Y-%m-%d %H:%M:%S")
+                    if datetime.now() - last_updated < timedelta(hours=6):
+                        news_lines = cache_data.get('news', [])
+                        if news_lines:
+                            logger.info("로컬 뉴스 캐시를 사용합니다.")
+                            return "\n".join(news_lines[:count])
+        except Exception as e:
+            logger.warning(f"뉴스 캐시 읽기 실패 (무시됨): {e}")
+
+        try:
+            fetched_news = []
+            
             # 1순위: Brave Search로 오늘의 핫이슈 검색
             brave_result = self._search_brave("오늘 뉴스 이슈 트렌드", count=count * 2) # 필터링 고려해 더 많이 검색
             if brave_result:
                 # 🟢 코드 레벨 필터링 적용
                 lines = brave_result.split('\n')
-                filtered_lines = []
                 for line in lines:
-                    if not self._filter_news_content(line):
-                        filtered_lines.append(line)
-                
-                if filtered_lines:
-                    return "\n".join(filtered_lines[:count])
+                    if line.strip() and not self._filter_news_content(line):
+                        fetched_news.append(line.strip())
             
             # 2순위: 네이버 실시간 검색어/인기 검색어 크롤링
-            try:
-                url = "https://search.naver.com/search.naver?query=" + urllib.parse.quote("오늘 뉴스")
-                ctx = ssl.create_default_context()
-                ctx.check_hostname = False
-                ctx.verify_mode = ssl.CERT_NONE
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, context=ctx, timeout=5) as response:
-                    html = response.read().decode('utf-8')
-                
-                # 뉴스 제목 추출
-                news_titles = re.findall(r'class="news_tit"[^>]*>(.*?)<', html)
-                if news_titles:
-                    filtered_news = []
-                    for title in news_titles:
-                        if not self._filter_news_content(title):
-                            filtered_news.append(title)
+            if not fetched_news:
+                try:
+                    url = "https://search.naver.com/search.naver?query=" + urllib.parse.quote("오늘 뉴스")
+                    ctx = ssl.create_default_context()
+                    ctx.check_hostname = False
+                    ctx.verify_mode = ssl.CERT_NONE
+                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                    with urllib.request.urlopen(req, context=ctx, timeout=5) as response:
+                        html = response.read().decode('utf-8')
                     
-                    if filtered_news:
-                        top_news = filtered_news[:count]
-                        lines = []
-                        for i, title in enumerate(top_news, 1):
-                            lines.append(f"{i}. {title}")
-                        return "\n".join(lines)
-            except Exception:
-                pass
+                    # 뉴스 제목 추출
+                    news_titles = re.findall(r'class="news_tit"[^>]*>(.*?)<', html)
+                    if news_titles:
+                        idx = 1
+                        for title in news_titles:
+                            if not self._filter_news_content(title):
+                                fetched_news.append(f"{idx}. {title}")
+                                idx += 1
+                except Exception:
+                    pass
             
+            # 검색 결과를 캐시에 저장
+            if fetched_news:
+                try:
+                    os.makedirs("config", exist_ok=True)
+                    with open(cache_file, 'w', encoding='utf-8') as f:
+                        json.dump({
+                            "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "news": fetched_news
+                        }, f, ensure_ascii=False, indent=4)
+                except Exception as e:
+                    logger.warning(f"뉴스 캐시 저장 실패: {e}")
+                
+                return "\n".join(fetched_news[:count])
+                
             # 3순위: 기본 안내 (검색 실패 시)
             return (
                 "[최신 이슈를 찾지 못했습니다]\n"

@@ -47,9 +47,9 @@ class IdleActivity:
         "공감합니다! 좋은 하루 되세요~", "오늘도 화이팅이요!", "잘 봤습니다~ 감사해요!"
     ]
     
-    def __init__(self, driver, gpt_handler, base_dir=None):
+    def __init__(self, driver, ai_handler, base_dir=None):
         self.driver = driver
-        self.gpt_handler = gpt_handler
+        self.ai_handler = ai_handler
         self.base_url = "https://section.blog.naver.com/BlogHome.naver?directoryNo=0&currentPage=1&groupId=0"
         self.base_dir = base_dir or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         
@@ -120,7 +120,7 @@ class IdleActivity:
 📌 예시:
 "오늘 [수련내용/활동] 하시는 모습 보니 정말 열정이 대단하시네요! 아이들 표정에서 즐거움이 느껴져서 저까지 기분이 좋아집니다. 앞으로도 자주 소통하며 지내요~"
 """
-            result = self.gpt_handler.generate_platform_content(
+            result = self.ai_handler.generate_platform_content(
                 topic=prompt,
                 platform='idle'
             )
@@ -676,7 +676,7 @@ class IdleActivity:
     def _generate_ai_reply(self, comment_text):
         """AI 기반 답글 생성"""
         try:
-            result = self.gpt_handler.generate_platform_content(
+            result = self.ai_handler.generate_platform_content(
                 topic=f"다음 댓글에 대한 따뜻하고 친근한 답글을 1-2문장으로 작성해주세요: '{comment_text}'",
                 platform='idle'
             )

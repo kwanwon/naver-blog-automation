@@ -33,6 +33,14 @@ class AIHandler:
     def model(self):
         return self.blog_expert.model
 
+    @property
+    def openai_client(self):
+        return self.blog_expert.openai_client
+
+    @property
+    def settings(self):
+        return self.blog_expert.settings
+
     def generate_content(self, topic, post_order=1, post_type_config=None, platform='blog', task_type=None, target_time=None, delta_days=0):
         """블로그 및 일반 포스팅 생성 요청을 라우팅합니다."""
         if platform == 'blog':
@@ -136,9 +144,9 @@ class AIHandler:
     def _load_user_settings(self):
         return self.blog_expert._load_user_settings()
 
-    def _get_trending_topics(self, count=3):
+    def _get_trending_topics(self, count=3, force_refresh=False):
         """하위 호환성을 위해 트렌딩 주제 탐색 기능을 blog_expert로부터 위임받아 제공합니다."""
-        return self.blog_expert._get_trending_topics(count=count)
+        return self.blog_expert._get_trending_topics(count=count, force_refresh=force_refresh)
 
 if __name__ == "__main__":
     # 테스트 코드

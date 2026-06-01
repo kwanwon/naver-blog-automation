@@ -15,9 +15,9 @@ import re
 import os
 
 class NaverBlogCommentReply:
-    def __init__(self, driver, gpt_handler=None, my_blog_id=None):
+    def __init__(self, driver, ai_handler=None, my_blog_id=None):
         self.driver = driver
-        self.gpt_handler = gpt_handler
+        self.ai_handler = ai_handler
         self.stop_flag = False  # 중지 플래그
         self.default_reply_index = 0  # 기본 답글 순차 인덱스
         
@@ -577,8 +577,8 @@ class NaverBlogCommentReply:
             input_elem = reply_input[0]
             
             # 답글 내용 생성
-            if use_ai and self.gpt_handler:
-                reply_text = self.gpt_handler.generate_reply(original_comment)
+            if use_ai and self.ai_handler:
+                reply_text = self.ai_handler.generate_reply(original_comment)
             else:
                 reply_text = self._get_default_reply()
             
@@ -777,7 +777,7 @@ class NaverBlogCommentReply:
         블로그 생성 로직 대신 직접 API 호출로 간결한 답글 생성
         상담 관련 댓글에는 전화번호 포함
         """
-        if not self.gpt_handler:
+        if not self.ai_handler:
             return "감사합니다! 행복한 하루 되세요~😊"
         
         # 상담 관련 키워드 체크
@@ -818,7 +818,7 @@ class NaverBlogCommentReply:
 
         try:
             # 통합 GPTHandler 사용 (OpenAI/Gemini 모두 지원)
-            if self.gpt_handler and hasattr(self.gpt_handler, 'generate_reply'):
+            if self.ai_handler and hasattr(self.ai_handler, 'generate_reply'):
                 # 시스템 메시지 구성
                 system_msg = "당신은 친근한 블로그 주인(관장)입니다. 사용자가 제공한 지침을 정확히 따라 댓글에 답글을 남깁니다."
                 if is_consultation and phone_number:
@@ -827,7 +827,7 @@ class NaverBlogCommentReply:
                 # 지침을 시스템 메시지에 추가
                 system_msg += f"\n\n[답글 작성 지침]\n{instruction}"
                 
-                content = self.gpt_handler.generate_reply(
+                content = self.ai_handler.generate_reply(
                     system_prompt=system_msg,
                     user_text=f"댓글: \"{comment_text}\"\n위 댓글에 대한 답글을 작성해주세요.",
                     max_tokens=300

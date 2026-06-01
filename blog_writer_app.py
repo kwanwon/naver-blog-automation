@@ -586,9 +586,22 @@ class BlogWriterApp:
                 # 이미지 핸들러 초기화 (감지된 폴더의 이미지들을 로드함)
                 blog_auto.setup_image_inserter()
                 
-                # 태그 준비
+                # 태그 준비: 고정 태그(최대15) + AI 태그(최대15) 병합 = 최대 30개
                 tags_str = self.settings.get('blog_tags', '')
-                tags = [tag.strip() for tag in tags_str.split(',') if tag.strip()] if tags_str else []
+                fixed_tags = [tag.strip() for tag in tags_str.split(',') if tag.strip()] if tags_str else []
+                ai_tags_raw = result.get('tags', [])
+                if isinstance(ai_tags_raw, str):
+                    ai_tags_raw = [t.strip() for t in ai_tags_raw.split(',') if t.strip()]
+                seen = set()
+                merged_tags = []
+                for t in fixed_tags[:15]:
+                    if t and t not in seen:
+                        merged_tags.append(t); seen.add(t)
+                for t in ai_tags_raw:
+                    if t and t not in seen and len(merged_tags) < 30:
+                        merged_tags.append(t); seen.add(t)
+                tags = merged_tags
+                print(f"📌 태그 준비 완료: 고정 {min(len(fixed_tags),15)}개 + AI {len(tags)-min(len(fixed_tags),15)}개 = 총 {len(tags)}개")
                 
                 # 포스팅 실행 (write_post 사용)
                 success = blog_auto.write_post(
@@ -1641,8 +1654,8 @@ class BlogWriterApp:
         """로그인 버튼 업데이트"""
         try:
             # 페이지 구조: [0] = header, [1] = tabs
-            # 첫 번째 탭(블로그 작성)의 첫 번째 컨트롤(로그인 버튼)을 업데이트
-            main_tab = page.controls[1].tabs[0].content  # 두 번째 컨트롤(탭)의 첫 번째 탭
+            # 두 번째 탭(블로그 시작)의 첫 번째 컨트롤(로그인 버튼)을 업데이트
+            main_tab = page.controls[1].tabs[1].content  # 두 번째 컨트롤(탭)의 두 번째 탭(블로그 시작)
             if isinstance(new_button, ft.Row):
                 # 새 버튼이 Row인 경우 (타이머 버튼들과 함께)
                 main_tab.controls[0] = ft.Container(
@@ -2611,6 +2624,17 @@ class BlogWriterApp:
                             print(f"    ❌ 내용 생성 실패 ({res_time})")
                             continue
                         
+                        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입
+                        f_sent = self.settings.get('blog_first_sentence', self.settings.get('first_sentence', '')).strip()
+                        s_sent = self.settings.get('blog_slogan', self.settings.get('slogan', '')).strip()
+                        content_str = result.get('content', '')
+                        if f_sent and f_sent not in content_str:
+                            content_str = f"{f_sent}\n\n{content_str}"
+                        if s_sent and s_sent not in content_str:
+                            content_str = f"{content_str}\n\n{s_sent}"
+                        result['content'] = content_str
+
+                        
                         # 2. 기존 브라우저 사용 또는 생성
                         driver = self.get_or_create_driver()
                         
@@ -2695,6 +2719,8 @@ class BlogWriterApp:
                         
                         # 태그: GPT 태그 + 사용자 설정 태그 병합
                         ai_tags = result.get('tags', [])
+                        if isinstance(ai_tags, str):
+                            ai_tags = [t.strip() for t in ai_tags.split(',') if t.strip()]
                         user_tags = []
                         try:
                             user_tags_str = self.settings.get('blog_tags', '')
@@ -2702,7 +2728,18 @@ class BlogWriterApp:
                                 user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
                         except:
                             pass
-                        tags = list(set(ai_tags + user_tags))  # 중복 제거
+                        
+                        seen_tags = set()
+                        merged_tags = []
+                        for t in user_tags[:15]:
+                            if t and t not in seen_tags:
+                                merged_tags.append(t)
+                                seen_tags.add(t)
+                        for t in ai_tags[:15]:
+                            if t and t not in seen_tags and len(merged_tags) < 30:
+                                merged_tags.append(t)
+                                seen_tags.add(t)
+                        tags = merged_tags
                         
                         # 글 작성 (이미지 포함) - write_post가 푸터+태그 추가까지 처리
                         # 예약 모드: 최종 발행 버튼 클릭 스킵 (나중에 예약 설정 후 발행)
@@ -2718,25 +2755,23 @@ class BlogWriterApp:
                             print(f"    ❌ 글 작성 실패: {write_err}")
                             continue
                         
-                        # 예약 모드: write_post()가 이미 푸터+태그+발행 처리했으므로 건너뜀
-                        # 발행 옵션 패널에서 예약 시간만 설정
                         finisher = NaverBlogPostFinisher(driver, self.settings)
+                        auto_publish = self.settings.get('blog_auto_publish', True)
+                        publish_success = False
+                        reservation_success = False
                         
-                        # 6. 예약 발행 설정
-                        reservation_success = finisher.set_reservation_time(res_time)
-                        publish_success = False  # 초기화
-                        
-                        if reservation_success:
-                            # 7. 발행 버튼 클릭
-                            publish_success = finisher.click_final_publish_button(is_reservation=True)
-                            
+                        if auto_publish:
+                            publish_success = finisher.click_final_publish_button(is_reservation=False)
                             if publish_success:
                                 success_cnt += 1
-                                print(f"    ✅ 블로그 예약 성공: {res_time}")
+                                print(f"    ✅ 블로그 자동 발행 성공")
                             else:
-                                print(f"    ❌ 발행 버튼 클릭 실패: {res_time}")
+                                print(f"    ❌ 발행 버튼 클릭 실패")
                         else:
-                            print(f"    ❌ 예약 시간 설정 실패: {res_time}")
+                            print("    ⏸️ '자동 발행'이 꺼져 있어 수동 발행을 위해 대기합니다.")
+                            success_cnt += 1
+                            publish_success = True
+                            reservation_success = True
                         
                         # 로그 기록
                         self.add_model_usage_log(
@@ -2823,6 +2858,16 @@ class BlogWriterApp:
                             print(f"    ❌ 내용 생성 실패")
                             task.last_status = 'failed'
                             return
+                            
+                        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입
+                        f_sent = self.settings.get('blog_first_sentence', self.settings.get('first_sentence', '')).strip()
+                        s_sent = self.settings.get('blog_slogan', self.settings.get('slogan', '')).strip()
+                        content_str = result.get('content', '')
+                        if f_sent and f_sent not in content_str:
+                            content_str = f"{f_sent}\n\n{content_str}"
+                        if s_sent and s_sent not in content_str:
+                            content_str = f"{content_str}\n\n{s_sent}"
+                        result['content'] = content_str
                         
                         driver = self.get_or_create_driver()
                         
@@ -2897,6 +2942,8 @@ class BlogWriterApp:
                         title = result.get('title', topic)
                         content = result.get('content', '')
                         ai_tags = result.get('tags', [])
+                        if isinstance(ai_tags, str):
+                            ai_tags = [t.strip() for t in ai_tags.split(',') if t.strip()]
                         user_tags = []
                         try:
                             user_tags_str = self.settings.get('blog_tags', '')
@@ -2904,7 +2951,18 @@ class BlogWriterApp:
                                 user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
                         except:
                             pass
-                        tags = list(set(ai_tags + user_tags))
+                        
+                        seen_tags = set()
+                        merged_tags = []
+                        for t in user_tags[:15]:
+                            if t and t not in seen_tags:
+                                merged_tags.append(t)
+                                seen_tags.add(t)
+                        for t in ai_tags[:15]:
+                            if t and t not in seen_tags and len(merged_tags) < 30:
+                                merged_tags.append(t)
+                                seen_tags.add(t)
+                        tags = merged_tags
                         
                         # 글 작성 (write_post가 푸터+태그 처리)
                         # 예약 모드: 최종 발행 버튼 클릭 스킵 (나중에 예약 설정 후 발행)
@@ -2917,26 +2975,24 @@ class BlogWriterApp:
                         
                         print(f"    ✅ 글 작성 완료")
                         
-                        # 예약 모드: write_post()가 이미 푸터+태그 처리함
-                        # 발행 옵션 패널에서 예약 시간만 설정
+                        # 6. 자동 발행 설정 확인 후 즉시 발행 또는 대기
                         finisher = NaverBlogPostFinisher(driver, self.settings)
+                        auto_publish = self.settings.get('blog_auto_publish', True)
+                        publish_success = False
+                        reservation_success = True
                         
-                        # 예약 시간 설정
-                        reservation_success = finisher.set_reservation_time(reservation_time)
-                        publish_success = False  # 초기화
-                        
-                        if reservation_success:
-                            publish_success = finisher.click_final_publish_button(is_reservation=True)
-                            
+                        if auto_publish:
+                            publish_success = finisher.click_final_publish_button(is_reservation=False)
                             if publish_success:
-                                print(f"    ✅ 블로그 예약 성공: {reservation_time}")
+                                print(f"    ✅ 블로그 자동 발행 성공")
                                 task.last_status = 'success'
                             else:
                                 print(f"    ❌ 발행 버튼 클릭 실패")
                                 task.last_status = 'failed'
                         else:
-                            print(f"    ❌ 예약 시간 설정 실패")
-                            task.last_status = 'failed'
+                            print("    ⏸️ '자동 발행'이 꺼져 있어 수동 발행을 위해 대기합니다.")
+                            task.last_status = 'success'
+                            publish_success = True
                         
                         # 로그 기록
                         self.add_model_usage_log(
@@ -4032,9 +4088,14 @@ class BlogWriterApp:
     def create_image_folders(self):
         """10개의 이미지 폴더를 생성합니다."""
         try:
+            blog_photo_dir = os.path.join(self.base_dir, '블로그사진폴더')
+            if not os.path.exists(blog_photo_dir):
+                os.makedirs(blog_photo_dir)
+                print(f"블로그사진폴더 생성 완료: {blog_photo_dir}")
+                
             for i in range(1, 11):
                 folder_name = f"default_images_{i}"
-                folder_path = os.path.join(self.base_dir, folder_name)
+                folder_path = os.path.join(blog_photo_dir, folder_name)
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
                     print(f"이미지 폴더 생성 완료: {folder_path}")
@@ -4195,13 +4256,20 @@ class BlogWriterApp:
                 pass
             return False
 
+        # 기준 디렉토리 설정 (블로그는 '블로그사진폴더' 우선)
+        base_search_dir = self.base_dir
+        if platform == 'blog':
+            blog_photo_dir = os.path.join(self.base_dir, '블로그사진폴더')
+            if os.path.exists(blog_photo_dir):
+                base_search_dir = blog_photo_dir
+                
         # 모든 폴더 사용 여부 확인
         all_used = True
         for i in range(1, 11):
             folder_name = f"{prefix}_{i}"
             if folder_name not in used_folders:
                 # 실제로 폴더가 존재하고 사진이 있는지 확인
-                if has_images(os.path.join(self.base_dir, folder_name)):
+                if has_images(os.path.join(base_search_dir, folder_name)):
                     all_used = False
                     break
                 
@@ -4218,7 +4286,7 @@ class BlogWriterApp:
         for _ in range(10):  # 최대 10번 시도 (한번씩만 확인)
             next_index = (next_index % 10) + 1  # 1~10 순환
             folder_name = f"{prefix}_{next_index}"
-            folder_path = os.path.join(self.base_dir, folder_name)
+            folder_path = os.path.join(base_search_dir, folder_name)
             
             # 폴더가 존재하고, 사진이 있으며, 아직 사용되지 않았으면 선택
             if has_images(folder_path) and folder_name not in used_folders:
@@ -4242,7 +4310,7 @@ class BlogWriterApp:
         # 인덱스 업데이트 및 저장
         self.save_folder_index(next_index, platform=platform)
         
-        folder_path = os.path.join(self.base_dir, f"{prefix}_{next_index}")
+        folder_path = os.path.join(base_search_dir, f"{prefix}_{next_index}")
         print(f"이미지 폴더 선택: {folder_path} (사이클 {cycle_count}, 플랫폼: {platform})")
         return folder_path
 
@@ -6066,6 +6134,58 @@ class BlogWriterApp:
             visible=not self.use_dummy
         )
 
+        # 🆕 [지능형 AI 포스팅 상세 제어 옵션 부활]
+        self.blog_persona_dropdown = ft.Dropdown(
+            label="블로그 페르소나 (역할)",
+            options=[
+                ft.dropdown.Option("expert_sport", "연구원/정보 전문가 (신뢰감)"),
+                ft.dropdown.Option("sabeom", "다정한 웰니스 에디터 (친근함)"),
+                ft.dropdown.Option("parent_friend", "친근한 정보 큐레이터 (공감형)"),
+            ],
+            value=self.settings.get('blog_persona_mode', 'expert_sport'),
+            width=280,
+            on_change=lambda e: self._save_setting('blog_persona_mode', e.control.value)
+        )
+        
+        self.blog_style_dropdown = ft.Dropdown(
+            label="블로그 말투 (스타일)",
+            options=[
+                ft.dropdown.Option("haeyo", "해요체 (~해요, ~에요?)"),
+                ft.dropdown.Option("imnida", "하십시오체 (~입니다, ~합니다)"),
+                ft.dropdown.Option("half_half", "반반 혼합 (5:5 친근+전문)"),
+            ],
+            value=self.settings.get('blog_style_mode', 'haeyo'),
+            width=280,
+            on_change=lambda e: self._save_setting('blog_style_mode', e.control.value)
+        )
+        
+        self.blog_theme_dropdown = ft.Dropdown(
+            label="본문 강조 테마 (양념)",
+            options=[
+                ft.dropdown.Option("none", "강조 없음 (순수 주제)"),
+                ft.dropdown.Option("spice_growth", "생애주기 신체 발달 강조"),
+                ft.dropdown.Option("spice_posture", "자세 교정 & 코어 강화 강조"),
+                ft.dropdown.Option("spice_stamina", "기초 체력 & 면역력 증가 강조"),
+                ft.dropdown.Option("spice_obesity", "체지방 & 대사 관리 강조"),
+                ft.dropdown.Option("spice_brain", "인지 기능 & 두뇌 활성화 강조"),
+                ft.dropdown.Option("spice_focus", "집중력 & 마인드 컨트롤 강조"),
+                ft.dropdown.Option("spice_happy", "정서적 안정 & 스트레스 케어"),
+                ft.dropdown.Option("spice_confidence", "작은 성취와 자신감 배양"),
+                ft.dropdown.Option("spice_social", "협력과 소통의 가치 강조"),
+                ft.dropdown.Option("spice_manners", "타인 존중과 성숙한 에티켓"),
+                ft.dropdown.Option("spice_safety", "유연한 안전 대처 & 밸런스"),
+            ],
+            value=self.settings.get('blog_theme', 'none'),
+            width=280,
+            on_change=lambda e: self._save_setting('blog_theme', e.control.value)
+        )
+        
+        self.blog_hometip_checkbox = ft.Checkbox(
+            label="1분 홈케어 스트레칭 팁 자동 포함 (순환 로테이션)",
+            value=self.settings.get('blog_hometip', False),
+            on_change=lambda e: self._save_setting('blog_hometip', e.control.value)
+        )
+
         # GPT 설정 탭 컴포넌트
         ai_persona = ft.TextField(
             label="AI 페르소나",
@@ -7492,6 +7612,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 duration = time.time() - start_time
                 self.current_title = result["title"]
                 self.current_content = result["content"]
+                self.current_tags = result.get("tags", [])
                 current_model_text.value = f"현재 모델: {result.get('model','-')}"
                 # AI 사용 로그 기록 (성공)
                 self.add_model_usage_log(
@@ -7762,11 +7883,31 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     page.update()
                     
                     user_settings_path = get_user_settings_path()
+                    user_tags = []
                     if os.path.exists(user_settings_path):
                         with open(user_settings_path, 'r', encoding='utf-8') as f:
                             settings = json.load(f)
-                            tags = [tag.strip() for tag in settings.get('blog_tags', '').split(',') if tag.strip()]
+                            user_tags_str = settings.get('blog_tags', '')
+                            if user_tags_str:
+                                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
                     
+                    gpt_tags = getattr(self, 'current_tags', [])
+                    if isinstance(gpt_tags, str):
+                        gpt_tags = [t.strip() for t in gpt_tags.split(',') if t.strip()]
+                        
+                    seen_tags = set()
+                    merged_tags = []
+                    for t in user_tags[:15]:
+                        if t and t not in seen_tags:
+                            merged_tags.append(t)
+                            seen_tags.add(t)
+                    for t in gpt_tags[:15]:
+                        if t and t not in seen_tags and len(merged_tags) < 30:
+                            merged_tags.append(t)
+                            seen_tags.add(t)
+                    
+                    tags = merged_tags
+
                     # 🆕 태그 완료 후 자동 발행 로직 적용 (체크 시 자동 발행, 해제 시 발행 직전 대기)
                     blog_auto.skip_final_publish = not auto_final_publish_checkbox.value
                     print(f"📊 최종 발행 설정: {'자동 발행' if not blog_auto.skip_final_publish else '발행 전 대기'}")
@@ -8036,6 +8177,14 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         gpt_settings_tab = ft.Container(
             content=ft.Column(
                 controls=[
+                    ft.Text("🌟 블로그 글쓰기 상세 제어 옵션 (블로그 전문가 연동)", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700),
+                    ft.Row([
+                        self.blog_persona_dropdown,
+                        self.blog_style_dropdown,
+                        self.blog_theme_dropdown,
+                    ], spacing=10),
+                    self.blog_hometip_checkbox,
+                    ft.Divider(height=1, color=ft.Colors.GREY_300),
                     ai_persona,
                     persona_help_text,
                     ai_instructions,
@@ -11817,10 +11966,68 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             # 5분마다 체크
             time.sleep(300)
 
+    def _update_weather_hourly_container(self, row_control, day_forecasts):
+        """시간대별 날씨 카드를 생성하여 Row 컨트롤에 바인딩합니다."""
+        import flet as ft
+        row_control.controls.clear()
+        
+        if not day_forecasts:
+            row_control.controls.append(
+                ft.Container(
+                    content=ft.Text("상세 예보 데이터가 준비 중입니다. (강제 업데이트를 눌러주세요)", color=ft.Colors.GREY_500, size=12),
+                    padding=10
+                )
+            )
+            return
+            
+        # 시간순 정렬 (02, 05, 08 ... 등)
+        sorted_hours = sorted(day_forecasts.keys())
+        
+        for hour in sorted_hours:
+            metrics = day_forecasts[hour]
+            temp = metrics.get('temp', '?')
+            desc = metrics.get('weather_desc', '')
+            pop = metrics.get('pop', '0')
+            pty = metrics.get('pty', '0')
+            
+            # 날씨 상태에 맞춘 센스 있는 아이콘 및 색상 매핑
+            icon = ft.Icons.WB_SUNNY
+            icon_color = ft.Colors.ORANGE_500
+            
+            if "비" in desc or pty in ['1', '2', '4']:
+                icon = ft.Icons.UMBRELLA
+                icon_color = ft.Colors.BLUE_700
+            elif "눈" in desc or pty == '3':
+                icon = ft.Icons.AC_UNIT
+                icon_color = ft.Colors.LIGHT_BLUE_200
+            elif "흐림" in desc or "구름많음" in desc:
+                icon = ft.Icons.CLOUD
+                icon_color = ft.Colors.BLUE_GREY_400
+                
+            card = ft.Container(
+                content=ft.Column([
+                    ft.Text(f"{hour}시", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_700),
+                    ft.Icon(icon, color=icon_color, size=24),
+                    ft.Text(f"{temp}°C", size=14, weight=ft.FontWeight.BOLD),
+                    ft.Text(desc, size=11, color=ft.Colors.GREY_700, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                    ft.Row([
+                        ft.Icon(ft.Icons.OPACITY, size=9, color=ft.Colors.BLUE_400),
+                        ft.Text(f"{pop}%", size=9, color=ft.Colors.BLUE_600)
+                    ], spacing=2, alignment=ft.MainAxisAlignment.CENTER)
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=4),
+                width=85,
+                padding=8,
+                border_radius=8,
+                bgcolor=ft.Colors.GREY_50,
+                border=ft.border.all(1, ft.Colors.GREY_200),
+                alignment=ft.alignment.center
+            )
+            row_control.controls.append(card)
+
     def _force_update_weather_news(self, e=None):
         """수동 및 자동 업데이트 실행"""
         try:
-            from datetime import datetime
+            from datetime import datetime, timedelta
             from modules.weather_cache_manager import WeatherCacheManager
             
             if hasattr(self, 'weather_status_text'):
@@ -11831,20 +12038,39 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
             location = self.ai_handler.settings.get('weather_location', '서울')
             api_key = self.ai_handler.settings.get('kma_api_key', '')
             
-            # 1. 날씨 갱신
+            # 1. 날씨 캐시 갱신 (로컬 기상 데이터를 가져오고 캐시 갱신)
             WeatherCacheManager.update_weather_cache(location, api_key)
-            weather_data = WeatherCacheManager.get_cached_weather(location, delta_days=0)
             
+            # 2. 캐시 데이터 로드하여 오늘/내일 시간대별 예보 그리기
+            cache = WeatherCacheManager.load_cache()
+            refined_loc = cache.get('refined_location', location)
+            
+            now = datetime.now()
+            today_str = now.strftime("%Y%m%d")
+            tomorrow_str = (now + timedelta(days=1)).strftime("%Y%m%d")
+            
+            forecasts = cache.get('forecasts', {})
+            
+            # 오늘 시간대별 리스트 갱신
+            today_forecasts = forecasts.get(today_str, {})
+            self._update_weather_hourly_container(self.today_hourly_row, today_forecasts)
+            
+            # 내일 시간대별 리스트 갱신
+            tomorrow_forecasts = forecasts.get(tomorrow_str, {})
+            self._update_weather_hourly_container(self.tomorrow_hourly_row, tomorrow_forecasts)
+            
+            # 현재 기온 및 요약 문구 업데이트
+            current_weather = WeatherCacheManager.get_cached_weather(location, delta_days=0)
             if hasattr(self, 'current_weather_text'):
-                self.current_weather_text.value = weather_data if weather_data else "날씨 정보를 불러올 수 없습니다."
+                self.current_weather_text.value = current_weather if current_weather else "날씨 정보를 불러올 수 없습니다."
             
-            # 2. 뉴스 갱신 (trending topics)
+            # 3. 뉴스 갱신 (trending topics)
             trending = self.ai_handler._get_trending_topics(count=6, force_refresh=True)
             if hasattr(self, 'current_news_text'):
                 self.current_news_text.value = trending if trending else "최신 뉴스를 가져올 수 없습니다."
             
             if hasattr(self, 'weather_status_text'):
-                self.weather_status_text.value = f"마지막 업데이트: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                self.weather_status_text.value = f"지역: {refined_loc} | 마지막 업데이트: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
                 
             if getattr(self, 'page', None):
                 self.page.update()
@@ -11864,21 +12090,61 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         import threading
         import time
         
-        self.current_weather_text = ft.Text("날씨 정보를 불러오는 중...", size=16, weight=ft.FontWeight.BOLD)
-        self.current_news_text = ft.Text("최신 뉴스를 불러오는 중...\\n(설정 탭에서 API를 확인하세요)", size=14)
+        self.current_weather_text = ft.Text("날씨 정보를 불러오는 중...", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_800)
+        self.current_news_text = ft.Text("최신 뉴스를 불러오는 중...\n(설정 탭에서 API를 확인하세요)", size=14)
         self.weather_status_text = ft.Text("마지막 업데이트: 대기 중", size=12, color=ft.Colors.GREY_600)
+        
+        # 시간대별 날씨 카드 Row 생성 (가로 스크롤 가능)
+        self.today_hourly_row = ft.Row(scroll=ft.ScrollMode.ALWAYS, spacing=10)
+        self.tomorrow_hourly_row = ft.Row(scroll=ft.ScrollMode.ALWAYS, spacing=10)
         
         refresh_btn = ft.ElevatedButton(
             "강제 업데이트", 
             icon=ft.Icons.REFRESH,
-            on_click=self._force_update_weather_news
+            on_click=self._force_update_weather_news,
+            style=ft.ButtonStyle(
+                color=ft.Colors.WHITE,
+                bgcolor=ft.Colors.BLUE_600,
+                shape=ft.RoundedRectangleBorder(radius=6)
+            )
+        )
+        
+        # 오늘 날씨 시간별 섹션
+        today_section = ft.Container(
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon(ft.Icons.CALENDAR_TODAY, color=ft.Colors.BLUE_600, size=15),
+                    ft.Text("오늘 시간대별 상세 예보", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_900)
+                ], spacing=6),
+                ft.Container(self.today_hourly_row, padding=2)
+            ], spacing=6),
+            padding=ft.padding.only(top=5, bottom=5)
+        )
+        
+        # 내일 날씨 시간별 섹션
+        tomorrow_section = ft.Container(
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon(ft.Icons.NEXT_PLAN, color=ft.Colors.GREEN_600, size=15),
+                    ft.Text("내일 시간대별 상세 예보", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_900)
+                ], spacing=6),
+                ft.Container(self.tomorrow_hourly_row, padding=2)
+            ], spacing=6),
+            padding=ft.padding.only(top=5, bottom=5)
         )
         
         weather_card = ft.Card(
             content=ft.Container(
                 content=ft.Column([
-                    ft.Row([ft.Icon(ft.Icons.CLOUD, color=ft.Colors.BLUE), ft.Text("현재 지역 날씨", size=18, weight=ft.FontWeight.BOLD)]),
+                    ft.Row([
+                        ft.Icon(ft.Icons.CLOUD, color=ft.Colors.BLUE), 
+                        ft.Text("현재 지역 날씨 요약", size=16, weight=ft.FontWeight.BOLD)
+                    ], spacing=6),
                     self.current_weather_text,
+                    ft.Divider(height=10, thickness=1, color=ft.Colors.GREY_100),
+                    today_section,
+                    ft.Divider(height=10, thickness=1, color=ft.Colors.GREY_100),
+                    tomorrow_section
                 ], spacing=10),
                 padding=20,
             )
@@ -11887,7 +12153,10 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         news_card = ft.Card(
             content=ft.Container(
                 content=ft.Column([
-                    ft.Row([ft.Icon(ft.Icons.ARTICLE, color=ft.Colors.GREEN), ft.Text("최신 실시간 이슈/뉴스", size=18, weight=ft.FontWeight.BOLD)]),
+                    ft.Row([
+                        ft.Icon(ft.Icons.ARTICLE, color=ft.Colors.GREEN), 
+                        ft.Text("최신 실시간 이슈/뉴스", size=16, weight=ft.FontWeight.BOLD)
+                    ], spacing=6),
                     self.current_news_text,
                 ], spacing=10),
                 padding=20,
@@ -11895,16 +12164,19 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         )
         
         layout = ft.Column([
-            ft.Row([ft.Text("날씨 & 뉴스 대시보드", size=24, weight=ft.FontWeight.BOLD), refresh_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            ft.Row([
+                ft.Text("날씨 & 뉴스 대시보드", size=22, weight=ft.FontWeight.BOLD), 
+                refresh_btn
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             self.weather_status_text,
-            ft.Divider(),
+            ft.Divider(height=1),
             weather_card,
             news_card
         ], spacing=15, expand=True, scroll=ft.ScrollMode.AUTO)
         
         # 첫 생성 시 초기 데이터 로딩 시도 (UI 렌더링 이후)
         def _initial_load():
-            time.sleep(2)  # UI 렌더링 대기
+            time.sleep(1)  # UI 렌더링 대기
             self._force_update_weather_news()
             
         threading.Thread(target=_initial_load, daemon=True).start()

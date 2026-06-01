@@ -10,6 +10,7 @@ AI(GPT-4o)에게 체육관 프로필, 커리큘럼 데이터, 연령 프로필�
 import os
 import json
 import re
+import random
 from datetime import datetime, date
 import calendar as cal_module
 
@@ -218,82 +219,226 @@ def generate_plan_with_ai(
     
     pool = _generate_training_pool(ai_handler, month, gym_profile, age_category, curriculum_md, special_note, holiday_info)
     if not pool:
-        print(f"[Step 1] [하이브리드] {month}월 수련 풀 생성 실패 - 기본 루틴으로 대체")
-        # 기본 루틴이라도 생성
-        pool = [f"{gym_profile.get('routine_1','몸풀기')}\n{gym_profile.get('routine_2','체력강화')}\n{gym_profile.get('routine_3','기본기')}\n{gym_profile.get('routine_4','정리운동')}"]
+        print(f"[Step 1] [하이브리드] {month}월 수련 풀 생성 치명적 실패 - 빈 계획표 생성")
+        pool = {}
 
-    # 2. 알고리즘으로 달력에 강제 배분
+    # [Step 2] [planner_engine] 수련계획 풀 후처리 및 고정 루틴 강제 보정 시작 (상태: 시도)
+    print(f"[Step 2] [planner_engine] 수련계획 풀 후처리 및 고정 루틴 강제 보정 시작 (상태: 시도)")
+    try:
+        pool = _post_process_training_pool(pool, gym_profile)
+        print(f"[Step 2] [planner_engine] 수련계획 풀 후처리 및 고정 루틴 강제 보정 완료 (상태: 성공)")
+    except Exception as e:
+        print(f"[Step 2] [planner_engine] 수련계획 풀 후처리 중 에러 발생 (상태: 실패) - {e}")
+
+    # 3. 알고리즘으로 달력에 강제 배분
     final_entries = _assign_pool_to_calendar(year, month, pool, gym_profile, special_note, existing_events)
     
-    print(f"[Step 1] [하이브리드] {month}월 계획 확정 (상태: 성공) - {len(final_entries)}개 날짜 채움")
+    print(f"[Step 3] [하이브리드] {month}월 계획 확정 (상태: 성공) - {len(final_entries)}개 날짜 채움")
     return final_entries
 
 
-def _generate_training_pool(ai_handler, month: int, gym_profile: dict, age_category: dict, curriculum_md: str, special_note: str = "", holiday_info: str = "없음") -> list:
-    """AI에게 날짜와 상관없는 수련 내용 조합 25~30개를 생성하도록 요청합니다."""
+def _post_process_training_pool(pool: dict, gym_profile: dict) -> dict:
+    """
+    Post-processes the AI-generated training pool to guarantee user-defined routines
+    are kept 100% exactly at their respective stage index, and sequentially routes
+    empty stages using base routines in a round-robin fashion to avoid duplicate items.
+    """
+    weekly_routine = gym_profile.get("weekly_routine", {})
     
-    # 루틴 우선순위 반영
+    # Parse base routine items for round-robin assignment
+    base_routines = {}
+    for i in range(1, 5):
+        raw_routine = gym_profile.get(f"routine_{i}", "")
+        items = [x.strip() for x in raw_routine.split(",") if x.strip()]
+        if not items:
+            items = [f"{i}단계 기본수련"]
+        base_routines[i] = items
+
+    # Global round-robin index per stage to maintain sequence across all sets
+    rr_index = {i: 0 for i in range(1, 5)}
+
+    processed_pool = {}
+    
+    for wd in ["월", "화", "수", "목", "금"]:
+        processed_pool[wd] = []
+        custom_routine = weekly_routine.get(wd, ["", "", "", ""])
+        
+        # Guarantee weekly routine length is exactly 4
+        while len(custom_routine) < 4:
+            custom_routine.append("")
+        custom_routine = custom_routine[:4]
+        
+        day_pool = pool.get(wd, [])
+        # Default fallback to 5 empty sets if AI returned empty pool
+        while len(day_pool) < 5:
+            day_pool.append("\n\n\n")
+            
+        for item_str in day_pool[:5]:
+            # Split AI generated string by newline
+            lines = [line.strip() for line in item_str.split("\n")]
+            while len(lines) < 4:
+                lines.append("")
+            lines = lines[:4]
+            
+            final_lines = []
+            used_today = set()
+            
+            for step_idx in range(4):
+                stage_num = step_idx + 1
+                custom_val = custom_routine[step_idx].strip()
+                
+                selected_val = ""
+                
+                if custom_val:
+                    # 1. Custom input from user exists -> Keep exactly as typed
+                    selected_val = custom_val
+                else:
+                    # 2. Empty stage -> AI's hallucination causes mixing of stages (e.g. Stage 2 item in Stage 1).
+                    # Rule Enforcement: Always pick strictly from this stage's routine_pool using Round-Robin.
+                    routine_pool = base_routines[stage_num]
+                    
+                    attempts = 0
+                    max_attempts = len(routine_pool)
+                    rr_val = ""
+                    while attempts < max_attempts:
+                        candidate = routine_pool[rr_index[stage_num] % len(routine_pool)]
+                        rr_index[stage_num] += 1
+                        if candidate not in used_today:
+                            rr_val = candidate
+                            break
+                        attempts += 1
+                        
+                    # 관장님 규칙: 해당 단계의 풀을 오늘 다 썼더라도 절대 다른 단계에서 가져오면 안 됨!
+                    # 중복이 발생하더라도 무조건 '해당 단계' 안에서만 순환하도록 강제 적용.
+                    if not rr_val:
+                        rr_val = routine_pool[rr_index[stage_num] % len(routine_pool)]
+                        rr_index[stage_num] += 1
+
+                    selected_val = rr_val
+                        
+                final_lines.append(selected_val)
+                used_today.add(selected_val)
+            
+            if wd == "금":
+                print(f"[DEBUG 금요일] custom_routine: {custom_routine}")
+                print(f"[DEBUG 금요일] lines from AI: {lines}")
+                print(f"[DEBUG 금요일] final_lines: {final_lines}")
+                
+            processed_pool[wd].append("\n".join(final_lines))
+            
+    return processed_pool
+
+
+def _generate_training_pool(ai_handler, month: int, gym_profile: dict, age_category: dict, curriculum_md: str, special_note: str = "", holiday_info: str = "없음") -> dict:
+    """AI에게 월~금 요일별로 특화된 수련 내용 조합을 5개씩 생성하도록 요청합니다."""
+    
     r1 = gym_profile.get("routine_1", "준비운동")
     r2 = gym_profile.get("routine_2", "체력단련")
     r3 = gym_profile.get("routine_3", "메인수련")
     r4 = gym_profile.get("routine_4", "마무리게임")
-    weekend_pattern = gym_profile.get("weekend_pattern", "없음")
     
     age_name = age_category.get("name", "일반")
     age_desc = age_category.get("description", "")
-    
-    # [수정] 모든 달을 관장님이 선호하시는 2월 스타일(전문 키워드)로 통일하되, 축약 방지 지침 추가
-    month_style = "전문 핵심 키워드 모드 (단계별로 축약하지 않은 정확한 수련 용어를 사용하세요)"
 
-    system_prompt = f"""당신은 20년 이상의 경력을 가진 무도 수련 프로그램 설계 전문가입니다. 
-제공된 루틴 테마와 커리큘럼을 기반으로, 한 달 동안 매일 다르게 사용할 수 있는 **'수련 내용 조합 리스트'**를 생성하세요.
-
+    system_prompt = f"""당신은 20년 경력의 무도 수련 설계 전문가입니다.
 [중요 규칙]
-1. **단계별 역할 엄격 준수**: 
-   - 1단계: 준비운동/스트레칭 (절대 기술이나 체력훈련을 넣지 마세요)
-   - 2단계: 체력보강/강화 (PT, 근력, 순발력 등)
-   - 3단계: 메인 기술 (호신술, 낙법, 발차기, 대련 등 가장 중요한 수련)
-   - 4단계: 정리운동/게임 (레크레이션, 구기, 마무리)
-2. **용어 축약 금지**: '성장스트레칭', '약속대련', '장애물낙법' 등 전문 용어를 '성장', '약속', '장애물' 등으로 줄이지 마세요.
-3. **독립성 유지**: 특정 달(특히 1월)의 계절이나 새해 테마에 치우치지 말고, 체육관 고유의 수련 루틴을 최우선으로 반영하세요. 모든 달은 동일한 '초간결' 스타일을 유지해야 합니다.
-4. 출력 형식은 JSON 배열 [ "내용1", "내용2", ... ] 형태여야 합니다.
+1. 각 날짜는 반드시 4줄로 구성되어야 합니다 (1단계~4단계).
+2. 관장님이 지정한 요일별 고정 루틴 내용이 있다면, 해당 요일의 5개 세트에 모두 포함시키되 나머지 비어있는 단계는 가장 잘 어울리게(변주를 주어) 채우세요.
+3. [유기적 조합]: 1단계, 2단계, 3단계는 서로 뜬금없는 종목이 아니라, "오늘의 수련 테마"가 부드럽게 이어지도록 연관성 있는 종목끼리 묶어주세요.
+4. [전체 항목 사용]: 관장님이 기본 설정한 쉼표로 구분된 모든 항목은 전체 요일 풀에 골고루 최소 1번 이상 사용되어야 합니다.
+5. 출력 형식은 반드시 "월", "화", "수", "목", "금"을 Key로 하고, Value로 각각 5개의 조합(문자열)을 갖는 JSON 객체(Object)여야 합니다.
 """
+
+    weekly_routine = gym_profile.get("weekly_routine", {})
+    weekly_routine_text = ""
+    for wd in ["월", "화", "수", "목", "금"]:
+        vals = weekly_routine.get(wd, ["", "", "", ""])
+        filled_vals = []
+        for i, v in enumerate(vals):
+            if v.strip(): filled_vals.append(f"{i+1}단계:{v.strip()}")
+        if filled_vals:
+            weekly_routine_text += f"- {wd}요일 고정: " + ", ".join(filled_vals) + "\\n"
+    if not weekly_routine_text:
+        weekly_routine_text = "지정된 요일별 고정 루틴 없음 (자유롭게 구성하세요)"
 
     user_prompt = f"""
-[체육관 설정]
-- 루틴 1단계(준비): {r1}
-- 루틴 2단계(체력): {r2}
-- 루틴 3단계(기술): {r3}
-- 루틴 4단계(마무리): {r4}
+[체육관 기본 설정]
+- 1단계(몸풀기): {r1}
+- 2단계(기본기): {r2}
+- 3단계(기술): {r3}
+- 4단계(회복): {r4}
 - 대상: {age_name} ({age_desc})
-- **이달의 특별 지침**: {special_note}
-- **이달의 공휴일 정보**: {holiday_info}
-- 커리큘럼 참고: {curriculum_md[:2000]}
+- 특별 지침: {special_note}
+
+[관장님의 요일별 고정 루틴 지시사항]
+{weekly_routine_text}
 
 [요청]
-위 설정을 바탕으로, 각 단계의 역할을 명확히 구분하여 매일 변주된 **서로 다른 수련 내용 조합 30개**를 JSON 배열로 만들어줘.
+관장님의 요일별 지시사항을 최우선으로 반영하여, 각 요일마다 사용할 수련 조합 5개씩을 생성해주세요.
+지시사항에 비어있는 요일이나 단계는 [체육관 기본 설정]의 항목들을 조합하여 자유롭게 4단계로 채워주세요.
+반드시 아래의 JSON 객체 형식(월~금)으로 출력해야 합니다.
 
-⚠️ [매우 중요] 
-- **전 평일 생성**: 공휴일이나 행사 여부와 관계없이 모든 평일(월~금)에 사용할 수 있도록 빠짐없이 생성하세요.
-- **엄격한 4단계**: 각 조합은 반드시 **줄바꿈(\\n)으로 구분된 정확히 4줄**이어야 합니다. (단계당 반드시 **1개의 핵심 아이템**만 기입하세요. 쉼표(,)를 사용하여 여러 개를 나열하는 것을 절대 금지합니다.)
-- **용어 보존**: 관장님이 입력한 루틴 단어를 최대한 활용하되, AI가 임의로 '성장', '체력' 같은 단어 하나로 줄이지 마세요. (예: "성장스트레칭"은 그대로 "성장스트레칭"으로 출력)
-- **중복 방지**: 30개 내용이 서로 겹치지 않도록 다양한 기술과 게임을 조합하세요.
-- 숫자를 붙이거나 마크다운 기호를 사용하지 마세요.
+[반드시 지켜야 할 출력 형식 예시]
+{{
+  "월": [
+    "가벼운 런닝\\n기초체력\\n앞차기 연습\\n피구",
+    "왕복 셔틀런\\n제자리 뛰기\\n뒤차기\\n명상",
+    ... (총 5개)
+  ],
+  "화": [ ... ],
+  "수": [ ... ],
+  "목": [ ... ],
+  "금": [ ... ]
+}}
 """
+    # 사용자가 체크한 모델 목록 가져오기 (없으면 기본값)
+    models_to_use = ai_handler.selected_models if hasattr(ai_handler, 'selected_models') and ai_handler.selected_models else ["gpt-4o-mini"]
+    
+    # 선택된 모델들을 순회하며 재시도 (최대 모델 수 x 3회 반복)
+    max_attempts = len(models_to_use) * 3
+    for attempt in range(max_attempts):
+        model_name = models_to_use[attempt % len(models_to_use)]
+        print(f"[AI 호출 시도 {attempt+1}/{max_attempts}] {month}월 수련계획 짜는 중... (사용 모델: {model_name})")
+        
+        try:
+            response = ai_handler.ask(user_prompt=user_prompt, system_prompt=system_prompt, max_tokens=3000, selected_models=[model_name])
+            
+            # AI가 거부하거나 실패 시 반환하는 엉뚱한 문자열 필터링
+            if not response or "감사합니다!" in response or "중단됨" in response:
+                continue 
+                
+            # 마크다운 찌꺼기 완벽 제거
+            clean_resp = re.sub(r'```json\s*', '', response)
+            clean_resp = re.sub(r'```\s*', '', clean_resp)
+            
+            json_match = re.search(r'\{[\s\S]*\}', clean_resp)
+            if json_match:
+                pool = json.loads(json_match.group())
+                if isinstance(pool, dict) and "월" in pool and "금" in pool:
+                    print(f"✅ AI 수련계획 생성 성공! (완료 모델: {model_name})")
+                    return pool
+        except Exception as e:
+            print(f"⚠️ AI 파싱 오류 ({model_name}): {e}")
+            continue
 
-    try:
-        response = ai_handler.ask(user_prompt=user_prompt, system_prompt=system_prompt, max_tokens=3000)
-        json_match = re.search(r'\[[\s\S]*\]', response)
-        if json_match:
-            pool = json.loads(json_match.group())
-            if isinstance(pool, list) and len(pool) > 0:
-                return pool
-        return []
-    except:
-        return []
+    print(f"🚨 모든 AI 호출({max_attempts}회) 실패! 안전장치(자동 랜덤 뽑기)를 작동합니다.")
+    
+    # AI가 뻗었을 때를 대비한 1개씩 뽑기 자동화 안전장치
+    def pick_one(text, default):
+        if not text: return default
+        items = [x.strip() for x in text.split(',') if x.strip()]
+        return random.choice(items) if items else default
+
+    fallback_pool = {}
+    for wd in ["월", "화", "수", "목", "금"]:
+        fallback_pool[wd] = []
+        for _ in range(5):
+            fallback_pool[wd].append(f"{pick_one(r1, '준비운동')}\n{pick_one(r2, '체력단련')}\n{pick_one(r3, '메인수련')}\n{pick_one(r4, '마무리게임')}")
+        
+    return fallback_pool
 
 
-def _assign_pool_to_calendar(year: int, month: int, pool: list, gym_profile: dict, special_note: str = "", existing_events: list = None) -> list:
+def _assign_pool_to_calendar(year: int, month: int, pool: dict, gym_profile: dict, special_note: str = "", existing_events: list = None) -> list:
     """알고리즘을 사용하여 수련 풀의 내용을 달력의 모든 빈칸에 100% 채웁니다."""
     holidays = get_holidays_for_month(year, month)
     weekdays = get_weekdays_in_month(year, month)
@@ -333,7 +478,7 @@ def _assign_pool_to_calendar(year: int, month: int, pool: list, gym_profile: dic
     event_name_map = assigned_weekends
 
     final_entries = []
-    pool_idx = 0
+    pool_idx = {"월": 0, "화": 0, "수": 0, "목": 0, "금": 0}
     
     for wd in weekdays:
         date_str = wd["date"]
@@ -359,10 +504,18 @@ def _assign_pool_to_calendar(year: int, month: int, pool: list, gym_profile: dic
             continue
             
         # 5. 평일(월~금) 처리
-        content = pool[pool_idx % min(25, len(pool))]
+        wd_str = wd["weekday"]
+        if wd_str in pool:
+            day_pool = pool[wd_str]
+            if len(day_pool) > 0:
+                content = day_pool[pool_idx[wd_str] % len(day_pool)]
+                pool_idx[wd_str] += 1
+            else:
+                content = "수련 루틴 없음"
+        else:
+            content = "수련 루틴 없음"
+            
         final_entries.append({"date": date_str, "title": content})
-        
-        pool_idx += 1
 
         
     return final_entries

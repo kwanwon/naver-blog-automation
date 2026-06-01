@@ -1,1 +1,0 @@
-{"nodes": [{"id": "ai_master_guide_document", "label": "AI Master Guide", "file_type": "document", "source_file": "AI_MASTER_GUIDE.md"}], "edges": [{"source": "ai_master_guide_document", "target": "blog_writer_app_blogwriterapp", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "AI_MASTER_GUIDE.md"}], "hyperedges": []}

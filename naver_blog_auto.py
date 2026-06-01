@@ -1592,7 +1592,12 @@ class NaverBlogAutomation:
             
             # 본문 내용 입력
             content_lines = content.split('\n')
+            is_slogan_mode = False
             for i, line in enumerate(content_lines):
+                if line.strip() == "[SLOGAN_START]":
+                    is_slogan_mode = True
+                    continue
+                
                 current_line = i
                 
                 # 현재 줄이 실제 텍스트를 포함하는지 확인
@@ -1606,13 +1611,20 @@ class NaverBlogAutomation:
                 
                 # 줄바꿈 추가 여부 확인
                 next_line = content_lines[i + 1] if i + 1 < len(content_lines) else None
-                if should_add_blank_line(line, next_line):
-                    actions = ActionChains(self.driver)
-                    actions.send_keys(line + Keys.ENTER + Keys.ENTER)
-                    consecutive_text_lines = 0
+                actions = ActionChains(self.driver)
+                
+                if is_slogan_mode:
+                    # 슬로건은 문단 띄어쓰기(ENTER) 대신 좁은 간격의 줄바꿈(SHIFT+ENTER) 적용
+                    if is_text_line:
+                        actions.send_keys(line).key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT)
+                    else:
+                        actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT)
                 else:
-                    actions = ActionChains(self.driver)
-                    actions.send_keys(line + Keys.ENTER)
+                    if should_add_blank_line(line, next_line):
+                        actions.send_keys(line + Keys.ENTER + Keys.ENTER)
+                        consecutive_text_lines = 0
+                    else:
+                        actions.send_keys(line + Keys.ENTER)
                 
                 actions.perform()
                 time.sleep(0.05)  # 입력 사이 최소 대기 시간
@@ -1734,10 +1746,15 @@ class NaverBlogAutomation:
             actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
             print("줄바꿈 추가 완료")
             
-            # 푸터 추가 직접 호출
+            # 푸터 추가 직접 호출 (카카오링크 포함) - 순서: 카카오링크 먼저
             print("add_footer 메서드 호출 시작...")
             footer_result = post_finisher.add_footer()
             print(f"add_footer 메서드 결과: {footer_result}")
+            
+            # 장소 정보 추가 직접 호출 - 순서: 장소는 카카오링크 다음
+            print("add_location 메서드 호출 시작...")
+            location_result = post_finisher.add_location()
+            print(f"add_location 메서드 결과: {location_result}")
             
             # 예약 모드 여부 확인 (외부에서 설정됨)
             skip_final_publish = getattr(self, 'skip_final_publish', False)
