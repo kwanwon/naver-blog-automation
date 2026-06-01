@@ -57,6 +57,7 @@ class BlogExpert(BaseAIExpert):
                 target_dt = now_dt.replace(hour=t_hour, minute=t_min, second=0, microsecond=0)
                 if target_dt < now_dt:
                     now_dt = now_dt + timedelta(days=1)
+                    delta_days += 1  # 날씨 조회 시 내일 날씨를 가져오도록 delta_days 증가
             except Exception as e:
                 logger.error(f"target_time ({target_time}) 파싱 중 오류: {e}")
                 target_hour = now_dt.hour
@@ -406,6 +407,7 @@ class BlogExpert(BaseAIExpert):
 오늘 다룬 유익한 정보와 팁이 독자 스스로의 일상에 어떤 실질적인 변화를 줄 수 있는지, 따뜻하고 신뢰감 있는 어조로 2~3문장을 자연스럽게 직접 작성하십시오.
 🚨 [맺음말 자기 지칭 완전 금지]: "전문가는", "전문 지도자는", "에디터는", "저희는" 등 필자 자신을 주어로 내세워 마무리하는 문장은 **100% 원천 금지**합니다. 맺음말의 주어는 반드시 독자("여러분", "일상", "오늘의 정보" 등)여야 합니다.
 (단, 광고 멘트·상업적 연락처·방문 유도 표현은 완전 배제하세요.)
+🚨 [슬로건/표어 임의 창작 절대 금지 ⭐⭐⭐⭐⭐]: AI가 스스로 체육관이나 단체의 슬로건, 표어(예: "몸은 튼튼하게 마음은 바르게" 등)를 창작하여 덧붙이는 행위를 100% 엄격히 금지합니다.
 """
 
         # 사용자 프롬프트 (홈케어 팁 다이렉트 주입 엔진 탑재)

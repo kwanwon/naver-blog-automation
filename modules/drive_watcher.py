@@ -332,8 +332,8 @@ class DriveWatcher:
                                 filepath = os.path.join(folder_path, actual_filename)
                                 handler._handle_file_event(filepath)
                             
-                            # 알려진 파일 목록 업데이트
-                            self.known_files[folder_path] = current_files
+                        # 알려진 파일 목록은 새 파일 감지 여부와 무관하게 항상 현재 상태로 업데이트 (파일 삭제/이동 시 동기화)
+                        self.known_files[folder_path] = current_files
                     except Exception as scan_err:
                         print(f"⚠️ [폴링] {handler.folder_name} 스캔 오류: {scan_err}")
             except Exception as e:

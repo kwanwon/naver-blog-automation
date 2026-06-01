@@ -572,42 +572,16 @@ class BlogWriterApp:
                 driver = self.get_or_create_driver()
                 naver_id = self.settings.get('naver_id', '')
                 
-                # 인스턴스 생성 (감지된 폴더를 이미지 소스로 사용)
-                blog_auto = NaverBlogAutomation(
-                    auto_mode=True, 
-                    image_insert_mode=self.settings.get('blog_image_position', 'random'),
-                    custom_images_folder=folder_path,
-                    naver_id=naver_id,
-                    media_position=self.settings.get('blog_media_position', 'middle'),
-                    media_order=self.settings.get('blog_media_order', 'image_first')
-                )
-                blog_auto.driver = driver
-                
-                # 이미지 핸들러 초기화 (감지된 폴더의 이미지들을 로드함)
-                blog_auto.setup_image_inserter()
-                
-                # 태그 준비: 고정 태그(최대15) + AI 태그(최대15) 병합 = 최대 30개
-                tags_str = self.settings.get('blog_tags', '')
-                fixed_tags = [tag.strip() for tag in tags_str.split(',') if tag.strip()] if tags_str else []
-                ai_tags_raw = result.get('tags', [])
-                if isinstance(ai_tags_raw, str):
-                    ai_tags_raw = [t.strip() for t in ai_tags_raw.split(',') if t.strip()]
-                seen = set()
-                merged_tags = []
-                for t in fixed_tags[:15]:
-                    if t and t not in seen:
-                        merged_tags.append(t); seen.add(t)
-                for t in ai_tags_raw:
-                    if t and t not in seen and len(merged_tags) < 30:
-                        merged_tags.append(t); seen.add(t)
-                tags = merged_tags
-                print(f"📌 태그 준비 완료: 고정 {min(len(fixed_tags),15)}개 + AI {len(tags)-min(len(fixed_tags),15)}개 = 총 {len(tags)}개")
-                
-                # 포스팅 실행 (write_post 사용)
-                success = blog_auto.write_post(
-                    title=title,
-                    content=content,
-                    tags=tags
+
+                # [리팩토링] 통합 파이프라인 호출
+                success = self._execute_unified_blog_posting(
+                    page=self.page_ref,
+                    topic=title,
+                    content_str=content,
+                    target_folder=folder_path,
+                    reservation_time=None,
+                    ai_tags=result.get('tags', []),
+                    title=title
                 )
                 
                 if success:
@@ -616,6 +590,7 @@ class BlogWriterApp:
                     self.file_manager.move_to_backup(files, folder_name)
                 else:
                     print(f"❌ [DriveWatcher] 블로그 자동 포스팅 실패")
+
             except Exception as e:
                 print(f"❌ [DriveWatcher] 자동 업로드 중 치명적 오류: {e}")
                 traceback.print_exc()
@@ -2624,15 +2599,7 @@ class BlogWriterApp:
                             print(f"    ❌ 내용 생성 실패 ({res_time})")
                             continue
                         
-                        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입
-                        f_sent = self.settings.get('blog_first_sentence', self.settings.get('first_sentence', '')).strip()
-                        s_sent = self.settings.get('blog_slogan', self.settings.get('slogan', '')).strip()
-                        content_str = result.get('content', '')
-                        if f_sent and f_sent not in content_str:
-                            content_str = f"{f_sent}\n\n{content_str}"
-                        if s_sent and s_sent not in content_str:
-                            content_str = f"{content_str}\n\n{s_sent}"
-                        result['content'] = content_str
+                        # (통합 파이프라인 _execute_unified_blog_posting에서 포스팅 직전에 기계적으로 일괄 삽입하도록 위임함)
 
                         
                         # 2. 기존 브라우저 사용 또는 생성
@@ -2717,61 +2684,27 @@ class BlogWriterApp:
                         title = result.get('title', topic)
                         content = result.get('content', '')
                         
-                        # 태그: GPT 태그 + 사용자 설정 태그 병합
-                        ai_tags = result.get('tags', [])
-                        if isinstance(ai_tags, str):
-                            ai_tags = [t.strip() for t in ai_tags.split(',') if t.strip()]
-                        user_tags = []
-                        try:
-                            user_tags_str = self.settings.get('blog_tags', '')
-                            if user_tags_str:
-                                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
-                        except:
-                            pass
+
+                        # [리팩토링] 통합 파이프라인 호출
+                        # 예약 모드: res_time 을 reservation_time 파라미터로 전달
+                        success = self._execute_unified_blog_posting(
+                            page=self.page_ref,
+                            topic=title,
+                            content_str=content,
+                            target_folder=None,
+                            reservation_time=res_time,
+                            ai_tags=result.get('tags', []),
+                            title=title
+                        )
                         
-                        seen_tags = set()
-                        merged_tags = []
-                        for t in user_tags[:15]:
-                            if t and t not in seen_tags:
-                                merged_tags.append(t)
-                                seen_tags.add(t)
-                        for t in ai_tags[:15]:
-                            if t and t not in seen_tags and len(merged_tags) < 30:
-                                merged_tags.append(t)
-                                seen_tags.add(t)
-                        tags = merged_tags
-                        
-                        # 글 작성 (이미지 포함) - write_post가 푸터+태그 추가까지 처리
-                        # 예약 모드: 최종 발행 버튼 클릭 스킵 (나중에 예약 설정 후 발행)
-                        try:
-                            blog_auto.skip_final_publish = True  # 예약 모드 플래그 설정
-                            success = blog_auto.write_post(title, content, tags)
-                            if success:
-                                print(f"    ✅ 글 작성 완료")
-                            else:
-                                print(f"    ❌ 글 작성 실패")
-                                continue
-                        except Exception as write_err:
-                            print(f"    ❌ 글 작성 실패: {write_err}")
-                            continue
-                        
-                        finisher = NaverBlogPostFinisher(driver, self.settings)
-                        auto_publish = self.settings.get('blog_auto_publish', True)
-                        publish_success = False
-                        reservation_success = False
-                        
-                        if auto_publish:
-                            publish_success = finisher.click_final_publish_button(is_reservation=False)
-                            if publish_success:
-                                success_cnt += 1
-                                print(f"    ✅ 블로그 자동 발행 성공")
-                            else:
-                                print(f"    ❌ 발행 버튼 클릭 실패")
-                        else:
-                            print("    ⏸️ '자동 발행'이 꺼져 있어 수동 발행을 위해 대기합니다.")
+                        if success:
                             success_cnt += 1
+                            print(f"    ✅ 블로그 예약/발행 통합 파이프라인 성공")
                             publish_success = True
                             reservation_success = True
+                        else:
+                            print(f"    ❌ 블로그 예약/발행 통합 파이프라인 실패")
+
                         
                         # 로그 기록
                         self.add_model_usage_log(
@@ -3519,23 +3452,15 @@ class BlogWriterApp:
         except:
             return False
 
-    def generate_content(self, topic, platform, task_type='regular', return_title=False):
+    def generate_content(self, topic, platform, task_type='regular', return_title=False, target_time=None):
         """GPT를 사용하여 플랫폼별 스타일의 게시글 생성"""
-        result = self.ai_handler.generate_platform_content(topic, platform=platform, task_type=task_type)
+        result = self.ai_handler.generate_platform_content(topic, platform=platform, task_type=task_type, target_time=target_time)
         
         content_str = result.get('content', '')
         
-        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입
+        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입 로직 제거
+        # (통합 파이프라인 _execute_unified_blog_posting에서 포스팅 직전에 기계적으로 일괄 삽입하도록 위임함)
         if platform == 'blog':
-            user_settings = self.ai_handler._load_user_settings()
-            f_sent = user_settings.get('blog_first_sentence', user_settings.get('first_sentence', '')).strip()
-            s_sent = user_settings.get('blog_slogan', user_settings.get('slogan', '')).strip()
-            
-            if f_sent and f_sent not in content_str:
-                content_str = f"{f_sent}\n\n{content_str}"
-            if s_sent and s_sent not in content_str:
-                content_str = f"{content_str}\n\n{s_sent}"
-            
             result['content'] = content_str
             
         if return_title:
@@ -5560,6 +5485,170 @@ class BlogWriterApp:
         guide_dlg.open = True
         self.page.update()
 
+
+
+    def _execute_unified_blog_posting(self, page, topic, content_str, target_folder=None, reservation_time=None, ai_tags=None, title=None):
+        """
+        [핵심 통합 파이프라인]
+        타이머, 일반, 스케줄 예약, 폴더 감지 4가지 모드가 모두 이 단일 함수를 통해 블로그에 포스팅합니다.
+        """
+        try:
+            print(f"🚀 통합 파이프라인 시작 (주제: {topic[:15]}...)")
+            from naver_blog_auto import NaverBlogAutomation
+            from naver_blog_post_finisher import NaverBlogPostFinisher
+            import os
+            
+            # --- 1. 모바일 가독성 포맷팅 (23자/문단 보호 룰) ---
+            def format_content_for_mobile(text, max_chars=25):
+                formatted = ""
+                for paragraph in text.split('\n'):
+                    if not paragraph.strip():
+                        formatted += "\n"
+                        continue
+                    current_line = ""
+                    for word in paragraph.split():
+                        if len(word) > max_chars:
+                            if current_line: formatted += current_line + "\n"
+                            formatted += word + "\n"
+                            current_line = ""
+                            continue
+                        if len(current_line) + len(word) + (1 if current_line else 0) > max_chars:
+                            formatted += current_line + "\n"
+                            current_line = word
+                        else:
+                            current_line += (" " + word) if current_line else word
+                    if current_line: formatted += current_line + "\n"
+                    formatted += "\n"
+                return formatted.strip()
+
+            content_str = format_content_for_mobile(content_str)
+            
+            # --- 2. 첫 문장 및 슬로건 강제 삽입 (모든 모드 공통 적용) ---
+            f_sent = self.settings.get('blog_first_sentence', self.settings.get('first_sentence', '')).strip()
+            s_sent = self.settings.get('blog_slogan', self.settings.get('slogan', '')).strip()
+            if f_sent and f_sent not in content_str:
+                content_str = f"{f_sent}\n\n{content_str}"
+            if s_sent and s_sent not in content_str:
+                content_str = f"{content_str}\n\n{s_sent}"
+                
+            final_title = title if title else topic
+
+            # --- 3. 브라우저 및 드라이버 준비 ---
+            driver = self.get_or_create_driver()
+            if not driver:
+                print("❌ 유효한 브라우저 세션을 얻지 못했습니다.")
+                return False
+
+            # --- 4. 이미지 폴더 및 삽입 모드 결정 ---
+            image_mode = getattr(self, 'blog_image_mode_dropdown', None)
+            image_mode_val = image_mode.value if image_mode else "auto"
+            custom_images_folder = None
+            images_available = False
+            
+            if target_folder and os.path.exists(target_folder):
+                # 1순위: 폴더 감지 모드 등에서 명시적으로 넘긴 폴더
+                custom_images_folder = target_folder
+                images_available = True
+            elif image_mode_val == "manual":
+                # 2순위: 수동 지정 폴더
+                manual_path = getattr(self, 'blog_manual_folder_path', None)
+                if manual_path and manual_path.value and os.path.exists(manual_path.value):
+                    custom_images_folder = manual_path.value
+                    images_available = True
+            elif image_mode_val == "auto":
+                # 3순위: 스마트 매칭
+                try:
+                    matched = self.get_smart_image_folder(final_title)
+                    if matched and os.path.exists(matched):
+                        custom_images_folder = matched
+                        images_available = True
+                except: pass
+
+            auto_img_cb = getattr(self, 'auto_image_checkbox', None)
+            auto_image_enabled = (auto_img_cb.value if auto_img_cb else True) and images_available
+
+            # --- 5. 블로그 자동화 인스턴스 초기화 ---
+            naver_id = self.settings.get('naver_id', '')
+            media_pos = getattr(self, 'blog_media_position_dropdown', None)
+            media_ord = getattr(self, 'blog_media_order_dropdown', None)
+            
+            blog_auto = NaverBlogAutomation(
+                auto_mode=auto_image_enabled,
+                image_insert_mode=media_pos.value if media_pos else 'random',
+                use_stickers=False,
+                custom_images_folder=custom_images_folder,
+                naver_id=naver_id,
+                media_position=media_pos.value if media_pos else 'middle',
+                media_order=media_ord.value if media_ord else 'image_first'
+            )
+            blog_auto.base_dir = self.base_dir
+            blog_auto.settings = blog_auto.load_settings()
+            blog_auto.driver = driver
+            
+            if auto_image_enabled:
+                from naver_blog_auto_image import NaverBlogImageInserter
+                fallback = blog_auto.custom_images_folder if blog_auto.custom_images_folder else blog_auto.default_images_folder
+                blog_auto.image_inserter = NaverBlogImageInserter(
+                    driver=blog_auto.driver,
+                    images_folder=blog_auto.images_folder,
+                    insert_mode=blog_auto.image_insert_mode,
+                    fallback_folder=fallback
+                )
+                blog_auto.image_inserter.media_position = blog_auto.media_position
+                blog_auto.image_inserter.media_order = blog_auto.media_order
+
+            # --- 6. 태그 병합 (고정 + AI = 최대 30개) ---
+            user_tags_str = self.settings.get('blog_tags', '')
+            user_tags = [t.strip() for t in user_tags_str.split(',') if t.strip()]
+            ai_tags_list = ai_tags if ai_tags else []
+            if isinstance(ai_tags_list, str):
+                ai_tags_list = [t.strip() for t in ai_tags_list.split(',') if t.strip()]
+                
+            merged_tags = []
+            seen = set()
+            for t in (user_tags[:15] + ai_tags_list[:15]):
+                if t and t not in seen:
+                    seen.add(t)
+                    merged_tags.append(t)
+            
+            # --- 7. 블로그 포스팅 엔진 실행 (제목/본문/이미지/푸터/장소/태그) ---
+            auto_final_cb = getattr(self, 'auto_final_publish_checkbox', None)
+            blog_auto.skip_final_publish = not auto_final_cb.value if auto_final_cb else False
+            
+            # [버그 픽스] 예약 모드일 경우 반드시 즉시 발행 버튼 클릭을 스킵해야 함
+            if reservation_time:
+                blog_auto.skip_final_publish = True
+                print("📌 [예약 모드 감지] 즉시 발행을 스킵하고 예약 패널로 이동합니다.")
+            
+            success = blog_auto.write_post(title=final_title, content=content_str, tags=merged_tags)
+            if not success:
+                print("❌ 통합 파이프라인: 본문/태그 작성 중 오류 발생")
+                return False
+
+            # --- 8. 스케줄 예약 모드일 경우 예약 시간 주입 및 발행 ---
+            finisher = NaverBlogPostFinisher(blog_auto.driver, self.settings)
+            
+            if reservation_time:
+                # write_post가 skip_publish 처리했으므로, 여기서 예약 시간 세팅 후 예약발행
+                res_ok = finisher.set_reservation_time(reservation_time)
+                if res_ok:
+                    return finisher.click_final_publish_button(is_reservation=True)
+                else:
+                    print("❌ 예약 시간 설정 실패로 발행 보류")
+                    return False
+            else:
+                # 일반 모드 - 설정에 따라 이미 발행되었거나 대기 중임
+                if not blog_auto.skip_final_publish:
+                    return True # write_post에서 이미 처리 완료됨
+                else:
+                    print("⏸️ '자동 발행'이 꺼져 있어 1차 발행 패널 상태에서 멈춥니다.")
+                    return True
+
+        except Exception as e:
+            print(f"❌ 통합 파이프라인 치명적 오류: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return False
 
     def main(self, page: ft.Page):
         # 페이지 객체 저장 (먼저 설정)
@@ -7737,207 +7826,25 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 dlg.open = True
                 page.update()
 
-                # 줄바꿈 처리 (한 줄이 25자를 넘지 않도록, 단어가 잘리지 않게)
-                def format_content_for_mobile(content, max_chars=25):
-                    formatted_content = ""
-                    paragraphs = content.split('\n')
-                    
-                    for paragraph in paragraphs:
-                        if not paragraph.strip():
-                            formatted_content += "\n"
-                            continue
-                            
-                        words = paragraph.split()
-                        current_line = ""
-                        
-                        for word in words:
-                            # 단어 자체가 max_chars보다 길면 그대로 사용
-                            if len(word) > max_chars:
-                                if current_line:
-                                    formatted_content += current_line + "\n"
-                                    current_line = ""
-                                formatted_content += word + "\n"
-                                continue
-                                
-                            # 현재 줄에 단어를 추가했을 때 max_chars를 초과하는지 확인
-                            if len(current_line) + len(word) + (1 if current_line else 0) > max_chars:
-                                formatted_content += current_line + "\n"
-                                current_line = word
-                            else:
-                                if current_line:
-                                    current_line += " " + word
-                                else:
-                                    current_line = word
-                        
-                        # 마지막 줄 추가
-                        if current_line:
-                            formatted_content += current_line + "\n"
-                        
-                        # 문단 사이에 빈 줄 추가
-                        formatted_content += "\n"
-                    
-                    return formatted_content.strip()
-                
-                # 원본 내용을 모바일 친화적으로 포맷팅
-                formatted_content = format_content_for_mobile(content_input.value)
-                
-                # 임시 파일에 내용 저장 (AppData 기반으로 변경 — 퍼미션 에러 방지)
-                today = datetime.now().strftime("%Y-%m-%d")
-                today_dir = os.path.join(self._get_app_data_dir(), 'data', today)
-                os.makedirs(today_dir, exist_ok=True)
-                
-                # 윈도우 파일명 사용 불가능 문자 제거 (? 등)
-                raw_title = title_input.value
-                import re
-                clean_title = re.sub(r'[\/:*?"<>|]', '', raw_title).strip()
-                if not clean_title:
-                    clean_title = "제목없음_" + datetime.now().strftime("%H%M%S")
-                
-                file_path = os.path.join(today_dir, f"{clean_title}.txt")
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(f"제목: {raw_title}\n\n{formatted_content}")
 
-                try:
-                    # 기존 naver_blog_auto.py 시스템 활용
-                    dlg.content.controls[0].value = "네이버 블로그 자동화 시스템 초기화 중..."
-                    page.update()
-                    
-                    # naver_blog_auto.py import
-                    from naver_blog_auto import NaverBlogAutomation
-                    
-                    # --- Phase 2: 이미지 삽입 모드 처리 ---
-                    image_mode = self.blog_image_mode_dropdown.value
-                    custom_images_folder = None
-                    images_available = False
-                    
-                    if image_mode == "off":
-                        print("🚫 이미지 삽입 모드: 사용 안함")
-                    elif image_mode == "manual":
-                        print("📂 이미지 삽입 모드: 수동 지정 폴더")
-                        folder_path = self.blog_manual_folder_path.value
-                        if folder_path and os.path.exists(folder_path):
-                            custom_images_folder = folder_path
-                            images_available = True
-                        else:
-                            print(f"⚠️ 수동 폴더를 찾을 수 없습니다: {folder_path}")
-                    else: # "auto"
-                        print("🤖 이미지 삽입 모드: 자동 (스마트 매칭)")
-                        try:
-                            folder_path = self.get_smart_image_folder(raw_title)
-                            if folder_path and os.path.exists(folder_path):
-                                custom_images_folder = folder_path
-                                images_available = True
-                        except Exception as img_folder_err:
-                            print(f"이미지 폴더 선정 중 오류: {img_folder_err}")
-                    
-                    # 이번 포스팅에 이미지 삽입 여부 결정 (체크박스 ON + 실제 이미지 존재)
-                    auto_image_enabled = auto_image_checkbox.value and images_available
-                    
-                    # 자동화 인스턴스 생성 (기존 브라우저 세션 활용)
-                     # 🆕 네이버 ID 설정 가져오기
-                    naver_id = self.settings.get('naver_id', '')
-                    
-                    insert_position = self.blog_media_position_dropdown.value
-                    
-                    blog_auto = NaverBlogAutomation(
-                        auto_mode=auto_image_enabled,  # 포스트 단위 이미지 사용 여부
-                        image_insert_mode=insert_position,  # 'random' 또는 'end'
-                        use_stickers=False,
-                        custom_images_folder=custom_images_folder,  # 포스트별 단일 폴더 고정
-                        naver_id=naver_id, # 🆕 네이버 ID 전달
-                        media_position=self.blog_media_position_dropdown.value,
-                        media_order=self.blog_media_order_dropdown.value
-                    )
-                    
-                    # 기본 디렉토리를 현재 작업 디렉토리로 설정하여 설정 파일 경로 보정
-                    blog_auto.base_dir = self.base_dir
-                    
-                    # 설정을 다시 로드하여 슬로건 등 최신 설정 반영
-                    blog_auto.settings = blog_auto.load_settings()
-                    
-                    # 기존 브라우저 세션을 naver_blog_auto에 전달
-                    blog_auto.driver = self.browser_driver
-                    
-                    # 이미지 삽입 핸들러 수동 초기화 (기존 브라우저 세션 사용 시)
-                    if auto_image_checkbox.value and blog_auto.driver:
-                        print("🖼️ 이미지 삽입 핸들러 수동 초기화 중...")
-                        from naver_blog_auto_image import NaverBlogImageInserter
-                        
-                        fallback_folder = blog_auto.custom_images_folder if blog_auto.custom_images_folder else blog_auto.default_images_folder
-                        print(f"사용할 이미지 폴더: {fallback_folder}")
-                        
-                        blog_auto.image_inserter = NaverBlogImageInserter(
-                            driver=blog_auto.driver,
-                            images_folder=blog_auto.images_folder,
-                            insert_mode=blog_auto.image_insert_mode,
-                            fallback_folder=fallback_folder
-                        )
-                        blog_auto.image_inserter.media_position = self.blog_media_position_dropdown.value
-                        blog_auto.image_inserter.media_order = self.blog_media_order_dropdown.value
-                        print("✅ 이미지 삽입 핸들러 수동 초기화 완료")
-                    else:
-                        print("ℹ️ 이미지 자동 삽입이 비활성화되어 있습니다.")
-                        blog_auto.image_inserter = None
-                    
-                    dlg.content.controls[0].value = "블로그 포스팅 작성 중..."
-                    page.update()
-                    
-                    user_settings_path = get_user_settings_path()
-                    user_tags = []
-                    if os.path.exists(user_settings_path):
-                        with open(user_settings_path, 'r', encoding='utf-8') as f:
-                            settings = json.load(f)
-                            user_tags_str = settings.get('blog_tags', '')
-                            if user_tags_str:
-                                user_tags = [tag.strip() for tag in user_tags_str.split(',') if tag.strip()]
-                    
-                    gpt_tags = getattr(self, 'current_tags', [])
-                    if isinstance(gpt_tags, str):
-                        gpt_tags = [t.strip() for t in gpt_tags.split(',') if t.strip()]
-                        
-                    seen_tags = set()
-                    merged_tags = []
-                    for t in user_tags[:15]:
-                        if t and t not in seen_tags:
-                            merged_tags.append(t)
-                            seen_tags.add(t)
-                    for t in gpt_tags[:15]:
-                        if t and t not in seen_tags and len(merged_tags) < 30:
-                            merged_tags.append(t)
-                            seen_tags.add(t)
-                    
-                    tags = merged_tags
-
-                    # 🆕 태그 완료 후 자동 발행 로직 적용 (체크 시 자동 발행, 해제 시 발행 직전 대기)
-                    blog_auto.skip_final_publish = not auto_final_publish_checkbox.value
-                    print(f"📊 최종 발행 설정: {'자동 발행' if not blog_auto.skip_final_publish else '발행 전 대기'}")
-                    
-                    # 블로그 포스팅 작성 (1차 시도, 실패 시 1회 재시도)
-                    last_err = None
-                    for attempt in range(2):
-                        try:
-                            success = blog_auto.write_post(
-                                title=title_input.value,
-                                content=formatted_content,
-                                tags=tags
-                            )
-                            if success:
-                                last_err = None
-                                break
-                            else:
-                                raise Exception("블로그 포스팅 작성에 실패했습니다")
-                        except Exception as attempt_err:
-                            last_err = attempt_err
-                            print(f"업로드 시도 {attempt + 1} 실패: {attempt_err}")
-                            if attempt == 0:
-                                print("➡️ 업로드를 한 번 더 재시도합니다.")
-                                time.sleep(1)
-                                continue
-                            else:
-                                raise attempt_err
-                    
-                    if last_err:
-                        raise last_err
+                # [리팩토링] 통합 파이프라인 호출
+                dlg.content.controls[0].value = "블로그 포스팅 작성 중..."
+                page.update()
+                
+                gpt_tags = getattr(self, 'current_tags', [])
+                
+                success = self._execute_unified_blog_posting(
+                    page=page,
+                    topic=title_input.value,
+                    content_str=content_input.value,
+                    target_folder=None,
+                    reservation_time=None,
+                    ai_tags=gpt_tags,
+                    title=title_input.value
+                )
+                
+                if not success:
+                    raise Exception("통합 파이프라인 업로드 실패")
                     
                     # 사용 횟수 증가
                     increment_usage_count()
@@ -7968,9 +7875,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     
                     return True  # 성공 반환
                         
-                except Exception as e:
-                    print(f"naver_blog_auto 업로드 중 오류 발생: {str(e)}")
-                    raise e
+
                     
             except Exception as e:
                 print(f"업로드 중 오류 발생: {str(e)}")

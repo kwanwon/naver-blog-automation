@@ -1879,41 +1879,41 @@ class NaverBlogPostFinisher:
             
             # 🎯 [Fix] 국내/해외 드롭다운 처리 (해외로 되어 있을 때만 클릭해서 국내로 변경)
             try:
-                domestic_handled = self.driver.execute_script("""
+                # 1. '해외'로 설정되어 있는지 확인하고 드롭다운 열기
+                needs_change = self.driver.execute_script("""
                     const buttons = Array.from(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'))
                         .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
                     
-                    let selectedValueEl = null;
-                    
-                    // '해외'가 현재 선택값인지 확인 (리스트 항목이 아닌 버튼)
                     for (const btn of buttons) {
                         const text = (btn.innerText || '').trim();
-                        if (text === '해외' && !btn.closest('li')) {
-                            selectedValueEl = btn;
-                            break;
+                        if (text === '해외' && !btn.closest('li') && !btn.closest('ul')) {
+                            btn.click(); // 드롭다운 열기
+                            return true;
                         }
                     }
-                    
-                    if (selectedValueEl) {
-                        console.log('현재 해외로 설정되어 있어 국내로 변경 시도');
-                        selectedValueEl.click(); // 드롭다운 열기
-                        
-                        setTimeout(() => {
-                            const options = document.querySelectorAll('li, button, a, span');
-                            for (const opt of options) {
-                                if ((opt.innerText || '').trim() === '국내' && opt.offsetWidth > 0) {
-                                    opt.click();
-                                    console.log('드롭다운에서 국내 선택 성공');
-                                    break;
-                                }
-                            }
-                        }, 500);
-                        return true;
-                    }
-                    return false; // 국내이거나 찾을 수 없음
+                    return false;
                 """)
-                time.sleep(1)
-                print(f"  -> 국내/해외 드롭다운 처리 완료: {domestic_handled}")
+                
+                if needs_change:
+                    print("  -> 현재 '해외'로 설정됨. 드롭다운을 열었습니다. 1초 대기 후 '국내' 선택 시도...")
+                    time.sleep(1) # 드롭다운 애니메이션 대기
+                    
+                    # 2. 드롭다운 목록에서 '국내' 찾아서 클릭
+                    domestic_clicked = self.driver.execute_script("""
+                        const options = document.querySelectorAll('li, button, a, span, div[role="button"], div[role="option"]');
+                        for (const opt of options) {
+                            if ((opt.innerText || '').trim() === '국내' && opt.offsetWidth > 0) {
+                                opt.click();
+                                return true;
+                            }
+                        }
+                        return false;
+                    """)
+                    print(f"  -> '국내'로 변경 결과: {domestic_clicked}")
+                    time.sleep(1) # 모드 변경 후 리렌더링 대기
+                else:
+                    print("  -> 이미 '국내'로 설정되어 있거나 '해외' 드롭다운을 찾을 수 없습니다.")
+                    
             except Exception as e:
                 print(f"  -> 국내/해외 드롭다운 처리 오류 (무시): {e}")
             
