@@ -116,8 +116,6 @@ class NaverBlogImageInserter:
     def get_media_files(self):
         """폴더에서 이미지와 동영상 파일 목록을 가져와 분류합니다."""
         all_files = []
-        
-        # 1순위: 단일 폴더 지정 모드
         if self.use_single_folder:
             folder = self.fallback_folder
             if folder and os.path.exists(folder):
@@ -127,31 +125,11 @@ class NaverBlogImageInserter:
                     for f in os.listdir(folder)
                     if os.path.splitext(f)[1].lower() in valid_exts
                 ]
-            
-            # 💡 [지능형 하이브리드 폴백] 만약 지정된 단일 폴더가 존재하지 않거나,
-            # 폴더 안에 실제 이미지/영상 파일이 한 장도 없는 경우(빈 폴더)라면
-            # 포스팅이 멈추거나 이미지가 누락되는 것을 원천 차단하기 위해
-            # 폴더 순환 모드로 긴급 전환하여 이미지가 있는 폴더를 순차 탐색합니다.
-            if not all_files:
-                print(f"⚠️ [ImageInserter] 지정된 폴더('{folder}')에 이미지가 없거나 비어 있습니다. 이미지가 있는 폴더를 순차 탐색하기 위해 순환 모드로 긴급 전환합니다.")
-                self.use_single_folder = False
-                
-        # 2순위: 기본 순환 폴더 모드 (또는 위에서 폴백된 경우)
-        if not self.use_single_folder:
+        else:
             current_folder = self.folder_manager.get_current_folder()
             if current_folder:
                 all_files = self.folder_manager.get_images_from_folder(current_folder)
                 self.folder_manager.get_next_folder()
-                
-            # 만약 선택된 순환 폴더에도 이미지가 없다면, 이미지가 있는 다른 순환 폴더를 찾기 위해 최대 10회까지 다음 폴더를 돌며 탐색
-            attempts = 0
-            while not all_files and attempts < 10:
-                print(f"⚠️ [ImageInserter] 선택된 폴더('{current_folder}')가 비어 있습니다. 다음 폴더를 탐색합니다. (시도: {attempts+1}/10)")
-                current_folder = self.folder_manager.get_current_folder()
-                if current_folder:
-                    all_files = self.folder_manager.get_images_from_folder(current_folder)
-                    self.folder_manager.get_next_folder()
-                attempts += 1
         
         images = [f for f in all_files if os.path.splitext(f)[1].lower() in {".jpg", ".jpeg", ".png", ".webp", ".gif"}]
         videos = [f for f in all_files if os.path.splitext(f)[1].lower() in {".mp4", ".mov", ".avi", ".mkv", ".webm"}]
