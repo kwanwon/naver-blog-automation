@@ -2792,14 +2792,8 @@ class BlogWriterApp:
                             task.last_status = 'failed'
                             return
                             
-                        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입
-                        f_sent = self.settings.get('blog_first_sentence', self.settings.get('first_sentence', '')).strip()
-                        s_sent = self.settings.get('blog_slogan', self.settings.get('slogan', '')).strip()
+                        # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입 로직 제거 (gpt_handler에서 처리)
                         content_str = result.get('content', '')
-                        if f_sent and f_sent not in content_str:
-                            content_str = f"{f_sent}\n\n{content_str}"
-                        if s_sent and s_sent not in content_str:
-                            content_str = f"{content_str}\n\n{s_sent}"
                         result['content'] = content_str
                         
                         driver = self.get_or_create_driver()
@@ -5523,14 +5517,20 @@ class BlogWriterApp:
 
             content_str = format_content_for_mobile(content_str)
             
-            # --- 2. 첫 문장 및 슬로건 강제 삽입 (모든 모드 공통 적용) ---
-            f_sent = self.settings.get('blog_first_sentence', self.settings.get('first_sentence', '')).strip()
-            s_sent = self.settings.get('blog_slogan', self.settings.get('slogan', '')).strip()
-            if f_sent and f_sent not in content_str:
-                content_str = f"{f_sent}\n\n{content_str}"
-            if s_sent and s_sent not in content_str:
-                content_str = f"{content_str}\n\n{s_sent}"
+            # --- 2. 첫 문장 및 슬로건 강제 삽입 (통합 파이프라인 단일 처리) ---
+            try:
+                user_settings = self.ai_handler._load_user_settings()
+                f_sent = user_settings.get('blog_first_sentence', user_settings.get('first_sentence', '')).strip()
+                s_sent = user_settings.get('blog_slogan', user_settings.get('slogan', '')).strip()
                 
+                if f_sent and f_sent not in content_str:
+                    content_str = f"{f_sent}\n\n{content_str}"
+                    
+                if s_sent and s_sent not in content_str:
+                    content_str = f"{content_str}\n\n{s_sent}"
+            except Exception as e:
+                print(f"⚠️ 첫 문장/슬로건 삽입 중 오류: {e}")
+            
             final_title = title if title else topic
 
             # --- 3. 브라우저 및 드라이버 준비 ---
@@ -6275,28 +6275,7 @@ class BlogWriterApp:
             on_change=lambda e: self._save_setting('blog_hometip', e.control.value)
         )
 
-        # GPT 설정 탭 컴포넌트
-        ai_persona = ft.TextField(
-            label="AI 페르소나",
-            hint_text="AI가 어떤 역할이나 정체성을 가지고 글을 작성할지 정의하세요...",
-            multiline=True,
-            min_lines=2,
-            max_lines=4,
-            expand=True,
-            value="""[Strict Style Rules: Anti-AI Filter]
-No Quotes: 제목과 본문에 따옴표(" ", ' ') 사용 금지. 강조는 **[대괄호]**나 볼드체로 하세요.
-Human-like List: 숫자(1. 2. 3.) 대신 '첫 번째는', '둘째는', '하나. 둘.' 처럼 사람의 호흡으로 쓰세요.
-Forbidden Words: 최고, 최선, 소중한, 놀라운, 발전하는, 결론적으로, 요약하자면 (AI가 즐겨 쓰는 단어 제외).
-Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요."""
-        )
-        
-        persona_help_text = ft.Text(
-            "페르소나 예시: '*** 분야 전문가', '*** 관련 블로거' 등 (권장 길이: 100-300자)",
-            size=12,
-            color=ft.Colors.GREY_600,
-            italic=True
-        )
-        
+
         ai_instructions = ft.TextField(
             label="AI 지침",
             hint_text="글 작성 시 따라야 할 구체적인 지침이나 규칙을 정의하세요...",
@@ -6317,27 +6296,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             color=ft.Colors.GREY_600,
             italic=True
         )
-        
-        ai_style = ft.TextField(
-            label="글쓰기 스타일",
-            hint_text="원하는 글쓰기 스타일을 설정하세요...",
-            multiline=True,
-            min_lines=2,
-            max_lines=4,
-            expand=True,
-            value="""[Strict Style Rules: Anti-AI Filter]
-No Quotes: 제목과 본문에 따옴표(" ", ' ') 사용 금지. 강조는 **[대괄호]**나 볼드체로 하세요.
-Human-like List: 숫자(1. 2. 3.) 대신 '첫 번째는', '둘째는', '하나. 둘.' 처럼 사람의 호흡으로 쓰세요.
-Forbidden Words: 최고, 최선, 소중한, 놀라운, 발전하는, 결론적으로, 요약하자면 (AI가 즐겨 쓰는 단어 제외).
-Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요."""
-        )
-        
-        style_help_text = ft.Text(
-            "스타일 예시: '친근한 대화체', '전문적인 설명식', '*** 스타일' 등 (권장 길이: 100-300자)",
-            size=12,
-            color=ft.Colors.GREY_600,
-            italic=True
-        )
+
 
         # 홍보/정보 지침 및 비율
         promotional_instructions = ft.TextField(
@@ -6744,9 +6703,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         def save_ai_settings(e):
             try:
                 settings = {
-                    "persona": ai_persona.value,
                     "instructions": ai_instructions.value,
-                    "style": ai_style.value,
                     "promotional_instructions": promotional_instructions.value,
                     "informational_instructions": informational_instructions.value,
                     "band_instructions": band_instructions.value,
@@ -6816,8 +6773,6 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 if os.path.exists(ai_settings_path):
                     with open(ai_settings_path, 'r', encoding='utf-8') as f:
                         settings = json.load(f)
-                        ai_persona.value = settings.get('persona', '')
-                        
                         # 고정 검토 지침 제거 (UI에 표시하지 않음)
                         instructions = settings.get('instructions', '')
                         fixed_review_prefix = """글 작성 후 반드시 다음 사항을 검토해주세요:
@@ -6833,8 +6788,6 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                             ai_instructions.value = instructions[len(fixed_review_prefix):]
                         else:
                             ai_instructions.value = instructions
-                            
-                        ai_style.value = settings.get('style', '')
                         promotional_instructions.value = settings.get('promotional_instructions', '')
                         informational_instructions.value = settings.get('informational_instructions', '')
                         band_instructions.value = settings.get('band_instructions', '')
@@ -7684,18 +7637,9 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     post_type_config=post_type_config
                 )
                 
-                # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입 (타 플랫폼 영향 없음)
-                f_sent = blog_first_sentence.value.strip()
-                s_sent = blog_slogan.value.strip()
-                
+                # [수정] 네이버 블로그 전용 첫 문장 및 슬로건 강제 삽입 로직 제거 (gpt_handler에서 처리)
                 content_str = result.get("content", "")
                 
-                if f_sent and f_sent not in content_str:
-                    content_str = f"{f_sent}\n\n{content_str}"
-                    
-                if s_sent and s_sent not in content_str:
-                    content_str = f"{content_str}\n\n{s_sent}"
-                    
                 result["content"] = content_str
 
                 duration = time.time() - start_time
@@ -8090,12 +8034,8 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                     ], spacing=10),
                     self.blog_hometip_checkbox,
                     ft.Divider(height=1, color=ft.Colors.GREY_300),
-                    ai_persona,
-                    persona_help_text,
                     ai_instructions,
                     instructions_help_text,
-                    ai_style,
-                    style_help_text,
                     ft.Divider(),
                     ft.Text("모델 선택 및 비용 안내", size=16, weight=ft.FontWeight.BOLD),
                     ft.Container(

@@ -1,0 +1,7 @@
+Total files: 423
+Top 5 directories:
+  /Users/gm2hapkido/Desktop/라이온개발자: 86 files
+  /Users/gm2hapkido/Desktop/라이온개발자/modules/news_poster/processed_images: 74 files
+  /Users/gm2hapkido/Desktop/라이온개발자/config: 33 files
+  /Users/gm2hapkido/Desktop/라이온개발자/블로그사진폴더/대회: 22 files
+  /Users/gm2hapkido/Desktop/라이온개발자/modules: 19 files

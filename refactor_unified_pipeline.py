@@ -44,14 +44,8 @@ UNIFIED_PIPELINE_CODE = """
 
             content_str = format_content_for_mobile(content_str)
             
-            # --- 2. 첫 문장 및 슬로건 강제 삽입 (모든 모드 공통 적용) ---
-            f_sent = self.settings.get('blog_first_sentence', self.settings.get('first_sentence', '')).strip()
-            s_sent = self.settings.get('blog_slogan', self.settings.get('slogan', '')).strip()
-            if f_sent and f_sent not in content_str:
-                content_str = f"{f_sent}\\n\\n{content_str}"
-            if s_sent and s_sent not in content_str:
-                content_str = f"{content_str}\\n\\n{s_sent}"
-                
+            # --- 2. 첫 문장 및 슬로건 강제 삽입 로직 제거 (gpt_handler에서 처리) ---
+            
             final_title = title if title else topic
 
             # --- 3. 브라우저 및 드라이버 준비 ---

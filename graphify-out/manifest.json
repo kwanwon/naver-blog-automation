@@ -1,1 +1,432 @@
-{"total_files": 161, "extracted": true}
+{
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/find_text.py": {
+    "mtime": 1779850962.701733,
+    "ast_hash": "fe70806e9fb136fb92dba830d6af8c5e",
+    "semantic_hash": "fe70806e9fb136fb92dba830d6af8c5e"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/update.py": {
+    "mtime": 1779850963.168366,
+    "ast_hash": "fbb00c4468b25a5f9a4ad5e92027be27",
+    "semantic_hash": "fbb00c4468b25a5f9a4ad5e92027be27"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/save_login_info.py": {
+    "mtime": 1779850963.165921,
+    "ast_hash": "6dfc04b454ab5e97893e16560128a1de",
+    "semantic_hash": "6dfc04b454ab5e97893e16560128a1de"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/build.py": {
+    "mtime": 1779850962.4627225,
+    "ast_hash": "92ec523e29ce66a37255fcc922fc13d8",
+    "semantic_hash": "92ec523e29ce66a37255fcc922fc13d8"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/folder_manager.py": {
+    "mtime": 1780244742.5191054,
+    "ast_hash": "144c7c45581711dc41b9ee22f3c9087e",
+    "semantic_hash": "144c7c45581711dc41b9ee22f3c9087e"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/os_file_picker.py": {
+    "mtime": 1779850963.1650033,
+    "ast_hash": "65ce5d2225e816ca296b1b0169ef5599",
+    "semantic_hash": "65ce5d2225e816ca296b1b0169ef5599"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_blog_post_finisher.py": {
+    "mtime": 1780299778.9576664,
+    "ast_hash": "8b8fd91e18e02f3ca75c4b376626bd32",
+    "semantic_hash": "8b8fd91e18e02f3ca75c4b376626bd32"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/improved_typing_test.py": {
+    "mtime": 1779850962.7023108,
+    "ast_hash": "0714b56af476fdf2e2a34dca06664c81",
+    "semantic_hash": "0714b56af476fdf2e2a34dca06664c81"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/version.json": {
+    "mtime": 1779850965.0126927,
+    "ast_hash": "edb8120b2d154464d0c789e50f7f7180",
+    "semantic_hash": "edb8120b2d154464d0c789e50f7f7180"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/version_mac.json": {
+    "mtime": 1779850963.169591,
+    "ast_hash": "9a9decca33d964cd2ddb31a5e6162eef",
+    "semantic_hash": "9a9decca33d964cd2ddb31a5e6162eef"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/deploy.py": {
+    "mtime": 1779850962.7010925,
+    "ast_hash": "12e6cb331ee7d76768ef70b8b9dda060",
+    "semantic_hash": "12e6cb331ee7d76768ef70b8b9dda060"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/init_secure_project.py": {
+    "mtime": 1779850962.7024205,
+    "ast_hash": "6c0c462cbcb0f442c8138c7e13544215",
+    "semantic_hash": "6c0c462cbcb0f442c8138c7e13544215"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/fix_indent.py": {
+    "mtime": 1777944853.9492562,
+    "ast_hash": "62c5a7158102d4fb0097f3d9cc62c221",
+    "semantic_hash": "62c5a7158102d4fb0097f3d9cc62c221"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/manual_login_helper.py": {
+    "mtime": 1779850963.158331,
+    "ast_hash": "3d2fb5d30fc9aa2f9079965fabe78cad",
+    "semantic_hash": "3d2fb5d30fc9aa2f9079965fabe78cad"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/serial_auth_window.py": {
+    "mtime": 1779850963.1660182,
+    "ast_hash": "5dda920773ade9f131f300b9d69b63f8",
+    "semantic_hash": "5dda920773ade9f131f300b9d69b63f8"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/verify_weather.py": {
+    "mtime": 1779850963.1693447,
+    "ast_hash": "3e10cf80a32ed3252963bd343f09b113",
+    "semantic_hash": "3e10cf80a32ed3252963bd343f09b113"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/simulate_startup.py": {
+    "mtime": 1779850963.1672404,
+    "ast_hash": "62b21766e1501fcdda4595b9097ab8ec",
+    "semantic_hash": "62b21766e1501fcdda4595b9097ab8ec"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/simulate_naver_blog_link_test.py": {
+    "mtime": 1779850963.166956,
+    "ast_hash": "6f41cb2b2d7b0d5bb4a0a058a89a2ab2",
+    "semantic_hash": "6f41cb2b2d7b0d5bb4a0a058a89a2ab2"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/manual_session_helper.py": {
+    "mtime": 1779850963.1584377,
+    "ast_hash": "ee84a3113ba40f490cbe78ce051c5aef",
+    "semantic_hash": "ee84a3113ba40f490cbe78ce051c5aef"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/cleanup_chrome_profiles.py": {
+    "mtime": 1779850962.6683846,
+    "ast_hash": "5d6c1b33bda3c6aac79d43b65e58a42e",
+    "semantic_hash": "5d6c1b33bda3c6aac79d43b65e58a42e"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_blog_auto_improved.py": {
+    "mtime": 1779850963.164215,
+    "ast_hash": "61973d207cffec60091e66aeb04cc4ab",
+    "semantic_hash": "61973d207cffec60091e66aeb04cc4ab"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/setup_cross_platform.py": {
+    "mtime": 1779850963.1666749,
+    "ast_hash": "08b6ac9a96bd8f9e1b6136ff7e2e8f0f",
+    "semantic_hash": "08b6ac9a96bd8f9e1b6136ff7e2e8f0f"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/build_release.py": {
+    "mtime": 1779850962.4633298,
+    "ast_hash": "621d213fc2dab6c1da3da83d3bcf9af9",
+    "semantic_hash": "621d213fc2dab6c1da3da83d3bcf9af9"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/simple_fix_chromedriver.sh": {
+    "mtime": 1779850963.1667752,
+    "ast_hash": "715286f543942dab9553613e6e92c80a",
+    "semantic_hash": "715286f543942dab9553613e6e92c80a"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/blog_auto.py": {
+    "mtime": 1779850962.4616256,
+    "ast_hash": "1d5aea376d4648fd4fccbe1f7a711676",
+    "semantic_hash": "1d5aea376d4648fd4fccbe1f7a711676"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_cookies.json": {
+    "mtime": 1779850963.1647582,
+    "ast_hash": "151c53a452e2f02067861dd8e4ff00aa",
+    "semantic_hash": "151c53a452e2f02067861dd8e4ff00aa"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_band_comment_reply.py": {
+    "mtime": 1779850963.163797,
+    "ast_hash": "580d4c730461676cb8633a33fea68dc5",
+    "semantic_hash": "580d4c730461676cb8633a33fea68dc5"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/auto_fix_chromedriver.py": {
+    "mtime": 1779850962.4572854,
+    "ast_hash": "4b865f459bd2f4b6a020b7042b4f15d0",
+    "semantic_hash": "4b865f459bd2f4b6a020b7042b4f15d0"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/run_vscode.py": {
+    "mtime": 1779850963.1657665,
+    "ast_hash": "044196ec6c89b1dc7f1ae8c8a732cedb",
+    "semantic_hash": "044196ec6c89b1dc7f1ae8c8a732cedb"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_blog_comment_reply.py": {
+    "mtime": 1779948233.4706304,
+    "ast_hash": "b96f3eaaa3e95746af850fcc3e9f628c",
+    "semantic_hash": "b96f3eaaa3e95746af850fcc3e9f628c"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/create_installer.py": {
+    "mtime": 1779850962.6706865,
+    "ast_hash": "5adbf305d019354cda60336e35c3489f",
+    "semantic_hash": "5adbf305d019354cda60336e35c3489f"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/setup_chrome_permissions.py": {
+    "mtime": 1779850963.1665657,
+    "ast_hash": "ae5454ce62d0821dc4eeff69b90dab2b",
+    "semantic_hash": "ae5454ce62d0821dc4eeff69b90dab2b"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/typing_test.py": {
+    "mtime": 1779850963.1679347,
+    "ast_hash": "185c096c83445c376f58403f7f2161ca",
+    "semantic_hash": "185c096c83445c376f58403f7f2161ca"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/real_keyboard_test.py": {
+    "mtime": 1779850963.1652474,
+    "ast_hash": "3ed5da5a32e1685a9149a1aac5361823",
+    "semantic_hash": "3ed5da5a32e1685a9149a1aac5361823"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/run_app.sh": {
+    "mtime": 1779850963.165604,
+    "ast_hash": "7bf4a415ea302c8af3367a55c156ab58",
+    "semantic_hash": "7bf4a415ea302c8af3367a55c156ab58"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/refactor_script2.py": {
+    "mtime": 1780282994.2697167,
+    "ast_hash": "1d3ab606a3fafddbe722b1194041245e",
+    "semantic_hash": "1d3ab606a3fafddbe722b1194041245e"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/start_blog_automation.py": {
+    "mtime": 1779850963.167411,
+    "ast_hash": "64726038c65ea97f90b69fa894d816ec",
+    "semantic_hash": "64726038c65ea97f90b69fa894d816ec"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_blog_auto.py": {
+    "mtime": 1780248929.0176969,
+    "ast_hash": "78fe109739671a129e2a30a8f545a766",
+    "semantic_hash": "78fe109739671a129e2a30a8f545a766"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/start_with_serial_auth.py": {
+    "mtime": 1779850963.167507,
+    "ast_hash": "d52592ed074a8e74435ee1cc45bd0769",
+    "semantic_hash": "d52592ed074a8e74435ee1cc45bd0769"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/simulate_reauth.py": {
+    "mtime": 1779850963.1670523,
+    "ast_hash": "9101b85123a48b82452b32f61d9ab43b",
+    "semantic_hash": "9101b85123a48b82452b32f61d9ab43b"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/read_log.py": {
+    "mtime": 1779850963.1650856,
+    "ast_hash": "8e89d871f0a9ffc212dd77ee70bca512",
+    "semantic_hash": "8e89d871f0a9ffc212dd77ee70bca512"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/direct_login_test.py": {
+    "mtime": 1779850962.7012782,
+    "ast_hash": "a55f4399da4991f14313f1288894bda9",
+    "semantic_hash": "a55f4399da4991f14313f1288894bda9"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/logger_utils.py": {
+    "mtime": 1779850962.7029095,
+    "ast_hash": "04cedd4f43ea99c8b442a62ddc53f2d5",
+    "semantic_hash": "04cedd4f43ea99c8b442a62ddc53f2d5"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/launcher.py": {
+    "mtime": 1779850962.7027848,
+    "ast_hash": "4ed2d664531a0a8a8bb38113664cacc9",
+    "semantic_hash": "4ed2d664531a0a8a8bb38113664cacc9"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/refactor_unified_pipeline.py": {
+    "mtime": 1780282942.0277903,
+    "ast_hash": "9ba1cb9edc0a7c7e06bf53ae691df6a4",
+    "semantic_hash": "9ba1cb9edc0a7c7e06bf53ae691df6a4"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/build_developer.py": {
+    "mtime": 1779873664.6723013,
+    "ast_hash": "e7d69201856514fc961ea48107d6cb0d",
+    "semantic_hash": "e7d69201856514fc961ea48107d6cb0d"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/run_improved_app.py": {
+    "mtime": 1779850963.165687,
+    "ast_hash": "095d7c99bc305847f51b03efc662c5a3",
+    "semantic_hash": "095d7c99bc305847f51b03efc662c5a3"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_blog_auto_image.py": {
+    "mtime": 1779850963.1641102,
+    "ast_hash": "5f63cf315045417b71bb0b3a86a8d428",
+    "semantic_hash": "5f63cf315045417b71bb0b3a86a8d428"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/build_cross_platform.py": {
+    "mtime": 1779850962.4628427,
+    "ast_hash": "38b079a7eaa314695c2e047176fd79fe",
+    "semantic_hash": "38b079a7eaa314695c2e047176fd79fe"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_cafe_auto.py": {
+    "mtime": 1779850963.1646762,
+    "ast_hash": "923447d6c984b9915c9465928420622a",
+    "semantic_hash": "923447d6c984b9915c9465928420622a"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/use_rembg.py": {
+    "mtime": 1779785369.9493754,
+    "ast_hash": "1a7aba9ba3fafb1388425d8b6e103aa0",
+    "semantic_hash": "1a7aba9ba3fafb1388425d8b6e103aa0"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_band_auto.py": {
+    "mtime": 1779850963.1636846,
+    "ast_hash": "081efd0ad3019a2019d2ba044a30263a",
+    "semantic_hash": "081efd0ad3019a2019d2ba044a30263a"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_cafe_comment_reply.py": {
+    "mtime": 1776951418.4428277,
+    "ast_hash": "b01487e00e1078ad2b04e5f404d0b0d0",
+    "semantic_hash": "b01487e00e1078ad2b04e5f404d0b0d0"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/blog_writer_app.py": {
+    "mtime": 1780320136.9820151,
+    "ast_hash": "96dcba7d21c2992f4793ee38abcf9055",
+    "semantic_hash": "96dcba7d21c2992f4793ee38abcf9055"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/simulate_settings_save.py": {
+    "mtime": 1779850963.1671443,
+    "ast_hash": "0e588676508e4f487837ffe8037fc138",
+    "semantic_hash": "0e588676508e4f487837ffe8037fc138"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/fix_chromedriver.py": {
+    "mtime": 1779850962.7019243,
+    "ast_hash": "d27ee98c99b80e364d57cd3fdb6a965d",
+    "semantic_hash": "d27ee98c99b80e364d57cd3fdb6a965d"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/naver_session.json": {
+    "mtime": 1773997143.4412262,
+    "ast_hash": "acbc6c1681649bf2a78d249fa75fb87b",
+    "semantic_hash": "acbc6c1681649bf2a78d249fa75fb87b"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/version_win.json": {
+    "mtime": 1779850963.169705,
+    "ast_hash": "9a9decca33d964cd2ddb31a5e6162eef",
+    "semantic_hash": "9a9decca33d964cd2ddb31a5e6162eef"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/check_gemini_models.py": {
+    "mtime": 1779850962.4669049,
+    "ast_hash": "a436b04b4244e74ffe1e9a47761008c3",
+    "semantic_hash": "a436b04b4244e74ffe1e9a47761008c3"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/UPDATE_SUMMARY.md": {
+    "mtime": 1779850962.44905,
+    "ast_hash": "b4c654bcf065698e295c11179907d2e2",
+    "semantic_hash": "b4c654bcf065698e295c11179907d2e2"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/ARCHIVE.md": {
+    "mtime": 1778253963.4198587,
+    "ast_hash": "1898871cf030772b45c93d873f651f8f",
+    "semantic_hash": "1898871cf030772b45c93d873f651f8f"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/PROJECT_STATUS.md": {
+    "mtime": 1778372904.9338408,
+    "ast_hash": "e567c34f6c9ebd41e29ed80aad1252b3",
+    "semantic_hash": "e567c34f6c9ebd41e29ed80aad1252b3"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/requirements_improved.txt": {
+    "mtime": 1779850963.1655097,
+    "ast_hash": "b66b48020984ce40625396520146e645",
+    "semantic_hash": "b66b48020984ce40625396520146e645"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/AI_MASTER_GUIDE.md": {
+    "mtime": 1778253937.2962444,
+    "ast_hash": "7ff59cc9ace6253a3d79ad89ec001cde",
+    "semantic_hash": "7ff59cc9ace6253a3d79ad89ec001cde"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/UPDATE_README.md": {
+    "mtime": 1779850962.4489374,
+    "ast_hash": "a2bc138a05f335e567dc29c0a3f7120c",
+    "semantic_hash": "a2bc138a05f335e567dc29c0a3f7120c"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/requirements.txt": {
+    "mtime": 1779850963.1653295,
+    "ast_hash": "db0126a141413872ca426d53f70634be",
+    "semantic_hash": "db0126a141413872ca426d53f70634be"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/debug_log.txt": {
+    "mtime": 1779850962.671363,
+    "ast_hash": "3635e7e941f3681d9e3ccecf5cda9859",
+    "semantic_hash": "3635e7e941f3681d9e3ccecf5cda9859"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/AI_CONTEXT_HISTORY.md": {
+    "mtime": 1778371242.683814,
+    "ast_hash": "883d723c126324db7227fd491e280b37",
+    "semantic_hash": "883d723c126324db7227fd491e280b37"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/\uc0ac\uc6a9\uc790_\uac00\uc774\ub4dc_v2.md": {
+    "mtime": 1779850963.170429,
+    "ast_hash": "2970877463868a433e63317fc13f4eee",
+    "semantic_hash": "2970877463868a433e63317fc13f4eee"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/models.txt": {
+    "mtime": 1779850963.1591847,
+    "ast_hash": "bf56d7a651feb0810e9022fdb93dc32f",
+    "semantic_hash": "bf56d7a651feb0810e9022fdb93dc32f"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/README_CROSS_PLATFORM.md": {
+    "mtime": 1779850962.4486942,
+    "ast_hash": "9689bede2cce33a2e66f023e34d73427",
+    "semantic_hash": "9689bede2cce33a2e66f023e34d73427"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/INSTALL.md": {
+    "mtime": 1779850962.447114,
+    "ast_hash": "948a1d43eca38c3edfe12e523af8b27d",
+    "semantic_hash": "948a1d43eca38c3edfe12e523af8b27d"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/project_history.md": {
+    "mtime": 1779803131.8042767,
+    "ast_hash": "d8015bfcc6c3e3f69d9c3372f78e59de",
+    "semantic_hash": "d8015bfcc6c3e3f69d9c3372f78e59de"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/WINDOWS_SETUP_GUIDE.md": {
+    "mtime": 1779850962.4492567,
+    "ast_hash": "4ed1b71cf4967bf027568a71536b72d7",
+    "semantic_hash": "4ed1b71cf4967bf027568a71536b72d7"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/README.md": {
+    "mtime": 1779850962.4484708,
+    "ast_hash": "8c4866dce2969b1fc6ce549d0dfb9c44",
+    "semantic_hash": "8c4866dce2969b1fc6ce549d0dfb9c44"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/DEVELOPER_GUIDE.md": {
+    "mtime": 1779850962.4464319,
+    "ast_hash": "1ef9958c5002e3fafeb913fa1b32cdd1",
+    "semantic_hash": "1ef9958c5002e3fafeb913fa1b32cdd1"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/\uc0ac\uc6a9\uc790_\uac00\uc774\ub4dc.md": {
+    "mtime": 1779850963.1703403,
+    "ast_hash": "d0595ef4edd258ab287d91f0017b08d3",
+    "semantic_hash": "d0595ef4edd258ab287d91f0017b08d3"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/EXECUTION_GUIDE.md": {
+    "mtime": 1779850962.4466484,
+    "ast_hash": "d4213ad46be8cf118eb60a6098556502",
+    "semantic_hash": "d4213ad46be8cf118eb60a6098556502"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/Google_Drive_Setup_Guide.md": {
+    "mtime": 1779850962.4469576,
+    "ast_hash": "8ec1385a8a83d37184b4fc7ba5a474c6",
+    "semantic_hash": "8ec1385a8a83d37184b4fc7ba5a474c6"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/RELEASE_GUIDE_MAC.md": {
+    "mtime": 1779803131.7145934,
+    "ast_hash": "9d7fc5ed5d7d7c34a2c5fe6a1765c3ac",
+    "semantic_hash": "9d7fc5ed5d7d7c34a2c5fe6a1765c3ac"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/SYSTEM_RULES.md": {
+    "mtime": 1779356467.6403682,
+    "ast_hash": "dd8019e96c21a068f7c9a0e6b077961e",
+    "semantic_hash": "dd8019e96c21a068f7c9a0e6b077961e"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/requirements_cross_platform.txt": {
+    "mtime": 1779850963.1654224,
+    "ast_hash": "e06dc615baa0a7ad8225b99e56cef1ca",
+    "semantic_hash": "e06dc615baa0a7ad8225b99e56cef1ca"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/README_WINDOWS.md": {
+    "mtime": 1779850962.448817,
+    "ast_hash": "134716ed817e99cc15ea6180a35c473b",
+    "semantic_hash": "134716ed817e99cc15ea6180a35c473b"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/CURSOR_WINDOWS_SETUP.md": {
+    "mtime": 1779850962.4462192,
+    "ast_hash": "72c60c00c36f96931131858d7250f7aa",
+    "semantic_hash": "72c60c00c36f96931131858d7250f7aa"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/fullbody_safe_pubic_taping_anatomy.png": {
+    "mtime": 1779179659.5531611,
+    "ast_hash": "dc6eb68748ed167b1a7442bf2fa0eb5a",
+    "semantic_hash": "dc6eb68748ed167b1a7442bf2fa0eb5a"
+  },
+  "/Users/gm2hapkido/Desktop/\u1105\u1161\u110b\u1175\u110b\u1169\u11ab\u1100\u1162\u1107\u1161\u11af\u110c\u1161/ultimate_safe_taping_anatomy.png": {
+    "mtime": 1779179209.0334496,
+    "ast_hash": "694a807b5d392333ad15bd9c02a411d4",
+    "semantic_hash": "694a807b5d392333ad15bd9c02a411d4"
+  }
+}

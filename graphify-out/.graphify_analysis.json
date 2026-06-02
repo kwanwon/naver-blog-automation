@@ -1,0 +1,978 @@
+{
+  "communities": {
+    "0": [
+      "naver_blog_auto_image_py",
+      "os_file_picker_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_get_date_folder",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_calculate_image_positions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_cleanup_temp_images",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_find_file_button",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_get_image_files",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_get_intercepted_input",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_get_media_files",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_handle_image_popups",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_insert_images_in_content",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_insert_media_in_content",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_insert_single_image",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_insert_single_media",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_insert_single_video",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_intercept_file_input",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_load_image_positions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_move_cursor_to_end",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_move_cursor_to_line",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_send_file_to_input",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter_simulate_video_drop",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_117",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_183",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_22",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_245",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_253",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_322",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_337",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_34",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_353",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_366",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_413",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_523",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_598",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_rationale_616",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_resource_path",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_os_file_picker_osfilepicker",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_os_file_picker_osfilepicker_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_os_file_picker_osfilepicker_select_file",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_os_file_picker_osfilepicker_select_file_mac",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_os_file_picker_rationale_17",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_os_file_picker_rationale_35",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_os_file_picker_rationale_8"
+    ],
+    "1": [
+      "naver_band_auto_py",
+      "naver_cafe_auto_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_auto_post",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_drive_post_to_band",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_execute_unified_blog_posting",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_get_or_create_driver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_get_smart_image_folder",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_get_time_based_task_type",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_handle_scheduled_task",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_is_driver_alive",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_load_settings",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_marketing_search_click",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_refresh_naver_session",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_start_comment_monitoring",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_update_activity_time",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_1191",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_1243",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_2515",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_278",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_3394",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_3471",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4120",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4900",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_5491",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_auto_naverbandautomation",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_auto_naverbandautomation_click_attach_button",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_auto_naverbandautomation_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_auto_naverbandautomation_post_to_band",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_auto_naverbandautomation_wait_for_submit_button_ready",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_auto_naverbandautomation_wait_for_upload_complete",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_auto_rationale_119",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_auto_rationale_152",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_auto_rationale_48",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_auto_navercafeautomation",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_auto_navercafeautomation_get_club_id",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_auto_navercafeautomation_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_auto_navercafeautomation_post_to_cafe",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_auto_rationale_17",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_auto_rationale_375"
+    ],
+    "2": [
+      "blog_writer_app_py",
+      "simulate_startup_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_build_full_usage_panel",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_check_login_status",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_clock_worker",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_close_dialog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_complete_login",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_create_marketing_tab",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_drive_generate_content",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_drive_on_fail",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_drive_on_success",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_get_current_version",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_get_serial_status",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_hide_full_usage_panel",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_load_image_positions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_fetch_notifications_click",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_marketing_auto_engage_click",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_smart_image_scan_click",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_perform_update",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_refresh_full_usage_panel_list",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_render_marketing_history",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_render_marketing_results",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_render_reply_notifications",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_restart_application",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_run_batch_engage_trigger",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_serial_status_worker",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_show_full_usage_panel",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_show_login_complete_button",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_start_session_keep_alive",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_stop_comment_monitoring",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_stop_session_keep_alive",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_toggle_blog_drive_watcher",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_toggle_cafe_drive_watcher_ui",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_update_login_button",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_1145",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_448",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_870",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_startup_simulate_startup_update"
+    ],
+    "3": [
+      "naver_blog_comment_reply_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_extract_blog_owner_from_url",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_find_notification_bell",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_generate_ai_reply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_get_next_default_reply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_get_unread_comment_notifications",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_is_my_blog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_is_notification_read",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_load_custom_reply_instruction",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_load_my_blog_id",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_load_phone_number",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_perform_reply_logic",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_perform_single_reply_logic",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_process_all_unanswered_comments",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_reply_to_comment_in_new_window",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_set_my_blog_id",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_stop",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_switch_to_main_frame",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply_write_single_reply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_1",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_113",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_135",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_164",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_432",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_486",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_607",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_775",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_87",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_907",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_rationale_949"
+    ],
+    "4": [
+      "naver_blog_post_finisher_py",
+      "simulate_naver_blog_link_test_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_add_footer",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_add_location",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_add_tags",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_click_final_publish_button",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_click_final_publish_button_legacy",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_click_publish_button",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_fill_link_input",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_get_auto_final_publish_setting",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_handle_browser_popups",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_handle_clipboard_popup",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_open_publish_panel_robust",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_set_reservation_time",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher_switch_to_main_frame_robust",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_1057",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_1094",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_14",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_1409",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_1555",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_2234",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_253",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_30",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_663",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_737",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_rationale_943",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_resource_path",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_naver_blog_link_test_get_chromedriver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_naver_blog_link_test_log",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_naver_blog_link_test_main"
+    ],
+    "5": [
+      "naver_blog_auto_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_calculate_image_positions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_check_page_status",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_cleanup_wdm_versions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_create_folders",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_find_file_button",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_fix_chromedriver_permissions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_get_chrome_major_version",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_get_driver_major_version",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_go_to_blog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_handle_clipboard_popup",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_handle_esc_key",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_insert_image",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_load_settings",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_login_naver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_purge_wdm_cache",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_safe_remove",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_set_font_and_alignment",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_setup_driver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_setup_image_inserter",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation_write_post",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_rationale_1467",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_rationale_190",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_rationale_237",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_rationale_264",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_rationale_300",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_rationale_41",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_rationale_896",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_resource_path"
+    ],
+    "6": [
+      "folder_manager_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_ensure_config_dir",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_find_matching_folder",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_get_all_subfolders",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_get_available_folders",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_get_current_folder",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_get_folder_path",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_get_folder_priority",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_get_images_from_folder",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_get_next_folder",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_has_images",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_load_folder_index",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_load_smart_rules",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_reset_folder_index",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_save_folder_index",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_save_smart_rules",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_scan_and_learn_keywords",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager_show_folder_status",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_rationale_116",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_rationale_192",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_rationale_204",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_rationale_216",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_rationale_243",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_rationale_256",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_rationale_313"
+    ],
+    "7": [
+      "naver_band_comment_reply_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_clean_comment_text",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_collect_post_urls",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_generate_ai_reply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_get_comment_info",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_get_next_default_reply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_has_my_reply_nearby",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_is_manager",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_is_spam",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_process_band_comments",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_process_comments_on_page",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_remove_emoji",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_scroll_main_page",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_scroll_to_comments",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_stop",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply_write_reply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_rationale_157",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_rationale_188",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_rationale_207",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_rationale_23",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_rationale_383",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_rationale_450",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_rationale_467"
+    ],
+    "8": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_check_for_updates",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_create_image_folders",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_debug_log",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_ensure_directories",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_get_app_data_dir",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_get_base_directory",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_initial_device_info_update",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_load_model_usage_logs",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_load_topic_index",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_blog_drive_detected",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_cafe_drive_detected",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_reply_auto_engage_click",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_save_topic_index",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_select_sequential_topic",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_start_caffeinate",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_1076",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_252",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_274",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4243",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4573",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_530",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_605",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_967"
+    ],
+    "9": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_auto_reply_comments_click",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_build_model_usage_card",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_create_reply_manager_tab",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_create_training_plan_tab",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_create_weather_news_tab",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_handle_update_click",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_init_drive_auto_post",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_load_main_ui",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_open_folder_picker",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_open_folder_picker_for",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_open_guide",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_scan_drive_folders",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_show_log_viewer",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_start_clock",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_start_drive_auto_post",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_start_serial_status_updater",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_stop_comment_reply_click",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_stop_drive_auto_post",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4275",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_442",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_5325",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_790",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_911"
+    ],
+    "10": [
+      "naver_blog_auto_improved_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_auto_login_with_credentials",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_click_login_button",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_close",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_go_to_blog_write",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_input_content",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_input_field_with_retry",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_input_tags",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_input_title",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_load_settings",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_login_naver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_publish_post",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_save_login_info",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_setup_driver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto_write_post",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_rationale_216"
+    ],
+    "11": [
+      "setup_cross_platform_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_check_dependencies",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_check_python_version",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_check_system_tools",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_create_config_files",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_detect_platform",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_get_activation_command",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_install_requirements",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_print_next_steps",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_print_platform_info",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_run_check_only",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_run_full_setup",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_setup_chromedriver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup_setup_virtual_environment",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_rationale_163"
+    ],
+    "12": [
+      "manual_session_helper_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_fix_permissions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_load_saved_session",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_open_login_page",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_purge_wdm_cache",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_run_manual_login_process",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_save_session",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_setup_driver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_test_blog_access",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_test_saved_session",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper_wait_for_manual_login",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_rationale_33",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_rationale_40"
+    ],
+    "13": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_get_images_to_upload",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_get_next_image_folder",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_load_folder_index",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_load_used_folders",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_save_folder_index",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_save_used_folder",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_save_used_folders",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4033",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4046",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4056",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4069",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4080",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4092",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4161"
+    ],
+    "14": [
+      "naver_cafe_comment_reply_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_navercafecommentreply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_navercafecommentreply_auto_reply_all_cafe_notifications",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_navercafecommentreply_generate_ai_reply",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_navercafecommentreply_get_unread_comment_notifications",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_navercafecommentreply_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_navercafecommentreply_perform_cafe_reply_logic",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_navercafecommentreply_reply_to_comment_in_new_window",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_rationale_1",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_rationale_140",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_rationale_175",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_rationale_244",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_rationale_27",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_cafe_comment_reply_rationale_53"
+    ],
+    "15": [
+      "build_cross_platform_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_build_pyinstaller_command",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_clean_build_dirs",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_collect_data_files",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_create_distribution_info",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_get_app_icon",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_get_hidden_imports",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_run_build",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_run_full_build",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_crossplatformbuilder_setup_chromedriver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_cross_platform_main"
+    ],
+    "16": [
+      "auto_fix_chromedriver_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_chromedriverautofixer",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_chromedriverautofixer_auto_fix_all",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_chromedriverautofixer_clean_corrupted_wdm_cache",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_chromedriverautofixer_find_chromedriver_files",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_chromedriverautofixer_fix_macos_chromedriver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_chromedriverautofixer_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_rationale_111",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_rationale_23",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_rationale_35",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_auto_fix_chromedriver_rationale_93"
+    ],
+    "17": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_band_login",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_calculate_next_post_time",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_create_simple_login_button",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_is_operating_time",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_load_timer_settings_data",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_show_dialog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_simple_login",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_start_timer",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_stop_timer",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_timer_worker",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_update_usage_display",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_1481"
+    ],
+    "18": [
+      "version_json",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_changelog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_min_requirements",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_min_requirements_os",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_min_requirements_python",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_preserved_files",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_release_date",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_updated_at",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_version"
+    ],
+    "19": [
+      "version_win_json",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_win_changelog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_win_min_requirements",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_win_min_requirements_os",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_win_min_requirements_python",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_win_preserved_files",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_win_release_date",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_win_updated_at",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_win_version"
+    ],
+    "20": [
+      "version_mac_json",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_mac_changelog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_mac_min_requirements",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_mac_min_requirements_os",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_mac_min_requirements_python",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_mac_preserved_files",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_mac_release_date",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_mac_updated_at",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_version_mac_version"
+    ],
+    "21": [
+      "fix_chromedriver_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_fix_chromedriver_download_chromedriver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_fix_chromedriver_fix_chromedriver_permissions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_fix_chromedriver_fix_existing_chromedrivers",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_fix_chromedriver_get_chrome_version",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_fix_chromedriver_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_fix_chromedriver_rationale_148",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_fix_chromedriver_run_command"
+    ],
+    "22": [
+      "logger_utils_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_logger_utils_rationale_6",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_logger_utils_streamlogger",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_logger_utils_streamlogger_flush",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_logger_utils_streamlogger_get_logs",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_logger_utils_streamlogger_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_logger_utils_streamlogger_set_callback",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_logger_utils_streamlogger_write"
+    ],
+    "23": [
+      "simulate_settings_save_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_settings_save_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_settings_save_mockapp",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_settings_save_mockapp_get_app_data_dir",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_settings_save_mockapp_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_settings_save_mockapp_load_settings",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_settings_save_mockapp_save_setting",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_settings_save_mockapp_save_settings"
+    ],
+    "24": [
+      "start_blog_automation_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_start_blog_automation_check_environment",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_start_blog_automation_detect_platform",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_start_blog_automation_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_start_blog_automation_print_header",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_start_blog_automation_run_application",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_start_blog_automation_setup_chromedriver",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_start_blog_automation_setup_virtual_environment"
+    ],
+    "25": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_safe_exit",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_stop_caffeinate",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_stop_clock",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_stop_serial_status_updater",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_terminate_processes_safely",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_1113",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_1365"
+    ],
+    "26": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_add_model_usage_log",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_clear_model_usage_logs",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_compute_usage_costs",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_refresh_model_usage_table",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_save_model_usage_logs",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_update_usage_cost_ui",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_1012"
+    ],
+    "27": [
+      "naver_session_json",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_session_current_url",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_session_found_indicators",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_session_login_confirmed",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_session_login_time",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_session_user_agent"
+    ],
+    "28": [
+      "setup_chrome_permissions_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_chrome_permissions_create_chrome_policy_file",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_chrome_permissions_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_chrome_permissions_rationale_110",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_chrome_permissions_rationale_15",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_chrome_permissions_setup_chrome_clipboard_permissions"
+    ],
+    "29": [
+      "create_installer_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_create_installer_check_requirements",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_create_installer_create_dmg",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_create_installer_create_installer_directory",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_create_installer_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_create_installer_run_command"
+    ],
+    "30": [
+      "manual_login_helper_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_login_helper_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_login_helper_manualloginhelper",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_login_helper_manualloginhelper_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_login_helper_manualloginhelper_manual_login_process",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_login_helper_manualloginhelper_setup_driver"
+    ],
+    "31": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_drive_folder_selected",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_global_folder_picker_result",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_save_setting",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_save_settings",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_334"
+    ],
+    "32": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_show_serial_auth_dialog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_start_periodic_validation",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4412",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_5689"
+    ],
+    "33": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_force_update_weather_news",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_update_weather_hourly_container",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_weather_news_auto_updater",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_11847",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_11875"
+    ],
+    "34": [
+      "deploy_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_deploy_get_current_version",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_deploy_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_deploy_run_command",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_deploy_update_version_file"
+    ],
+    "35": [
+      "serial_auth_window_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_serial_auth_window_serialauthwindow",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_serial_auth_window_serialauthwindow_init",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_serial_auth_window_serialauthwindow_launch_main_app",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_serial_auth_window_serialauthwindow_main"
+    ],
+    "36": [
+      "build_release_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_release_create_release_config_templates",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_release_main",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_release_rationale_146"
+    ],
+    "37": [
+      "refactor_script2_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_refactor_script2_replace_folder_watch",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_refactor_script2_replace_scheduler_blog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_refactor_script2_replace_upload_to_blog"
+    ],
+    "38": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_calculate_image_positions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_on_content_change",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_save_image_positions",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_4399"
+    ],
+    "39": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_close_full_usage_dialog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_show_full_usage_bottomsheet",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_show_full_usage_dialog",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_3742"
+    ],
+    "40": [
+      "verify_weather_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_verify_weather_load_settings",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_verify_weather_rationale_17",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_verify_weather_test_kma_weather_full"
+    ],
+    "41": [
+      "build_developer_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_developer_main"
+    ],
+    "42": [
+      "cleanup_chrome_profiles_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_cleanup_chrome_profiles_cleanup_chrome_profiles"
+    ],
+    "43": [
+      "direct_login_test_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_direct_login_test_direct_login_test"
+    ],
+    "44": [
+      "init_secure_project_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_init_secure_project_init_secure_project"
+    ],
+    "45": [
+      "save_login_info_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_save_login_info_save_current_login"
+    ],
+    "46": [
+      "simulate_reauth_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_simulate_reauth_simulate_reauth"
+    ],
+    "47": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_generate_content",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_3456"
+    ],
+    "48": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_toggle_cafe_drive_watcher",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_489"
+    ],
+    "49": [
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp_toggle_blog_drive_watcher_ui",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_rationale_427"
+    ],
+    "50": [
+      "build_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_build_build_app"
+    ],
+    "51": [
+      "improved_typing_test_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_improved_typing_test_improved_typing_test"
+    ],
+    "52": [
+      "real_keyboard_test_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_real_keyboard_test_real_keyboard_login_test"
+    ],
+    "53": [
+      "typing_test_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_typing_test_test_typing_methods"
+    ],
+    "54": [
+      "update_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_update_main"
+    ],
+    "55": [
+      "use_rembg_py",
+      "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_use_rembg_process_emblem"
+    ],
+    "56": [
+      "find_text_py"
+    ],
+    "57": [
+      "fix_indent_py"
+    ],
+    "58": [
+      "simple_fix_chromedriver_sh"
+    ],
+    "59": [
+      "blog_auto_py"
+    ],
+    "60": [
+      "naver_cookies_json"
+    ],
+    "61": [
+      "run_vscode_py"
+    ],
+    "62": [
+      "run_app_sh"
+    ],
+    "63": [
+      "start_with_serial_auth_py"
+    ],
+    "64": [
+      "read_log_py"
+    ],
+    "65": [
+      "launcher_py"
+    ],
+    "66": [
+      "refactor_unified_pipeline_py"
+    ],
+    "67": [
+      "run_improved_app_py"
+    ],
+    "68": [
+      "check_gemini_models_py"
+    ]
+  },
+  "cohesion": {
+    "0": 0.07,
+    "1": 0.06,
+    "2": 0.06,
+    "3": 0.09,
+    "4": 0.09,
+    "5": 0.1,
+    "6": 0.13,
+    "7": 0.13,
+    "8": 0.1,
+    "9": 0.09,
+    "10": 0.18,
+    "11": 0.23,
+    "12": 0.24,
+    "13": 0.15,
+    "14": 0.18,
+    "15": 0.28,
+    "16": 0.24,
+    "17": 0.21,
+    "18": 0.22,
+    "19": 0.22,
+    "20": 0.22,
+    "21": 0.5,
+    "22": 0.29,
+    "23": 0.5,
+    "24": 0.46,
+    "25": 0.29,
+    "26": 0.43,
+    "27": 0.33,
+    "28": 0.47,
+    "29": 0.67,
+    "30": 0.53,
+    "31": 0.4,
+    "32": 0.4,
+    "33": 0.4,
+    "34": 0.7,
+    "35": 0.5,
+    "36": 0.67,
+    "37": 0.5,
+    "38": 0.5,
+    "39": 0.5,
+    "40": 0.5,
+    "41": 1.0,
+    "42": 1.0,
+    "43": 1.0,
+    "44": 1.0,
+    "45": 1.0,
+    "46": 1.0,
+    "47": 1.0,
+    "48": 1.0,
+    "49": 1.0,
+    "50": 1.0,
+    "51": 1.0,
+    "52": 1.0,
+    "53": 1.0,
+    "54": 1.0,
+    "55": 1.0,
+    "56": 1.0,
+    "57": 1.0,
+    "58": 1.0,
+    "59": 1.0,
+    "60": 1.0,
+    "61": 1.0,
+    "62": 1.0,
+    "63": 1.0,
+    "64": 1.0,
+    "65": 1.0,
+    "66": 1.0,
+    "67": 1.0,
+    "68": 1.0
+  },
+  "gods": [
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_blog_writer_app_blogwriterapp",
+      "label": "BlogWriterApp",
+      "degree": 139
+    },
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_image_naverblogimageinserter",
+      "label": "NaverBlogImageInserter",
+      "degree": 28
+    },
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_naverblogautomation",
+      "label": "NaverBlogAutomation",
+      "degree": 27
+    },
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_folder_manager_imagefoldermanager",
+      "label": "ImageFolderManager",
+      "degree": 23
+    },
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_comment_reply_naverblogcommentreply",
+      "label": "NaverBlogCommentReply",
+      "degree": 22
+    },
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_post_finisher_naverblogpostfinisher",
+      "label": "NaverBlogPostFinisher",
+      "degree": 21
+    },
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_band_comment_reply_naverbandcommentreply",
+      "label": "NaverBandCommentReply",
+      "degree": 20
+    },
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_naver_blog_auto_improved_improvednaverblogauto",
+      "label": "ImprovedNaverBlogAuto",
+      "degree": 16
+    },
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_setup_cross_platform_crossplatformsetup",
+      "label": "CrossPlatformSetup",
+      "degree": 16
+    },
+    {
+      "id": "\ub77c\uc774\uc628\uac1c\ubc1c\uc790_manual_session_helper_manualsessionhelper",
+      "label": "ManualSessionHelper",
+      "degree": 14
+    }
+  ],
+  "surprises": [
+    {
+      "source": "NaverBlogImageInserter",
+      "target": "ImageFolderManager",
+      "source_files": [
+        "naver_blog_auto_image.py",
+        "folder_manager.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "BlogWriterApp",
+      "target": "ImageFolderManager",
+      "source_files": [
+        "blog_writer_app.py",
+        "folder_manager.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "NaverBlogAutomation",
+      "target": "NaverBlogPostFinisher",
+      "source_files": [
+        "naver_blog_auto.py",
+        "naver_blog_post_finisher.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "BlogWriterApp",
+      "target": "NaverBlogPostFinisher",
+      "source_files": [
+        "blog_writer_app.py",
+        "naver_blog_post_finisher.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "simulate_startup_update()",
+      "target": "BlogWriterApp",
+      "source_files": [
+        "simulate_startup.py",
+        "blog_writer_app.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "calls",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; peripheral node `simulate_startup_update()` unexpectedly reaches hub `BlogWriterApp`"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `BlogWriterApp` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 12`, `Community 13`, `Community 17`, `Community 22`, `Community 25`, `Community 26`, `Community 31`, `Community 32`, `Community 33`, `Community 38`, `Community 39`, `Community 47`, `Community 48`, `Community 49`?",
+      "why": "High betweenness centrality (0.351) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `NaverBlogImageInserter` connect `Community 0` to `Community 1`, `Community 2`, `Community 5`, `Community 6`?",
+      "why": "High betweenness centrality (0.089) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `NaverBlogPostFinisher` connect `Community 4` to `Community 1`, `Community 2`, `Community 5`?",
+      "why": "High betweenness centrality (0.064) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 11 inferred relationships involving `BlogWriterApp` (e.g. with `NaverBandAutomation` and `NaverBandCommentReply`) actually correct?",
+      "why": "`BlogWriterApp` has 11 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 8 inferred relationships involving `NaverBlogImageInserter` (e.g. with `NaverBlogAutomation` and `ImageFolderManager`) actually correct?",
+      "why": "`NaverBlogImageInserter` has 8 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 5 inferred relationships involving `NaverBlogAutomation` (e.g. with `NaverBlogImageInserter` and `NaverBlogPostFinisher`) actually correct?",
+      "why": "`NaverBlogAutomation` has 5 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 4 inferred relationships involving `ImageFolderManager` (e.g. with `NaverBlogImageInserter` and `BlogWriterApp`) actually correct?",
+      "why": "`ImageFolderManager` has 4 INFERRED edges - model-reasoned connections that need verification."
+    }
+  ]
+}

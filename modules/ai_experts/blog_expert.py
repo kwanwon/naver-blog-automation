@@ -36,6 +36,20 @@ class BlogExpert(BaseAIExpert):
         ai_settings = settings
         user_settings = self._load_user_settings()
         
+        # [블로그 전용 설정 로드] base_expert를 오염시키지 않고 블로그 엔진 내에서만 단독으로 로드
+        try:
+            import json, os
+            from utils.path_utils import get_app_settings_path
+            app_settings_path = get_app_settings_path()
+            if os.path.exists(app_settings_path):
+                with open(app_settings_path, 'r', encoding='utf-8') as f:
+                    app_settings = json.load(f)
+                    for k in ['blog_persona_mode', 'blog_persona_mode_custom', 'blog_style_mode', 'blog_theme', 'blog_hometip']:
+                        if k in app_settings:
+                            ai_settings[k] = app_settings[k]
+        except Exception as e:
+            logger.error(f"블로그 전용 설정 로드 중 오류: {e}")
+        
         # 🟢 사용자 맞춤형 페르소나 및 종목 컨텍스트 주입 (범용화 완료)
         dojang_name = user_settings.get('dojang_name', user_settings.get('gym_name', '센터'))
         user_sports = user_settings.get('gym_sport', '운동')
@@ -257,9 +271,12 @@ class BlogExpert(BaseAIExpert):
 2. [블랙리스트 단어 원천 차단]: "최선을 다하겠습니다", "노력하겠습니다", "센터로 오세요" 등 뻔한 다짐이나 홍보성 멘트는 100% 금지합니다. 오직 가치 있는 정보와 유익한 조언만을 담백하게 남기세요.
 3. [마크다운 규격 준수]: 제목은 반드시 가장 첫 줄에 한 번만 작성하고, 나머지 본문을 자연스럽게 이어가세요."""
 
+        general_instructions = ai_settings.get('instructions', '')
         smart_ui_prompt = f"""[✍️ AI 역할 (페르소나)]: {smart_persona_prompt}
  
-[💬 글쓰기 말투 (스타일)]: {smart_style_prompt}{smart_spice_prompt}"""
+[💬 글쓰기 말투 (스타일)]: {smart_style_prompt}{smart_spice_prompt}
+
+[📝 기본 글쓰기 공통 지침]: {general_instructions}"""
         # ─────────────────────────────────────────────────────────────────
 
         # 🟢 플랫폼 공통 및 블로그 전용 규칙 로드 (런타임 NameError 방지)
