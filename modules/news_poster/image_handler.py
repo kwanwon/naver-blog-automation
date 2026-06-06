@@ -145,17 +145,69 @@ class ImageHandler:
         """
         print(f"[Step] [ImageHandler] Starting watermark & processing pipeline (Logo: {logo_path})")
         
-        # Resolve default logo path if not specified
+        # Ensure image_paths is a list of files
+        import shutil
+        if isinstance(image_paths, str):
+            if os.path.isdir(image_paths):
+                print(f"[Step] [ImageHandler] Input is a directory: {image_paths}")
+                valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+                files = []
+                for f in os.listdir(image_paths):
+                    full_path = os.path.join(image_paths, f)
+                    if os.path.isfile(full_path):
+                        ext = os.path.splitext(f)[1].lower()
+                        if ext in valid_exts:
+                            files.append(full_path)
+                        else:
+                            # Copy non-image files (like videos) directly to processed_dir
+                            out_path = os.path.join(self.processed_dir, f)
+                            try:
+                                shutil.copy2(full_path, out_path)
+                                print(f"[Step] [ImageHandler] Copied non-image file: {f}")
+                            except Exception as e:
+                                print(f"[Error] [ImageHandler] Failed to copy {f}: {e}")
+                image_paths = files
+            elif os.path.isfile(image_paths):
+                image_paths = [image_paths]
+            else:
+                image_paths = []
+
+        # 1. Load user settings to override logo path, get watermark size and GPS
+        import json
         import unicodedata
-        if logo_path:
+        import subprocess
+        import sys
+        
+        user_settings = {}
+        settings_path = os.path.join(os.path.expanduser("~"), ".gemini", "antigravity-ide", "config", "user_settings.txt") # Using standard app data path or checking multiple
+        
+        # Determine base dir depending on execution context to find user_settings.txt
+        try:
+            from utils.path_utils import get_app_data_dir
+            app_data_dir = get_app_data_dir()
+            settings_path = os.path.join(app_data_dir, 'config', 'user_settings.txt')
+        except:
+            # Fallback path if get_app_data_dir fails
+            pass
+            
+        if os.path.exists(settings_path):
+            try:
+                with open(settings_path, 'r', encoding='utf-8') as f:
+                    user_settings = json.load(f)
+            except:
+                pass
+                
+        user_watermark_path = user_settings.get("watermark_path", "")
+        if user_watermark_path and os.path.exists(user_watermark_path):
+            logo_path = unicodedata.normalize('NFC', user_watermark_path)
+        elif logo_path:
             logo_path = unicodedata.normalize('NFC', logo_path)
             
         if not logo_path or not os.path.exists(logo_path):
             # Check Desktop/체육관엠블럼
-            desktop_logo_dir = "/Users/gm2hapkido/Desktop/체육관엠블럼"
-            # Normalize target directory
+            desktop_logo_dir = os.path.join(os.path.expanduser("~"), "Desktop", "체육관엠블럼")
             desktop_logo_dir = unicodedata.normalize('NFC', desktop_logo_dir)
-            possible_logos = ["엠블럼.png", "라이온체육관(all).png", "사자만.png"]
+            possible_logos = ["엠블럼.png", "라이온체육관(all).png", "사자만.png"]
             possible_logos = [unicodedata.normalize('NFC', p) for p in possible_logos]
             
             resolved_logo = None
@@ -202,10 +254,15 @@ class ImageHandler:
                     bg_w, bg_h = bg_im.size
                     logo_w, logo_h = logo_im.size
                     
-                    print(f"[Step 3] [ImageHandler] 워터마크 15% 동적 리사이징 (상태: 시도)")
+                    # Compute watermark size dynamically from user_settings (default 10%)
+                    try:
+                        watermark_percent = float(user_settings.get("watermark_size_percent", "10")) / 100.0
+                    except:
+                        watermark_percent = 0.10
+                        
+                    print(f"[Step 3] [ImageHandler] 워터마크 {int(watermark_percent*100)}% 동적 리사이징 (상태: 시도)")
                     
-                    # Compute watermark size: Exactly 15% of background width
-                    target_w = int(bg_w * 0.15)
+                    target_w = int(bg_w * watermark_percent)
                     
                     # Maintain logo's original aspect ratio
                     aspect_ratio = logo_h / float(logo_w)
@@ -233,15 +290,71 @@ class ImageHandler:
                     watermark_layer = Image.new("RGBA", bg_im.size, (0, 0, 0, 0))
                     watermark_layer.paste(resized_logo, (pos_x, pos_y))
                     bg_im = Image.alpha_composite(bg_im, watermark_layer)
-                    print(f"[Step 3] [ImageHandler] 워터마크 15% 동적 리사이징 및 3% 동적 여백 합성 적용 (상태: 성공)")
+                    print(f"[Step 3] [ImageHandler] 워터마크 {int(watermark_percent*100)}% 동적 리사이징 및 3% 동적 여백 합성 적용 (상태: 성공)")
                 
                 # 4. Save processed image as JPEG to matches blog compatibility
                 final_im = bg_im.convert("RGB")
                 out_filename = f"processed_{idx}_{random.randint(100,999)}.jpg"
                 out_path = os.path.join(self.processed_dir, out_filename)
                 
-                # Safe save with quality 90+
-                final_im.save(out_path, "JPEG", quality=92)
+                # 🌟 [GPS 메타데이터(EXIF) 주입 로직 시작] 🌟
+                exif_bytes = b""
+                gym_gps = user_settings.get("gym_gps_coords", "").strip()
+                if gym_gps:
+                    try:
+                        import piexif
+                    except ImportError:
+                        print(f"[Warning] [ImageHandler] 'piexif' 패키지가 없습니다. 자동 설치를 시도합니다...")
+                        try:
+                            import subprocess, sys
+                            subprocess.check_call([sys.executable, "-m", "pip", "install", "piexif"])
+                            import piexif
+                        except Exception as e:
+                            print(f"[Warning] [ImageHandler] 'piexif' 자동 설치 실패: {e}")
+                            piexif = None
+                    
+                    if piexif is not None:
+                        try:
+                            lat_str, lng_str = gym_gps.replace(" ", "").split(",")
+                            target_lat = float(lat_str)
+                            target_lng = float(lng_str)
+                            
+                            # 위도/경도를 도/분/초 형태로 변환 (piexif 형식)
+                            def to_deg(value, loc):
+                                if value < 0:
+                                    loc_value = loc[0]
+                                    value = -value
+                                else:
+                                    loc_value = loc[1]
+                                d = int(value)
+                                m = int((value - d) * 60)
+                                s = round((value - d - m/60) * 3600 * 100)
+                                return ((d, 1), (m, 1), (s, 100)), loc_value
+
+                            lat_deg, lat_ref = to_deg(target_lat, ["S", "N"])
+                            lng_deg, lng_ref = to_deg(target_lng, ["W", "E"])
+
+                            gps_ifd = {
+                                piexif.GPSIFD.GPSLatitudeRef: lat_ref,
+                                piexif.GPSIFD.GPSLatitude: lat_deg,
+                                piexif.GPSIFD.GPSLongitudeRef: lng_ref,
+                                piexif.GPSIFD.GPSLongitude: lng_deg,
+                                piexif.GPSIFD.GPSAltitudeRef: 0,
+                                piexif.GPSIFD.GPSAltitude: (50, 1) # 임의의 고도 50m
+                            }
+                            
+                            exif_dict = {"GPS": gps_ifd}
+                            exif_bytes = piexif.dump(exif_dict)
+                            print(f"[Step 4] [ImageHandler] 설정된 사용자 GPS 메타데이터({gym_gps}) 생성 성공")
+                        except Exception as e:
+                            print(f"[Warning] [ImageHandler] GPS EXIF 생성 중 오류 발생: {e}")
+
+                # Safe save with quality 90+ and EXIF data if available
+                if exif_bytes:
+                    final_im.save(out_path, "JPEG", quality=92, exif=exif_bytes)
+                else:
+                    final_im.save(out_path, "JPEG", quality=92)
+                    
                 processed_paths.append(out_path)
                 print(f"[Step] [ImageHandler] Processed image saved: {out_filename}")
                 
@@ -256,7 +369,7 @@ class ImageHandler:
                 except:
                     pass
                     
-        return processed_paths
+        return self.processed_dir
 
     def cleanup(self):
         """

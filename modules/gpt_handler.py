@@ -1908,6 +1908,14 @@ class GPTHandler:
         
         hook_msg = f"\n[System: {weather_label} ({weather_loc})]\n{weather_info}\n"
         
+        # --- 🚨 비/소나기/강수 감지 로직 추가 ---
+        if any(keyword in weather_info for keyword in ["비", "소나기", "눈", "강수", "폭우"]):
+            hook_msg += (
+                "⚠️ [시스템 긴급 경고]: 현재 일기예보에 '비/소나기/강수'가 포함되어 있습니다. "
+                "절대로 '활동하기 좋은 날씨'나 '화창하다'는 긍정적인 표현을 하지 마세요!! "
+                "반드시 '외출 시 우산을 챙기세요', '비가 오니 실내 활동을 추천합니다' 등 궂은 날씨에 대비하는 당부의 말로 작성하세요.\n"
+            )
+        
         if is_forecast:
             hook_msg += (
                 f"(위 정보는 '내일' 발행용입니다. 구체적인 수치보다는 {month}월의 계절감과 "
@@ -1943,10 +1951,19 @@ class GPTHandler:
             return ""
             
         hook_msg = f"\n[System: 내일의 준비 (배려 팁)]\n{tomorrow_weather}\n"
-        hook_msg += (
-            "(위 내일 날씨를 참고하여, 글 마무리에서 '내일은 비 소식이 있으니 우산을 챙기세요' 같은 "
-            "세심한 당부 멘트를 포함하세요.)\n"
-        )
+        
+        # --- 🚨 비/소나기/강수 감지 로직 추가 ---
+        if any(keyword in tomorrow_weather for keyword in ["비", "소나기", "눈", "강수", "폭우"]):
+            hook_msg += (
+                "⚠️ [시스템 긴급 경고]: 내일 일기예보에 '비/소나기/강수'가 포함되어 있습니다. "
+                "반드시 마무리 멘트에서 '내일은 비 소식이 있으니 우산을 꼭 챙기세요', '비굣길 조심하세요' 등 비에 대비하는 세심한 당부 멘트를 포함하세요.\n"
+            )
+        else:
+            hook_msg += (
+                "(위 내일 날씨를 참고하여, 글 마무리에서 '내일은 비 소식이 있으니 우산을 챙기세요' 같은 "
+                "세심한 당부 멘트를 포함하세요.)\n"
+            )
+            
         return hook_msg
 
     def _get_semester_context(self):
