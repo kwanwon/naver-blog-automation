@@ -9768,9 +9768,9 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             border_radius=10
         )
 
-        # ========== 🆕 특별 예약 (폴더 감지) 설정 UI ==========
+        # ========== 🆕 특별 밴드 감지 (폴더 감지) 설정 UI ==========
         special_time_rows_container = ft.Column(spacing=10)
-        special_enabled_checkbox = ft.Checkbox(label="특별 예약 활성화", value=False)
+        special_enabled_checkbox = ft.Checkbox(label="특별 밴드 감지 활성화", value=False)
         special_status_text = ft.Text("🔴 비활성화됨", color=ft.Colors.RED, size=12)
         
         def create_special_time_row(start_val="09:00", end_val="10:00"):
@@ -9802,14 +9802,14 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         add_time_btn = ft.ElevatedButton("➕ 시간 추가", on_click=add_special_time_row, height=35)
         
         def toggle_special_reservation(e):
-            """특별 예약 활성화/비활성화"""
+            """특별 밴드 감지 활성화/비활성화"""
             enabled = special_enabled_checkbox.value
             
             if not enabled:
                 self.scheduler.stop_special_reservation_monitor()
                 special_status_text.value = "🔴 비활성화됨"
                 special_status_text.color = ft.Colors.RED
-                page.snack_bar = ft.SnackBar(content=ft.Text("⏹️ 특별 예약 비활성화됨"))
+                page.snack_bar = ft.SnackBar(content=ft.Text("⏹️ 특별 밴드 감지 비활성화됨"))
                 page.snack_bar.open = True
                 page.update()
                 return
@@ -9852,7 +9852,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             self.scheduler.start_special_reservation_monitor()
             special_status_text.value = f"🟢 활성화됨 ({len(time_slots)}개 시간대)"
             special_status_text.color = ft.Colors.GREEN
-            page.snack_bar = ft.SnackBar(content=ft.Text(f"✅ 특별 예약 활성화: {len(time_slots)}개 시간대 감시 중"))
+            page.snack_bar = ft.SnackBar(content=ft.Text(f"✅ 특별 밴드 감지 활성화: {len(time_slots)}개 시간대 감시 중"))
             page.snack_bar.open = True
             page.update()
         
@@ -9860,7 +9860,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         
         special_reservation_section = ft.Container(
             content=ft.Column([
-                ft.Text("📂 특별 예약 (폴더 감지)", size=16, weight=ft.FontWeight.BOLD),
+                ft.Text("📂 특별 밴드 감지 (폴더 감지)", size=16, weight=ft.FontWeight.BOLD),
                 ft.Text("🎵 설정한 시간에 플레이리스트를 일시정지하고 폴더 감지 작업을 실행합니다.", size=11, color=ft.Colors.GREY_600),
                 
                 ft.Row([ft.Text("예약 시간목록:", width=80), add_time_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
@@ -9967,9 +9967,9 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     controls=[daily_auto_section],
                     initially_expanded=False
                 ),
-                # 🆕 특별 예약 (폴더 감지) 설정
+                # 🆕 특별 밴드 감지 (폴더 감지) 설정
                 ft.ExpansionTile(
-                    title=ft.Text("📂 특별 예약 - 폴더 감지 (클릭하여 펼치기)", size=14, weight=ft.FontWeight.BOLD),
+                    title=ft.Text("📂 특별 밴드 감지 - 폴더 감지 (클릭하여 펼치기)", size=14, weight=ft.FontWeight.BOLD),
                     controls=[special_reservation_section],
                     initially_expanded=False
                 ),
