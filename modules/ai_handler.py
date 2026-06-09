@@ -53,7 +53,29 @@ class AIHandler:
                 delta_days=delta_days
             )
         elif platform in ['band', 'drive_auto', 'manual_topic']:
-            return self.band_expert.generate_band_content(topic, platform, task_type or 'regular', target_time, delta_days)
+            result = self.band_expert.generate_band_content(topic, platform, task_type or 'regular', target_time, delta_days)
+            if result and result.get('content'):
+                import os
+                import re
+                from modules.pipelines.band_pipeline import BandPipeline
+                from utils.path_utils import get_app_data_dir
+                app_data_dir = get_app_data_dir()
+                folder_name = "수련"
+                if platform in ['drive_auto', 'manual_topic']:
+                    match = re.search(r'(\d+시부|선수부|시범단|행사|합숙)', topic)
+                    if match:
+                        folder_name = match.group(1)
+                
+                assembled_content, final_tags = BandPipeline.process(
+                    content=result.get('content', ''),
+                    ai_tags=result.get('tags', []),
+                    app_data_dir=app_data_dir,
+                    mode='band' if platform == 'band' else 'drive_auto',
+                    folder_name=folder_name
+                )
+                result['content'] = assembled_content
+                result['tags'] = ", ".join(final_tags)
+            return result
         elif platform == 'cafe':
             return self.cafe_expert.generate_cafe_content(topic, task_type or 'regular', target_time, delta_days)
         elif platform == 'idle':
@@ -74,7 +96,29 @@ class AIHandler:
                 delta_days=delta_days
             )
         elif platform in ['band', 'drive_auto', 'manual_topic']:
-            return self.band_expert.generate_band_content(topic, platform, task_type, target_time, delta_days)
+            result = self.band_expert.generate_band_content(topic, platform, task_type, target_time, delta_days)
+            if result and result.get('content'):
+                import os
+                import re
+                from modules.pipelines.band_pipeline import BandPipeline
+                from utils.path_utils import get_app_data_dir
+                app_data_dir = get_app_data_dir()
+                folder_name = "수련"
+                if platform in ['drive_auto', 'manual_topic']:
+                    match = re.search(r'(\d+시부|선수부|시범단|행사|합숙)', topic)
+                    if match:
+                        folder_name = match.group(1)
+                
+                assembled_content, final_tags = BandPipeline.process(
+                    content=result.get('content', ''),
+                    ai_tags=result.get('tags', []),
+                    app_data_dir=app_data_dir,
+                    mode='band' if platform == 'band' else 'drive_auto',
+                    folder_name=folder_name
+                )
+                result['content'] = assembled_content
+                result['tags'] = ", ".join(final_tags)
+            return result
         elif platform == 'cafe':
             return self.cafe_expert.generate_cafe_content(topic, task_type, target_time, delta_days)
         elif platform == 'idle':
