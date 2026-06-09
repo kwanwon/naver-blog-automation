@@ -209,13 +209,24 @@ class NaverBandAutomation:
             self.driver.execute_script("arguments[0].click();", write_btn)
             time.sleep(2)
             
-            # 2. 내용 입력 (다중 폴백)
+            # 2. 내용 입력 (다중 폴백 - StaleElement 방지 재시도 로직 추가)
             print("⌨️ 내용 입력 중 (다중 폴백)...")
-            editor = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "div[contenteditable='true'], textarea._postWriteInput"))
-            )
-            editor.click()
-            time.sleep(0.5)
+            editor = None
+            for attempt in range(3):
+                try:
+                    editor = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "div[contenteditable='true'], textarea._postWriteInput"))
+                    )
+                    editor.click()
+                    time.sleep(0.5)
+                    break  # 클릭 성공 시 반복문 탈출
+                except Exception as e:
+                    print(f"⚠️ 에디터 클릭 실패, 재시도 중... ({attempt+1}/3)")
+                    time.sleep(1.5)
+            
+            if not editor:
+                print("❌ 에디터를 여러 번 클릭 시도했으나 실패했습니다.")
+                return False
             
             # 방법 1: 클립보드 헬퍼 사용 시도
             insert_success = False

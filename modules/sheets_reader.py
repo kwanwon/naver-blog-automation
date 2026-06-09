@@ -9,7 +9,7 @@ import os
 import re
 from datetime import datetime
 from typing import Optional, Dict, List
-from io import StringIO
+from io import StringIO, BytesIO
 
 try:
     import pandas as pd
@@ -36,15 +36,18 @@ class GoogleSheetsReader:
     - C열: 수련내용
     """
     
-    def __init__(self, sheet_url: str = None, sheet_name: str = None):
+    def __init__(self, sheet_url: str = None, sheet_name: str = None, read_mode: str = 'csv'):
         """
         Args:
             sheet_url: 구글 스프레드시트 공유 URL
             sheet_name: 특정 시트 이름 (없으면 첫 번째 시트)
+            read_mode: 'csv' (단일 탭) 또는 'xlsx' (모든 탭 로드)
         """
         self.sheet_url = sheet_url
         self.sheet_name = sheet_name
+        self.read_mode = read_mode
         self.data: Optional[pd.DataFrame] = None
+        self.all_sheets_data: Dict[str, pd.DataFrame] = {}
         self.last_fetch_time: Optional[datetime] = None
         self.cache_minutes = 5  # 5분 캐시
     
@@ -57,6 +60,19 @@ class GoogleSheetsReader:
         """시트 이름 설정"""
         self.sheet_name = sheet_name
         self.data = None
+        
+    def _convert_to_xlsx_url(self, share_url: str) -> str:
+        """
+        공유 URL을 Excel(.xlsx) 내보내기 URL로 변환
+        """
+        pattern = r'/spreadsheets/d/([a-zA-Z0-9-_]+)'
+        match = re.search(pattern, share_url)
+        
+        if not match:
+            raise ValueError(f"유효하지 않은 구글 스프레드시트 URL: {share_url}")
+            
+        sheet_id = match.group(1)
+        return f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
     
     def _convert_to_csv_url(self, share_url: str) -> str:
         """
@@ -114,11 +130,42 @@ class GoogleSheetsReader:
             if elapsed < self.cache_minutes:
                 print(f"ℹ️ 캐시 사용 (마지막 갱신: {elapsed:.1f}분 전)")
                 return True
+                
+        # 로컬 파일인지 확인
+        is_local_file = False
+        if not self.sheet_url.startswith('http'):
+            if os.path.exists(self.sheet_url):
+                is_local_file = True
+            else:
+                print(f"❌ 파일을 찾을 수 없습니다: {self.sheet_url}")
+                return False
+
+        if is_local_file:
+            try:
+                print(f"📊 로컬 엑셀 파일 읽는 중... {self.sheet_url}")
+                self.all_sheets_data = pd.read_excel(self.sheet_url, sheet_name=None)
+                if not self.all_sheets_data:
+                    return False
+                for sheet, df in self.all_sheets_data.items():
+                    df.columns = [str(col).strip() for col in df.columns]
+                first_sheet = list(self.all_sheets_data.keys())[0]
+                self.data = self.all_sheets_data[first_sheet]
+                self.last_fetch_time = datetime.now()
+                print(f"✅ 로컬 데이터 로드 완료: {len(self.data)}행, {len(self.data.columns)}열 (총 {len(self.all_sheets_data)}개 탭)")
+                return True
+            except Exception as e:
+                print(f"❌ 로컬 엑셀 파일 로드 오류: {e}")
+                return False
         
         try:
-            csv_url = self._convert_to_csv_url(self.sheet_url)
-            print(f"📊 스프레드시트 데이터 가져오는 중...")
-            print(f"   URL: {csv_url[:80]}...")
+            if self.read_mode == 'xlsx':
+                url = self._convert_to_xlsx_url(self.sheet_url)
+                print(f"📊 엑셀(.xlsx) 형태로 데이터 가져오는 중...")
+            else:
+                url = self._convert_to_csv_url(self.sheet_url)
+                print(f"📊 스프레드시트 데이터(CSV) 가져오는 중...")
+                
+            print(f"   URL: {url[:80]}...")
             
             # 세션 사용하여 쿠키 처리
             session = requests.Session()
@@ -129,7 +176,7 @@ class GoogleSheetsReader:
             })
             
             # 첫 번째 시도
-            response = session.get(csv_url, timeout=30, allow_redirects=True)
+            response = session.get(url, timeout=30, allow_redirects=True)
             
             # 상태 코드 로깅
             print(f"   📡 응답 코드: {response.status_code}")
@@ -139,7 +186,7 @@ class GoogleSheetsReader:
                 print(f"   ⚠️ 첫 시도 실패 ({response.status_code}), 재시도 중...")
                 import time
                 time.sleep(2)
-                response = session.get(csv_url, timeout=30, allow_redirects=True)
+                response = session.get(url, timeout=30, allow_redirects=True)
                 print(f"   📡 재시도 응답 코드: {response.status_code}")
             
             # 400/403/404 오류 상세 처리
@@ -147,34 +194,49 @@ class GoogleSheetsReader:
                 print(f"   ❌ HTTP {response.status_code} 오류")
                 print(f"   💡 원인:")
                 print(f"      - 스프레드시트가 '링크가 있는 모든 사용자'에게 공유되어 있는지 확인")
-                print(f"      - URL에 올바른 gid(시트 ID)가 포함되어 있는지 확인")
+                if self.read_mode != 'xlsx':
+                    print(f"      - URL에 올바른 gid(시트 ID)가 포함되어 있는지 확인")
                 print(f"   📋 현재 URL: {self.sheet_url}")
                 return False
             
             response.raise_for_status()
-            response.encoding = 'utf-8'
             
-            # HTML 응답 체크 (오류 페이지)
-            content = response.text.strip()
-            if content.startswith('<!DOCTYPE html>') or content.startswith('<HTML>'):
-                print("   ❌ HTML 응답 감지 - 스프레드시트 접근 불가")
-                print("   💡 스프레드시트가 공개 설정되어 있는지 확인하세요.")
-                return False
-            
-            # CSV 파싱
-            csv_data = StringIO(content)
-            self.data = pd.read_csv(csv_data)
-            
-            # 데이터 유효성 검사
-            if len(self.data) == 0:
-                print("   ⚠️ 스프레드시트에 데이터가 없습니다.")
-                return False
-            
-            # 컬럼명 정리 (공백 제거)
-            self.data.columns = [str(col).strip() for col in self.data.columns]
+            if self.read_mode == 'xlsx':
+                # 엑셀 전체 탭 로드
+                excel_data = BytesIO(response.content)
+                self.all_sheets_data = pd.read_excel(excel_data, sheet_name=None)
+                if not self.all_sheets_data:
+                    print("   ⚠️ 스프레드시트에 데이터 탭이 없습니다.")
+                    return False
+                
+                # 컬럼명 정리 및 호환성 처리
+                for sheet, df in self.all_sheets_data.items():
+                    df.columns = [str(col).strip() for col in df.columns]
+                first_sheet = list(self.all_sheets_data.keys())[0]
+                self.data = self.all_sheets_data[first_sheet]
+            else:
+                # 단일 CSV 파싱
+                response.encoding = 'utf-8'
+                content = response.text.strip()
+                if content.startswith('<!DOCTYPE html>') or content.startswith('<HTML>'):
+                    print("   ❌ HTML 응답 감지 - 스프레드시트 접근 불가")
+                    print("   💡 스프레드시트가 공개 설정되어 있는지 확인하세요.")
+                    return False
+                    
+                csv_data = StringIO(content)
+                self.data = pd.read_csv(csv_data)
+                
+                # 데이터 유효성 검사
+                if len(self.data) == 0:
+                    print("   ⚠️ 스프레드시트에 데이터가 없습니다.")
+                    return False
+                
+                # 컬럼명 정리 (공백 제거)
+                self.data.columns = [str(col).strip() for col in self.data.columns]
+                self.all_sheets_data = {self.sheet_name or 'Sheet1': self.data}
             
             self.last_fetch_time = datetime.now()
-            print(f"✅ 데이터 로드 완료: {len(self.data)}행, {len(self.data.columns)}열")
+            print(f"✅ 데이터 로드 완료: {len(self.data)}행, {len(self.data.columns)}열 (총 {len(self.all_sheets_data)}개 탭)")
             print(f"   컬럼: {list(self.data.columns)}")
             
             return True
@@ -239,41 +301,48 @@ class GoogleSheetsReader:
             if not self.fetch_data():
                 return None
         
+        # self.all_sheets_data가 설정되지 않은 경우 호환성 보장
+        if not hasattr(self, 'all_sheets_data') or not self.all_sheets_data:
+            self.all_sheets_data = {'Sheet1': self.data}
+            
         today_str = datetime.now().strftime("%Y-%m-%d")
         print(f"📅 오늘 날짜: {today_str}")
         
-        # 날짜 컬럼 찾기
-        if date_column and date_column in self.data.columns:
-            date_col = date_column
-        elif '날짜' in self.data.columns:
-            date_col = '날짜'
-        else:
-            date_col = self.data.columns[0]  # 첫 번째 컬럼
-        
-        # 내용 컬럼 찾기
-        if content_column and content_column in self.data.columns:
-            content_col = content_column
-        elif '수련내용' in self.data.columns:
-            content_col = '수련내용'
-        elif '내용' in self.data.columns:
-            content_col = '내용'
-        elif len(self.data.columns) >= 3:
-            content_col = self.data.columns[2]  # 세 번째 컬럼
-        else:
-            content_col = self.data.columns[-1]  # 마지막 컬럼
-        
-        print(f"   날짜 컬럼: {date_col}, 내용 컬럼: {content_col}")
-        
-        # 날짜 매칭
-        for idx, row in self.data.iterrows():
-            date_value = row[date_col]
-            parsed_date = self._parse_date(date_value)
+        # 모든 시트 순회
+        for sheet_name, df in self.all_sheets_data.items():
+            if df is None or len(df.columns) == 0:
+                continue
+                
+            # 날짜 컬럼 찾기
+            if date_column and date_column in df.columns:
+                date_col = date_column
+            elif '날짜' in df.columns:
+                date_col = '날짜'
+            else:
+                date_col = df.columns[0]  # 첫 번째 컬럼
             
-            if parsed_date == today_str:
-                content = row[content_col]
-                if pd.notna(content) and str(content).strip():
-                    print(f"✅ 오늘의 수련내용 발견: {str(content)[:50]}...")
-                    return str(content).strip()
+            # 내용 컬럼 찾기
+            if content_column and content_column in df.columns:
+                content_col = content_column
+            elif '수련내용' in df.columns:
+                content_col = '수련내용'
+            elif '내용' in df.columns:
+                content_col = '내용'
+            elif len(df.columns) >= 3:
+                content_col = df.columns[2]  # 세 번째 컬럼
+            else:
+                content_col = df.columns[-1]  # 마지막 컬럼
+            
+            # 날짜 매칭
+            for idx, row in df.iterrows():
+                date_value = row[date_col]
+                parsed_date = self._parse_date(date_value)
+                
+                if parsed_date == today_str:
+                    content = row[content_col]
+                    if pd.notna(content) and str(content).strip():
+                        print(f"✅ 오늘의 수련내용 발견 (탭: {sheet_name}): {str(content)[:50]}...")
+                        return str(content).strip()
         
         print(f"ℹ️ 오늘({today_str}) 날짜의 데이터가 없습니다.")
         return None
@@ -340,18 +409,25 @@ class GoogleSheetsReader:
         if self.data is None:
             if not self.fetch_data():
                 return None
+                
+        if not hasattr(self, 'all_sheets_data') or not self.all_sheets_data:
+            self.all_sheets_data = {'Sheet1': self.data}
         
-        date_col = self.data.columns[0]
-        content_col = self.data.columns[2] if len(self.data.columns) >= 3 else self.data.columns[-1]
-        
-        for idx, row in self.data.iterrows():
-            date_value = row[date_col]
-            parsed_date = self._parse_date(date_value)
+        for sheet_name, df in self.all_sheets_data.items():
+            if df is None or len(df.columns) == 0:
+                continue
+                
+            date_col = df.columns[0]
+            content_col = df.columns[2] if len(df.columns) >= 3 else df.columns[-1]
             
-            if parsed_date == target_date:
-                content = row[content_col]
-                if pd.notna(content):
-                    return str(content).strip()
+            for idx, row in df.iterrows():
+                date_value = row[date_col]
+                parsed_date = self._parse_date(date_value)
+                
+                if parsed_date == target_date:
+                    content = row[content_col]
+                    if pd.notna(content):
+                        return str(content).strip()
         
         return None
     
@@ -380,6 +456,9 @@ class GoogleSheetsReader:
         if self.data is None:
             if not self.fetch_data():
                 return None
+                
+        if not hasattr(self, 'all_sheets_data') or not self.all_sheets_data:
+            self.all_sheets_data = {'Sheet1': self.data}
         
         today_str = datetime.now().strftime("%Y-%m-%d")
         print(f"📅 [시간대별] 오늘 날짜: {today_str}, 요청 시간대: {period}")
@@ -391,28 +470,51 @@ class GoogleSheetsReader:
             '저녁': ['저녁', '저녁내용', 'evening', 'F']
         }
         
-        # 날짜 컬럼 찾기
-        date_col = None
-        for col_name in ['날짜', '날짜 (A열)', 'date', 'Date']:
-            if col_name in self.data.columns:
-                date_col = col_name
-                break
-        if date_col is None:
-            date_col = self.data.columns[0]
+        today_row = None
+        current_df = None
         
+        # 모든 탭 순회하여 오늘 날짜가 있는 행 찾기
+        for sheet_name, df in self.all_sheets_data.items():
+            if df is None or len(df.columns) == 0:
+                continue
+                
+            # 날짜 컬럼 찾기
+            date_col = None
+            for col_name in ['날짜', '날짜 (A열)', 'date', 'Date']:
+                if col_name in df.columns:
+                    date_col = col_name
+                    break
+            if date_col is None:
+                date_col = df.columns[0]
+                
+            for idx, row in df.iterrows():
+                date_value = row[date_col]
+                parsed_date = self._parse_date(date_value)
+                
+                if parsed_date == today_str:
+                    today_row = row
+                    current_df = df
+                    break
+            if today_row is not None:
+                break
+                
+        if today_row is None or current_df is None:
+            print(f"ℹ️ 오늘({today_str}) 날짜의 데이터가 없습니다.")
+            return None
+            
         # C열 (행사명/공통내용) 컬럼 찾기
         event_col = None
         for col_name in ['수련내용', '수련내용 (C열)', '행사명', 'content']:
-            if col_name in self.data.columns:
+            if col_name in current_df.columns:
                 event_col = col_name
                 break
-        if event_col is None and len(self.data.columns) >= 3:
-            event_col = self.data.columns[2]
+        if event_col is None and len(current_df.columns) >= 3:
+            event_col = current_df.columns[2]
         
         # 시간대별 컬럼 찾기
         def find_period_column(period_name: str) -> Optional[str]:
             for possible_name in column_mapping.get(period_name, []):
-                for col in self.data.columns:
+                for col in current_df.columns:
                     if possible_name.lower() in str(col).lower():
                         return col
             return None
@@ -429,20 +531,6 @@ class GoogleSheetsReader:
             '오후': [afternoon_col, morning_col, evening_col],
             '저녁': [evening_col, afternoon_col, morning_col]
         }
-        
-        # 오늘 날짜 행 찾기
-        today_row = None
-        for idx, row in self.data.iterrows():
-            date_value = row[date_col]
-            parsed_date = self._parse_date(date_value)
-            
-            if parsed_date == today_str:
-                today_row = row
-                break
-        
-        if today_row is None:
-            print(f"ℹ️ 오늘({today_str}) 날짜의 데이터가 없습니다.")
-            return None
         
         # C열 (행사명) 가져오기
         event_name = None

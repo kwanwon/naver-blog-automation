@@ -736,15 +736,24 @@ class GPTHandler:
                 elif platform == 'cafe':
                     first_sentence = user_settings.get('cafe_first_sentence', '').strip()
                 elif platform == 'band':
-                    # 밴드는 설정된 첫 문장이 있다면 시간대(task_type)에 관계없이 무조건 적용합니다.
                     first_sentence = user_settings.get('band_first_sentence', '').strip()
+                    if not first_sentence:
+                        first_sentence = user_settings.get('first_sentence', '').strip()
                     if first_sentence:
                         logger.info(f"밴드 포스팅에 사용자 설정 첫 문장 적용: {first_sentence[:30]}...")
+                        print(f"🔥 밴드 첫 문장 적용! ({len(first_sentence)}자)")
+                    else:
+                        print(f"🔥 밴드 첫 문장을 찾을 수 없습니다. (band_first_sentence/first_sentence 없음)")
                 elif platform in ['drive_auto', 'manual_topic']:
                     # 🟢 드라이브 자동포스팅/수동주제 포스팅은 밴드에 올라가므로 밴드 첫 문장 사용
                     first_sentence = user_settings.get('band_first_sentence', '').strip()
+                    if not first_sentence:
+                        first_sentence = user_settings.get('first_sentence', '').strip()
                     if first_sentence:
                         logger.info(f"드라이브 자동포스팅에 밴드 첫 문장 적용: {first_sentence[:30]}...")
+                        print(f"🔥 드라이브/수동 밴드 첫 문장 적용! ({len(first_sentence)}자)")
+                    else:
+                        print(f"🔥 드라이브/수동 밴드 첫 문장을 찾을 수 없습니다.")
                 
                 if first_sentence:
                      body = f"{first_sentence}\n\n{body}"
@@ -757,12 +766,30 @@ class GPTHandler:
                     slogan = user_settings.get('cafe_slogan', '').strip()
                 elif platform == 'band':
                     slogan = user_settings.get('band_slogan', '').strip()
+                    if slogan:
+                        print(f"🔥 밴드 슬로건 적용! ({len(slogan)}자)")
+                    else:
+                        print("🔥 밴드 슬로건 없음!")
                 elif platform in ['drive_auto', 'manual_topic']:
                     # 🟢 드라이브 자동포스팅/수동주제 포스팅은 밴드 슬로건 사용
                     slogan = user_settings.get('band_slogan', '').strip()
                 
                 if slogan:
                     body = f"{body}\n\n{slogan}"
+                
+                # 🟢 플랫폼별 고정 태그 추가 (밴드)
+                if platform in ['band', 'drive_auto', 'manual_topic']:
+                    # 밴드는 blog_tags를 공용으로 사용하거나, 따로 없으면 blog_tags를 fallback으로 사용
+                    band_hashtags = settings.get('band_hashtags', user_settings.get('blog_tags', '')).strip()
+                    print(f"🔥 밴드 태그 추출 시도: {band_hashtags[:30]}...")
+                    if band_hashtags:
+                        # 콤마나 띄어쓰기로 구분된 태그 파싱
+                        tags = [t.strip() for t in band_hashtags.replace(',', ' ').split() if t.strip()]
+                        # 앞의 5개만 추출 후 # 붙이기
+                        fixed_tags = [t if t.startswith('#') else f"#{t}" for t in tags[:5]]
+                        if fixed_tags:
+                            body = f"{body}\n\n" + " ".join(fixed_tags)
+                            print(f"🔥 밴드 태그 적용: {' '.join(fixed_tags)}")
                 
                 # 성공 시 다음 호출은 그다음 모델부터 시작
                 self._increment_usage(model_name)  # 🟢 사용량 증가
@@ -793,9 +820,9 @@ class GPTHandler:
         # 플랫폼별 맞춤형 콘텐츠 생성
         settings = self._load_settings() # settings를 먼저 로드
         
-        # 🟢 밴드 지침: 기본 300~400자 제약 추가
         band_instr = settings.get('band_instructions', "밴드 멤버들과 소통하기 좋은 친근하고 간결한 스타일로 작성해주세요. (공백 포함 300~400자 이내)")
         if platform == 'band':
+            band_instr += "\n[밴드 전용 필수 지침]\n1. 모바일 가독성을 위해 문단과 문단 사이에는 반드시 빈 줄을 넣어 간격을 띄워주세요.\n2. 학부모님들이 보는 공간이므로 무의미한 체육관 홍보, 종목 어필, 상업적 광고는 절대 금지합니다. 오직 학부모님들이 관심 가질 만한 순수하고 유익한 정보만 담아주세요.\n3. 포스팅 내용 작성을 모두 마친 후, 맨 마지막 줄에 오늘 수련 내용과 어울리는 해시태그 5개를 반드시 포함하세요. (형식: #태그1 #태그2)"
             # '아침'이라는 단어가 포함되어 있고 태스크 타입이 아침이 아니면, '아침' 관련 문구 무력화
             if '아침' in band_instr and task_type not in ['morning', 'regular_morning']:
                  band_instr = band_instr.replace('아침', '일상') # 아침 -> 일상으로 단순 치환
@@ -912,7 +939,10 @@ class GPTHandler:
                         f"\n[System: {weather_label} (기상청/네이버)]\n"
                         f"{weather_info}\n"
                         "(위 날씨 정보를 바탕으로 회원들에게 건넬 따뜻한 인사말과 옷차림/건강 팁을 작성하세요. "
-                        "⚠️ 절대 위 데이터에 없는 주간 예보나 다른 날짜의 날씨를 지어내지 마세요.)"
+                        "⚠️ 절대 위 데이터에 없는 주간 예보나 다른 날짜의 날씨를 지어내지 마세요.)\n"
+                        "[!!! 필수 규칙 !!!]\n"
+                        "날씨 인사말은 1문단으로 짧게 끝내고, **반드시 빈 줄(엔터 2번)을 넣어 완전히 문단을 나눈 뒤** 2문단부터 본론 주제(수련 내용 등)를 작성하세요.\n"
+                        "날씨 인사와 수련 내용을 억지로 한 문장에 섞어 쓰지 마세요."
                     )
 
 
@@ -949,7 +979,10 @@ class GPTHandler:
                         f"{dedup_guide}\n"
                         "[⚠️ 뉴스 인용 안전 규칙]\n"
                         "- 정치(여당/야당/대통령 등), 종교, 범죄, 선정적, 자극적인 내용은 절대 인용하지 마세요.\n"
-                        "- 만약 검색된 뉴스가 모두 그런 내용이라면, 차라리 '오늘의 생활 건강 팁'으로 주제를 변경하세요."
+                        "- 만약 검색된 뉴스가 모두 그런 내용이라면, 차라리 '오늘의 생활 건강 팁'으로 주제를 변경하세요.\n"
+                        "[!!! 필수 규칙 !!!]\n"
+                        "인사말/도입부는 1문단으로 짧게 끝내고, **반드시 빈 줄(엔터 2번)을 넣어 완전히 문단을 나눈 뒤** 2문단부터 본론 주제(수련 내용 등)를 작성하세요.\n"
+                        "도입부와 수련 내용을 억지로 한 문장에 섞어 쓰지 마세요."
                     )
                     
                     # 🟢 밴드 오후/저녁에도 실시간 날씨 참고 정보 제공 (할루시네이션 방지)
@@ -1217,8 +1250,38 @@ class GPTHandler:
                 "[제목]  오전 요가와 외발자전거 수업!\n"
                 "[본문] 오늘 오전에 요가와 외발자전거 수업을 진행했어요. 요가로 몸의 유연성을 기르고 깊은 호흡으로 마음을 차분하게 다스렸습니다. 이어서 외발자전거로 균형감각과 하체 근력을 키우는 시간도 가졌어요. 두 가지 운동 모두 다이어트와 건강 유지에 효과적이랍니다. 꾸준히 하면 몸이 더욱 가벼워지는 것을 느낄 수 있어요. 건강한 하루 되세요! \n"
             )
+        elif platform == 'band':
+            # 🟢 밴드 전용 포스팅: 체육관 홍보 절대 금지, 학부모 맞춤형 육아/건강/교육 칼럼
+            user_prompt = (
+                f"주제: {topic}\n\n"
+                f"### [작성 규칙]\n"
+                "1. **작성 방향 및 어조 (절대 엄수)**: \n"
+                "   - 당신은 아이들의 성장을 돕는 따뜻한 교육 전문가(관장)입니다.\n"
+                "   - **도장 자랑, 종목 홍보, 원생 모집, '우리 체육관에서는~' 등의 어필을 절대 금지합니다.** (무술, 단련, 수련, 입관, 등록 등 금지)\n"
+                "   - **[중요] 절대로 가르치거나 훈계하는 듯한 딱딱한 어조를 사용하지 마세요.**\n"
+                "   - 같은 학부모의 입장에서 **깊이 공감하고, 다정하게 경험을 공유하며, 함께 고민을 나누는 듯한 부드러운 어조**를 사용하세요.\n\n"
+                "2. **도입부 (시간대별 훅) - [중요: 본문과 연결 금지]**:\n"
+                "   - 오전 (morning): 오늘 하루의 상쾌한 날씨/계절 인사\n"
+                "   - 오후/저녁 (regular/closing): 주요 뉴스나 트렌디한 이슈\n"
+                "   - 저녁 (closing) 특별: 내일의 날씨(기온)를 언급하며 아이들 옷차림/준비물 등을 세심하게 챙기는 멘트\n"
+                "   - **주의: 이 도입부(날씨/뉴스)는 본론 주제와 억지로 연결하지 마세요. 독립적인 안부 인사로만 끝내세요.**\n\n"
+                "3. **본론 (주제 준수)**: 독립적인 새로운 문단으로 본론을 시작하세요.\n"
+                "   - 유익한 육아/건강/마인드셋 정보를 다룹니다.\n"
+                "   - 학부모의 일상적 고민에 대한 공감 형성 -> 일상에서 실천할 수 있는 가벼운 조언 공유 -> 따뜻한 응원의 마무리 순으로 자연스럽게 전개하세요.\n\n"
+                f"4. **분량**: 학부모님들께 깊이 있는 공감과 충분한 정보가 전달되도록 **400~500자 내외**로 넉넉하게 작성하세요.\n\n"
+                "5. **태그**: 글 맨 마지막에 본문 주제와 관련된 해시태그 5개를 생성하세요.\n\n"
+                "반드시 아래 형식을 지켜서 출력해:\n\n"
+                "[제목]\n"
+                "(학부모의 눈길을 끄는 정보성/공감형 제목)\n\n"
+                "[본문]\n"
+                "(1문단: 날씨/뉴스 훅 (본론과 연결 금지))\n\n"
+                "(2문단: 학부모 공감 및 본론 주제 설명)\n\n"
+                "(3문단: 가정 내 실천 팁 및 따뜻한 마무리)\n\n"
+                "(AI 생성 해시태그 5개: #태그1 #태그2 ...)\n\n"
+                f"주의: {platform}용 글에는 블로그 전용 문구(한국체대 라이온 블로거 등)를 절대 포함하지 마세요.\n"
+            )
         else:
-            # 🟢 일반적인 밴드/카페 포스팅 (주제 + 시간대별 훅)
+            # 🟢 카페 포스팅 (기존 로직 유지)
             user_prompt = (
                 f"주제: {topic}\n\n"
                 f"### [작성 규칙]\n"

@@ -870,6 +870,39 @@ class BlogWriterApp:
         if getattr(self, 'current_folder_picker_target', None):
             self._on_drive_folder_selected(e, self.current_folder_picker_target)
             self.current_folder_picker_target = None
+            
+    def _on_global_file_picker_result(self, e: ft.FilePickerResultEvent):
+        """전역 파일 선택기 결과 처리"""
+        if e.files and getattr(self, 'current_file_picker_target', None):
+            file_path = e.files[0].path
+            # 한글 경로 처리
+            import unicodedata
+            normalized_path = unicodedata.normalize('NFC', file_path)
+            
+            target_field = self.current_file_picker_target
+            target_field.value = normalized_path
+            target_field.update()
+            
+            # 관련된 설정 키 찾아서 자동 저장
+            if target_field == self.band_sheet_url:
+                self._save_setting('band_sheet_url', normalized_path)
+            
+            if target_field.page:
+                target_field.page.snack_bar = ft.SnackBar(content=ft.Text(f"✅ 파일이 선택되었습니다: {os.path.basename(normalized_path)}"))
+                target_field.page.snack_bar.open = True
+                target_field.page.update()
+                
+        self.current_file_picker_target = None
+        
+    def _open_excel_file_picker(self, e, target_field: ft.TextField):
+        """엑셀 파일 선택기 열기"""
+        self.current_file_picker_target = target_field
+        if hasattr(self, 'file_picker'):
+            self.file_picker.pick_files(
+                dialog_title="엑셀 파일 선택",
+                allowed_extensions=["xlsx", "xls", "csv"],
+                file_type=ft.FilePickerFileType.CUSTOM
+            )
 
     def _save_user_setting_individual(self, key, value):
         """사용자 설정 개별 항목 자동 저장 (on_blur 용)"""
@@ -1103,8 +1136,21 @@ class BlogWriterApp:
             if len(folder_names) > 10:
                 message += f" 외 {len(folder_names) - 10}개"
             page.snack_bar = ft.SnackBar(content=ft.Text(message), bgcolor=ft.Colors.GREEN)
+            
+            if hasattr(self, 'scanned_folders_column'):
+                self.scanned_folders_column.controls.clear()
+                self.scanned_folders_column.controls.append(ft.Text(f"스캔된 폴더 ({len(folders)}개):", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700))
+                for name in folder_names:
+                    self.scanned_folders_column.controls.append(ft.Text(f" 📁 {name}", size=12, color=ft.Colors.GREY_700))
+                self.scanned_folders_column.update()
+                
         else:
             page.snack_bar = ft.SnackBar(content=ft.Text("⚠️ 하위 폴더가 없거나 모두 제외되었습니다."), bgcolor=ft.Colors.ORANGE)
+            
+            if hasattr(self, 'scanned_folders_column'):
+                self.scanned_folders_column.controls.clear()
+                self.scanned_folders_column.controls.append(ft.Text("⚠️ 하위 폴더가 없거나 모두 제외되었습니다.", size=12, color=ft.Colors.ORANGE))
+                self.scanned_folders_column.update()
         
         page.snack_bar.open = True
         page.update()
@@ -5869,6 +5915,11 @@ class BlogWriterApp:
         self.folder_picker = ft.FilePicker(on_result=self._on_global_folder_picker_result)
         page.overlay.append(self.folder_picker)
         
+        # 전역 파일 선택기 초기화
+        self.current_file_picker_target = None
+        self.file_picker = ft.FilePicker(on_result=self._on_global_file_picker_result)
+        page.overlay.append(self.file_picker)
+        
         # 시리얼 인증 확인 (필수) - 앱 내부에서 처리
         if self.serial_auth.is_serial_required():
             print("🔐 시리얼 인증이 필요합니다. 인증 화면을 표시합니다...")
@@ -6258,6 +6309,10 @@ class BlogWriterApp:
             expand=True,
             on_change=lambda e: self._save_setting('band_sheet_url', e.control.value)
         )
+        
+        self.scanned_folders_column = ft.Column([
+            ft.Text("스캔된 폴더: (폴더 스캔 버튼을 눌러주세요)", size=12, color=ft.Colors.GREY_500)
+        ], spacing=2)
 
         self.user_blog_drive_folder = ft.TextField(
             label="📂 블로그 이미지 감지 폴더 (Google Drive)",
@@ -9798,15 +9853,30 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
 
         # ========== 🆕 특별 밴드 감지 (폴더 감지) 설정 UI ==========
         special_time_rows_container = ft.Column(spacing=10)
-        special_enabled_checkbox = ft.Checkbox(label="특별 밴드 감지 활성화", value=False)
+        
+        saved_enabled = self.settings.get('special_band_enabled', False)
+        special_enabled_checkbox = ft.Checkbox(label="특별 밴드 감지 활성화", value=saved_enabled)
         special_status_text = ft.Text("🔴 비활성화됨", color=ft.Colors.RED, size=12)
         
+        def save_special_band_settings(e=None):
+            time_slots = []
+            for row in special_time_rows_container.controls:
+                start_time = row.controls[0].value
+                end_time = row.controls[2].value
+                if start_time and end_time:
+                    time_slots.append({"start": start_time, "end": end_time})
+            
+            self._save_setting('special_band_enabled', special_enabled_checkbox.value)
+            import json
+            self._save_setting('special_band_time_slots', json.dumps(time_slots))
+        
         def create_special_time_row(start_val="09:00", end_val="10:00"):
-            start_input = ft.TextField(label="시작 시간", value=start_val, width=100, hint_text="HH:MM")
-            end_input = ft.TextField(label="종료 시간", value=end_val, width=100, hint_text="HH:MM")
+            start_input = ft.TextField(label="시작 시간", value=start_val, width=100, hint_text="HH:MM", on_blur=save_special_band_settings)
+            end_input = ft.TextField(label="종료 시간", value=end_val, width=100, hint_text="HH:MM", on_blur=save_special_band_settings)
             
             def delete_row(e):
                 special_time_rows_container.controls.remove(row)
+                save_special_band_settings()
                 page.update()
                 
             del_btn = ft.IconButton(icon=ft.Icons.DELETE, icon_color=ft.Colors.RED_400, tooltip="시간대 삭제", on_click=delete_row)
@@ -9820,11 +9890,23 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             
             return row
             
-        # 초기 시간대 1개 추가
-        special_time_rows_container.controls.append(create_special_time_row("09:00", "10:00"))
+        # 저장된 설정 불러오기
+        saved_slots_str = self.settings.get('special_band_time_slots', '[]')
+        try:
+            import json
+            saved_slots = json.loads(saved_slots_str)
+        except:
+            saved_slots = []
+            
+        if not saved_slots:
+            saved_slots = [{"start": "09:00", "end": "10:00"}]
+            
+        for slot in saved_slots:
+            special_time_rows_container.controls.append(create_special_time_row(slot.get("start", ""), slot.get("end", "")))
         
         def add_special_time_row(e):
             special_time_rows_container.controls.append(create_special_time_row("", ""))
+            save_special_band_settings()
             page.update()
         
         add_time_btn = ft.ElevatedButton("➕ 시간 추가", on_click=add_special_time_row, height=35)
@@ -9837,6 +9919,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 self.scheduler.stop_special_reservation_monitor()
                 special_status_text.value = "🔴 비활성화됨"
                 special_status_text.color = ft.Colors.RED
+                save_special_band_settings()
                 page.snack_bar = ft.SnackBar(content=ft.Text("⏹️ 특별 밴드 감지 비활성화됨"))
                 page.snack_bar.open = True
                 page.update()
@@ -9872,10 +9955,12 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             # 스케줄러에 다중 시간대 설정 적용
             self.scheduler.set_special_reservations(enabled, time_slots)
             
+            # 설정 자동 저장 추가
+            save_special_band_settings()
+            
             # 콜백 함수 설정 (드라이브 폴더 감지 실행)
-            if self.drive_auto_post_system:
-                self.scheduler.on_special_reservation = lambda: self._start_drive_auto_post(page)
-                self.scheduler.on_special_reservation_end = lambda: self._stop_drive_auto_post(page)
+            self.scheduler.on_special_reservation = lambda: self._start_drive_auto_post(page)
+            self.scheduler.on_special_reservation_end = lambda: self._stop_drive_auto_post(page)
             
             self.scheduler.start_special_reservation_monitor()
             special_status_text.value = f"🟢 활성화됨 ({len(time_slots)}개 시간대)"
@@ -9885,6 +9970,10 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             page.update()
         
         special_enabled_checkbox.on_change = toggle_special_reservation
+        
+        # 🟢 앱 시작 시 초기 상태 복원 (저장된 상태가 켜져있다면 자동 스케줄러 시작)
+        if saved_enabled:
+            page.run_task(toggle_special_reservation, None)
         
         special_reservation_section = ft.Container(
             content=ft.Column([
@@ -10921,7 +11010,16 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                         ft.Text("구글 드라이브 폴더에 사진이 들어오면 자동으로 포스팅합니다.", size=12, color=ft.Colors.GREY_700),
                         
                         # 수련계획표 URL (밴드 전용 독립 키 사용)
-                        self.band_sheet_url,
+                        ft.Row([
+                            self.band_sheet_url,
+                            ft.IconButton(
+                                icon=ft.Icons.FILE_OPEN,
+                                tooltip="컴퓨터에서 엑셀 파일 선택",
+                                icon_size=30,
+                                icon_color=ft.Colors.ORANGE_400,
+                                on_click=lambda e: self._open_excel_file_picker(e, self.band_sheet_url)
+                            )
+                        ]),
                         ft.Text("💡 선택사항: 오늘 날짜의 수련내용을 자동으로 가져와 AI 글 주제로 사용합니다. 없으면 기본 주제 사용.", size=11, color=ft.Colors.GREY_600),
                         
                         # 상위 감시 폴더 (하위 폴더 자동 스캔)
@@ -10959,10 +11057,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                         
                         # 스캔된 폴더 목록 컨테이너
                         ft.Container(
-                            content=ft.Column([
-                                ft.Text("스캔된 폴더: (폴더 스캔 버튼을 눌러주세요)", size=12, color=ft.Colors.GREY_500)
-                            ], spacing=2),
-                            ref=ft.Ref[ft.Container](),
+                            content=self.scanned_folders_column,
                             padding=10,
                             bgcolor=ft.Colors.GREY_100,
                             border_radius=5,

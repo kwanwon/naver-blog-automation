@@ -126,3 +126,17 @@ AttributeError: 'Page' object has no attribute 'window_destroy'
 2026-01-30 11:36:08,046 - INFO - 로컬 DB 업데이트 완료: ea920794-39ca-458d-b2ad-4681b6a4aaa7 (사용횟수: 3)
 2026-01-30 11:36:08,046 - INFO - 서버 업데이트 시도: ea920794-39ca-458d-b2ad-4681b6a4aaa7, 데이터: {'device_info': {'hostname': 'lionui-MacBookAir.local', 'ip_address': '218.38.137.28', 'system_manufacturer': 'Apple', 'os_name': 'Darwin', 'os_version': 'Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112', 'processor': 'Apple M2', 'registration_date': '2026-01-30 11:36:08', 'system_model': 'Mac14,15', 'total_memory': '8.00GB', 'app_name': '블로그자동화'}, 'activation_count': 3, 'status': '사용중', 'expiry_date': '2026-07-17'}
 2026-01-30 11:36:09,494 - INFO - 서버 업데이트 성공
+2026-06-09 09:09:30,560 - INFO - 현재 base_dir: /Users/gm2hapkido/Desktop/라이온개발자/modules
+2026-06-09 09:09:30,560 - INFO - 경로 1 시도: /시리얼관리/serials.db
+2026-06-09 09:09:30,560 - INFO - ❌ 경로 없음: /시리얼관리/serials.db
+2026-06-09 09:09:30,560 - INFO - 경로 2 시도: /Users/gm2hapkido/시리얼관리/serials.db
+2026-06-09 09:09:30,560 - INFO - ❌ 경로 없음: /Users/gm2hapkido/시리얼관리/serials.db
+2026-06-09 09:09:30,560 - INFO - 경로 3 시도: /Users/시리얼관리/serials.db
+2026-06-09 09:09:30,560 - INFO - ❌ 경로 없음: /Users/시리얼관리/serials.db
+2026-06-09 09:09:30,560 - ERROR - ❌ 모든 경로에서 시리얼 DB를 찾을 수 없습니다.
+2026-06-09 09:09:30,560 - ERROR - 가능한 해결방법:
+2026-06-09 09:09:30,560 - ERROR - 1. 시리얼관리 프로그램이 실행 중인지 확인
+2026-06-09 09:09:30,560 - ERROR - 2. serials.db 파일이 시리얼관리 폴더에 있는지 확인
+2026-06-09 09:09:30,560 - ERROR - 설정 파일 로드 오류: [Errno 1] Operation not permitted: '/Users/gm2hapkido/.blog_automation/config/serial_config.json'
+2026-06-09 09:09:30,560 - ERROR - 설정 파일 로드 오류: [Errno 1] Operation not permitted: '/Users/gm2hapkido/.blog_automation/config/serial_config.json'
+2026-06-09 09:09:30,560 - INFO - 시리얼 번호 없음 → 입력 필요

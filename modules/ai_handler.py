@@ -96,7 +96,7 @@ class AIHandler:
                 delta_days=delta_days
             )
         elif platform in ['band', 'drive_auto', 'manual_topic']:
-            result = self.band_expert.generate_band_content(topic, platform, task_type, target_time, delta_days)
+            result = self.band_expert.generate_band_content(topic, platform, task_type, target_time, delta_days, news_pool=news_pool)
             if result and result.get('content'):
                 import os
                 import re

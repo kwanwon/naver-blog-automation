@@ -4,14 +4,49 @@ import uuid
 import hashlib
 import json
 
+import platform
+import subprocess
+from utils.path_utils import get_config_dir
+
 def get_machine_id():
     """Returns a unique ID for the current machine."""
-    # Try to get MAC address or other unique identifier
+    config_dir = get_config_dir()
+    machine_id_file = os.path.join(config_dir, ".machine_id")
+    
+    # 1. 파일에서 읽기 (가장 안정적, 네트워크 변경에 영향 안 받음)
+    if os.path.exists(machine_id_file):
+        try:
+            with open(machine_id_file, "r") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+            
+    # 2. macOS 고유 식별자 또는 uuid.getnode()로 생성
+    machine_id = "default-machine-id"
     try:
-        node = uuid.getnode()
-        return str(node)
-    except:
-        return "default-machine-id"
+        if platform.system() == "Darwin":
+            output = subprocess.check_output(
+                ["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"]
+            ).decode("utf-8")
+            for line in output.split('\n'):
+                if "IOPlatformUUID" in line:
+                    machine_id = line.split('"')[3]
+                    break
+        
+        if machine_id == "default-machine-id":
+            machine_id = str(uuid.getnode())
+    except Exception:
+        machine_id = str(uuid.uuid4())
+        
+    # 3. 변경되지 않도록 파일에 영구 저장
+    try:
+        os.makedirs(config_dir, exist_ok=True)
+        with open(machine_id_file, "w") as f:
+            f.write(machine_id)
+    except Exception:
+        pass
+        
+    return machine_id
 
 def _get_secret_key():
     """Generates a secret key based on the machine ID."""

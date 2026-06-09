@@ -37,7 +37,7 @@ class DriveAutoPostSystem:
         
         # 모듈 초기화
         self.watcher = DriveWatcher(debounce_seconds=120)
-        self.sheets_reader = GoogleSheetsReader()
+        self.sheets_reader = GoogleSheetsReader(read_mode='xlsx')
         self.file_manager = FileManager()
         
         # 콜백 함수들
@@ -419,12 +419,10 @@ class DriveAutoPostSystem:
                     result = self.generate_content(topic, folder_name)
                     if result:
                         content = result.get('content', '')
-                        # AI 생성 글 뒤에 안내문 + 해시태그 추가
+                        # AI 생성 글 뒤에 안내문 추가 (해시태그는 gpt_handler에서 이미 처리됨)
                         if content:
                             if safety_notice and safety_notice.strip() not in content:
                                 content = content + safety_notice
-                            if hashtags:
-                                content = content + hashtags
                 except Exception as e:
                     print(f"❌ AI 글 생성 오류: {e}")
             
