@@ -310,12 +310,40 @@ class BlogWriterApp:
                 settings_path = legacy_path
 
         try:
+            settings = {}
             if os.path.exists(settings_path):
                 with open(settings_path, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    settings = json.load(f)
+                    
+            # 수동 이미지 폴더 기본값 보장 및 폴더 자동 생성 (블로그/카페 공용)
+            default_manual_folder = os.path.join(self.base_dir, '블로그_카페_수동이미지')
+            if not os.path.exists(default_manual_folder):
+                try:
+                    os.makedirs(default_manual_folder, exist_ok=True)
+                except Exception:
+                    pass
+                    
+            if 'blog_manual_folder' not in settings or not settings['blog_manual_folder']:
+                settings['blog_manual_folder'] = default_manual_folder
+                
+            if 'cafe_manual_folder' not in settings or not settings['cafe_manual_folder']:
+                settings['cafe_manual_folder'] = default_manual_folder
+                
+            return settings
         except Exception as e:
             print(f"설정 로드 중 오류: {e}")
-        return {}
+            
+        default_manual_folder = os.path.join(self.base_dir, '블로그_카페_수동이미지')
+        if not os.path.exists(default_manual_folder):
+            try:
+                os.makedirs(default_manual_folder, exist_ok=True)
+            except Exception:
+                pass
+                
+        return {
+            'blog_manual_folder': default_manual_folder,
+            'cafe_manual_folder': default_manual_folder
+        }
 
     def save_settings(self):
         """앱 설정 파일 저장"""
@@ -9879,7 +9907,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 ], spacing=10),
                 ft.Text("⚠️ 플레이리스트 실행 중 위 시간에 도달하면:", size=11, color=ft.Colors.ORANGE),
                 ft.Text("   1. 현재 작업 완료 후 일시정지", size=11, color=ft.Colors.GREY_600),
-                ft.Text("   2. 폴더 감지 작업 실행 (Google Drive 수동업로드)", size=11, color=ft.Colors.GREY_600),
+                ft.Text("   2. 폴더 감지 작업 실행 (Google Drive 밴드_수동이미지)", size=11, color=ft.Colors.GREY_600),
                 ft.Text("   3. 종료 시간 후 플레이리스트 자동 재개", size=11, color=ft.Colors.GREY_600),
             ], spacing=8),
             padding=15,
@@ -10511,8 +10539,8 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         # 수동 업로드 전용 폴더 (자동 감지 폴더와 완전 분리)
         def get_manual_upload_folder():
             """수동 업로드 전용 폴더 경로 반환"""
-            # 기본값: 앱 폴더 내 '수동업로드'
-            default_path = os.path.join(self.base_dir, '수동업로드')
+            # 기본값: 앱 폴더 내 '밴드_수동이미지'
+            default_path = os.path.join(self.base_dir, '밴드_수동이미지')
             folder_path = self.settings.get('manual_upload_folder', default_path)
             
             # 폴더 자동 생성
@@ -10525,14 +10553,14 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         def get_manual_backup_folder():
             """수동 포스팅 백업 폴더 경로 반환"""
             base_folder = get_manual_upload_folder()
-            backup_folder = os.path.join(os.path.dirname(base_folder), '수동업로드_백업')
+            backup_folder = os.path.join(os.path.dirname(base_folder), '밴드_수동이미지_백업')
             os.makedirs(backup_folder, exist_ok=True)
             return backup_folder
         
         def get_manual_fail_folder():
             """수동 포스팅 실패 폴더 경로 반환"""
             base_folder = get_manual_upload_folder()
-            fail_folder = os.path.join(os.path.dirname(base_folder), '수동업로드_실패')
+            fail_folder = os.path.join(os.path.dirname(base_folder), '밴드_수동이미지_실패')
             os.makedirs(fail_folder, exist_ok=True)
             return fail_folder
         
@@ -10862,7 +10890,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                         band_manual_topic_input,
                         
                         ft.Text("💡 수동 업로드 폴더에 사진을 넣고 포스팅 버튼을 누르세요.", size=11, color=ft.Colors.GREY_600),
-                        ft.Text("✅ 성공 → 수동업로드_백업/ | ❌ 실패 → 수동업로드_실패/", size=11, color=ft.Colors.TEAL_600),
+                        ft.Text("✅ 성공 → 밴드_수동이미지_백업/ | ❌ 실패 → 밴드_수동이미지_실패/", size=11, color=ft.Colors.TEAL_600),
                         
                         ft.ElevatedButton(
                             "🚀 수동 주제로 포스팅",
