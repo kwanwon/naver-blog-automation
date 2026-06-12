@@ -44,7 +44,7 @@ class NaverBandAutomation:
         print("⚠️ 첨부하기 버튼을 찾지 못함")
         return False
     
-    def _wait_for_upload_complete(self, timeout: int = 120):
+    def _wait_for_upload_complete(self, timeout: int = 300):
         """
         업로드가 완료될 때까지 대기합니다.
         실제 진행 상황(X/Y)을 감지하여 정확하게 완료를 판단합니다.
@@ -384,16 +384,29 @@ class NaverBandAutomation:
                         time.sleep(1)
                         self._click_attach_button()
                         
-                        # 첨부 완료 후 짧은 안정화 대기
-                        print("⏳ 사진 첨부 완료, 3초 안정화 대기...")
-                        time.sleep(3)
-                        print("✅ 사진 첨부 완료")
+                        # 1. 사진 업로드 팝업 사라질 때까지 대기 (프로그레스 바 확인)
+                        upload_timeout = max(300, len(photos) * 5)  # 최소 5분, 장당 5초 여유
+                        print(f"⏳ 사진 업로드 대기 (타임아웃: {upload_timeout}초)...")
+                        self._wait_for_upload_complete(timeout=upload_timeout)
+                        
+                        # 2. 업로드 팝업이 닫힌 후, 에디터 본문에 썸네일이 모두 렌더링될 때까지 탄력적 대기
+                        # 기본 3초 + 1장당 0.5초 추가 (관장님 제안 반영)
+                        render_wait_time = 3 + (len(photos) * 0.5)
+                        print(f"⏳ 사진 렌더링 및 에디터 안정화 대기 중... ({render_wait_time:.1f}초)")
+                        time.sleep(render_wait_time)
+                        print("✅ 사진 업로드 및 렌더링 최종 완료")
                         
                     except Exception as photo_err:
                         print(f"⚠️ 사진 업로드 중 오류: {photo_err}")
                 
                 # 3-2. 동영상 첨부 (동영상이 있는 경우)
+                remaining_videos = []
                 if videos:
+                    if len(videos) > 10:
+                        print(f"⚠️ 네이버 밴드 동영상 첨부 제한(최대 10개)으로 인해 10개만 업로드합니다. (나머지 {len(videos)-10}개는 이어서 자동으로 포스팅됩니다)")
+                        remaining_videos = videos[10:]
+                        videos = videos[:10]
+                        
                     print(f"🎬 동영상 업로드 중 ({len(videos)}개)...")
                     time.sleep(3)  # 사진 업로드 완료 후 안정화 대기 (3초로 줄임)
                     try:
@@ -447,7 +460,7 @@ class NaverBandAutomation:
                         self._click_attach_button()
                         
                         # 동영상 업로드 완료 대기 - 파일 개수에 따라 타임아웃 조절
-                        upload_timeout = max(120, len(videos) * 60)  # 최소 2분, 동영상당 1분
+                        upload_timeout = max(300, len(videos) * 60)  # 최소 5분, 동영상당 1분
                         print(f"⏳ 업로드 대기 (타임아웃: {upload_timeout}초)...")
                         self._wait_for_upload_complete(timeout=upload_timeout)
                         
@@ -813,6 +826,13 @@ class NaverBandAutomation:
                 
                 if post_success:
                     print("✅ 밴드 포스팅(예약) 완료! (에디터 닫힘 확인)")
+                    
+                    if 'remaining_videos' in locals() and remaining_videos:
+                        print(f"🔄 남은 동영상 {len(remaining_videos)}개 추가 포스팅을 위해 5초 대기 후 새 게시물을 작성합니다...")
+                        time.sleep(5)
+                        extra_content = "[추가 영상] 앞선 게시물에 이어서 추가로 올려드리는 영상입니다. 😊"
+                        return self.post_to_band(band_url, extra_content, remaining_videos, reservation_time)
+                        
                     return True
                 else:
                     print("⚠️ 포스팅 완료 확인 실패 (에디터가 닫히지 않음)")
@@ -822,6 +842,13 @@ class NaverBandAutomation:
                          for btn in close_btns:
                              if btn.is_displayed(): btn.click()
                     except: pass
+                    
+                    if 'remaining_videos' in locals() and remaining_videos:
+                        print(f"🔄 남은 동영상 {len(remaining_videos)}개 추가 포스팅을 위해 5초 대기 후 새 게시물을 작성합니다...")
+                        time.sleep(5)
+                        extra_content = "[추가 영상] 앞선 게시물에 이어서 추가로 올려드리는 영상입니다. 😊"
+                        return self.post_to_band(band_url, extra_content, remaining_videos, reservation_time)
+                        
                     return True # 일단 진행
             else:
                 print("❌ 게시 버튼을 결국 찾을 수 없습니다.")

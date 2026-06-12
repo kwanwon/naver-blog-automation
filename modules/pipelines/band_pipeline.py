@@ -7,21 +7,12 @@ class BandPipeline:
     def _get_settings(app_data_dir):
         user_settings = {}
         try:
-            # 1. Flet UI의 주요 설정 파일인 app_settings.json 로드 시도
+            # Flet UI의 주요 설정 파일인 app_settings.json 로드 시도
             app_settings_path = os.path.join(app_data_dir, 'config', 'app_settings.json')
             if os.path.exists(app_settings_path):
                 with open(app_settings_path, 'r', encoding='utf-8') as f:
                     user_settings = json.load(f)
                     print(f"📖 [BandPipeline] app_settings.json 로드 성공 (키 수: {len(user_settings)})")
-            
-            # 2. 레거시 user_settings.txt 가 있다면 누락된 설정 병합
-            txt_path = os.path.join(app_data_dir, 'config', 'user_settings.txt')
-            if os.path.exists(txt_path):
-                with open(txt_path, 'r', encoding='utf-8') as f:
-                    txt_settings = json.load(f)
-                    for k, v in txt_settings.items():
-                        if k not in user_settings:
-                            user_settings[k] = v
         except Exception as e:
             print(f"⚠️ [BandPipeline] 설정 파일 로드 실패: {e}")
         return user_settings

@@ -3173,21 +3173,20 @@ class BlogWriterApp:
                  
                  success_cnt = 0
                  
-                 # 🟢 뉴스 중복 방지 (방안 A): 뉴스 6건 사전 검색 후 분배
-                 news_type_count = sum(1 for t in times if self._get_time_based_task_type(t) in ('regular', 'closing'))
-                 all_news = None
-                 news_items = []
-                 if news_type_count >= 2:
-                     try:
-                         all_news = self.ai_handler._get_trending_topics(count=6)
-                         if all_news:
-                             news_items = all_news.split('\n')
-                             print(f"  📰 뉴스 {len(news_items)}건 사전 검색 완료 (분배 모드)")
-                     except Exception as e:
-                         print(f"  ⚠️ 뉴스 사전 검색 실패, 개별 검색 모드: {e}")
+                 # 뉴스 중복 방지 (방안 A): 로직 주석 처리 (UI 뉴스는 유지하되, 스케줄러에는 연동 해제)
+                 # news_type_count = sum(1 for t in times if self._get_time_based_task_type(t) in ('regular', 'closing'))
+                 # all_news = None
+                 # news_items = []
+                 # if news_type_count >= 2:
+                 #     try:
+                 #         all_news = self.ai_handler._get_trending_topics(count=6)
+                 #         if all_news:
+                 #             news_items = all_news.split('\n')
+                 #     except Exception as e:
+                 #         pass
                  
-                 news_distribution_index = 0  # 뉴스 분배 인덱스
-                 previous_news_summary = ""   # 이전 포스팅 뉴스 (방안 C)
+                 # news_distribution_index = 0
+                 # previous_news_summary = ""
                  
                  for i, res_time in enumerate(times):
                      # 🆕 스케줄러 중지 체크
@@ -3212,27 +3211,12 @@ class BlogWriterApp:
                          print(f"  🔄 유형 자동 보정: '{user_type}' → '{task_type}' (예약 시간 {res_time} 기준)")
                      print(f"  👉 예약 작업 {i+1}/{len(times)}: {res_time} (유형: {task_type}) 처리 중...")
                      
-                     # 🟢 뉴스 분배 (방안 A+C): regular/closing 타입에 뉴스 3건씩 분배
-                     news_pool = None
-                     if task_type in ('regular', 'closing') and news_items:
-                         start_idx = news_distribution_index * 3
-                         end_idx = start_idx + 3
-                         news_subset = news_items[start_idx:end_idx]
-                         if news_subset:
-                             news_pool = '\n'.join(news_subset)
-                             print(f"    📰 뉴스 분배: {start_idx+1}~{end_idx}번 ({len(news_subset)}건)")
-                             news_distribution_index += 1
-                     
+                     # 🟢 뉴스 분배 로직 제거: 밴드 탭의 AI 자동 포스팅과 100% 동일한 방식으로 호출
                      # 주제 및 내용 생성 (유형에 따라 다른 스타일)
                      topic = self.select_sequential_topic('band') or "체육관 일상"
                      result = self.ai_handler.generate_platform_content(
-                         topic, platform='band', task_type=task_type, target_time=res_time,
-                         news_pool=news_pool, previous_news=previous_news_summary
+                         topic, platform='band', task_type=task_type, target_time=res_time
                      )
-                     
-                     # 🟢 방안 C: 이전 뉴스 기록 (다음 포스팅에서 중복 방지)
-                     if task_type in ('regular', 'closing') and news_pool:
-                         previous_news_summary = news_pool
                      
                      if not result or not result.get('content'):
                          print(f"    ❌ 내용 생성 실패 ({res_time})")
@@ -3318,7 +3302,7 @@ class BlogWriterApp:
                 # 내용 생성
                 topic = self.select_sequential_topic('band') or "체육관 소개 및 일상"
                 print(f"🤖 [밴드] '{topic}' 주제로 내용 생성 중... (예약: {reservation_time or '즉시'}, 타입: {task.task_type})")
-                result = self.ai_handler.generate_platform_content(topic, platform='band', task_type=task.task_type)
+                result = self.ai_handler.generate_platform_content(topic, platform='band', task_type=task.task_type, target_time=reservation_time)
                 
                 if not result or not result.get('content'):
                     print("❌ [밴드] AI 내용 생성에 실패했습니다.")
@@ -3393,7 +3377,7 @@ class BlogWriterApp:
                 # 🟢 카페: 현재 시간 기준 시간대 자동 판별 (예약 없음)
                 cafe_task_type = self._get_time_based_task_type()
                 print(f"🤖 [카페] '{topic}' 주제로 내용 생성 중... (시간대: {cafe_task_type})")
-                result = self.ai_handler.generate_platform_content(topic, platform='cafe', task_type=cafe_task_type)
+                result = self.ai_handler.generate_platform_content(topic, platform='cafe', task_type=cafe_task_type, target_time=reservation_time)
                 
                 if not result or not result.get('content'):
                     print("❌ [카페] AI 내용 생성에 실패했습니다.")
@@ -10226,7 +10210,8 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             try:
                 start_time = time.time()
                 # 🟢 선택된 시간대 유형을 AI에 전달
-                result = self.ai_handler.generate_platform_content(selected_topic, platform='band', task_type=selected_time_type)
+                fake_time = "20:00" if selected_time_type == 'closing' else None
+                result = self.ai_handler.generate_platform_content(selected_topic, platform='band', task_type=selected_time_type, target_time=fake_time)
                 band_title_input.value = result.get('title', '')
                 band_content_input.value = result.get('content', '')
                 

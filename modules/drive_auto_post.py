@@ -36,7 +36,7 @@ class DriveAutoPostSystem:
         self.settings = settings or {}
         
         # 모듈 초기화
-        self.watcher = DriveWatcher(debounce_seconds=120)
+        self.watcher = DriveWatcher(debounce_seconds=180, polling_interval=10)
         self.sheets_reader = GoogleSheetsReader(read_mode='xlsx')
         self.file_manager = FileManager()
         
@@ -419,10 +419,7 @@ class DriveAutoPostSystem:
                     result = self.generate_content(topic, folder_name)
                     if result:
                         content = result.get('content', '')
-                        # AI 생성 글 뒤에 안내문 추가 (해시태그는 gpt_handler에서 이미 처리됨)
-                        if content:
-                            if safety_notice and safety_notice.strip() not in content:
-                                content = content + safety_notice
+                        # AI 생성 글 뒤에 안내문 추가는 band_pipeline에서 처리하므로 여기서 중복 추가하지 않음
                 except Exception as e:
                     print(f"❌ AI 글 생성 오류: {e}")
             
