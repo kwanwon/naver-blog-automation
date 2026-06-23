@@ -7,12 +7,19 @@ class BandPipeline:
     def _get_settings(app_data_dir):
         user_settings = {}
         try:
-            # Flet UI의 주요 설정 파일인 app_settings.json 로드 시도
+            # Flet UI의 주요 설정 파일들 로드
             app_settings_path = os.path.join(app_data_dir, 'config', 'app_settings.json')
+            user_settings_path = os.path.join(app_data_dir, 'config', 'user_settings.txt')
+            
             if os.path.exists(app_settings_path):
                 with open(app_settings_path, 'r', encoding='utf-8') as f:
-                    user_settings = json.load(f)
-                    print(f"📖 [BandPipeline] app_settings.json 로드 성공 (키 수: {len(user_settings)})")
+                    user_settings.update(json.load(f))
+                    
+            if os.path.exists(user_settings_path):
+                with open(user_settings_path, 'r', encoding='utf-8') as f:
+                    user_settings.update(json.load(f))
+                    
+            print(f"📖 [BandPipeline] 설정 로드 성공 (키 수: {len(user_settings)})")
         except Exception as e:
             print(f"⚠️ [BandPipeline] 설정 파일 로드 실패: {e}")
         return user_settings
@@ -71,7 +78,9 @@ class BandPipeline:
 
         # 1. 초기 텍스트 정제 (AI 마커 및 볼드 기호 제거)
         content = content.replace('**', '')
-        for marker in ['[제목]', '제목:', '**제목:**', '[본문]', '본문:', '**본문:**', '[태그]', '태그:', '**태그:**']:
+        # 변칙적인 숫자 포함 키워드/태그 마커 제거
+        content = re.sub(r'\*?\*?(?:태그|키워드|해시태그|헤시태그)\s*\d*\s*:\*?\*?', '', content)
+        for marker in ['[제목]', '제목:', '[본문]', '본문:', '[태그]', '태그:', '[키워드]', '키워드:', '[해시태그]', '해시태그:', '[헤시태그]', '헤시태그:']:
             content = content.replace(marker, '').strip()
 
         # 본문 내 AI 해시태그 뭉치 잔재 제거
@@ -93,40 +102,31 @@ class BandPipeline:
             if band_intro:
                 assembled_content += f"{band_intro}\n\n"
                 
-            # AI 본문 삽입 (문장 단위로 쪼개어 모바일 가독성 확보)
-            sentences = [s.strip() for s in re.split(r'(?<=\.)\s+', content.strip()) if s.strip()]
-            content_formatted = "\n\n".join(sentences)
-            assembled_content += f"{content_formatted}"
+            # AI 본문 삽입 (band_expert의 23자 모바일 가독성 포맷팅 원형 유지)
+            assembled_content += f"{content.strip()}"
             
             # 마지막 슬로건 처리 및 조립
             band_slogan = user_settings.get('band_slogan', '').strip()
             if band_slogan:
-                # 밴드용 슬로건에서 연락처 및 문의 문구 제거
-                slogan_clean = re.sub(r'(\d{2,3}[-\s]\d{3,4}[-\s]\d{4})', '', band_slogan).strip()
-                slogan_clean = re.sub(r'(📞\s*)?문의\s*:\s*', '', slogan_clean).strip()
-                if slogan_clean:
-                    # 모바일 가독성을 위한 안전한 단락 여백 확보
-                    assembled_content = assembled_content.rstrip() + f"\n\n{slogan_clean}"
+                # 모바일 가독성을 위한 안전한 단락 여백 확보
+                assembled_content = assembled_content.rstrip() + f"\n\n{band_slogan}"
         else:
             # 📌 [유형 2] 간결한 현장 기록형 포스팅
-            # 순서: 첫문장 -> 오늘 OO부 수련을 마쳤습니다 -> 팩트 본문 -> 양해문구
+            # 순서: 첫문장 -> 동적 맞춤형 안내 멘트 -> 팩트 본문
             assembled_content = ""
             if band_intro:
                 assembled_content += f"{band_intro}\n\n"
                 
-            # OO부 안내 멘트 조립
-            display_folder = folder_name or "수련"
-            # 만약 폴더명 끝에 '부'가 안 붙어있고 '시'나 '반' 등으로 끝난다면 그대로 씀
-            if not display_folder.endswith(('부', '반', '팀', '단', '학습', '합숙', '행사')):
-                # 숫자로 끝나는 경우(예: '3시')에만 '부'를 붙여줌
-                if re.search(r'\d+$', display_folder) or display_folder.endswith('시'):
-                    display_folder = f"{display_folder}부"
+            # 폴더명 그대로 출력 + '입니다.' 통일
+            display_folder = folder_name if folder_name else "수련"
+            ment = f"{display_folder} 입니다."
             
-            assembled_content += f"오늘 {display_folder} 수련을 마쳤습니다.\n\n"
+            assembled_content += f"{ment}\n\n"
             
             # 팩트 본문 삽입 (과장 배제 초간결 + 23자 기준 단어 잘림 방지 1줄바꿈 + 온점(.) 1줄바꿈 필터 적용)
             import textwrap
-            paragraphs = [p.strip() for p in re.split(r'(?<=\.)\s+', content.strip()) if p.strip()]
+            normalized_content = re.sub(r'\s+', ' ', content.strip())
+            paragraphs = [p.strip() for p in re.split(r'(?<=\.)\s+', normalized_content) if p.strip()]
             
             wrapped_lines = []
             for para in paragraphs:
@@ -136,8 +136,9 @@ class BandPipeline:
                 
             content_formatted = "\n".join(wrapped_lines)
             assembled_content += f"{content_formatted}"
-            
-            # 양해문구(band_footer_notice) 조립 (사용자 설정 하단 안내문 - 1번 스샷 대응)
+
+        # 유형 2에만 양해문구(band_footer_notice) 조립 (태그 바로 위에 위치)
+        if not is_type_1:
             band_footer = user_settings.get('band_footer_notice', '').strip()
             if band_footer:
                 # 모바일 가독성을 위한 여백 적용

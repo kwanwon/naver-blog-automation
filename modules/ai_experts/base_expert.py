@@ -704,18 +704,31 @@ class BaseAIExpert:
             tags_list = []
             
             # 1. 태그 섹션 분리 (다양한 마커 대응)
-            tag_markers = ['[태그]', '태그:', '**태그:**', '### 태그', 'Tags:', 'Keywords:']
+            tag_markers = ['[태그]', '태그:', '**태그:**', '### 태그', 'Tags:', 'Keywords:', '키워드:', '**키워드:**', '[키워드]', '[해시태그]', '해시태그:', '**해시태그:**', '### 해시태그']
             found_tag_marker = False
-            for marker in tag_markers:
-                if marker in content:
-                    tag_parts = content.split(marker)
-                    # 마커 이전은 본문, 이후는 태그로 간주
-                    content = tag_parts[0].strip()
-                    tags_text = tag_parts[1].strip()
-                    # 쉼표, 공백, 줄바꿈, 해시태그 등으로 태그 분리 (의미없는 1글자 기호 제거)
-                    tags_list = [t.strip() for t in re.split(r'[#,\s/]+', tags_text) if len(t.strip()) > 1]
-                    found_tag_marker = True
-                    break
+            
+            # 변칙적인 숫자 포함 마커 (예: 키워드1:, 태그 1:) 탐색
+            regex_marker = re.search(r'\n?\s*\*?\*?(?:태그|키워드)\s*\d*\s*:\*?\*?', content)
+            if regex_marker:
+                marker = regex_marker.group(0)
+                tag_parts = content.split(marker, 1) # 첫 번째 마커에서만 분리
+                content = tag_parts[0].strip()
+                tags_text = tag_parts[1].strip()
+                # 태그 텍스트 내부에 남아있는 '키워드2:', '키워드3:' 등 찌꺼기 제거
+                tags_text = re.sub(r'\*?\*?(?:태그|키워드)\s*\d*\s*:\*?\*?', '', tags_text)
+                tags_list = [t.strip() for t in re.split(r'[#,\s/]+', tags_text) if len(t.strip()) > 1]
+                found_tag_marker = True
+            else:
+                for marker in tag_markers:
+                    if marker in content:
+                        tag_parts = content.split(marker)
+                        # 마커 이전은 본문, 이후는 태그로 간주
+                        content = tag_parts[0].strip()
+                        tags_text = tag_parts[1].strip()
+                        # 쉼표, 공백, 줄바꿈, 해시태그 등으로 태그 분리 (의미없는 1글자 기호 제거)
+                        tags_list = [t.strip() for t in re.split(r'[#,\s/]+', tags_text) if len(t.strip()) > 1]
+                        found_tag_marker = True
+                        break
             
             # 마커가 없는데 본문 하단에 #해시태그나 나열된 단어가 있는 경우 추출 시도
             if not found_tag_marker:
@@ -1294,8 +1307,20 @@ class BaseAIExpert:
         has_reservation = False
         if target_time:
             try:
-                target_hour = int(target_time.split(':')[0])
-                has_reservation = True
+                if isinstance(target_time, str):
+                    cleaned_str = str(target_time).strip()
+                    if len(cleaned_str) > 10 and ':' in cleaned_str:
+                        import re
+                        h_match = re.search(r'\s(\d{1,2}):', cleaned_str)
+                        if h_match:
+                            target_hour = int(h_match.group(1))
+                            has_reservation = True
+                    else:
+                        target_hour = int(cleaned_str.split(':')[0])
+                        has_reservation = True
+                elif hasattr(target_time, 'hour'):
+                    target_hour = target_time.hour
+                    has_reservation = True
             except Exception as e:
                 logger.error(f"_build_weather_hook_message target_time ({target_time}) 파싱 중 오류: {e}")
                 target_hour = now.hour
@@ -1326,6 +1351,10 @@ class BaseAIExpert:
         try:
             weather_info = WeatherCacheManager.get_cached_weather(refined_location, delta_days=delta_days, target_hour=target_hour)
             if weather_info:
+                # 🛑 [핵심 버그 수정] 예약(is_forecast=True) 포스팅의 경우 데이터에 '내일/모레/예보'가 있으면
+                # AI가 무조건 '오늘'로 작성하라는 블로그 지침과 충돌하여 오류(날씨 생략 또는 오작동)를 일으키므로 '현재/오늘'로 치환
+                if is_forecast:
+                    weather_info = weather_info.replace('내일', '오늘').replace('모레', '오늘').replace('예보', '현재')
                 logger.info(f"🎉 로컬 날씨 캐시 히트 성공! 대기시간 0.00초: {weather_info}")
         except Exception as cache_err:
             logger.error(f"Weather cache lookup error (skipped): {cache_err}")
@@ -1553,10 +1582,26 @@ class BaseAIExpert:
         if not target_time: return False
         try:
             now = datetime.now()
-            t_hour, t_min = map(int, target_time.split(':'))
-            target_dt = now.replace(hour=t_hour, minute=t_min, second=0, microsecond=0)
-            if target_dt < now:
-                return True
+            t_hour = None
+            t_min = 0
+            if isinstance(target_time, str):
+                cleaned_str = str(target_time).strip()
+                if len(cleaned_str) > 10 and ':' in cleaned_str:
+                    import re
+                    h_match = re.search(r'\s(\d{1,2}):(\d{2})', cleaned_str)
+                    if h_match:
+                        t_hour = int(h_match.group(1))
+                        t_min = int(h_match.group(2))
+                else:
+                    t_hour, t_min = map(int, cleaned_str.split(':'))
+            elif hasattr(target_time, 'hour'):
+                t_hour = target_time.hour
+                t_min = target_time.minute
+                
+            if t_hour is not None:
+                target_dt = now.replace(hour=t_hour, minute=t_min, second=0, microsecond=0)
+                if target_dt < now:
+                    return True
             return False
         except: 
             return False

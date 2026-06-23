@@ -489,10 +489,11 @@ class WeatherCacheManager:
         label = f"{day_label} {t_hour}시 예보" if delta_days > 0 else f"현재({t_hour}시)"
         
         dust_info = f", 미세먼지: {dust}" if dust else ""
+        pop_info = f", 강수확률: {pop}%" if pop else ""
         advice_section = f" ({rain_alert} {advice})" if rain_alert else f" ({advice})"
         
-        # [Location label] 기온: XX도, 하늘: XX, 바람: XX, 미세먼지: XX. (Advice)
-        return f"[{refined_loc} {label}] 기온: {temp}도, 하늘: {weather_desc}{wind_str}{dust_info}.{advice_section}"
+        # [Location label] 기온: XX도, 하늘: XX, 바람: XX, 미세먼지: XX, 강수확률: XX%. (Advice)
+        return f"[{refined_loc} {label}] 기온: {temp}도, 하늘: {weather_desc}{wind_str}{dust_info}{pop_info}.{advice_section}"
 
     @classmethod
     def generate_posting_weather_text(cls, location, target_datetime=None) -> str:

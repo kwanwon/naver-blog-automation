@@ -2806,8 +2806,22 @@ class BlogWriterApp:
                         topic = self.select_sequential_topic('blog') or "일상 이야기"
                         # 🟢 시간대 자동 판별: 예약 시간 기준
                         blog_task_type = self._get_time_based_task_type(res_time)
-                        print(f"    📊 시간대 판별: {res_time} → {blog_task_type}")
-                        result = self.ai_handler.generate_platform_content(topic, platform='blog', task_type=blog_task_type, target_time=res_time)
+                        
+                        # 내일 예약인지 판별하여 delta_days 설정
+                        delta_days = 0
+                        if res_time:
+                            try:
+                                t_parts = res_time.split(":")
+                                res_hour = int(t_parts[0])
+                                res_minute = int(t_parts[1])
+                                now = datetime.now()
+                                if res_hour < now.hour or (res_hour == now.hour and res_minute < now.minute):
+                                    delta_days = 1
+                            except:
+                                pass
+                                
+                        print(f"    📊 시간대 판별: {res_time} → {blog_task_type} (delta_days: {delta_days})")
+                        result = self.ai_handler.generate_platform_content(topic, platform='blog', task_type=blog_task_type, target_time=res_time, delta_days=delta_days)
                         
                         if not result or not result.get('content'):
                             print(f"    ❌ 내용 생성 실패 ({res_time})")
@@ -3211,11 +3225,24 @@ class BlogWriterApp:
                          print(f"  🔄 유형 자동 보정: '{user_type}' → '{task_type}' (예약 시간 {res_time} 기준)")
                      print(f"  👉 예약 작업 {i+1}/{len(times)}: {res_time} (유형: {task_type}) 처리 중...")
                      
+                     # 내일 예약인지 판별하여 delta_days 설정
+                     delta_days = 0
+                     if res_time:
+                         try:
+                             t_parts = res_time.split(":")
+                             res_hour = int(t_parts[0])
+                             res_minute = int(t_parts[1])
+                             now = datetime.now()
+                             if res_hour < now.hour or (res_hour == now.hour and res_minute < now.minute):
+                                 delta_days = 1
+                         except:
+                             pass
+                     
                      # 🟢 뉴스 분배 로직 제거: 밴드 탭의 AI 자동 포스팅과 100% 동일한 방식으로 호출
                      # 주제 및 내용 생성 (유형에 따라 다른 스타일)
                      topic = self.select_sequential_topic('band') or "체육관 일상"
                      result = self.ai_handler.generate_platform_content(
-                         topic, platform='band', task_type=task_type, target_time=res_time
+                         topic, platform='band', task_type=task_type, target_time=res_time, delta_days=delta_days
                      )
                      
                      if not result or not result.get('content'):
@@ -6558,7 +6585,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             min_lines=3,
             max_lines=10,
             expand=True,
-            value="""[페르소나] 너는 [OO지역]에서 [N]년 경력을 가진 [종목] 관장님이야. 학부모님께는 신뢰받는 교육 전문가이자, 아이들에게는 따뜻한 멘토야.
+            value="""[페르소나] 너는 [OO지역]에서 [N]년 경력을 가진 [종목] 지도자야. 학부모님께는 신뢰받는 교육 전문가이자, 아이들에게는 따뜻한 멘토야.
 
 [톤앤매너 (중요 ⭐)]
 - 하오체/합쇼체(다, 까): 뉴스, 건강 상식, 핫이슈 등 객관적인 정보를 전달할 때는 신뢰감을 주기 위해 '다/까'를 사용해.
@@ -8322,7 +8349,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                             self.blog_image_mode_dropdown,
                             self.blog_media_position_dropdown,
                             self.blog_media_order_dropdown,
-                        ], spacing=10),
+                        ], spacing=10, wrap=True),
                         blog_image_help_text,
                         self.blog_manual_settings_row,
                         ft.Row([
@@ -8381,7 +8408,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                         self.blog_persona_dropdown,
                         self.blog_style_dropdown,
                         self.blog_theme_dropdown,
-                    ], spacing=10),
+                    ], spacing=10, wrap=True),
                     self.blog_hometip_checkbox,
                     ft.Divider(height=1, color=ft.Colors.GREY_300),
                     ai_instructions,
@@ -10210,7 +10237,12 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             try:
                 start_time = time.time()
                 # 🟢 선택된 시간대 유형을 AI에 전달
-                fake_time = "20:00" if selected_time_type == 'closing' else None
+                if selected_time_type == 'closing':
+                    fake_time = "20:00"
+                elif selected_time_type == 'morning':
+                    fake_time = "07:00"
+                else:
+                    fake_time = None
                 result = self.ai_handler.generate_platform_content(selected_topic, platform='band', task_type=selected_time_type, target_time=fake_time)
                 band_title_input.value = result.get('title', '')
                 band_content_input.value = result.get('content', '')

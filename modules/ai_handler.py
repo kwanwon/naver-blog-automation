@@ -61,10 +61,19 @@ class AIHandler:
                 from utils.path_utils import get_app_data_dir
                 app_data_dir = get_app_data_dir()
                 folder_name = "수련"
-                if platform in ['drive_auto', 'manual_topic']:
-                    match = re.search(r'(\d+시부|선수부|시범단|행사|합숙)', topic)
+                if platform == 'drive_auto':
+                    match = re.match(r'^\[(.*?)\]', topic)
                     if match:
-                        folder_name = match.group(1)
+                        folder_name = match.group(1).strip()
+                    else:
+                        folder_name = "수련"
+                elif platform == 'manual_topic':
+                    match = re.match(r'^\[(.*?)\]', topic)
+                    if match:
+                        folder_name = match.group(1).strip()
+                    else:
+                        # 괄호가 없으면 전체 주제(혹은 첫 단어)를 폴더명으로 간주
+                        folder_name = topic.strip()
                 
                 assembled_content, final_tags = BandPipeline.process(
                     content=result.get('content', ''),
@@ -104,10 +113,18 @@ class AIHandler:
                 from utils.path_utils import get_app_data_dir
                 app_data_dir = get_app_data_dir()
                 folder_name = "수련"
-                if platform in ['drive_auto', 'manual_topic']:
-                    match = re.search(r'(\d+시부|선수부|시범단|행사|합숙)', topic)
+                if platform == 'drive_auto':
+                    match = re.match(r'^\[(.*?)\]', topic)
                     if match:
-                        folder_name = match.group(1)
+                        folder_name = match.group(1).strip()
+                    else:
+                        folder_name = "수련"
+                elif platform == 'manual_topic':
+                    match = re.match(r'^\[(.*?)\]', topic)
+                    if match:
+                        folder_name = match.group(1).strip()
+                    else:
+                        folder_name = topic.strip()
                 
                 assembled_content, final_tags = BandPipeline.process(
                     content=result.get('content', ''),

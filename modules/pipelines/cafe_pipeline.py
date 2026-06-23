@@ -7,7 +7,7 @@ class CafePipeline:
     def _get_settings(app_data_dir):
         user_settings = {}
         try:
-            settings_path = os.path.join(app_data_dir, 'config', 'app_settings.json')
+            settings_path = os.path.join(app_data_dir, 'config', 'user_settings.txt')
             if os.path.exists(settings_path):
                 with open(settings_path, 'r', encoding='utf-8') as f:
                     user_settings = json.load(f)
