@@ -1590,6 +1590,50 @@ class NaverBlogAutomation:
                 # AI와 설정에서 이미 완벽하게 줄바꿈을 계산해서 넘겨주므로, 셀레니움 단에서는 원본 그대로 입력하도록 강제합니다.
                 return False
             
+            # ── input_buffer 헬퍼: 텍스트 삽입 ──
+            def _exec_insert_text(text):
+                """input_buffer iframe의 execCommand를 사용하여 텍스트를 삽입한다.
+                ActionChains.send_keys()와 달리 글자 씹힘/꼬임이 원천 차단된다."""
+                self.driver.execute_script("""
+                    var iframes = document.querySelectorAll('iframe[id^="input_buffer"]');
+                    if (iframes.length > 0) {
+                        var bufferDoc = iframes[0].contentDocument || iframes[0].contentWindow.document;
+                        bufferDoc.body.focus();
+                        bufferDoc.execCommand('insertText', false, arguments[0]);
+                    }
+                """, text)
+
+            def _exec_enter_key(shift=False):
+                """input_buffer iframe에서 Enter 키 이벤트를 dispatch한다.
+                shift=True이면 Shift+Enter (줄바꿈), False이면 Enter (새 문단)."""
+                self.driver.execute_script("""
+                    var iframes = document.querySelectorAll('iframe[id^="input_buffer"]');
+                    if (iframes.length > 0) {
+                        var bufferDoc = iframes[0].contentDocument || iframes[0].contentWindow.document;
+                        bufferDoc.body.focus();
+                        var opts = {key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, shiftKey: arguments[0]};
+                        bufferDoc.body.dispatchEvent(new KeyboardEvent('keydown', opts));
+                        bufferDoc.body.dispatchEvent(new KeyboardEvent('keypress', opts));
+                        bufferDoc.body.dispatchEvent(new KeyboardEvent('keyup', opts));
+                    }
+                """, shift)
+
+            def _refocus_input_buffer():
+                """input_buffer iframe의 body에 포커스를 되돌린다.
+                미디어 삽입 후 커서 증발을 방지한다."""
+                try:
+                    self.driver.switch_to.default_content()
+                    self.driver.switch_to.frame("mainFrame")
+                    self.driver.execute_script("""
+                        var iframes = document.querySelectorAll('iframe[id^="input_buffer"]');
+                        if (iframes.length > 0) {
+                            var bufferDoc = iframes[0].contentDocument || iframes[0].contentWindow.document;
+                            bufferDoc.body.focus();
+                        }
+                    """)
+                except Exception as e:
+                    print(f"input_buffer 포커스 복구 실패: {str(e)}")
+
             # 본문 내용 입력
             content_lines = content.split('\n')
             is_slogan_mode = False
@@ -1611,23 +1655,23 @@ class NaverBlogAutomation:
                 
                 # 줄바꿈 추가 여부 확인
                 next_line = content_lines[i + 1] if i + 1 < len(content_lines) else None
-                actions = ActionChains(self.driver)
                 
                 if is_slogan_mode:
                     # 슬로건은 문단 띄어쓰기(ENTER) 대신 좁은 간격의 줄바꿈(SHIFT+ENTER) 적용
                     if is_text_line:
-                        actions.send_keys(line).key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT)
-                    else:
-                        actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT)
+                        _exec_insert_text(line)
+                    _exec_enter_key(shift=True)  # Shift+Enter (줄바꿈)
                 else:
+                    if is_text_line:
+                        _exec_insert_text(line)
                     if should_add_blank_line(line, next_line):
-                        actions.send_keys(line + Keys.ENTER + Keys.ENTER)
+                        _exec_enter_key(shift=False)  # Enter (새 문단)
+                        _exec_enter_key(shift=False)  # Enter (빈 줄)
                         consecutive_text_lines = 0
                     else:
-                        actions.send_keys(line + Keys.ENTER)
+                        _exec_enter_key(shift=False)  # Enter (새 문단)
                 
-                actions.perform()
-                time.sleep(0.05)  # 입력 사이 최소 대기 시간
+                time.sleep(0.08)  # 입력 후 React 동기화 대기
                 
                 # 미디어 삽입 조건 확인 (미리 계산된 줄 번호에 도달했을 때)
                 if (self.auto_mode and
@@ -1655,18 +1699,9 @@ class NaverBlogAutomation:
                         print(f"줄 {current_line}: {mtype} 삽입 처리 완료")
                         current_media_index += 1
                         
-                        # 본문 재포커스
-                        try:
-                            # 프레임 확실히 확인
-                            self.driver.switch_to.default_content()
-                            self.driver.switch_to.frame("mainFrame")
-                            body_areas = self.driver.find_elements(By.CSS_SELECTOR, 
-                                "div.se-component.se-text.se-l-default")
-                            if body_areas:
-                                self.driver.execute_script("arguments[0].click();", body_areas[-1])
-                                print("미디어 삽입 후 본문 재포커스 성공")
-                        except Exception as refocus_error:
-                            print(f"본문 재포커스 실패: {str(refocus_error)}")
+                        # 본문 재포커스 (input_buffer 방식)
+                        _refocus_input_buffer()
+                        print("미디어 삽입 후 input_buffer 재포커스 성공")
                     except Exception as e:
                         print(f"미디어 삽입 중 중대 오류: {str(e)}")
                         # 치명적 오류 시 프레임 초기화
@@ -1675,16 +1710,10 @@ class NaverBlogAutomation:
                             self.driver.switch_to.frame("mainFrame")
                         except: pass
 
-            # 본문 영역 다시 클릭하여 포커스 확보
-            try:
-                body_areas = self.driver.find_elements(By.CSS_SELECTOR, 
-                    "div.se-component.se-text.se-l-default")
-                if body_areas:
-                    self.driver.execute_script("arguments[0].click();", body_areas[-1])
-                    print("남은 이미지 삽입 전 본문 재포커스 성공")
-                    time.sleep(0.5)
-            except Exception as refocus_error:
-                print(f"본문 재포커스 실패: {str(refocus_error)}")
+            # 본문 영역 다시 포커스 확보 (input_buffer 방식)
+            _refocus_input_buffer()
+            print("남은 이미지 삽입 전 input_buffer 재포커스 성공")
+            time.sleep(0.5)
 
             # 남은 미디어들 마지막에 삽입
             if self.auto_mode and self.image_inserter:
@@ -1703,30 +1732,18 @@ class NaverBlogAutomation:
                             print(f"미디어 삽입 중 오류: {str(e)}")
                             traceback.print_exc()
                     
-                    # 마지막 이미지 삽입 후 본문 재포커스
-                    try:
-                        body_areas = self.driver.find_elements(By.CSS_SELECTOR, 
-                            "div.se-component.se-text.se-l-default")
-                        if body_areas:
-                            self.driver.execute_script("arguments[0].click();", body_areas[-1])
-                            print("최종 이미지 삽입 후 본문 재포커스 성공")
-                    except Exception as refocus_error:
-                        print(f"본문 재포커스 실패: {str(refocus_error)}")
+                    # 마지막 이미지 삽입 후 본문 재포커스 (input_buffer 방식)
+                    _refocus_input_buffer()
+                    print("최종 이미지 삽입 후 input_buffer 재포커스 성공")
 
                         # 본문 텍스트 입력 완료
             print("본문 텍스트 입력 완료")
             time.sleep(1)
             
-            # 본문 영역 최종 포커스
-            try:
-                body_areas = self.driver.find_elements(By.CSS_SELECTOR, 
-                    "div.se-component.se-text.se-l-default")
-                if body_areas:
-                    self.driver.execute_script("arguments[0].click();", body_areas[-1])
-                    print("✅ 본문 최종 포커스 완료")
-                    time.sleep(0.5)
-            except Exception as refocus_error:
-                print(f"❌ 본문 최종 포커스 실패: {str(refocus_error)}")
+            # 본문 영역 최종 포커스 (input_buffer 방식)
+            _refocus_input_buffer()
+            print("✅ 본문 최종 포커스 완료 (input_buffer)")
+            time.sleep(0.5)
 
             # 푸터 추가 직접 호출
             print("add_footer 메서드 호출 시작...")
@@ -1739,11 +1756,10 @@ class NaverBlogAutomation:
             print(f"- 주소: {self.settings.get('address', '없음')}")
             print(f"- 카카오 URL: {self.settings.get('kakao_url', '없음')}")
             
-            # 줄바꿈 추가
+            # 줄바꿈 추가 (input_buffer 방식)
             print("줄바꿈 추가...")
-            actions = ActionChains(self.driver)
-            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
-            actions.key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+            _exec_enter_key(shift=True)
+            _exec_enter_key(shift=True)
             print("줄바꿈 추가 완료")
             
             # 푸터 추가 직접 호출 (카카오링크 포함) - 순서: 카카오링크 먼저

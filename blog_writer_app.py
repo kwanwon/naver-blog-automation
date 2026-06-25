@@ -5792,7 +5792,21 @@ class BlogWriterApp:
             auto_img_cb = getattr(self, 'auto_image_checkbox', None)
             auto_image_enabled = (auto_img_cb.value if auto_img_cb else True) and images_available
 
-            # --- [추가] 이미지 후처리 (워터마크, EXIF 삭제, GPS 주입 등) ---
+            # ── [DIAGNOSTIC] 이미지 삽입 결정 사유 출력 ──
+            print(f"🔍 [DIAG] image_mode_val={image_mode_val}")
+            print(f"🔍 [DIAG] target_folder={target_folder}")
+            print(f"🔍 [DIAG] custom_images_folder={custom_images_folder}")
+            print(f"🔍 [DIAG] images_available={images_available}")
+            print(f"🔍 [DIAG] auto_img_cb.value={auto_img_cb.value if auto_img_cb else '(없음)'}")
+            print(f"🔍 [DIAG] auto_image_enabled={auto_image_enabled}")
+            if custom_images_folder and os.path.exists(custom_images_folder):
+                files_in_folder = os.listdir(custom_images_folder)
+                print(f"🔍 [DIAG] 폴더 내 파일 수: {len(files_in_folder)} → {files_in_folder[:5]}")
+            else:
+                print(f"🔍 [DIAG] 이미지 폴더 없음 또는 비어있음")
+            # ── [DIAGNOSTIC END] ──
+
+
             if images_available and custom_images_folder:
                 try:
                     from modules.news_poster.image_handler import ImageHandler

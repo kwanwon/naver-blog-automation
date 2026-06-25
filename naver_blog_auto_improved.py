@@ -25,6 +25,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+from naver_blog_auto_image import NaverBlogImageInserter
 
 class ImprovedNaverBlogAuto:
     def __init__(self, base_dir=None):
@@ -312,16 +313,45 @@ class ImprovedNaverBlogAuto:
             print(f"❌ 블로그 이동 중 오류: {e}")
             return False
     
-    def write_post(self, title, content, tags=None):
+    def calculate_image_positions(self, content):
+        """이미지 삽입 위치를 계산하는 메서드 - 100자/200자 기준 문장 끝에 삽입"""
+        content_lines = content.split('\n')
+        sentence_end_markers = ['다.', '요.', '죠.', '.', '!', '?']
+        line_positions = []
+        char_count = 0
+        is_first_image = True
+        
+        for i, line in enumerate(content_lines):
+            line_text = line.strip()
+            char_count += len(line)
+            is_sentence_end = any(line_text.endswith(marker) for marker in sentence_end_markers)
+            
+            if is_first_image and char_count >= 100 and is_sentence_end:
+                line_positions.append(i)
+                char_count = 0
+                is_first_image = False
+            elif not is_first_image and char_count >= 200 and is_sentence_end:
+                line_positions.append(i)
+                char_count = 0
+                
+        return line_positions
+
+    def write_post(self, title, content, tags=None, images_folder=None, videos_folder=None):
         """블로그 포스트 작성 및 발행"""
         try:
             print("✍️ 블로그 포스트 작성 시작...")
             
+            # 이미지/동영상 인서터 설정
+            if images_folder or videos_folder:
+                self.image_inserter = NaverBlogImageInserter(self.driver, images_folder=images_folder)
+            else:
+                self.image_inserter = None
+                
             # 제목 입력
             if not self._input_title(title):
                 return False
             
-            # 내용 입력
+            # 내용 입력 (텍스트 + 미디어 삽입)
             if not self._input_content(content):
                 return False
             
@@ -340,7 +370,7 @@ class ImprovedNaverBlogAuto:
             print(f"❌ 포스트 작성 중 오류: {e}")
             traceback.print_exc()
             return False
-    
+            
     def _input_title(self, title):
         """제목 입력"""
         try:
@@ -376,9 +406,9 @@ class ImprovedNaverBlogAuto:
         except Exception as e:
             print(f"❌ 제목 입력 실패: {e}")
             return False
-    
+
     def _input_content(self, content):
-        """내용 입력"""
+        """내용 입력 (이미지 및 동영상 삽입 포함)"""
         try:
             print("📝 내용 입력 중...")
             
@@ -406,38 +436,130 @@ class ImprovedNaverBlogAuto:
             if not iframe_found:
                 print("⚠️ 에디터 프레임을 찾을 수 없음 - 직접 입력 시도")
             
-            # 내용 입력
-            content_selectors = [
-                (By.CSS_SELECTOR, "body"),
-                (By.CSS_SELECTOR, ".se-content"),
-                (By.CSS_SELECTOR, "[contenteditable='true']"),
-                (By.TAG_NAME, "body")
-            ]
-            
-            for selector_type, selector_value in content_selectors:
+            # 본문 영역 클릭 포커스 확보
+            try:
+                body_area = WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "div.se-component.se-text.se-l-default"))
+                )
+                body_area.click()
+                time.sleep(0.5)
+            except:
+                print("본문 영역 클릭 실패 (무시하고 계속)")
+
+            # 미디어 준비
+            media_list = []
+            if hasattr(self, 'image_inserter') and self.image_inserter:
+                image_files, video_files = self.image_inserter.get_media_files()
+                temp_all = [(f, "image") for f in image_files] + [(f, "video") for f in video_files]
+                random.shuffle(temp_all)
+                media_list = temp_all
+                print(f"📊 삽입 대기 미디어: 총 {len(media_list)}개 (사진 {len(image_files)}, 영상 {len(video_files)})")
+
+            # 위치 계산
+            image_positions = self.calculate_image_positions(content)
+            print(f"계산된 미디어 위치 정보: {image_positions}")
+
+            def _exec_insert_text(text):
+                self.driver.execute_script("""
+                    var iframes = document.querySelectorAll('iframe[id^="input_buffer"]');
+                    if (iframes.length > 0) {
+                        var bufferDoc = iframes[0].contentDocument || iframes[0].contentWindow.document;
+                        bufferDoc.body.focus();
+                        bufferDoc.execCommand('insertText', false, arguments[0]);
+                    }
+                """, text)
+
+            def _exec_enter_key(shift=False):
+                self.driver.execute_script("""
+                    var iframes = document.querySelectorAll('iframe[id^="input_buffer"]');
+                    if (iframes.length > 0) {
+                        var bufferDoc = iframes[0].contentDocument || iframes[0].contentWindow.document;
+                        bufferDoc.body.focus();
+                        var opts = {key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, shiftKey: arguments[0]};
+                        bufferDoc.body.dispatchEvent(new KeyboardEvent('keydown', opts));
+                        bufferDoc.body.dispatchEvent(new KeyboardEvent('keypress', opts));
+                        bufferDoc.body.dispatchEvent(new KeyboardEvent('keyup', opts));
+                    }
+                """, shift)
+
+            def _refocus_input_buffer():
                 try:
-                    content_area = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((selector_type, selector_value))
-                    )
-                    
-                    content_area.click()
-                    time.sleep(1)
-                    content_area.clear()
-                    content_area.send_keys(content)
-                    
-                    print("✅ 내용 입력 완료")
-                    
-                    # 프레임에서 나오기
+                    self.driver.switch_to.default_content()
                     if iframe_found:
-                        self.driver.switch_to.default_content()
-                    
-                    return True
-                    
-                except:
-                    continue
+                        for selector in iframe_selectors:
+                            try:
+                                frame = self.driver.find_element(By.CSS_SELECTOR, selector)
+                                self.driver.switch_to.frame(frame)
+                                break
+                            except: pass
+                    self.driver.execute_script("""
+                        var iframes = document.querySelectorAll('iframe[id^="input_buffer"]');
+                        if (iframes.length > 0) {
+                            var bufferDoc = iframes[0].contentDocument || iframes[0].contentWindow.document;
+                            bufferDoc.body.focus();
+                        }
+                    """)
+                except Exception as e:
+                    print(f"input_buffer 포커스 복구 실패: {e}")
+
+            # 본문 내용 입력 (미디어 삽입과 병행)
+            content_lines = content.split('\n')
+            current_media_index = 0
             
-            print("❌ 내용 입력 영역을 찾을 수 없습니다.")
-            return False
+            for i, line in enumerate(content_lines):
+                current_line = i
+                is_text_line = bool(line.strip())
+                
+                if is_text_line:
+                    _exec_insert_text(line)
+                _exec_enter_key(shift=True) # 줄바꿈
+
+                time.sleep(0.08)
+
+                # 미디어 삽입 시점 확인
+                if (hasattr(self, 'image_inserter') and self.image_inserter and
+                    current_line in image_positions and 
+                    current_media_index < len(media_list)):
+                    
+                    try:
+                        file_path, mtype = media_list[current_media_index]
+                        print(f"줄 {current_line}: {mtype} 삽입 시도... ({current_media_index + 1}/{len(media_list)})")
+                        
+                        if mtype == "image":
+                            self.image_inserter.insert_single_image(file_path)
+                        else:
+                            success = self.image_inserter.insert_single_video(file_path)
+                            if not success:
+                                # 실패 시 에스케이프
+                                self.driver.switch_to.default_content()
+                                self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+                                time.sleep(0.5)
+                        
+                        current_media_index += 1
+                        _refocus_input_buffer()
+                    except Exception as e:
+                        print(f"미디어 삽입 오류: {e}")
+
+            _refocus_input_buffer()
+            time.sleep(0.5)
+
+            # 남은 미디어 일괄 삽입
+            if hasattr(self, 'image_inserter') and self.image_inserter:
+                remaining_media = media_list[current_media_index:]
+                for file_path, mtype in remaining_media:
+                    try:
+                        print(f"마지막 미디어 추가 삽입: {mtype}")
+                        if mtype == "image":
+                            self.image_inserter.insert_single_image(file_path)
+                        else:
+                            self.image_inserter.insert_single_video(file_path)
+                        time.sleep(0.5)
+                    except: pass
+            
+            print("✅ 내용 입력 완료")
+            if iframe_found:
+                self.driver.switch_to.default_content()
+            return True
             
         except Exception as e:
             print(f"❌ 내용 입력 실패: {e}")
@@ -546,7 +668,7 @@ if __name__ == "__main__":
                 content = "테스트 내용입니다."
                 tags = ["테스트", "블로그"]
                 
-                if blog_auto.write_post(title, content, tags):
+                if blog_auto.write_post(title, content, tags, images_folder=None, videos_folder=None):
                     print("🎉 모든 작업 완료!")
                 else:
                     print("❌ 포스트 작성 실패")

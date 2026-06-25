@@ -319,9 +319,12 @@ class NaverBlogImageInserter:
             print(f"이미지 팝업 처리 중 오류: {str(e)}")
 
     def _intercept_file_input(self):
-        """input[type=file]의 click()을 가로채서 Finder가 열리지 않게 설정"""
+        """input[type=file]의 click()을 가로채서 Finder가 열리지 않게 설정.
+        동영상의 경우 removeChild/remove도 가로채서 input이 DOM에서 삭제되지 않도록 한다."""
         self.driver.execute_script("""
             window.__fileInputIntercepted = null;
+            
+            // 1. click() 가로채기 (사진 + 동영상 공통)
             var origClick = HTMLInputElement.prototype.click;
             window.__origInputClick = origClick;
             HTMLInputElement.prototype.click = function() {
@@ -331,20 +334,56 @@ class NaverBlogImageInserter:
                 }
                 return origClick.apply(this, arguments);
             };
+            
+            // 2. removeChild() 가로채기 (동영상 전용: input#hidden-input 삭제 방지)
+            var origRemoveChild = Element.prototype.removeChild;
+            window.__origRemoveChild = origRemoveChild;
+            Element.prototype.removeChild = function(child) {
+                if (child && child.tagName === 'INPUT' && child.type === 'file') {
+                    console.log('[intercept] removeChild blocked for input[type=file]');
+                    return child;  // 삭제하지 않고 그대로 반환
+                }
+                return origRemoveChild.apply(this, arguments);
+            };
+            
+            // 3. remove() 가로채기 (일부 코드에서 el.remove() 사용 대비)
+            var origRemove = Element.prototype.remove;
+            window.__origRemove = origRemove;
+            Element.prototype.remove = function() {
+                if (this.tagName === 'INPUT' && this.type === 'file') {
+                    console.log('[intercept] remove() blocked for input[type=file]');
+                    return;  // 삭제하지 않음
+                }
+                return origRemove.apply(this, arguments);
+            };
         """)
 
     def _get_intercepted_input(self, max_wait=10):
-        """가로챈 input[type=file] 요소를 가져오고 원래 click 복원"""
+        """가로챈 input[type=file] 요소를 가져오고 원래 click/removeChild/remove 복원"""
         file_input = None
         for _ in range(max_wait):
-            file_input = self.driver.execute_script("return window.__fileInputIntercepted;")
+            file_input = self.driver.execute_script("""
+                var el = window.__fileInputIntercepted;
+                if (el && !el.parentNode) {
+                    // Python으로 리턴하기 전에 반드시 DOM에 붙어있어야 함
+                    // 그렇지 않으면 Selenium이 StaleElementReferenceException을 발생시킴
+                    document.body.appendChild(el);
+                }
+                return el;
+            """)
             if file_input:
                 break
             time.sleep(0.3)
-        # 원래 click 복원
+        # 원래 click, removeChild, remove 복원
         self.driver.execute_script("""
             if (window.__origInputClick) {
                 HTMLInputElement.prototype.click = window.__origInputClick;
+            }
+            if (window.__origRemoveChild) {
+                Element.prototype.removeChild = window.__origRemoveChild;
+            }
+            if (window.__origRemove) {
+                Element.prototype.remove = window.__origRemove;
             }
         """)
         return file_input
@@ -353,14 +392,27 @@ class NaverBlogImageInserter:
         """input[type=file]에 파일 경로를 send_keys로 전달"""
         self.driver.execute_script("""
             var el = arguments[0];
+            if (!el.parentNode) {
+                document.body.appendChild(el);
+            }
             el.style.display = 'block';
             el.style.visibility = 'visible';
             el.style.opacity = '1';
             el.style.width = '1px';
             el.style.height = '1px';
             el.style.position = 'absolute';
+            el.style.top = '0';
+            el.style.left = '0';
         """, file_input)
-        file_input.send_keys(file_path)
+        
+        # DOM에 적용될 시간을 짧게 부여
+        time.sleep(0.1)
+        
+        try:
+            file_input.send_keys(file_path)
+        except Exception as e:
+            print(f"⚠️ send_keys 중 오류 (DOM 연결 문제일 수 있음): {e}")
+            raise
 
     def insert_single_image(self, image_path):
         """단일 이미지 삽입 (Finder 열지 않음 - input click 가로채기 방식)"""
