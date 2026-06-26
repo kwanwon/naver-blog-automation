@@ -199,7 +199,8 @@ class NaverBlogImageInserter:
             elif self.media_order == "video_first":
                 media_list = [(f, "video") for f in video_files] + [(f, "image") for f in image_files]
             elif self.media_order == "off":
-                # 사용자의 요청: '사용 안함'은 영상만 제외하고 사진은 정상 삽입
+                # 영상 사용 안함 - 영상 목록 초기화
+                video_files = []
                 print("🚫 영상 삽입 제외 설정 (사진만 삽입)")
                 media_list = [(f, "image") for f in image_files]
             else:  # mixed
@@ -478,98 +479,177 @@ class NaverBlogImageInserter:
                 print(f"동영상 버튼 클릭 실패: {e}")
                 return False
 
-            # 2. 동영상 팝업은 default_content에 열림
-            self.driver.switch_to.default_content()
+            # 2. 동영상 팝업은 mainFrame 내부에 열림
+            # self.driver.switch_to.default_content() # <-- 여기가 문제였습니다! 팝업도 mainFrame 안에 있습니다.
 
             # 3. input[type=file] click 가로채기 설정
             self._intercept_file_input()
 
-            # 4. '동영상 추가' 버튼 클릭 (Finder 대신 input이 가로채어짐)
+            # 4. 동영상 전송 (우회 로직 A: 숨겨진 input 찾아서 직접 전송, B: 드래그 앤 드롭)
+            print("🚀 동영상 전송 우회 기법 시도...")
+            
+            # 4-1. 팝업 내부의 실제 input[type="file"] 찾기 (가장 확실한 방법)
+            real_input_success = False
+            try:
+                inputs = self.driver.find_elements(By.CSS_SELECTOR, '#video-uploader-wrap input[type="file"], .nvu_wrap input[type="file"], .se-popup-container input[type="file"]')
+                for file_input in inputs:
+                    # 보이지 않는 input이어도 send_keys는 작동함
+                    file_input.send_keys(abs_path)
+                    print("✅ 숨겨진 input[type=file]에 직접 파일 전송 성공!")
+                    real_input_success = True
+                    time.sleep(2)
+                    break
+            except Exception as e:
+                print(f"⚠️ 실제 input 전송 실패: {e}")
+
+            # 4-2. 실제 input 전송이 실패했다면 드래그 앤 드롭 위조 시도
+            drop_success = False
+            if not real_input_success:
+                print("🚀 직접 전송 실패. 드래그 앤 드롭 이벤트 위조 시도...")
+                self.driver.execute_script("""
+                    var oldInput = document.getElementById('selenium-dummy-file-input');
+                    if (oldInput) oldInput.remove();
+                    
+                    var input = document.createElement('input');
+                    input.type = 'file';
+                    input.id = 'selenium-dummy-file-input';
+                    input.style.position = 'absolute';
+                    input.style.top = '-9999px';
+                    document.body.appendChild(input);
+                """)
+                time.sleep(0.5)
+                
+                dummy_input = self.driver.find_element(By.ID, 'selenium-dummy-file-input')
+                dummy_input.send_keys(abs_path)
+                time.sleep(0.5)
+                
+                drop_success = self.driver.execute_script("""
+                    var input = document.getElementById('selenium-dummy-file-input');
+                    if (!input || !input.files || input.files.length === 0) return false;
+                    
+                    var file = input.files[0];
+                    var dropZone = document.querySelector('.nvu_section_upload') || document.querySelector('.nvu_area_rep') || document.querySelector('#video-uploader-wrap') || document.querySelector('.se-popup-container');
+                    if (!dropZone) return false;
+                    
+                    var dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    
+                    var events = ['dragenter', 'dragover', 'drop'];
+                    events.forEach(function(eventName) {
+                        try {
+                            var event = new DragEvent(eventName, { bubbles: true, cancelable: true, dataTransfer: dataTransfer });
+                            dropZone.dispatchEvent(event);
+                        } catch (e) {
+                            var event = new Event(eventName, { bubbles: true, cancelable: true });
+                            event.dataTransfer = dataTransfer;
+                            dropZone.dispatchEvent(event);
+                        }
+                    });
+                    return true;
+                """)
+            
+            if not real_input_success and not drop_success:
+                print("❌ 동영상 파일을 전송할 수 있는 방법을 찾지 못했습니다.")
+                # 팝업 닫기 (새로 찾아주신 nvu_btn_close 클래스 추가)
+                self.driver.execute_script("document.querySelector('.nvu_btn_close, .se-popup-button-cancel, .se-popup-close-button, header button[class*=\"close\"]')?.click();")
+                return False
+            
+            time.sleep(3)
+
+            # 6. 메타데이터 입력
+            print("📝 동영상 제목 및 태그 입력 중...")
             self.driver.execute_script("""
-                var selectors = ['.se-video-dialog-btn-upload', '.se-video-dialog-content-upload-button', '.se-popup-button-upload'];
-                for (var i = 0; i < selectors.length; i++) {
-                    var btn = document.querySelector(selectors[i]);
-                    if (btn) { btn.click(); return true; }
-                }
-                var buttons = Array.from(document.querySelectorAll('button')).filter(function(b) {
-                    return b.innerText.indexOf('추가') >= 0 || b.innerText.indexOf('파일') >= 0;
-                });
-                if (buttons.length > 0) { buttons[0].click(); return true; }
-                return false;
-            """)
+                var titleInput = document.querySelector('input[class*="title"], input[placeholder*="제목"]');
+                var descInput = document.querySelector('textarea[class*="description"], textarea[placeholder*="설명"]');
+                if (titleInput) { titleInput.value = arguments[0]; titleInput.dispatchEvent(new Event('input', {bubbles:true})); }
+                if (descInput) { descInput.value = arguments[1]; descInput.dispatchEvent(new Event('input', {bubbles:true})); }
+            """, self.video_metadata.get('title', ''), self.video_metadata.get('info', ''))
+            time.sleep(0.5)
+            
+            # 태그는 말풍선 생성을 위해 Selenium send_keys + ENTER 사용
+            tag_elem = self.driver.execute_script("return document.querySelector('input[class*=\"tag\"], input[placeholder*=\"태그\"]');")
+            if tag_elem:
+                from selenium.webdriver.common.keys import Keys
+                tags_str = self.video_metadata.get('tags', '')
+                for tag in tags_str.split(','):
+                    tag = tag.strip()
+                    if tag:
+                        tag_elem.send_keys(tag)
+                        time.sleep(0.2)
+                        tag_elem.send_keys(Keys.ENTER)
+                        time.sleep(0.2)
             time.sleep(1)
 
-            # 5. 가로챈 input 가져오기
-            file_input = self._get_intercepted_input()
-
-            if not file_input:
-                inputs = self.driver.find_elements(By.CSS_SELECTOR, 'input[type="file"]')
-                if inputs:
-                    file_input = inputs[-1]
-
-            if file_input:
-                self._send_file_to_input(file_input, abs_path)
-                print(f"✅ 동영상 파일 전송 성공 (Finder 없이)")
-                time.sleep(3)
-
-                # 6. 메타데이터 입력
-                print("📝 동영상 제목 및 태그 입력 중...")
-                self.driver.execute_script("""
-                    var titleInput = document.querySelector('input[class*="title"], input[placeholder*="제목"]');
-                    var descInput = document.querySelector('textarea[class*="description"], textarea[placeholder*="설명"]');
-                    var tagInput = document.querySelector('input[class*="tag"], input[placeholder*="태그"]');
-                    if (titleInput) { titleInput.value = arguments[0]; titleInput.dispatchEvent(new Event('input', {bubbles:true})); }
-                    if (descInput) { descInput.value = arguments[1]; descInput.dispatchEvent(new Event('input', {bubbles:true})); }
-                    if (tagInput) { tagInput.value = arguments[2]; tagInput.dispatchEvent(new Event('input', {bubbles:true})); }
-                """, self.video_metadata.get('title', ''), self.video_metadata.get('info', ''), self.video_metadata.get('tags', ''))
-                time.sleep(1)
-
-                # 7. 완료 버튼 클릭
-                self.driver.execute_script("""
+            # 7. 완료 버튼 활성화 대기 및 클릭 (최대 120초)
+            print("⏳ 동영상 업로드 및 처리 완료 대기 중 (최대 120초)...")
+            upload_success = False
+            for _ in range(60):
+                clicked = self.driver.execute_script("""
                     var selectors = ['.se-video-dialog-btn-submit', '.se-popup-button-confirm', 'button[class*="submit"]'];
                     for (var i = 0; i < selectors.length; i++) {
                         var btn = document.querySelector(selectors[i]);
-                        if (btn && !btn.disabled) { btn.click(); return true; }
+                        if (btn && !btn.disabled && btn.getAttribute('aria-disabled') !== 'true' && !btn.classList.contains('disabled')) { 
+                            btn.click(); 
+                            return true; 
+                        }
                     }
                     var buttons = Array.from(document.querySelectorAll('button')).filter(function(b) {
                         return b.innerText.indexOf('완료') >= 0 || b.innerText.indexOf('올리기') >= 0;
                     });
-                    if (buttons.length > 0) { buttons[0].click(); return true; }
+                    for (var j = 0; j < buttons.length; j++) {
+                        var btn = buttons[j];
+                        if (!btn.disabled && btn.getAttribute('aria-disabled') !== 'true' && !btn.classList.contains('disabled')) {
+                            btn.click();
+                            return true;
+                        }
+                    }
                     return false;
                 """)
-                print("✅ 동영상 업로드 완료")
-                self.used_images.append(video_path)
-                return True
-            else:
-                print("❌ 동영상 input[type=file]을 찾을 수 없습니다")
+                if clicked:
+                    upload_success = True
+                    break
+                time.sleep(2)
+
+            if not upload_success:
+                print("❌ 동영상 업로드 완료 대기 시간 초과")
+                # 실패 시 남겨진 팝업창을 강제로 닫아서 다음 작업(장소 추가 등)을 방해하지 않게 함
+                self.driver.execute_script("document.querySelector('.nvu_btn_close, .se-popup-button-cancel, .se-popup-close-button, header button[class*=\"close\"], button[title=\"닫기\"]')?.click();")
                 return False
+
+            print("✅ 동영상 완료 버튼 클릭됨")
+            
+            # 8. 팝업이 완전히 사라질 때까지 대기
+            print("⏳ 팝업창이 완전히 닫힐 때까지 대기 중...")
+            for _ in range(10):
+                popup_exists = self.driver.execute_script("return document.querySelector('.se-popup-dim') !== null;")
+                if not popup_exists:
+                    break
+                time.sleep(1)
+
+            print("✅ 동영상 업로드 최종 성공!")
+            self.used_images.append(video_path)
+            return True
             
         finally:
-            # 🎯 중요: 실패하든 성공하든 무조건 팝업을 닫고 mainFrame으로 복귀해야 함!
+            # 🎯 중요: 성공 시에는 팝업이 이미 닫혔으므로 바로 mainFrame으로 복귀.
+            # 실패 시에만 남아있는 팝업 정리 시도 (업로드를 강제로 취소하지 않기 위해 조건부 실행)
             try:
-                print("🧹 남아있는 팝업 정리 시도...")
                 self.driver.switch_to.default_content()
-                
-                # 강제 닫기 버튼 클릭
-                self.driver.execute_script("""
-                    document.querySelectorAll('.se-popup-button-cancel, .se-popup-close-button, button[class*="close"], button[title*="닫기"], .se-video-dialog-btn-close').forEach(btn => {
-                        try { btn.click(); } catch(e) {}
-                    });
-                """)
-                
-                # ESC 키 입력
-                for _ in range(3):
-                    self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
-                    time.sleep(0.2)
+                popup_exists = self.driver.execute_script("return document.querySelector('.se-popup-dim') !== null;")
+                if popup_exists:
+                    print("🧹 남아있는 에러 팝업 정리 시도...")
+                    for _ in range(2):
+                        self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+                        time.sleep(0.5)
                     
                 # mainFrame으로 복귀
                 frame = WebDriverWait(self.driver, 3).until(
                     EC.presence_of_element_located((By.ID, "mainFrame"))
                 )
                 self.driver.switch_to.frame(frame)
-                print("✅ 팝업 정리 완료 및 mainFrame 복귀 성공")
+                print("✅ mainFrame 복귀 성공")
             except Exception as e:
-                print(f"팝업 정리 및 프레임 복귀 중 오류 (무시됨): {str(e)}")
+                print(f"프레임 복귀 중 오류 (무시됨): {str(e)}")
 
     def _simulate_video_drop(self, video_path):
         """드래그 앤 드롭 시뮬레이션을 통한 동영상 삽입"""

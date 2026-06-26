@@ -1580,6 +1580,8 @@ class NaverBlogAutomation:
                     media_list = [(f, "image") for f in image_files] + [(f, "video") for f in video_files]
                 elif self.media_order == "video_first":
                     media_list = [(f, "video") for f in video_files] + [(f, "image") for f in image_files]
+                elif self.media_order == "off":
+                    media_list = [(f, "image") for f in image_files]
                 else: # mixed
                     temp_all = [(f, "image") for f in image_files] + [(f, "video") for f in video_files]
                     random.shuffle(temp_all)

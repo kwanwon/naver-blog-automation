@@ -42,9 +42,8 @@ class DebouncedFolderHandler(FileSystemEventHandler):
         self.debounce_timer: Optional[threading.Timer] = None
         self.lock = threading.Lock()
         
-        # 유효한 이미지/영상 확장자
-        self.valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
-                                  '.mp4', '.mov', '.avi', '.mkv', '.m4v'}
+        # 유효한 이미지/영상 확장자 (동영상은 사용안함 모드로 인해 제외)
+        self.valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'}
     
     def _is_valid_media(self, filepath: str) -> bool:
         """유효한 미디어 파일인지 확인"""
@@ -258,8 +257,7 @@ class DriveWatcher:
     
     def _init_known_files(self):
         """현재 폴더의 파일 목록 초기화"""
-        valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
-                           '.mp4', '.mov', '.avi', '.mkv', '.m4v'}
+        valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'}
         
         for folder_path, handler in self.handlers.items():
             try:
@@ -292,8 +290,7 @@ class DriveWatcher:
         """폴링 루프 - 주기적으로 폴더 스캔"""
         print(f"🔄 [폴링] 루프 시작됨 - is_running: {self.is_running}, handlers: {len(self.handlers)}")
         
-        valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
-                           '.mp4', '.mov', '.avi', '.mkv', '.m4v'}
+        valid_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif'}
         
         poll_count = 0
         while self.is_running:
