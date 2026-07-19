@@ -190,6 +190,17 @@ jobs:
           cp naver_blog_auto.py "$APP_FRAMEWORKS/"
           cp naver_blog_auto_image.py "$APP_FRAMEWORKS/"
           cp naver_blog_post_finisher.py "$APP_FRAMEWORKS/"
+          # 이미지/사진 폴더 전체 복사 (개발자 모드와 동일하게 맞추기)
+          if [ -d "블로그사진폴더" ]; then cp -R 블로그사진폴더 "$APP_FRAMEWORKS/"; fi
+          if [ -d "밴드사진폴더" ]; then cp -R 밴드사진폴더 "$APP_FRAMEWORKS/"; fi
+          if [ -d "블로그_카페_수동이미지" ]; then cp -R 블로그_카페_수동이미지 "$APP_FRAMEWORKS/"; fi
+          if [ -d "카페사진폴더" ]; then cp -R 카페사진폴더 "$APP_FRAMEWORKS/"; fi
+          if [ -d "밴드_수동이미지" ]; then cp -R 밴드_수동이미지 "$APP_FRAMEWORKS/"; fi
+          if [ -d "수동이미지" ]; then cp -R 수동이미지 "$APP_FRAMEWORKS/"; fi
+          if [ -d "수동업로드" ]; then cp -R 수동업로드 "$APP_FRAMEWORKS/"; fi
+          if [ -d "default_images" ]; then cp -R default_images "$APP_FRAMEWORKS/"; fi
+          if [ -d "data" ]; then cp -R data "$APP_FRAMEWORKS/"; fi
+          if [ -d "drafts" ]; then cp -R drafts "$APP_FRAMEWORKS/"; fi
           # 개발자 모드 파일 삭제 (일반 사용자는 시리얼 인증 필요)
           # rm -f "$APP_FRAMEWORKS/modules/.developer_mode"
           
