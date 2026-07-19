@@ -155,6 +155,7 @@ jobs:
           pip install psutil cryptography
           pip install pyperclip httpx
           pip install pandas watchdog
+          pip install openpyxl pdfplumber
           
       - name: Build with flet pack
         run: |
@@ -191,6 +192,9 @@ jobs:
           cp naver_blog_post_finisher.py "$APP_FRAMEWORKS/"
           # 개발자 모드 파일 삭제 (일반 사용자는 시리얼 인증 필요)
           # rm -f "$APP_FRAMEWORKS/modules/.developer_mode"
+          
+          # 서명 갱신 (파일 복사로 인해 깨진 서명 복구)
+          codesign --force --deep --sign - "dist/BlogAutomation_Mac.app"
           
       - name: Create macOS ZIP
         run: |
