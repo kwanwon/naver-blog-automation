@@ -304,7 +304,12 @@ class BlogExpert(BaseAIExpert):
         sport_instruction = ""  # 런타임 NameError 방지를 위해 안전하게 정의
         
         # 🟢 [홍보성 vs 정보성 스마트 지침 분기 처리]
-        is_promotional = ai_settings.get('is_promotional', False)
+        is_promotional = False
+        if post_type_config and "is_promotional" in post_type_config:
+            is_promotional = post_type_config.get("is_promotional")
+        else:
+            is_promotional = ai_settings.get('is_promotional', False)
+            
         type_instructions = ""
         if is_promotional:
             promotional_instr = post_type_config.get('promotional_instructions', '') if post_type_config else ""
@@ -470,8 +475,13 @@ class BlogExpert(BaseAIExpert):
 """
 
         # 🔄 사용자가 설정창에서 체크(선택)한 모델 리스트 동적 로드 (관장님 최종 피드백 반영 ⭐⭐⭐)
-        selected_model_ids = ai_settings.get('selected_models', [])
-        
+        selected_model_ids = []
+        if post_type_config and post_type_config.get("selected_models"):
+            selected_model_ids = post_type_config.get("selected_models")
+            
+        if not selected_model_ids:
+            selected_model_ids = ai_settings.get('selected_models', [])
+            
         # 만약 사용자가 아무것도 선택하지 않았다면, 오리지널 기본 모델 리스트로 폴백
         if not selected_model_ids:
             selected_model_ids = ["gemini-2.5-pro", "gemini-2.5-flash", "gpt-4o", "gpt-4o-mini"]
@@ -491,7 +501,12 @@ class BlogExpert(BaseAIExpert):
 
             if provider == "openai" and not Config.GPT_API_KEY:
                 continue
-            if provider == "gemini" and not Config.GEMINI_API_KEY:
+                
+            gemini_key = Config.GEMINI_API_KEY
+            if post_type_config and post_type_config.get("gemini_api_key"):
+                gemini_key = post_type_config.get("gemini_api_key")
+                
+            if provider == "gemini" and not gemini_key:
                 continue
 
             try:
@@ -505,7 +520,7 @@ class BlogExpert(BaseAIExpert):
                     )
                     content = resp.choices[0].message.content.strip()
                 elif provider == "gemini":
-                    content = self._generate_with_gemini(model_name, system_message, base_prompt)
+                    content = self._generate_with_gemini(model_name, system_message, base_prompt, api_key=gemini_key)
                 else: continue
 
                 if self._validate_content(content):
