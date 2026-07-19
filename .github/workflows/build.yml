@@ -178,31 +178,32 @@ jobs:
           
       - name: Copy additional data files to app bundle
         run: |
-          APP_FRAMEWORKS="dist/BlogAutomation_Mac.app/Contents/Frameworks"
-          cp -R modules "$APP_FRAMEWORKS/"
-          cp -R config "$APP_FRAMEWORKS/"
-          cp -R utils "$APP_FRAMEWORKS/"
-          cp -R assets "$APP_FRAMEWORKS/"
-          cp version.json "$APP_FRAMEWORKS/"
+          # ✅ 코드의 _get_base_directory()가 Resources를 먼저 검색하므로 여기에 복사
+          APP_RESOURCES="dist/BlogAutomation_Mac.app/Contents/Resources"
+          cp -R modules "$APP_RESOURCES/"
+          cp -R config "$APP_RESOURCES/"
+          cp -R utils "$APP_RESOURCES/"
+          cp -R assets "$APP_RESOURCES/"
+          cp version.json "$APP_RESOURCES/"
           # 핵심 자동화 모듈 명시적 복사 (빌드 vs 개발 모드 동일 동작 보장)
-          cp naver_cafe_auto.py "$APP_FRAMEWORKS/"
-          cp naver_band_auto.py "$APP_FRAMEWORKS/"
-          cp naver_blog_auto.py "$APP_FRAMEWORKS/"
-          cp naver_blog_auto_image.py "$APP_FRAMEWORKS/"
-          cp naver_blog_post_finisher.py "$APP_FRAMEWORKS/"
-          # 이미지/사진 폴더 전체 복사 (개발자 모드와 동일하게 맞추기)
-          if [ -d "블로그사진폴더" ]; then cp -R 블로그사진폴더 "$APP_FRAMEWORKS/"; fi
-          if [ -d "밴드사진폴더" ]; then cp -R 밴드사진폴더 "$APP_FRAMEWORKS/"; fi
-          if [ -d "블로그_카페_수동이미지" ]; then cp -R 블로그_카페_수동이미지 "$APP_FRAMEWORKS/"; fi
-          if [ -d "카페사진폴더" ]; then cp -R 카페사진폴더 "$APP_FRAMEWORKS/"; fi
-          if [ -d "밴드_수동이미지" ]; then cp -R 밴드_수동이미지 "$APP_FRAMEWORKS/"; fi
-          if [ -d "수동이미지" ]; then cp -R 수동이미지 "$APP_FRAMEWORKS/"; fi
-          if [ -d "수동업로드" ]; then cp -R 수동업로드 "$APP_FRAMEWORKS/"; fi
-          if [ -d "default_images" ]; then cp -R default_images "$APP_FRAMEWORKS/"; fi
-          if [ -d "data" ]; then cp -R data "$APP_FRAMEWORKS/"; fi
-          if [ -d "drafts" ]; then cp -R drafts "$APP_FRAMEWORKS/"; fi
+          cp naver_cafe_auto.py "$APP_RESOURCES/"
+          cp naver_band_auto.py "$APP_RESOURCES/"
+          cp naver_blog_auto.py "$APP_RESOURCES/"
+          cp naver_blog_auto_image.py "$APP_RESOURCES/"
+          cp naver_blog_post_finisher.py "$APP_RESOURCES/"
+          # 사진/이미지 폴더 구조만 생성 (gitignore로 실제 사진 파일 없음 → 앱 실행 후 사용자가 채움)
+          mkdir -p "$APP_RESOURCES/블로그사진폴더"
+          mkdir -p "$APP_RESOURCES/밴드사진폴더"
+          mkdir -p "$APP_RESOURCES/블로그_카페_수동이미지"
+          mkdir -p "$APP_RESOURCES/카페사진폴더"
+          mkdir -p "$APP_RESOURCES/밴드_수동이미지"
+          mkdir -p "$APP_RESOURCES/수동이미지"
+          mkdir -p "$APP_RESOURCES/수동업로드"
+          mkdir -p "$APP_RESOURCES/default_images"
+          mkdir -p "$APP_RESOURCES/data"
+          mkdir -p "$APP_RESOURCES/drafts"
           # 개발자 모드 파일 삭제 (일반 사용자는 시리얼 인증 필요)
-          # rm -f "$APP_FRAMEWORKS/modules/.developer_mode"
+          # rm -f "$APP_RESOURCES/modules/.developer_mode"
           
           # 서명 갱신 (파일 복사로 인해 깨진 서명 복구)
           codesign --force --deep --sign - "dist/BlogAutomation_Mac.app"
