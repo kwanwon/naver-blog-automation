@@ -308,8 +308,12 @@ class GoogleSheetsReader:
         today_str = datetime.now().strftime("%Y-%m-%d")
         print(f"📅 오늘 날짜: {today_str}")
         
-        # 모든 시트 순회
-        for sheet_name, df in self.all_sheets_data.items():
+        # 모든 시트 순회 (첫 번째 탭은 건너뜀)
+        sheets = list(self.all_sheets_data.items())
+        if len(sheets) > 1:
+            sheets = sheets[1:]
+            
+        for sheet_name, df in sheets:
             if df is None or len(df.columns) == 0:
                 continue
                 
@@ -413,7 +417,11 @@ class GoogleSheetsReader:
         if not hasattr(self, 'all_sheets_data') or not self.all_sheets_data:
             self.all_sheets_data = {'Sheet1': self.data}
         
-        for sheet_name, df in self.all_sheets_data.items():
+        sheets = list(self.all_sheets_data.items())
+        if len(sheets) > 1:
+            sheets = sheets[1:]
+            
+        for sheet_name, df in sheets:
             if df is None or len(df.columns) == 0:
                 continue
                 
@@ -473,8 +481,12 @@ class GoogleSheetsReader:
         today_row = None
         current_df = None
         
-        # 모든 탭 순회하여 오늘 날짜가 있는 행 찾기
-        for sheet_name, df in self.all_sheets_data.items():
+        # 모든 탭 순회하여 오늘 날짜가 있는 행 찾기 (첫 번째 탭은 건너뜀)
+        sheets = list(self.all_sheets_data.items())
+        if len(sheets) > 1:
+            sheets = sheets[1:]
+            
+        for sheet_name, df in sheets:
             if df is None or len(df.columns) == 0:
                 continue
                 

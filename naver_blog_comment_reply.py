@@ -352,13 +352,43 @@ class NaverBlogCommentReply:
                     
                     # 인덱스 기반 클릭
                     self.driver.execute_script("arguments[0].click();", current_item_info['item'])
-                    time.sleep(2)
                     
-                    # 이동된 URL 캡처
-                    new_url = self.driver.current_url
+                    # 🆕 새 탭 열림 감지 (네이버 알림센터 클릭 시 새 탭으로 열리는 경우 대비)
+                    opened_new_tab = False
+                    original_handle = self.driver.current_window_handle
+                    
+                    # 클릭 후 잠시 대기 (새 탭이 열리길 기다림)
+                    time.sleep(1.5)
+                    
+                    if len(self.driver.window_handles) > 1:
+                        self.driver.switch_to.window(self.driver.window_handles[-1])
+                        opened_new_tab = True
+                        
+                        # 🔑 [핵심 수정] 탭 전환 즉시 window.alert/confirm 무력화
+                        # → "이동할 댓글이 존재하지 않습니다" 팝업이 아예 뜨지 않도록 원천 차단
+                        try:
+                            self.driver.execute_script(
+                                "window.alert = function(msg) { return; };"
+                                "window.confirm = function(msg) { return true; };"
+                            )
+                        except Exception:
+                            pass
+                        
+                        # alert가 이미 떠 있는 경우도 dismiss 시도
+                        try:
+                            self.driver.switch_to.alert.accept()
+                        except Exception:
+                            pass
+                        
+                        time.sleep(0.5)
+                    
+                    # URL 수집
+                    try:
+                        new_url = self.driver.current_url
+                    except Exception:
+                        new_url = current_url
                     
                     if new_url != current_url and "blog.naver.com" in new_url:
-                        # 🆕 URL과 타입을 함께 저장
                         unread_links.append({'url': new_url, 'type': current_type})
                         print(f"    ✅ URL 수집: {new_url[:50]}... (타입: {current_type})")
                         processed_count += 1
@@ -368,9 +398,19 @@ class NaverBlogCommentReply:
                         print(f"    ✅ URL 수집 (모바일→PC 변환): {pc_url[:50]}... (타입: {current_type})")
                         processed_count += 1
                     else:
-                        print(f"    ⚠️ 블로그 URL 아님: {new_url[:50]}...")
+                        print(f"    ⚠️ URL 수집 불가 (삭제된 댓글): {new_url[:50]}...")
+
+                    # 새 탭 닫기
+                    if opened_new_tab:
+                        try:
+                            self.driver.close()
+                        except Exception:
+                            pass
+                        try:
+                            self.driver.switch_to.window(self.driver.window_handles[0])
+                        except Exception:
+                            pass
                     
-                    # 알림 센터로 복귀
                     self.driver.get(notify_url)
                     time.sleep(2)
                     
@@ -448,17 +488,46 @@ class NaverBlogCommentReply:
             print(f"  ⏭️ 건너뜀 (남의 글: {blog_owner}) - 내 블로그가 아닙니다.")
             return False
         
-        print(f"  ✅ 내 블로그 확인됨 ({blog_owner})")
-        
         try:
+            # 🌟 핵심 방어 로직: 새로 열리는 탭에서 모든 alert 창을 무력화시킴
+            # 이렇게 하면 늦게 뜨는 '삭제된 댓글입니다' 팝업이 아예 뜨지 않아서 멈춤 현상이 사라짐
+            try:
+                self.driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
+                    'source': 'window.alert = function() { console.log("Alert suppressed"); };'
+                })
+            except:
+                pass
+
             # 1. 새 창 열기
             print(f"  🔗 링크 이동: {url[:60]}...")
             self.driver.execute_script(f"window.open('{url}', '_blank');")
-            time.sleep(4)  # 페이지 로딩 대기 시간 늘림
             
-            # 2. 새 창으로 전환
+            # 즉시 새 창으로 전환
+            time.sleep(1)
             new_window = [w for w in self.driver.window_handles if w != original_window][-1]
             self.driver.switch_to.window(new_window)
+            
+            # (이제 팝업이 뜨지 않으므로 팝업 감시 루프는 불필요하지만, 만약을 위해 짧게 대기)
+            time.sleep(3)
+            
+            # 🌟 새 창 팝업(Alert) 감지 (최대 6초간 폴링하며 감시)
+            # 페이지 로딩 도중 늦게 뜨는 팝업을 잡기 위함
+            alert_found = False
+            for _ in range(6):
+                try:
+                    alert = self.driver.switch_to.alert
+                    alert_text = alert.text
+                    print(f"    ⚠️ 새 창 팝업 감지됨: {alert_text}")
+                    alert.accept()
+                    print(f"    🚫 삭제되거나 존재하지 않는 댓글입니다. 건너뜁니다.")
+                    alert_found = True
+                    break
+                except:
+                    time.sleep(1)
+            
+            if alert_found:
+                return False
+                
             
             # 3. Iframe 전환 및 답글 작성 시도
             if self.switch_to_main_frame():
@@ -472,13 +541,24 @@ class NaverBlogCommentReply:
             print(f"❌ 답글 작업 중 오류: {e}")
             traceback.print_exc()
         finally:
-            # 4. 창 닫기 및 복귀
+            # 4. 남아있는 예기치 않은 팝업 창 모두 닫기 (이것이 탭 전환/닫기를 방해할 수 있음)
+            try:
+                alert = self.driver.switch_to.alert
+                alert.accept()
+            except:
+                pass
+                
+            # 5. 창 닫기 및 복귀 (안전하게 분리)
             try:
                 if len(self.driver.window_handles) > 1:
                     self.driver.close()
+            except Exception as e:
+                print(f"    ⚠️ 창 닫기 실패: {e}")
+                
+            try:
                 self.driver.switch_to.window(original_window)
-            except:
-                pass
+            except Exception as e:
+                print(f"    ⚠️ 원래 창 복귀 실패: {e}")
                 
         return success
 

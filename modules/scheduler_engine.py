@@ -175,7 +175,15 @@ class SmartScheduler:
         self.save_tasks()
         
         self.running = True
-        self.paused = False
+        
+        # 특별 예약(폴더 감지) 중이면 시작과 동시에 일시정지로 둠
+        if getattr(self, 'special_reservation_running', False):
+            self.paused = True
+            self.paused_by_special = True
+            print("⚠️ 특별 예약(폴더 감지) 작동 중이므로 예약 포스팅은 일시정지 상태로 대기합니다.")
+        else:
+            self.paused = False
+            
         self.thread = threading.Thread(target=self._run_playlist, daemon=True)
         self.thread.start()
         print("▶️ 플레이리스트 스케줄러 시작됨")
@@ -197,6 +205,10 @@ class SmartScheduler:
         
         if not self.paused:
             print("ℹ️ 이미 실행 중입니다.")
+            return
+            
+        if getattr(self, 'paused_by_special', False):
+            print("⚠️ 특별 예약(폴더 감지)이 작동 중이므로 임의로 재개할 수 없습니다. (시간 종료 시 자동 재개)")
             return
         
         self.paused = False
@@ -301,17 +313,32 @@ class SmartScheduler:
             
             try:
                 # 작업 실행 콜백 호출
+                success = True
                 if self.on_task_executed:
-                    self.on_task_executed(task)
+                    result = self.on_task_executed(task)
+                    if result is False:
+                        success = False
                 
-                task.is_completed = True
-                task.last_status = 'completed'
-                task.last_run_date = datetime.now().strftime("%Y-%m-%d")
-                print(f"✅ [{self.current_index + 1}/{len(self.tasks)}] 작업 완료: [{task.platform.upper()}] {task.task_type}")
-                
+                # _run_task 등에서 이미 실패 처리(failed)를 한 경우 덮어쓰지 않도록 방어
+                if task.last_status == 'failed':
+                    success = False
+
+                if success:
+                    task.is_completed = True
+                    task.last_status = 'completed'
+                    task.last_run_date = datetime.now().strftime("%Y-%m-%d")
+                    print(f"✅ [{self.current_index + 1}/{len(self.tasks)}] 작업 완료: [{task.platform.upper()}] {task.task_type}")
+                else:
+                    print(f"⚠️ [{self.current_index + 1}/{len(self.tasks)}] 작업 실패 반환됨: [{task.platform.upper()}] {task.task_type}")
+                    # 실패 시 is_completed를 True로 해야 다음 스케줄로 넘어감 (단, 상태는 failed 유지)
+                    task.is_completed = True
+                    task.last_status = 'failed'
+                    task.last_run_date = datetime.now().strftime("%Y-%m-%d")
+                    
             except Exception as e:
-                print(f"❌ 작업 실행 중 오류: {e}")
+                print(f"❌ 작업 실행 중 치명적 오류: {e}")
                 task.last_status = 'failed'
+                task.is_completed = True
             
             finally:
                 with self.current_task_lock:

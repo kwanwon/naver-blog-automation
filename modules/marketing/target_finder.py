@@ -5,6 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from datetime import datetime, timedelta
 
 class TargetFinder:
     """
@@ -33,8 +34,12 @@ class TargetFinder:
         """
         try:
             encoded_keyword = urllib.parse.quote(keyword)
-            # 정확도순 정렬 (orderBy=simul) - 관련성 높은 글 우선
-            url = f"https://section.blog.naver.com/Search/Post.naver?pageNo=1&rangeType=ALL&orderBy=simul&keyword={encoded_keyword}"
+            # 최근 1개월 이내 필터 적용 (30일 전 ~ 오늘)
+            end_date = datetime.now().strftime("%Y-%m-%d")
+            start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+            
+            # 정확도순 정렬 (orderBy=simul), 기간 설정 (rangeType=PERIOD)
+            url = f"https://section.blog.naver.com/Search/Post.naver?pageNo=1&rangeType=PERIOD&orderBy=simul&startDate={start_date}&endDate={end_date}&keyword={encoded_keyword}"
             self.driver.get(url)
             time.sleep(2)
             
@@ -89,8 +94,11 @@ class TargetFinder:
         """
         try:
             encoded_keyword = urllib.parse.quote(keyword)
-            # 카페 전체 글 검색 (정확도순)
-            url = f"https://section.cafe.naver.com/ca-fe/home/search/articles?q={encoded_keyword}&od=1&pr=7&p_dt=20240101"
+            # 카페 최근 1개월 이내 필터 적용 (30일 전)
+            start_date_cafe = (datetime.now() - timedelta(days=30)).strftime("%Y%m%d")
+            
+            # 카페 전체 글 검색 (정확도순 od=1, 직접입력 pr=7, 시작일 p_dt)
+            url = f"https://section.cafe.naver.com/ca-fe/home/search/articles?q={encoded_keyword}&od=1&pr=7&p_dt={start_date_cafe}"
             self.driver.get(url)
             time.sleep(3)
             

@@ -27,15 +27,18 @@ class NaverBandCommentReply:
     - 이미 답글 단 댓글은 스킵
     """
     
-    def __init__(self, driver, gpt_handler=None, base_dir=None, instruction=None):
+    def __init__(self, driver, ai_handler=None, base_dir=None, instruction=None, gpt_handler=None):
         self.driver = driver
-        self.gpt_handler = gpt_handler
+        self.ai_handler = ai_handler or gpt_handler
         self.base_dir = base_dir
         self.instruction = instruction
         self.stop_flag = False
         
         # 운영자/관장 키워드 (스킵 대상)
-        self.MANAGER_KEYWORDS = ['관장', '사범', '매니저', '리더', '공동리더', '운영자', '이관원', '부평라이온']
+        self.MANAGER_KEYWORDS = [
+            '관장', '관장님', '사범', '사범님', '매니저', '리더', '공동리더', 
+            '운영자', '지도자', '상담사', '선생', '선생님', '이관원', '부평라이온'
+        ]
         
         # 스팸 키워드 (🔧 개선: '홍보' 대신 더 구체적인 패턴 사용)
         self.SPAM_KEYWORDS = [
@@ -490,10 +493,11 @@ class NaverBandCommentReply:
             # 3. 답글 생성
             if is_spam:
                 reply = self.SPAM_REPLY
-            elif use_ai and self.gpt_handler:
-                print(f"  🤖 AI 답글 생성 중...")
-                reply = self._generate_ai_reply(comment_text)
-                print(f"  💬 AI 답글: {reply}")
+            elif use_ai and self.ai_handler:
+                reply = self.ai_handler.generate_platform_content(
+                    topic=f"다음 밴드 댓글에 대해 학부모님/관원에게 답변하듯 따뜻하고 긍정적인 답글을 1-2문장으로 작성해주세요: '{comment_text}'",
+                    platform='idle'
+                ).get('content', self._get_next_default_reply())
             else:
                 reply = self._get_next_default_reply()
             
@@ -515,14 +519,10 @@ class NaverBandCommentReply:
             except:
                 pass
             
-            # 클립보드로 답글 입력
-            try:
-                pyperclip.copy(reply)
-                input_box.send_keys(Keys.COMMAND, 'v')
-            except:
-                # 이모지 제거 후 직접 입력
-                clean_reply = self._remove_emoji(reply)
-                input_box.send_keys(clean_reply)
+            # 클립보드 붙여넣기(Cmd+V)는 백그라운드/셀레니움 환경에서 조용히 실패하여 빈 내용이 날아가는 원인이 됨.
+            # 이모지를 제거하고 직접 send_keys로 확실하게 입력함.
+            clean_reply = self._remove_emoji(reply)
+            input_box.send_keys(clean_reply)
             
             time.sleep(1.0)
             

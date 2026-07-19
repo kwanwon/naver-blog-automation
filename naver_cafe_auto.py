@@ -13,6 +13,63 @@ class NaverCafeAutomation:
     def __init__(self, driver):
         self.driver = driver
         
+    def _intercept_file_input(self):
+        """input[type=file]의 click()을 가로채서 Finder가 열리지 않게 설정"""
+        self.driver.execute_script("""
+            window.__fileInputIntercepted = null;
+            var origClick = HTMLInputElement.prototype.click;
+            window.__origInputClick = origClick;
+            HTMLInputElement.prototype.click = function() {
+                if (this.type === 'file') {
+                    window.__fileInputIntercepted = this;
+                    return;
+                }
+                return origClick.apply(this, arguments);
+            };
+        """)
+
+    def _get_intercepted_input(self, max_wait=10):
+        """가로챈 input[type=file] 요소를 가져오고 원래 click 복원"""
+        file_input = None
+        for _ in range(max_wait):
+            file_input = self.driver.execute_script("""
+                var el = window.__fileInputIntercepted;
+                if (el && !el.parentNode) {
+                    document.body.appendChild(el);
+                }
+                return el;
+            """)
+            if file_input:
+                break
+            import time
+            time.sleep(0.3)
+        self.driver.execute_script("""
+            if (window.__origInputClick) {
+                HTMLInputElement.prototype.click = window.__origInputClick;
+            }
+        """)
+        return file_input
+
+    def _send_file_to_input(self, file_input, file_path):
+        """input[type=file]에 파일 경로를 send_keys로 전달"""
+        self.driver.execute_script("""
+            var el = arguments[0];
+            if (!el.parentNode) {
+                document.body.appendChild(el);
+            }
+            el.style.display = 'block';
+            el.style.visibility = 'visible';
+            el.style.opacity = '1';
+            el.style.width = '1px';
+            el.style.height = '1px';
+            el.style.position = 'absolute';
+            el.style.top = '0';
+            el.style.left = '0';
+        """, file_input)
+        import time
+        time.sleep(0.1)
+        file_input.send_keys(file_path)
+        
     def post_to_cafe(self, cafe_url: str, menu_id: str, title: str, content: str, image_paths: list = None):
         """
         네이버 카페에 글을 게시합니다.
@@ -179,57 +236,32 @@ class NaverCafeAutomation:
             if image_paths and len(image_paths) > 0:
                 print(f"🖼️ 이미지 업로드 중 ({len(image_paths)}개)...")
                 try:
-                    # 1. 먼저 기존의 파일 입력 필드 탐색 및 활성화
-                    file_input = self.driver.execute_script("""
-                        function findFileInput() {
-                            return document.querySelector('input[type="file"][accept*="image"]') || 
-                                   document.querySelector('input[type="file"].se-ff-file-input') || 
-                                   document.querySelector('.Editor_footer__button_image input') ||
-                                   document.querySelector('input.image_upload_input') ||
-                                   document.querySelector('input[type="file"]');
-                        }
-                        
-                        let input = findFileInput();
-                        
-                        // 만약 입력 필드가 없다면 사진 버튼을 한번 클릭해서 생성 시도 (시스템 창 방지 위해 클릭 후 즉시 리턴)
-                        if (!input) {
-                            let imgBtn = document.querySelector('button.se-image-toolbar-button') || 
-                                         document.querySelector('button[title*="사진"]') || 
-                                         document.querySelector('button[title*="이미지"]') ||
-                                         document.querySelector('.Editor_footer__button_image button');
-                            if (imgBtn) {
-                                // 직접 클릭하면 시스템 창이 뜰 수 있으므로, 해당 버튼의 연결된 input이 있는지 혹은 이벤트를 통해 생성되는지 확인
-                                // 여기서는 일반적인 방식으로는 버튼을 눌러야 생성되기도 함
-                            }
-                        }
-                        
-                        if (input) {
-                            input.style.display = 'block';
-                            input.style.visibility = 'visible';
-                            input.style.opacity = '1';
-                            input.style.position = 'fixed';
-                            input.style.top = '0';
-                            input.style.left = '0';
-                            input.style.width = '100px';
-                            input.style.height = '100px';
-                            input.style.zIndex = '9999';
-                        }
-                        return input;
-                    """)
+                    # 1. 가로채기 설정 (Finder 열림 방지)
+                    self._intercept_file_input()
+                    
+                    # 2. 사진 버튼 클릭 (시스템 창 열리지 않고 가로채짐)
+                    print("ℹ️ 사진 버튼 클릭 (Finder 없이 모드 시도)...")
+                    try:
+                        img_btn = self.driver.find_element(By.CSS_SELECTOR, "button.se-image-toolbar-button, button[title*='사진'], .Editor_footer__button_image button")
+                        img_btn.click()
+                    except:
+                        self.driver.execute_script("document.querySelector('button.se-image-toolbar-button, button[title*=\"사진\"], .Editor_footer__button_image button')?.click();")
+                    time.sleep(0.5)
+                    
+                    # 3. 가로챈 input 획득
+                    file_input = self._get_intercepted_input()
                     
                     if not file_input:
-                        print("ℹ️ 파일 필드를 찾지 못해 사진 버튼 클릭 시도...")
-                        try:
-                            # 텍스트나 타이틀로 사진 버튼 찾기
-                            img_btn = self.driver.find_element(By.CSS_SELECTOR, "button.se-image-toolbar-button, button[title*='사진'], .Editor_footer__button_image button")
-                            img_btn.click()
-                            time.sleep(1)
-                            file_input = self.driver.find_element(By.CSS_SELECTOR, "input[type='file']")
-                        except: pass
-                    
+                        print("⚠️ 가로채기 실패, DOM에서 직접 검색...")
+                        inputs = self.driver.find_elements(By.CSS_SELECTOR, 'input[type="file"]')
+                        if inputs:
+                            file_input = inputs[-1]
+                            
                     if file_input:
-                        file_input.send_keys("\n".join(image_paths))
-                        print("📤 이미지 파일 전송 완료. 팝업 대기...")
+                        import os
+                        abs_paths = [os.path.abspath(p) for p in image_paths]
+                        self._send_file_to_input(file_input, "\n".join(abs_paths))
+                        print(f"✅ 이미지 파일 전송 성공 (Finder 없이)")
                         time.sleep(3)
                         
                         # 📸 사진 첨부 방식 팝업 처리
@@ -303,6 +335,7 @@ class NaverCafeAutomation:
                 "button.BaseButton.type_filled:not(.btn_save)"
             ]
             
+            submit_btn = None
             for selector in submit_selectors:
                 try:
                     btns = self.driver.find_elements(By.CSS_SELECTOR, selector)

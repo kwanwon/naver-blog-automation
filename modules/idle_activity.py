@@ -3,6 +3,7 @@ import random
 import json
 import os
 import threading
+import hashlib
 from datetime import datetime
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -57,8 +58,9 @@ class IdleActivity:
         self.replied_comments_path = os.path.join(self.base_dir, 'config', 'replied_comments.json')
         self.replied_comments = self._load_replied_comments()
         
-        # 처리한 이웃글 (이번 세션 동안만 중복 방지)
-        self.processed_posts = set()
+        # 처리한 이웃글 (영구 중복 방지)
+        self.visited_posts_path = os.path.join(self.base_dir, 'config', 'visited_posts.json')
+        self.visited_posts = self._load_visited_posts()
         
         # 중단 플래그
         self.is_running = False
@@ -85,6 +87,26 @@ class IdleActivity:
                 json.dump(self.replied_comments, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"⚠️ 저장 실패: {e}")
+            
+    def _load_visited_posts(self):
+        try:
+            if os.path.exists(self.visited_posts_path):
+                with open(self.visited_posts_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    # 7일(604800초) 지난 기록은 삭제
+                    cutoff = datetime.now().timestamp() - (7 * 24 * 60 * 60)
+                    return {k: v for k, v in data.items() if v.get('timestamp', 0) > cutoff}
+            return {}
+        except Exception:
+            return {}
+            
+    def _save_visited_posts(self):
+        try:
+            os.makedirs(os.path.dirname(self.visited_posts_path), exist_ok=True)
+            with open(self.visited_posts_path, 'w', encoding='utf-8') as f:
+                json.dump(self.visited_posts, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"⚠️ 방문 기록 저장 실패: {e}")
     
     def _get_next_reply_phrase(self):
         phrase = self.REPLY_PHRASES[self.phrase_index]
@@ -99,26 +121,20 @@ class IdleActivity:
     def _generate_ai_comment(self, post_title, post_content_preview):
         """글 내용을 읽고 관련된 댓글 생성 + 블로그 방문 초대"""
         try:
-            prompt = f"""다음 블로그 글에 대한 친근하고 따뜻한 댓글을 작성해주세요.
+            prompt = f"""다음 블로그 글을 읽은 이웃이 짧은 공감 댓글을 한 문장으로 남깁니다.
 
 제목: {post_title}
-내용: {post_content_preview[:300]}
+내용: {post_content_preview[:200]}
 
-📋 규칙 (중요):
-1. **역할 정의**: 당신은 지금 이웃의 블로그에 놀러 온 **'방문자(이웃)'**입니다. 절대 글의 주인인 것처럼 행동하지 마세요.
-2. **절대 금지어**: "문의해 주세요", "상담 가능합니다", "체험 수업", "방문해 주세요" 등 본인의 체육관 홍보나 영업 멘트를 **절대** 하지 마세요. 
-3. 글의 내용을 구체적으로 언급하며 공감해주세요. (예: "수련하시는 모습이 멋지네요" X -> "아이들이 뛰는 모습이 정말 활기차 보이네요!" O)
-4. "감사합니다", "잘 보고 갑니다" 같은 상투적인 인사로 시작하지 마세요. 바로 본론(감상)부터 말하세요.
-5. 마치 친구의 글을 읽은 것처럼 자연스럽게 반응해주세요.
-6. 마지막에 "자주 소통해요~" 또는 "좋은 하루 되세요^^" 같은 가벼운 인사를 덧붙여주세요.
-7. 전체 50~100자 내외.
+📋 규칙:
+1. 나는 다른 이웃의 블로그에 방문한 이웃입니다. 글 주인처럼 에 하지 마세요.
+2. 체육관 홍보나 영업 멘트는 절대 금지.
+3. 지급 읽은 글의 내용 한 가지를 구체적으로 언급하며 공감하세요.
+4. 한 문장, 최대 50자 이내로 작성하세요. (중요: 반드시 1문장만!)
+5. "안녕하세요", "감사합니다", "잘 보고 갑니다" 로 시작하지 마세요.
 
-📌 절대 금지:
-- 상담 유도 ("궁금한 점 있으면 연락주세요" 등 절대 금지)
-- 상대방이 나에게 해준 게 없는데 "감사합니다"라고 말하기 (나는 방문자임)
-
-📌 예시:
-"오늘 [수련내용/활동] 하시는 모습 보니 정말 열정이 대단하시네요! 아이들 표정에서 즐거움이 느껴져서 저까지 기분이 좋아집니다. 앞으로도 자주 소통하며 지내요~"
+📌 예시 (50자 이내):
+"설악산 대청봉 10시간 코스를 다 오셨다니 정말 대단하시네요! 사진만봐도 고생이 느껴진다요~"
 """
             result = self.ai_handler.generate_platform_content(
                 topic=prompt,
@@ -126,17 +142,15 @@ class IdleActivity:
             )
             comment = result.get('content', '')
             
-            # 정리: 문장 단위로 자르기 (중인 잘림 방지)
-            if len(comment) > 150:
-                # 마침표(。. ! ?) 기준으로 안전하게 자르기
-                cut = comment[:150]
-                for end_char in ['^^', '~', '!', '?', '.', '。']:
-                    last_idx = cut.rfind(end_char)
-                    if last_idx > 60:  # 적어도 60자 이상이어야 자르기
-                        comment = cut[:last_idx + len(end_char)]
+            # 50자 초과 시 첫 문장만 사용
+            if len(comment) > 80:
+                for end_char in ['!', '~', '^^', '?', '.']:
+                    last_idx = comment[:80].rfind(end_char)
+                    if last_idx > 20:
+                        comment = comment[:last_idx + len(end_char)]
                         break
                 else:
-                    comment = cut  # 마침 문자 못 찾으면 그대로
+                    comment = comment[:60].rstrip() + '~'
             
             return comment.strip()
         except Exception:
@@ -180,18 +194,23 @@ class IdleActivity:
                                 if "off" not in btn_class:
                                     continue
                                     
-                                # 고유 ID 생성
+                                # 고유 ID 생성 (결정론적 해시 사용)
                                 try:
                                     title_elem = item.find_element(By.CSS_SELECTOR, "a.desc_inner, .text")
-                                    post_id = str(hash(title_elem.text[:50]))
+                                    title_text = title_elem.text[:50]
+                                    post_id = hashlib.md5(title_text.encode('utf-8')).hexdigest()
                                 except:
-                                    post_id = str(i)
+                                    post_id = f"unknown_{i}_{datetime.now().strftime('%Y%m%d%H')}"
                                 
-                                if post_id in self.processed_posts:
+                                if post_id in self.visited_posts:
                                     continue
                                 
                                 target_item = item
-                                self.processed_posts.add(post_id)
+                                self.visited_posts[post_id] = {
+                                    'title': title_text if 'title_text' in locals() else 'unknown',
+                                    'timestamp': datetime.now().timestamp()
+                                }
+                                self._save_visited_posts()
                                 break
                                 
                             except:
@@ -259,7 +278,17 @@ class IdleActivity:
                         if do_like:
                             try:
                                 like_btn = target_item.find_element(By.CSS_SELECTOR, ".u_likeit_button")
-                                self.driver.execute_script("arguments[0].click();", like_btn)
+                                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", like_btn)
+                                time.sleep(0.5)
+                                try:
+                                    like_btn.click()
+                                except:
+                                    try:
+                                        from selenium.webdriver.common.action_chains import ActionChains
+                                        icon = like_btn.find_element(By.CSS_SELECTOR, ".u_likeit_icon")
+                                        ActionChains(self.driver).move_to_element(icon).click().perform()
+                                    except:
+                                        self.driver.execute_script("arguments[0].click();", like_btn)
                                 print("  ❤️ 좋아요 클릭")
                                 time.sleep(1)
                             except Exception as e:
@@ -425,27 +454,38 @@ class IdleActivity:
                 pass
             return False
 
-    def _has_my_comment(self):
+    def _has_my_comment(self, my_names=None):
         """현재 열린 글에 내 댓글이 이미 있는지 확인"""
         try:
-            # 네이버 블로그 댓글 영역에서 내 댓글 확인
-            # 내 댓글에는 수정/삭제 버튼이 있거나, is-mine 또는 u_cbox_mine 클래스가 있음
+            # [1차] CSS 클래스 기반 (삭제 버튼 등 내 댓글 전용 요소)
             my_comment_selectors = [
-                ".u_cbox_comment.u_cbox_mine",        # 내 댓글 클래스
-                ".cbox_comment_box.is_mine",           # 다른 형태
-                ".u_cbox_info_delete",                 # 삭제 버튼 = 내 댓글 증거
-                "button.u_cbox_btn_delete",            # 삭제 버튼
-                ".coment_box .u_cbox_btn_moderate",    # 관리 버튼 = 내 댓글
+                ".u_cbox_comment.u_cbox_mine",
+                ".u_cbox_info_delete",
+                "button.u_cbox_btn_delete",
             ]
             for sel in my_comment_selectors:
                 elements = self.driver.find_elements(By.CSS_SELECTOR, sel)
                 if elements:
-                    print(f"  ℹ️ 이미 내 댓글 있음 (감지: {sel}) → 스킵")
+                    print(f"  ℹ️ 이미 내 댓글 있음 (CSS 감지: {sel}) → 스킵")
                     return True
+            
+            # [2차] 댓글 작성자 닉네임 텍스트 직접 스캔 (더 확실한 방법)
+            if my_names:
+                name_elements = self.driver.find_elements(By.CSS_SELECTOR, ".u_cbox_info_name span, .u_cbox_nick")
+                for el in name_elements:
+                    try:
+                        el_text = el.text.strip()
+                        for name in my_names:
+                            if name and name.strip() and name.strip() in el_text:
+                                print(f"  ℹ️ '{name}' 니코네임 댓글 발견 → 스킵")
+                                return True
+                    except:
+                        continue
+            
             return False
         except Exception as e:
             print(f"  ⚠️ 내 댓글 확인 중 오류 (무시): {e}")
-            return False  # 확인 불가 시 댓글 달기 시도
+            return False
 
     def _write_comment_internal(self, text):
         """현재 활성화된 페이지(탭)에서 공감 클릭 + 댓글 작성"""
@@ -463,35 +503,69 @@ class IdleActivity:
             except:
                 pass
             
-            # ✅ [NEW] 내 댓글 이미 있는지 확인 → 있으면 바로 종료
-            if self._has_my_comment():
+            # ✅ [강화] 내 댓글 이미 있는지 확인 → 있으면 바로 종료
+            # 설정에서 내 아이디/닉네임 가져오기
+            my_names = []
+            if hasattr(self, 'settings') and self.settings:
+                for key in ['naver_blog_id', 'naver_id', 'username', 'blogger_name']:
+                    val = self.settings.get(key, '').strip()
+                    if val:
+                        my_names.append(val)
+            if self._has_my_comment(my_names=my_names):
                 self.driver.switch_to.default_content()
                 return False  # 댓글 안 달고 정상 종료
             
-            # 1️⃣ 공감(좋아요) 클릭 - 'off' 상태면 클릭
-
-            try:
-                like_btn = self.driver.find_element(By.CSS_SELECTOR, ".u_likeit_button")
-                btn_class = like_btn.get_attribute("class") or ""
-                if "off" in btn_class:
-                    # 🔧 더 안정적인 클릭: dispatchEvent로 마우스 이벤트 시뮬레이션
-                    self.driver.execute_script("""
-                        var btn = arguments[0];
-                        ['mousedown', 'mouseup', 'click'].forEach(function(evtType) {
-                            var event = new MouseEvent(evtType, {
-                                view: window,
-                                bubbles: true,
-                                cancelable: true
-                            });
-                            btn.dispatchEvent(event);
-                        });
-                    """, like_btn)
-                    print("  ❤️ 글 공감 클릭")
-                    time.sleep(1)
-                else:
-                    print("  ℹ️ 이미 공감한 글")
-            except Exception as e:
-                print(f"  ⚠️ 공감 버튼 못 찾음: {e}")
+            # 1️⃣ 공감(좋아요) 클릭 - 게시글 본문 하단의 공감 버튼
+            like_clicked = False
+            # 댓글 좋아요(u_cbox)가 아닌 본문 좋아요(u_likeit_module)를 명확히 찾기
+            for like_sel in [".u_likeit_module .u_likeit_button", "div.post_btn_wrap .u_likeit_button", "a.u_likeit_button"]:
+                try:
+                    like_btns = self.driver.find_elements(By.CSS_SELECTOR, like_sel)
+                    for like_btn in like_btns:
+                        btn_class = like_btn.get_attribute("class") or ""
+                        
+                        # 댓글용 좋아요 버튼 제외
+                        if "u_cbox" in btn_class:
+                            continue
+                            
+                        # aria-pressed나 클래스를 통해 이미 공감했는지 확인
+                        is_on = "on" in btn_class.split() or like_btn.get_attribute("aria-pressed") == "true"
+                        
+                        if not is_on:
+                            # 화면 중앙에 오도록 스크롤
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", like_btn)
+                            time.sleep(1)
+                            
+                            # 순수 JS 클릭 대신 실제 클릭 이벤트 우선 시도
+                            try:
+                                like_btn.click()
+                                print("  ❤️ 글 본문 공감 클릭 성공 (일반 클릭)")
+                            except:
+                                try:
+                                    # 내부의 하트 아이콘을 직접 마우스로 클릭 (스샷 부분 직접 클릭 효과)
+                                    from selenium.webdriver.common.action_chains import ActionChains
+                                    icon = like_btn.find_element(By.CSS_SELECTOR, ".u_likeit_icon")
+                                    ActionChains(self.driver).move_to_element(icon).click().perform()
+                                    print("  ❤️ 글 본문 공감 클릭 성공 (아이콘 정밀 클릭)")
+                                except:
+                                    # 최후의 수단으로 JS 클릭
+                                    self.driver.execute_script("arguments[0].click();", like_btn)
+                                    print("  ❤️ 글 본문 공감 클릭 성공 (JS 클릭)")
+                                    
+                            like_clicked = True
+                            time.sleep(1)
+                            break
+                        else:
+                            print("  ℹ️ 이미 공감한 글")
+                            like_clicked = True
+                            break
+                    if like_clicked:
+                        break
+                except Exception as e:
+                    continue
+                    
+            if not like_clicked:
+                print("  ⚠️ 공감 버튼 못 찾음 (스킵)")
             
             # 페이지 끝으로 스크롤 (댓글 영역 보이게)
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")

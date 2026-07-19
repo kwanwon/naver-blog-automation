@@ -484,7 +484,7 @@ class BlogWriterApp:
 
         if not hasattr(self, 'blog_watcher') or not self.blog_watcher:
             from modules.drive_watcher import DriveWatcher
-            self.blog_watcher = DriveWatcher(debounce_seconds=60)
+            self.blog_watcher = DriveWatcher(debounce_seconds=100)
             self.blog_watcher.set_callback(self._on_blog_drive_detected)
 
         if not self.blog_watcher.is_running:
@@ -525,7 +525,7 @@ class BlogWriterApp:
 
         if not hasattr(self, 'cafe_watcher') or not self.cafe_watcher:
             from modules.drive_watcher import DriveWatcher
-            self.cafe_watcher = DriveWatcher(debounce_seconds=60)
+            self.cafe_watcher = DriveWatcher(debounce_seconds=100)
             self.cafe_watcher.set_callback(self._on_cafe_drive_detected)
 
         if not self.cafe_watcher.is_running:
@@ -711,12 +711,31 @@ class BlogWriterApp:
                 driver = self.get_or_create_driver()
                 cafe_auto = NaverCafeAutomation(driver)
                 
+                # 🌟 카페 감지모드 이미지 후처리 (워터마크, EXIF, 각도 조절 등)
+                upload_files = list(isolated_files)
+                if upload_files:
+                    try:
+                        from modules.news_poster.image_handler import ImageHandler
+                        image_handler = ImageHandler(self.settings)
+                        image_handler.cleanup()
+                        processed_folder = image_handler.process_and_watermark(upload_files)
+                        if processed_folder and os.path.exists(processed_folder):
+                            valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+                            upload_files = [
+                                os.path.join(processed_folder, f)
+                                for f in os.listdir(processed_folder)
+                                if os.path.splitext(f)[1].lower() in valid_exts and not f.startswith('.')
+                            ]
+                            print(f"✅ 카페 감지모드 이미지 후처리(워터마크/EXIF/GPS) 완료: {len(upload_files)}개")
+                    except Exception as e:
+                        print(f"⚠️ 카페 감지모드 이미지 후처리 중 오류 발생: {e}")
+                
                 success = cafe_auto.post_to_cafe(
                     cafe_url=self.settings.get('cafe_url', ''),
                     menu_id=self.settings.get('cafe_menu_id', ''),
                     title=title,
                     content=content,
-                    image_paths=isolated_files
+                    image_paths=upload_files
                 )
                 
                 if success:
@@ -1467,6 +1486,7 @@ class BlogWriterApp:
                 return
             
             idle_module = IdleActivity(driver, self.ai_handler, self.base_dir)
+            idle_module.settings = self.settings  # 내 니코네임 중복 댓글 방지용
             use_ai_reply = self.settings.get('idle_use_ai_reply', False)
             check_interval = self.settings.get('idle_comment_check_interval', 300)
             
@@ -3404,7 +3424,7 @@ class BlogWriterApp:
                 # 🟢 카페: 현재 시간 기준 시간대 자동 판별 (예약 없음)
                 cafe_task_type = self._get_time_based_task_type()
                 print(f"🤖 [카페] '{topic}' 주제로 내용 생성 중... (시간대: {cafe_task_type})")
-                result = self.ai_handler.generate_platform_content(topic, platform='cafe', task_type=cafe_task_type, target_time=reservation_time)
+                result = self.ai_handler.generate_platform_content(topic, platform='cafe', task_type=cafe_task_type, target_time=None)
                 
                 if not result or not result.get('content'):
                     print("❌ [카페] AI 내용 생성에 실패했습니다.")
@@ -3431,6 +3451,23 @@ class BlogWriterApp:
                     print(f"🤖 카페 예약 이미지 삽입 모드: {image_mode}")
                     images = self.get_images_to_upload(platform='cafe')
                     
+                # 🌟 카페 이미지 후처리 (워터마크, EXIF, 각도 조절 등)
+                if images:
+                    try:
+                        from modules.news_poster.image_handler import ImageHandler
+                        image_handler = ImageHandler(self.settings)
+                        image_handler.cleanup()
+                        processed_folder = image_handler.process_and_watermark(images)
+                        if processed_folder and os.path.exists(processed_folder):
+                            valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+                            images = [
+                                os.path.join(processed_folder, f)
+                                for f in os.listdir(processed_folder)
+                                if os.path.splitext(f)[1].lower() in valid_exts and not f.startswith('.')
+                            ]
+                            print(f"✅ 카페 예약 이미지 후처리(워터마크/EXIF/GPS) 완료: {len(images)}개")
+                    except Exception as e:
+                        print(f"⚠️ 카페 예약 이미지 후처리 중 오류 발생: {e}")
                 success = cafe_auto.post_to_cafe(cafe_url, menu_id, result.get('title', '제목 없음'), result.get('content', ''), image_paths=images)
                 
                 if success:
@@ -3454,6 +3491,7 @@ class BlogWriterApp:
             elif task.platform == 'idle':
                 # 유휴 활동 (방문소통 / 댓글소통 분리)
                 idle_module = IdleActivity(self.get_or_create_driver(), self.ai_handler, self.base_dir)
+                idle_module.settings = self.settings
                 
                 # 설정값 로드
                 do_like = self.settings.get('idle_do_like', True)
@@ -3568,6 +3606,7 @@ class BlogWriterApp:
                     print(f"📊 이웃방문 설정: 횟수={visit_count}, 좋아요={do_like}, AI={use_ai}")
                     
                     idle_module = IdleActivity(driver, self.ai_handler, self.base_dir)
+                    idle_module.settings = self.settings
                     success = idle_module.visit_and_interact(
                         count=visit_count,
                         do_like=do_like,
@@ -5264,7 +5303,10 @@ class BlogWriterApp:
 
         self.page.snack_bar = ft.SnackBar(ft.Text("🚀 순차적 자동 소통을 시작합니다..."), bgcolor=ft.Colors.PURPLE_600)
         self.page.snack_bar.open = True
-        self.page.update()
+        try:
+            self.page.update()
+        except Exception:
+            pass
         
         def batch_process():
             total = len(self.current_search_results)
@@ -5289,7 +5331,10 @@ class BlogWriterApp:
                 
             self.page.snack_bar = ft.SnackBar(ft.Text("✅ 모든 작업이 완료되었습니다!"), bgcolor=ft.Colors.GREEN_600)
             self.page.snack_bar.open = True
-            self.page.update()
+            try:
+                self.page.update()
+            except Exception:
+                pass
 
         threading.Thread(target=batch_process, daemon=True).start()
 
@@ -5304,7 +5349,10 @@ class BlogWriterApp:
         if self.page:
             self.page.snack_bar = ft.SnackBar(ft.Text(f"🤖 '{title}' 분석 및 댓글 작성 중..."), duration=2000)
             self.page.snack_bar.open = True
-            self.page.update()
+            try:
+                self.page.update()
+            except Exception:
+                pass
         
         # Driver check
         driver = self.get_or_create_driver()
@@ -5345,7 +5393,10 @@ class BlogWriterApp:
             if not reply_text:
                 self.page.snack_bar = ft.SnackBar(ft.Text("❌ 댓글 생성 실패"), bgcolor=ft.Colors.RED)
                 self.page.snack_bar.open = True
-                self.page.update()
+                try:
+                    self.page.update()
+                except Exception:
+                    pass
                 return
 
             # 2. Post Comment
@@ -9936,7 +9987,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         
         add_time_btn = ft.ElevatedButton("➕ 시간 추가", on_click=add_special_time_row, height=35)
         
-        def toggle_special_reservation(e):
+        async def toggle_special_reservation(e):
             """특별 밴드 감지 활성화/비활성화"""
             enabled = special_enabled_checkbox.value
             
@@ -11516,6 +11567,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 
                 try:
                     idle_module = IdleActivity(self.get_or_create_driver(), self.ai_handler, self.base_dir)
+                    idle_module.settings = self.settings
                     
                     # 실행 상태 전달을 위해 idle_module에 플래그 설정
                     idle_module.is_running = True
@@ -13350,7 +13402,7 @@ if __name__ == "__main__":
                 os.path.join(os.getcwd(), 'version.json')
             ]
             
-            for path in possible_paths:
+            for path in possible_paths: 
                 if os.path.exists(path):
                     with open(path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
