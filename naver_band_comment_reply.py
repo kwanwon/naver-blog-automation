@@ -9,8 +9,12 @@ try:
     import pyperclip
 except ImportError:
     print("📦 pyperclip 모듈 설치 중...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "pyperclip"])
-    import pyperclip
+    if getattr(sys, 'frozen', False):
+        print("[Warning] 빌드된 앱에서는 pip install을 실행할 수 없습니다. pyperclip 기능을 건너뜁니다.")
+        pyperclip = None
+    else:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyperclip"])
+        import pyperclip
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys

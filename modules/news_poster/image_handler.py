@@ -307,8 +307,12 @@ class ImageHandler:
                         print(f"[Warning] [ImageHandler] 'piexif' 패키지가 없습니다. 자동 설치를 시도합니다...")
                         try:
                             import subprocess, sys
-                            subprocess.check_call([sys.executable, "-m", "pip", "install", "piexif"])
-                            import piexif
+                            if getattr(sys, 'frozen', False):
+                                print("[Warning] 빌드된 앱에서는 pip install을 실행할 수 없습니다. piexif 기능을 건너뜁니다.")
+                                piexif = None
+                            else:
+                                subprocess.check_call([sys.executable, "-m", "pip", "install", "piexif"])
+                                import piexif
                         except Exception as e:
                             print(f"[Warning] [ImageHandler] 'piexif' 자동 설치 실패: {e}")
                             piexif = None

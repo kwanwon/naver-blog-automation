@@ -7281,6 +7281,10 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     try:
                         from geopy.geocoders import Nominatim
                     except ImportError:
+                        import sys
+                        if getattr(sys, 'frozen', False):
+                            raise Exception("앱 버전에 geopy 패키지가 포함되지 않아 위치 검색을 사용할 수 없습니다.")
+                        import subprocess
                         subprocess.check_call([sys.executable, "-m", "pip", "install", "geopy"])
                         from geopy.geocoders import Nominatim
 
