@@ -363,6 +363,36 @@ class AutoUpdater:
                 # 개발 환경 등에서는 기존 방식 사용
                 return self.apply_update(update_source_dir, preserved_data), "기본 업데이트 적용"
 
+            # App Translocation (macOS Gatekeeper 격리) 환경인지 확인
+            if "AppTranslocation" in app_bundle_path:
+                self.logger.warning(f"macOS 격리 환경(App Translocation) 감지됨: {app_bundle_path}")
+                # 원본 경로 추측 (가장 일반적인 설치 경로)
+                possible_paths = [
+                    os.path.expanduser(f"~/Desktop/{app_bundle_name}"),
+                    os.path.expanduser(f"~/Downloads/{app_bundle_name}"),
+                    f"/Applications/{app_bundle_name}"
+                ]
+                
+                real_bundle_path = None
+                for p in possible_paths:
+                    if os.path.exists(p):
+                        real_bundle_path = p
+                        self.logger.info(f"원본 앱 경로 추측 성공: {real_bundle_path}")
+                        # 원본 경로의 quarantine 해제 시도
+                        subprocess.run(["xattr", "-cr", real_bundle_path], capture_output=True)
+                        break
+                
+                if real_bundle_path:
+                    # 원본 경로를 대상으로 업데이트 수행하도록 덮어쓰기
+                    app_bundle_path = real_bundle_path
+                else:
+                    error_msg = (
+                        "macOS 보안(Gatekeeper)으로 인해 임시 폴더에서 실행 중이며, 원본 앱의 위치를 찾을 수 없습니다.\n\n"
+                        "해결 방법:\n"
+                        "바탕화면이나 응용 프로그램 폴더의 기존 앱을 지우고 새 버전을 다시 다운로드해 주세요."
+                    )
+                    return False, error_msg
+
             # 2. 새로운 앱 번들 찾기
             # update_source_dir은 version.json이 있는 곳 (.../Contents/Frameworks)
             up_contents = os.path.dirname(update_source_dir)
