@@ -234,7 +234,7 @@ class BlogWriterApp:
         self.session_keep_alive_active = False
         self.session_keep_alive_thread = None
         self.last_activity_time = time.time()
-        self.session_refresh_interval = 30 * 60  # 30분 (초 단위)
+        self.session_refresh_interval = 15 * 60  # 15분 (초 단위)
         
         if self.is_macos:
             self._start_caffeinate()
@@ -1384,7 +1384,7 @@ class BlogWriterApp:
         self.last_activity_time = time.time()
         
         def session_worker():
-            print("🔄 세션 유지 시스템 시작됨 (30분 비활성 시 갱신)")
+            print("🔄 세션 유지 시스템 시작됨 (15분 비활성 시 갱신)")
             
             while self.session_keep_alive_active:
                 try:
@@ -1399,7 +1399,7 @@ class BlogWriterApp:
                     # 비활성 시간 확인
                     idle_time = time.time() - self.last_activity_time
                     
-                    # 30분(1800초) 경과 시 세션 갱신
+                    # 15분(900초) 경과 시 세션 갱신
                     if idle_time >= self.session_refresh_interval:
                         print(f"⏰ {int(idle_time/60)}분 비활성 - 세션 갱신 시작...")
                         self._refresh_naver_session()
