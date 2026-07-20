@@ -205,8 +205,8 @@ jobs:
           # 개발자 모드 파일 삭제 (일반 사용자는 시리얼 인증 필요)
           # rm -f "$APP_RESOURCES/modules/.developer_mode"
           
-          # 서명 갱신 (파일 복사로 인해 깨진 서명 복구)
-          codesign --force --deep --sign - "dist/BlogAutomation_Mac.app"
+          # 서명 갱신 (파일 복사로 인해 깨진 서명 복구) - PyInstaller 바이너리 손상을 유발하므로 제거
+          # codesign --force --deep --sign - "dist/BlogAutomation_Mac.app"
           
       - name: Create macOS ZIP
         run: |
