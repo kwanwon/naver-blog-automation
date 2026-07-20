@@ -230,11 +230,11 @@ class BlogWriterApp:
         self.drive_auto_post_system = None
         self._init_drive_auto_post()
         
-        # 🔄 세션 유지 시스템 (30분 비활성 시 네이버 홈 방문)
+        # 🔄 세션 유지 시스템 (15분 비활성 시 네이버 홈 방문)
         self.session_keep_alive_active = False
         self.session_keep_alive_thread = None
-        self.last_activity_time = time.time()
         self.session_refresh_interval = 15 * 60  # 15분 (초 단위)
+        self.last_activity_time = time.time()
         
         if self.is_macos:
             self._start_caffeinate()
