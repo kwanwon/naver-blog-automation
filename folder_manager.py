@@ -313,8 +313,25 @@ class ImageFolderManager:
         """Analyze post title & body to select the best matching image folder."""
         print(f"[Step 1] [FolderManager] 스마트 이미지 매칭 수행 (주제: '{title}') (상태: 시도)")
         rules = self.load_smart_rules()
+        if rules is None:
+            rules = {}
+            
+        # 모든 하위 폴더를 스캔하여 rules에 없는 경우 기본 키워드(폴더명)로 자동 추가
+        all_folders = self.get_all_subfolders()
+        for folder in all_folders:
+            if folder.startswith("default_images"):
+                continue
+            if folder not in rules:
+                rules[folder] = {
+                    "keywords": [folder],
+                    "priority": self.get_folder_priority(folder)
+                }
+            else:
+                if folder not in rules[folder].get("keywords", []):
+                    rules[folder].setdefault("keywords", []).append(folder)
+                    
         if not rules:
-            print("[Warning] [FolderManager] 스마트 매칭 규칙이 없어 순차 폴더 순환을 사용합니다.")
+            print("[Warning] [FolderManager] 매칭할 수 있는 특정 주제 폴더가 없어 기본 폴더 순환을 사용합니다.")
             return self.get_current_folder()
             
         best_folder = None
