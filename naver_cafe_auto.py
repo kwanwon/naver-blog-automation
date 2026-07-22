@@ -353,19 +353,25 @@ class NaverCafeAutomation:
                 try:
                     # '등록' 텍스트를 포함하는 모든 클릭 가능한 요소 탐색
                     xpath_selectors = [
+                        "//button[contains(@class, 'BaseButton--skinGreen')]",
                         "//a[@role='button'][contains(., '등록')]",
                         "//button[contains(., '등록')]",
                         "//span[text()='등록']/ancestor::a",
-                        "//span[text()='등록']/ancestor::button"
+                        "//span[text()='등록']/ancestor::button",
+                        "//button[contains(@class, 'btn_complete')]",
+                        "//button[contains(@class, 'publish_btn')]"
                     ]
                     for xpath in xpath_selectors:
                         btns = self.driver.find_elements(By.XPATH, xpath)
                         for btn in btns:
-                            btn_text = btn.text.strip()
-                            if btn.is_displayed() and "임시" not in btn_text:
-                                submit_btn = btn
-                                print(f"✅ 버튼 발견 (XPATH): {xpath} -> {btn_text}")
-                                break
+                            try:
+                                btn_text = btn.text.strip()
+                                # '임시' 저장 버튼은 제외, '등록'이라는 텍스트가 없어도 class가 맞으면 시도
+                                if btn.is_displayed() and "임시" not in btn_text:
+                                    submit_btn = btn
+                                    print(f"✅ 버튼 발견 (XPATH): {xpath} -> {btn_text}")
+                                    break
+                            except: pass
                         if submit_btn: break
                 except: pass
             
@@ -377,11 +383,34 @@ class NaverCafeAutomation:
                     submit_btn.click()
                 except:
                     self.driver.execute_script("arguments[0].click();", submit_btn)
-                print("🚀 등록 버튼 클릭 완료")
+                print("🚀 등록 버튼 클릭 완료 (요소 기반)")
             else:
-                print("❌ 등록 버튼을 찾을 수 없습니다.")
+                print("⚠️ 요소를 찾지 못했습니다. JS 강제 클릭을 시도합니다.")
+                try:
+                    self.driver.execute_script("""
+                        const btns = Array.from(document.querySelectorAll('button, a'));
+                        const target = btns.find(b => 
+                            (b.innerText && b.innerText.includes('등록') && !b.innerText.includes('임시')) || 
+                            b.classList.contains('BaseButton--skinGreen')
+                        );
+                        if(target) target.click();
+                    """)
+                    print("🚀 JS 강제 등록 버튼 클릭 완료")
+                    submit_btn = True
+                except Exception as e:
+                    print(f"❌ 등록 버튼을 찾거나 클릭할 수 없습니다: {e}")
             
-            time.sleep(5)
+            time.sleep(3)
+            # 등록 후 팝업(경고창)이 뜨는지 확인 (예: 태그 입력, 게시판 선택 등)
+            try:
+                alert = self.driver.switch_to.alert
+                print(f"⚠️ 등록 중 알림 발생: {alert.text}")
+                alert.accept()
+                time.sleep(2)
+            except:
+                pass
+            
+            time.sleep(2)
             # 완료 후 게시글 페이지로 이동했는지 확인 (성공 판단)
             if "write" not in self.driver.current_url:
                 print("✅ 카페 포스팅 성공 및 페이지 전환 확인!")
