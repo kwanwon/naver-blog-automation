@@ -72,15 +72,34 @@ class NaverCafeAutomation:
         
     def post_to_cafe(self, cafe_url: str, menu_id: str, title: str, content: str, image_paths: list = None):
         """
-        네이버 카페에 글을 게시합니다.
-        
-        Args:
-            cafe_url: 카페 기본 URL (예: https://cafe.naver.com/mycafe)
-            menu_id: 게시판 메뉴 ID
-            title: 게시글 제목
-            content: 게시글 내용
-            image_paths: 업로드할 이미지 경로 리스트 (옵션)
+        네이버 카페에 글을 게시합니다. (이미지가 10장 초과 시 자동 분할 포스팅 지원)
         """
+        if not image_paths or len(image_paths) <= 10:
+            return self._do_single_post(cafe_url, menu_id, title, content, image_paths)
+            
+        print(f"ℹ️ 업로드할 이미지가 {len(image_paths)}장입니다. 10장 단위로 분할하여 포스팅합니다.")
+        chunk_size = 10
+        chunks = [image_paths[i:i + chunk_size] for i in range(0, len(image_paths), chunk_size)]
+        
+        success = True
+        for idx, chunk in enumerate(chunks):
+            current_title = title if idx == 0 else f"{title} (이어지는 사진 {idx+1})"
+            current_content = content if idx == 0 else f"이전 게시글에 이어지는 사진입니다."
+            
+            print(f"🚀 [Cafe] 파트 {idx+1}/{len(chunks)} 포스팅 중... (이미지 {len(chunk)}장)")
+            res = self._do_single_post(cafe_url, menu_id, current_title, current_content, chunk)
+            if not res:
+                print(f"❌ [Cafe] 파트 {idx+1} 포스팅 실패.")
+                success = False
+                break
+                
+            if idx < len(chunks) - 1:
+                print("⏳ 연속 포스팅 방지를 위해 10초 대기...")
+                time.sleep(10)
+                
+        return success
+
+    def _do_single_post(self, cafe_url: str, menu_id: str, title: str, content: str, image_paths: list = None):
         try:
             # 0. clubid 추출
             club_id = self._get_club_id(cafe_url)
@@ -347,144 +366,99 @@ class NaverCafeAutomation:
                 except Exception as img_err:
                     print(f"⚠️ 이미지 업로드 실패: {img_err}")
             
-            # 4. 등록 버튼 클릭
+            # 4. 등록 버튼 클릭 및 검증 루프 (최대 5회 시도)
             print("🚀 등록 버튼 클릭 시도...")
-            time.sleep(2)
-            
-            # 팝업이나 포커스 문제를 해결하기 위해 에디터 바깥이나 에디터 본문을 한 번 클릭
-            try:
-                ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
-                time.sleep(0.5)
-            except:
-                pass
-            
-            # 팝업 알림이 뜨는 경우 확인 (예: "내용을 입력하세요" 혹은 다른 확인창)
-            try:
-                alert = self.driver.switch_to.alert
-                print(f"🔔 브라우저 알림 발견: {alert.text}")
-                alert.accept()
-                time.sleep(1)
-            except:
-                pass
-
-            submit_selectors = [
-                "a.BaseButton--skinGreen", # 사용자 스크린샷 기반 (초록색 등록 버튼)
-                "button.BaseButton.btn_complete", 
-                "button.Editor_footer__button_publish", 
-                "a.BaseButton[role='button']",
-                ".publish_btn", 
-                "button.BaseButton.type_filled:not(.btn_save)"
-            ]
-            
-            submit_btn = None
-            for selector in submit_selectors:
+            success_post = False
+            for attempt in range(5):
+                submit_btn = None
                 try:
-                    btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                    for btn in btns:
-                        btn_text = btn.text.strip()
-                        if btn.is_displayed() and "등록" in btn_text and "임시" not in btn_text:
-                            submit_btn = btn
-                            print(f"✅ 버튼 발견 (CSS): {selector} -> {btn_text}")
-                            break
-                    if submit_btn: break
-                except: continue
-                
-            # 2. XPATH로 '등록' 글자가 포함된 모든 요소(button, a) 찾기
-            if not submit_btn:
-                try:
-                    # '등록' 텍스트를 포함하는 모든 클릭 가능한 요소 탐색
-                    xpath_selectors = [
-                        "//button[contains(@class, 'BaseButton--skinGreen')]",
-                        "//a[@role='button'][contains(., '등록')]",
-                        "//button[contains(., '등록')]",
-                        "//span[text()='등록']/ancestor::a",
-                        "//span[text()='등록']/ancestor::button",
-                        "//button[contains(@class, 'btn_complete')]",
-                        "//button[contains(@class, 'publish_btn')]"
+                    # 상단/하단 등록 버튼 모두 검색
+                    xpath_candidates = [
+                        "//a[contains(@class, 'BaseButton--skinGreen') and contains(text(), '등록')]",
+                        "//button[contains(@class, 'BaseButton--skinGreen') and contains(text(), '등록')]",
+                        "//a[contains(text(), '등록')]",
+                        "//button[contains(text(), '등록')]"
                     ]
-                    for xpath in xpath_selectors:
-                        btns = self.driver.find_elements(By.XPATH, xpath)
-                        for btn in btns:
-                            try:
+                    for xpath in xpath_candidates:
+                        try:
+                            btns = self.driver.find_elements(By.XPATH, xpath)
+                            for btn in btns:
                                 btn_text = btn.text.strip()
-                                # '임시' 저장 버튼은 제외, '등록'이라는 텍스트가 없어도 class가 맞으면 시도
                                 if btn.is_displayed() and "임시" not in btn_text:
                                     submit_btn = btn
-                                    print(f"✅ 버튼 발견 (XPATH): {xpath} -> {btn_text}")
                                     break
-                            except: pass
+                        except: pass
                         if submit_btn: break
                 except: pass
-            
-            if submit_btn:
-                # 일반 클릭 시도 후 실패 시 ActionChains 및 JS 클릭
-                try:
-                    self.driver.execute_script("""
-                        arguments[0].removeAttribute('disabled');
-                        arguments[0].removeAttribute('aria-disabled');
-                        arguments[0].classList.remove('disabled');
-                        arguments[0].scrollIntoView({block: 'center'});
-                    """, submit_btn)
-                    time.sleep(1)
-                    # 1순위: 일반 클릭
-                    submit_btn.click()
-                except:
+                
+                if submit_btn:
                     try:
-                        # 2순위: ActionChains 클릭 (리액트에서 더 자연스럽게 인식)
-                        ActionChains(self.driver).move_to_element(submit_btn).click().perform()
-                    except:
-                        # 3순위: JS 강제 클릭
-                        self.driver.execute_script("arguments[0].click();", submit_btn)
-                print("🚀 등록 버튼 클릭 완료 (요소 기반)")
-            else:
-                print("⚠️ 요소를 찾지 못했습니다. JS 강제 클릭을 시도합니다.")
+                        self.driver.execute_script("""
+                            arguments[0].removeAttribute('disabled');
+                            arguments[0].removeAttribute('aria-disabled');
+                            arguments[0].classList.remove('disabled');
+                            arguments[0].scrollIntoView({block: 'center'});
+                        """, submit_btn)
+                        time.sleep(0.5)
+                        
+                        # 강력한 JS 이벤트 트리거 (React 감지 우회)
+                        self.driver.execute_script("""
+                            var el = arguments[0];
+                            var ev1 = new MouseEvent('mousedown', {bubbles: true, cancelable: true, view: window});
+                            var ev2 = new MouseEvent('mouseup', {bubbles: true, cancelable: true, view: window});
+                            var ev3 = new MouseEvent('click', {bubbles: true, cancelable: true, view: window});
+                            el.dispatchEvent(ev1);
+                            el.dispatchEvent(ev2);
+                            el.dispatchEvent(ev3);
+                        """, submit_btn)
+                        
+                        # Fallback click
+                        submit_btn.click()
+                        print(f"🚀 등록 버튼 클릭 완료 (시도 {attempt+1}/5)")
+                    except Exception as e:
+                        pass
+                else:
+                    print(f"⚠️ 요소를 찾지 못했습니다. JS 강제 클릭 (시도 {attempt+1}/5)")
+                    try:
+                        self.driver.execute_script("""
+                            const btns = Array.from(document.querySelectorAll('button, a'));
+                            const target = btns.find(b => 
+                                (b.innerText && b.innerText.includes('등록') && !b.innerText.includes('임시')) || 
+                                b.classList.contains('BaseButton--skinGreen')
+                            );
+                            if(target) {
+                                target.removeAttribute('disabled');
+                                target.removeAttribute('aria-disabled');
+                                target.classList.remove('disabled');
+                                target.click();
+                            }
+                        """)
+                    except: pass
+                
+                time.sleep(4)
+                
+                # 등록 후 팝업(경고창)이 뜨는지 확인
                 try:
-                    self.driver.execute_script("""
-                        const btns = Array.from(document.querySelectorAll('button, a'));
-                        const target = btns.find(b => 
-                            (b.innerText && b.innerText.includes('등록') && !b.innerText.includes('임시')) || 
-                            b.classList.contains('BaseButton--skinGreen')
-                        );
-                        if(target) {
-                            target.removeAttribute('disabled');
-                            target.removeAttribute('aria-disabled');
-                            target.classList.remove('disabled');
-                            target.click();
-                        }
-                    """)
-                    print("🚀 JS 강제 등록 버튼 클릭 완료")
-                    submit_btn = True
-                except Exception as e:
-                    print(f"❌ 등록 버튼을 찾거나 클릭할 수 없습니다: {e}")
+                    alert = self.driver.switch_to.alert
+                    print(f"⚠️ 등록 중 알림 발생: {alert.text}")
+                    alert.accept()
+                    time.sleep(2)
+                except: pass
+                
+                # 완료 후 게시글 페이지로 이동했는지 확인
+                if "write" not in self.driver.current_url:
+                    print("✅ 카페 포스팅 성공 및 페이지 전환 확인!")
+                    success_post = True
+                    break
+                else:
+                    print(f"⏳ 페이지 전환 대기 중... (현재 URL: {self.driver.current_url})")
             
-            time.sleep(3)
-            # 등록 후 팝업(경고창)이 뜨는지 확인 (예: 태그 입력, 게시판 선택 등)
-            try:
-                alert = self.driver.switch_to.alert
-                print(f"⚠️ 등록 중 알림 발생: {alert.text}")
-                alert.accept()
-                time.sleep(2)
-            except:
-                pass
-            
-            time.sleep(2)
-            # 완료 후 게시글 페이지로 이동했는지 확인 (성공 판단)
-            if "write" not in self.driver.current_url:
-                print("✅ 카페 포스팅 성공 및 페이지 전환 확인!")
+            if success_post:
                 return True
             else:
-                print("⚠️ 포스팅 버튼을 눌렀으나 여전히 작문 페이지입니다. (수동 등록이 필요할 수 있습니다)")
+                print("⚠️ 5회 클릭 시도에도 작문 페이지를 벗어나지 못했습니다. (수동 등록 필요)")
                 return False
-            
-            time.sleep(5)
-            # 완료 후 게시글 페이지로 이동했는지 확인 (성공 판단)
-            if "write" not in self.driver.current_url:
-                print("✅ 카페 포스팅 성공 및 페이지 전환 확인!")
-                return True
-            else:
-                print("⚠️ 포스팅 버튼을 눌렀으나 여전히 작문 페이지입니다.")
-                return False
-            
+                
         except Exception as e:
             print(f"❌ 카페 포스팅 중 오류 발생: {e}")
             traceback.print_exc()
