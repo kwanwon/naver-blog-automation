@@ -499,13 +499,13 @@ class BlogExpert(BaseAIExpert):
             provider = model_cfg["provider"]
             model_name = model_cfg["model"]
 
-            if provider == "openai" and not Config.GPT_API_KEY:
+            if provider == "openai" and not self.api_key:
                 continue
                 
-            gemini_key = Config.GEMINI_API_KEY
+            gemini_key = self.gemini_api_key
             if post_type_config and post_type_config.get("gemini_api_key"):
                 gemini_key = post_type_config.get("gemini_api_key")
-                
+            
             if provider == "gemini" and not gemini_key:
                 continue
 

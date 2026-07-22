@@ -164,7 +164,9 @@ class BaseAIExpert:
             if api_key == 'your-api-key-here' or not api_key:
                 logger.warning("API 키가 설정되지 않았습니다. 더미 모드로 전환합니다.")
                 self.use_dummy = True
+                self.api_key = ""
             else:
+                self.api_key = api_key
                 if OpenAI:
                     self.openai_client = OpenAI(api_key=api_key, timeout=60.0)
                     logger.info("OpenAI 클라이언트 초기화 성공 (new SDK, timeout=60s)")
