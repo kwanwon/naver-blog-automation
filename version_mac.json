@@ -1,9 +1,10 @@
 {
-  "version": "1.2.139",
-  "updated_at": "2026-07-22T11:15:00",
+  "version": "1.2.140",
+  "updated_at": "2026-07-22T12:45:00",
   "release_date": "2026-07-22",
   "changelog": [
-    "🚀 [Critical Fix] v1.2.139: Mac/Win 자동 업데이트 시 한글 폴더명 깨짐 현상 완벽 해결 (Native Unzip 및 인코딩 복원 적용)",
+    "🚀 [Fix] v1.2.140: 밴드 폴더 감지 모드가 빌드된 맥 앱에서 작동하지 않는 버그 수정 (watchdog 패키지 누락 해결)",
+    "🚀 [Fix] v1.2.140: 답글 관리에서 '이동' 클릭 시 원래 블로그 포스팅으로 정확히 이동하도록 새 탭 감지 추가",
     "🚀 [Critical Fix] v1.2.138: Mac/Win 빌드 앱에서 API 키(OpenAI, Gemini) 로드 실패 현상 완벽 수정 (절대경로 참조로 변경)",
     "🐛 [Fix] v1.2.138: 다중 이미지 업로드 시 'click 가로채기 실패' 방지를 위한 재시도 로직 추가 (네이버 에디터 지연 대응)",
     "🚀 [Critical Fix] v1.2.136: Mac 앱 빌드 시 발생하는 바이너리 손상(PyInstaller embedded PKG) 버그 픽스",

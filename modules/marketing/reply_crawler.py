@@ -104,10 +104,20 @@ class ReplyCrawler:
                     print(f"  👆 [{i+1}] Clicking notification (Follow-up): {text[:20]}...")
                     
                     # --- Click and Capture ---
+                    original_window = self.driver.current_window_handle
                     self.driver.execute_script("arguments[0].click();", item)
                     time.sleep(3) # Wait for navigation
                     
-                    current_url = self.driver.current_url
+                    if len(self.driver.window_handles) > 1:
+                        for window_handle in self.driver.window_handles:
+                            if window_handle != original_window:
+                                self.driver.switch_to.window(window_handle)
+                                break
+                        current_url = self.driver.current_url
+                        self.driver.close()
+                        self.driver.switch_to.window(original_window)
+                    else:
+                        current_url = self.driver.current_url
                     
                     # Convert Mobile to PC URL
                     if "m.blog.naver.com" in current_url:

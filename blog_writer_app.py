@@ -4814,7 +4814,7 @@ class BlogWriterApp:
                     content=ft.Column([
                         ft.Text(text, weight=ft.FontWeight.BOLD),
                         ft.Row([
-                            ft.TextButton("이동", on_click=lambda e, l=link: [subprocess.run(f"open {l}", shell=True) if sys.platform=='darwin' else subprocess.run(f"start {l}", shell=True)]),
+                            ft.TextButton("이동", on_click=lambda e, l=link: [subprocess.run(f'open "{l}"', shell=True) if sys.platform=='darwin' else subprocess.run(f'start "" "{l}"', shell=True)]),
                             ft.ElevatedButton("🤖 AI 자동 답글 (문의 분석)", on_click=on_ai_reply_click, bgcolor=ft.Colors.PURPLE_600, color=ft.Colors.WHITE) 
                         ])
                     ]),

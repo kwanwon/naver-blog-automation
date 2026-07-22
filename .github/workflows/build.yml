@@ -174,7 +174,9 @@ jobs:
             --hidden-import selenium.webdriver.support.expected_conditions \
             --hidden-import selenium.webdriver.remote.webdriver \
             --hidden-import selenium.webdriver.remote.webelement \
-            --hidden-import certifi
+            --hidden-import certifi \
+            --hidden-import pandas \
+            --hidden-import watchdog
           
       - name: Copy additional data files to app bundle
         run: |
