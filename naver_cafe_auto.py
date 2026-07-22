@@ -327,14 +327,19 @@ class NaverCafeAutomation:
                     else:
                         print("⚠️ 이미지 업로드 요소를 찾을 수 없습니다.")
                         
-                    # 이미지 업로드 후 React 상태 업데이트를 위해 에디터에 공백 입력 후 지우기
+                    # 이미지 업로드 후 React 상태 업데이트를 위해 에디터에 강제 이벤트 발생
                     try:
                         print("ℹ️ 이미지 업로드 후 에디터 상태 갱신 중...")
-                        editor_area = WebDriverWait(self.driver, 5).until(
-                            EC.element_to_be_clickable((By.CSS_SELECTOR, ".se-content, .Editor_content__container, [contenteditable='true']"))
-                        )
-                        editor_area.click()
-                        ActionChains(self.driver).send_keys(Keys.SPACE).send_keys(Keys.BACKSPACE).perform()
+                        self.driver.execute_script("""
+                            const editor = document.querySelector('.se-main-container, .se-content, [contenteditable="true"]');
+                            if(editor) {
+                                editor.focus();
+                                const inputEvent = new Event('input', { bubbles: true });
+                                editor.dispatchEvent(inputEvent);
+                                const keyupEvent = new KeyboardEvent('keyup', { bubbles: true, key: ' ' });
+                                editor.dispatchEvent(keyupEvent);
+                            }
+                        """)
                         time.sleep(1)
                     except Exception as e:
                         print(f"⚠️ 에디터 상태 갱신 실패 (무시됨): {e}")
@@ -414,7 +419,12 @@ class NaverCafeAutomation:
             if submit_btn:
                 # 일반 클릭 시도 후 실패 시 ActionChains 및 JS 클릭
                 try:
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", submit_btn)
+                    self.driver.execute_script("""
+                        arguments[0].removeAttribute('disabled');
+                        arguments[0].removeAttribute('aria-disabled');
+                        arguments[0].classList.remove('disabled');
+                        arguments[0].scrollIntoView({block: 'center'});
+                    """, submit_btn)
                     time.sleep(1)
                     # 1순위: 일반 클릭
                     submit_btn.click()
@@ -435,7 +445,12 @@ class NaverCafeAutomation:
                             (b.innerText && b.innerText.includes('등록') && !b.innerText.includes('임시')) || 
                             b.classList.contains('BaseButton--skinGreen')
                         );
-                        if(target) target.click();
+                        if(target) {
+                            target.removeAttribute('disabled');
+                            target.removeAttribute('aria-disabled');
+                            target.classList.remove('disabled');
+                            target.click();
+                        }
                     """)
                     print("🚀 JS 강제 등록 버튼 클릭 완료")
                     submit_btn = True
