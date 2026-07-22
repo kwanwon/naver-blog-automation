@@ -303,6 +303,22 @@ class NaverCafeAutomation:
                                     }
                                     return false;
                                 """)
+                                
+                            time.sleep(0.5)
+                            
+                            # 📸 '확인' 버튼 클릭하여 팝업 닫기 (매우 중요: 안 닫으면 등록 버튼 안 눌림)
+                            self.driver.execute_script("""
+                                const confirmBtns = Array.from(document.querySelectorAll('button'));
+                                const confirmTarget = confirmBtns.find(b => 
+                                    b.offsetParent !== null && 
+                                    (b.innerText.includes('확인') || b.innerText.includes('적용'))
+                                );
+                                if(confirmTarget) {
+                                    confirmTarget.click();
+                                }
+                            """)
+                            print("✅ '개별사진' 확인 버튼 클릭 완료")
+                            
                         except Exception as pop_err:
                             print(f"ℹ️ 사진 첨부 방식 팝업이 표시되지 않았거나 자동으로 넘어갔습니다.")
 
@@ -310,12 +326,32 @@ class NaverCafeAutomation:
                         print("✅ 이미지 업로드 프로세스 완료")
                     else:
                         print("⚠️ 이미지 업로드 요소를 찾을 수 없습니다.")
+                        
+                    # 이미지 업로드 후 React 상태 업데이트를 위해 에디터에 공백 입력 후 지우기
+                    try:
+                        print("ℹ️ 이미지 업로드 후 에디터 상태 갱신 중...")
+                        editor_area = WebDriverWait(self.driver, 5).until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, ".se-content, .Editor_content__container, [contenteditable='true']"))
+                        )
+                        editor_area.click()
+                        ActionChains(self.driver).send_keys(Keys.SPACE).send_keys(Keys.BACKSPACE).perform()
+                        time.sleep(1)
+                    except Exception as e:
+                        print(f"⚠️ 에디터 상태 갱신 실패 (무시됨): {e}")
+                        
                 except Exception as img_err:
                     print(f"⚠️ 이미지 업로드 실패: {img_err}")
             
             # 4. 등록 버튼 클릭
             print("🚀 등록 버튼 클릭 시도...")
             time.sleep(2)
+            
+            # 팝업이나 포커스 문제를 해결하기 위해 에디터 바깥이나 에디터 본문을 한 번 클릭
+            try:
+                ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+                time.sleep(0.5)
+            except:
+                pass
             
             # 팝업 알림이 뜨는 경우 확인 (예: "내용을 입력하세요" 혹은 다른 확인창)
             try:
@@ -376,13 +412,19 @@ class NaverCafeAutomation:
                 except: pass
             
             if submit_btn:
-                # 일반 클릭 시도 후 실패 시 JS 클릭
+                # 일반 클릭 시도 후 실패 시 ActionChains 및 JS 클릭
                 try:
-                    # 클릭 전 잠시 대기
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", submit_btn)
                     time.sleep(1)
+                    # 1순위: 일반 클릭
                     submit_btn.click()
                 except:
-                    self.driver.execute_script("arguments[0].click();", submit_btn)
+                    try:
+                        # 2순위: ActionChains 클릭 (리액트에서 더 자연스럽게 인식)
+                        ActionChains(self.driver).move_to_element(submit_btn).click().perform()
+                    except:
+                        # 3순위: JS 강제 클릭
+                        self.driver.execute_script("arguments[0].click();", submit_btn)
                 print("🚀 등록 버튼 클릭 완료 (요소 기반)")
             else:
                 print("⚠️ 요소를 찾지 못했습니다. JS 강제 클릭을 시도합니다.")
