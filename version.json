@@ -1,8 +1,9 @@
 {
-  "version": "1.2.138",
-  "updated_at": "2026-07-22T10:55:00",
+  "version": "1.2.139",
+  "updated_at": "2026-07-22T11:15:00",
   "release_date": "2026-07-22",
   "changelog": [
+    "🚀 [Critical Fix] v1.2.139: Mac/Win 자동 업데이트 시 한글 폴더명 깨짐 현상 완벽 해결 (Native Unzip 및 인코딩 복원 적용)",
     "🚀 [Critical Fix] v1.2.138: Mac/Win 빌드 앱에서 API 키(OpenAI, Gemini) 로드 실패 현상 완벽 수정 (절대경로 참조로 변경)",
     "🐛 [Fix] v1.2.138: 다중 이미지 업로드 시 'click 가로채기 실패' 방지를 위한 재시도 로직 추가 (네이버 에디터 지연 대응)",
     "🚀 [Critical Fix] v1.2.136: Mac 앱 빌드 시 발생하는 바이너리 손상(PyInstaller embedded PKG) 버그 픽스",

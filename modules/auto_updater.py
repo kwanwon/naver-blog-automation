@@ -312,8 +312,24 @@ class AutoUpdater:
                 shutil.rmtree(extract_path)
             os.makedirs(extract_path)
             
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                zip_ref.extractall(extract_path)
+            if sys.platform == 'darwin':
+                self.logger.info("macOS 환경: 시스템 unzip 명령어 사용 (인코딩 보존)")
+                subprocess.run(['unzip', '-o', zip_path, '-d', extract_path], check=True, capture_output=True)
+            else:
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    for member in zip_ref.infolist():
+                        if member.flag_bits & 0x800:
+                            zip_ref.extract(member, extract_path)
+                        else:
+                            original_bytes = member.filename.encode('cp437')
+                            try:
+                                member.filename = original_bytes.decode('utf-8')
+                            except UnicodeDecodeError:
+                                try:
+                                    member.filename = original_bytes.decode('cp949')
+                                except UnicodeDecodeError:
+                                    pass
+                            zip_ref.extract(member, extract_path)
             
             # 압축 해제 내용 확인
             items = os.listdir(extract_path)
