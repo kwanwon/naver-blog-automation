@@ -1,8 +1,10 @@
 {
-  "version": "1.2.137",
-  "updated_at": "2026-07-20T18:40:00",
-  "release_date": "2026-07-20",
+  "version": "1.2.138",
+  "updated_at": "2026-07-22T10:55:00",
+  "release_date": "2026-07-22",
   "changelog": [
+    "🚀 [Critical Fix] v1.2.138: Mac/Win 빌드 앱에서 API 키(OpenAI, Gemini) 로드 실패 현상 완벽 수정 (절대경로 참조로 변경)",
+    "🐛 [Fix] v1.2.138: 다중 이미지 업로드 시 'click 가로채기 실패' 방지를 위한 재시도 로직 추가 (네이버 에디터 지연 대응)",
     "🚀 [Critical Fix] v1.2.136: Mac 앱 빌드 시 발생하는 바이너리 손상(PyInstaller embedded PKG) 버그 픽스",
     "✨ [Fix] v1.2.134: 빌드된 앱에서 스마트 폴더 매칭 룰 파일이 없더라도 폴더명(예: 대련, 낙법 등) 기반 자동 매칭이 되도록 로직 보완",
     "🚀 [Critical Fix] v1.2.133: 빌드된 Mac 앱에서 중복 실행(새 창이 계속 열리는 현상) 방지 로직 추가 (PyInstaller Fork Bomb 버그 픽스)",
