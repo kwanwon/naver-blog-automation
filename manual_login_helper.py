@@ -30,15 +30,17 @@ class ManualLoginHelper:
             
             chrome_options = Options()
             
-            # 고유한 프로필 디렉토리 생성
-            timestamp = str(int(time.time()))
-            unique_id = str(uuid.uuid4())[:8]
-            profile_path = os.path.join(self.base_dir, f"chrome_profile_manual_{timestamp}_{unique_id}")
+            # 독립된 사용자 데이터 디렉토리 설정 (앱 업데이트 유지 및 브라우저 충돌 방지)
+            import platform
+            if platform.system() == "Windows":
+                profile_path = os.path.join(os.path.expanduser("~"), "selenium_profile")
+            else:
+                profile_path = os.path.expanduser("~/selenium_profile")
             os.makedirs(profile_path, exist_ok=True)
             
             # Chrome 옵션 설정
             chrome_options.add_argument(f"--user-data-dir={profile_path}")
-            chrome_options.add_argument("--profile-directory=NaverBlogManual")
+            chrome_options.add_argument("--profile-directory=Default")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-notifications")

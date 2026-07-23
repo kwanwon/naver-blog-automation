@@ -73,8 +73,15 @@ class ManualSessionHelper:
         except:
             pass
             
-        user_data_dir = os.path.join(get_data_dir(), "naver_blog_automation_profile")
+        # 독립된 사용자 데이터 디렉토리 설정 (앱 업데이트 유지 및 브라우저 충돌 방지)
+        import platform
+        if platform.system() == "Windows":
+            user_data_dir = os.path.join(os.path.expanduser("~"), "selenium_profile")
+        else:
+            user_data_dir = os.path.expanduser("~/selenium_profile")
+            
         chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
+        chrome_options.add_argument("--profile-directory=Default")
         
         # 프로젝트 루트의 ChromeDriver 사용
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(self.base_dir)))

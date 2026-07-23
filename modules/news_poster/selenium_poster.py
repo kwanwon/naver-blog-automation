@@ -39,8 +39,13 @@ class SeleniumPoster:
             options.add_argument('--allow-clipboard-read-write')
             
             # Shared session profile
-            user_data_dir = os.path.join(get_data_dir(), "naver_blog_automation_profile")
+            import platform
+            if platform.system() == "Windows":
+                user_data_dir = os.path.join(os.path.expanduser("~"), "selenium_profile")
+            else:
+                user_data_dir = os.path.expanduser("~/selenium_profile")
             options.add_argument(f"--user-data-dir={user_data_dir}")
+            options.add_argument("--profile-directory=Default")
             
             service = Service(ChromeDriverManager().install())
             self.driver = webdriver.Chrome(service=service, options=options)

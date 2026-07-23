@@ -3666,9 +3666,17 @@ class BlogWriterApp:
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
             
-            # 🆕 윈도우 세션 유지를 위해 고정된 프로필 사용 (ManualSessionHelper와 동일 경로)
-            user_data_dir = os.path.join(get_data_dir(), "naver_blog_automation_profile")
+            # 🆕 독립된 사용자 데이터 디렉토리 설정 (앱 업데이트 시에도 프로필 유지 및 일반 크롬 충돌 방지)
+            import platform
+            if platform.system() == "Windows":
+                # Windows의 경우 사용자 폴더 하위에 생성 (예: C:\Users\Username\selenium_profile)
+                user_data_dir = os.path.join(os.path.expanduser("~"), "selenium_profile")
+            else:
+                # Mac/Linux의 경우 사용자 지정 절대 경로 또는 홈 디렉토리 하위 사용
+                user_data_dir = os.path.expanduser("~/selenium_profile")
+                
             options.add_argument(f"--user-data-dir={user_data_dir}")
+            options.add_argument("--profile-directory=Default")
             
             # Use ChromeDriverManager to install/manage driver
             service = Service(ChromeDriverManager().install())
