@@ -1620,28 +1620,28 @@ class BlogWriterApp:
                 except Exception as e:
                     print(f"⚠️ 임시 브라우저 드라이버 종료 중 오류: {e}")
             
-            # 플랫폼별 프로세스 종료 (전체 크롬 브라우저가 아닌 자동화 전용 크롬/드라이버만 종료)
+            # 플랫폼별 프로세스 종료 (전체 크롬 브라우저가 아닌 네이버 자동화 전용 크롬/드라이버만 종료)
             if self.is_windows:
-                # Windows: chromedriver.exe 및 selenium_profile을 사용하는 크롬 프로세스만 타겟 종료
+                # Windows: chromedriver.exe 및 naver_automation_profile을 사용하는 크롬 프로세스만 타겟 종료
                 try:
                     subprocess.run(["taskkill", "/f", "/im", "chromedriver.exe"], 
                                  capture_output=True, timeout=10)
                     # 전체 chrome.exe 무차별 종료 제거 (주식 프로그램/개인 크롬 보호)
-                    # selenium_profile을 포함하는 명령줄 프로세스만 정밀 종료
-                    subprocess.run(["wmic", "process", "where", "CommandLine like '%selenium_profile%'", "call", "terminate"],
+                    # naver_automation_profile을 포함하는 명령줄 프로세스만 정밀 종료
+                    subprocess.run(["wmic", "process", "where", "CommandLine like '%naver_automation_profile%'", "call", "terminate"],
                                  capture_output=True, timeout=10)
-                    print("✅ Windows 자동화 관련 프로세스 정밀 종료 완료")
+                    print("✅ Windows 네이버 자동화 관련 프로세스 정밀 종료 완료")
                 except Exception as e:
                     print(f"⚠️ Windows 프로세스 종료 중 오류: {e}")
                     
             elif self.is_macos or self.is_linux:
-                # macOS/Linux: chromedriver 및 selenium_profile 프로필 크롬만 정밀 종료
+                # macOS/Linux: chromedriver 및 naver_automation_profile 프로필 크롬만 정밀 종료 (주식 프로그램 보호)
                 try:
                     subprocess.run(["pkill", "-f", "chromedriver"], 
                                  capture_output=True, timeout=10)
-                    subprocess.run(["pkill", "-f", "selenium_profile"], 
+                    subprocess.run(["pkill", "-f", "naver_automation_profile"], 
                                  capture_output=True, timeout=10)
-                    print("✅ macOS/Linux 자동화 관련 프로세스 정밀 종료 완료")
+                    print("✅ macOS/Linux 네이버 자동화 관련 프로세스 정밀 종료 완료")
                 except Exception as e:
                     print(f"⚠️ macOS/Linux 프로세스 종료 중 오류: {e}")
             
@@ -3668,14 +3668,12 @@ class BlogWriterApp:
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
             
-            # 🆕 독립된 사용자 데이터 디렉토리 설정 (앱 업데이트 시에도 프로필 유지 및 일반 크롬 충돌 방지)
+            # 🆕 네이버 자동화 전용 고유 데이터 디렉토리 설정 (주식 봇 등 타 크롬 셀레니움과도 완전 격리)
             import platform
             if platform.system() == "Windows":
-                # Windows의 경우 사용자 폴더 하위에 생성 (예: C:\Users\Username\selenium_profile)
-                user_data_dir = os.path.join(os.path.expanduser("~"), "selenium_profile")
+                user_data_dir = os.path.join(os.path.expanduser("~"), "naver_automation_profile")
             else:
-                # Mac/Linux의 경우 사용자 지정 절대 경로 또는 홈 디렉토리 하위 사용
-                user_data_dir = os.path.expanduser("~/selenium_profile")
+                user_data_dir = os.path.expanduser("~/naver_automation_profile")
                 
             options.add_argument(f"--user-data-dir={user_data_dir}")
             options.add_argument("--profile-directory=Default")
@@ -3693,10 +3691,11 @@ class BlogWriterApp:
                 try:
                     if platform.system() == "Windows":
                         subprocess.run(["taskkill", "/f", "/im", "chromedriver.exe"], capture_output=True)
+                        subprocess.run(["wmic", "process", "where", "CommandLine like '%naver_automation_profile%'", "call", "terminate"], capture_output=True)
                     else:
                         subprocess.run(["pkill", "-f", "chromedriver"], capture_output=True)
-                        # 해당 고정 프로필을 사용하는 크롬 프로세스만 정밀 강제 종료 (일반 크롬 보호)
-                        subprocess.run(["pkill", "-f", "selenium_profile"], capture_output=True)
+                        # 네이버 자동화 전용 프로필 크롬만 정밀 강제 종료 (주식 프로그램/개인 크롬 보호)
+                        subprocess.run(["pkill", "-f", "naver_automation_profile"], capture_output=True)
                 except Exception as kill_err:
                     print(f"⚠️ 프로세스 종료 중 오류 (무시): {kill_err}")
                 

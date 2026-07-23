@@ -363,9 +363,9 @@ class NaverBlogAutomation:
             # 브라우저 프로필 저장 경로 설정 (독립된 사용자 데이터 디렉토리 사용)
             import platform
             if platform.system() == "Windows":
-                profile_path = os.path.join(os.path.expanduser("~"), "selenium_profile")
+                profile_path = os.path.join(os.path.expanduser("~"), "naver_automation_profile")
             else:
-                profile_path = os.path.expanduser("~/selenium_profile")
+                profile_path = os.path.expanduser("~/naver_automation_profile")
             os.makedirs(profile_path, exist_ok=True)
             chrome_options.add_argument(f"--user-data-dir={profile_path}")
             chrome_options.add_argument("--profile-directory=Default")

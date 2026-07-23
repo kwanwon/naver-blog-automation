@@ -41,9 +41,9 @@ class SeleniumPoster:
             # Shared session profile
             import platform
             if platform.system() == "Windows":
-                user_data_dir = os.path.join(os.path.expanduser("~"), "selenium_profile")
+                user_data_dir = os.path.join(os.path.expanduser("~"), "naver_automation_profile")
             else:
-                user_data_dir = os.path.expanduser("~/selenium_profile")
+                user_data_dir = os.path.expanduser("~/naver_automation_profile")
             options.add_argument(f"--user-data-dir={user_data_dir}")
             options.add_argument("--profile-directory=Default")
             
