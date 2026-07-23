@@ -1620,26 +1620,28 @@ class BlogWriterApp:
                 except Exception as e:
                     print(f"⚠️ 임시 브라우저 드라이버 종료 중 오류: {e}")
             
-            # 플랫폼별 프로세스 종료
+            # 플랫폼별 프로세스 종료 (전체 크롬 브라우저가 아닌 자동화 전용 크롬/드라이버만 종료)
             if self.is_windows:
-                # Windows 프로세스 종료
+                # Windows: chromedriver.exe 및 selenium_profile을 사용하는 크롬 프로세스만 타겟 종료
                 try:
                     subprocess.run(["taskkill", "/f", "/im", "chromedriver.exe"], 
                                  capture_output=True, timeout=10)
-                    subprocess.run(["taskkill", "/f", "/im", "chrome.exe"], 
+                    # 전체 chrome.exe 무차별 종료 제거 (주식 프로그램/개인 크롬 보호)
+                    # selenium_profile을 포함하는 명령줄 프로세스만 정밀 종료
+                    subprocess.run(["wmic", "process", "where", "CommandLine like '%selenium_profile%'", "call", "terminate"],
                                  capture_output=True, timeout=10)
-                    print("✅ Windows 프로세스 종료 완료")
+                    print("✅ Windows 자동화 관련 프로세스 정밀 종료 완료")
                 except Exception as e:
                     print(f"⚠️ Windows 프로세스 종료 중 오류: {e}")
                     
             elif self.is_macos or self.is_linux:
-                # macOS/Linux 프로세스 종료
+                # macOS/Linux: chromedriver 및 selenium_profile 프로필 크롬만 정밀 종료
                 try:
                     subprocess.run(["pkill", "-f", "chromedriver"], 
                                  capture_output=True, timeout=10)
-                    subprocess.run(["pkill", "-f", "chrome"], 
+                    subprocess.run(["pkill", "-f", "selenium_profile"], 
                                  capture_output=True, timeout=10)
-                    print("✅ macOS/Linux 프로세스 종료 완료")
+                    print("✅ macOS/Linux 자동화 관련 프로세스 정밀 종료 완료")
                 except Exception as e:
                     print(f"⚠️ macOS/Linux 프로세스 종료 중 오류: {e}")
             
@@ -3693,8 +3695,8 @@ class BlogWriterApp:
                         subprocess.run(["taskkill", "/f", "/im", "chromedriver.exe"], capture_output=True)
                     else:
                         subprocess.run(["pkill", "-f", "chromedriver"], capture_output=True)
-                        # 해당 고정 프로필을 사용하는 크롬 프로세스만 정밀 강제 종료
-                        subprocess.run(["pkill", "-f", "naver_blog_automation_profile"], capture_output=True)
+                        # 해당 고정 프로필을 사용하는 크롬 프로세스만 정밀 강제 종료 (일반 크롬 보호)
+                        subprocess.run(["pkill", "-f", "selenium_profile"], capture_output=True)
                 except Exception as kill_err:
                     print(f"⚠️ 프로세스 종료 중 오류 (무시): {kill_err}")
                 
