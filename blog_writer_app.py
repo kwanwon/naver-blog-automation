@@ -5388,16 +5388,27 @@ class BlogWriterApp:
                 except:
                     pass
             
-            # Scrape content
+            # Scrape content (본문 영역 우선 수집)
             body_text = ""
             try:
-                body_text = driver.find_element(By.TAG_NAME, "body").text[:1000]
+                # 네이버 블로그/카페 본문 컨테이너 탐색
+                for selector in [".se-main-container", ".se-viewer", "#postViewArea", ".post-view", "#articleBody", "article"]:
+                    try:
+                        el = driver.find_element(By.CSS_SELECTOR, selector)
+                        txt = el.text.strip()
+                        if txt:
+                            body_text = txt[:2000]
+                            break
+                    except:
+                        pass
+                if not body_text:
+                    body_text = driver.find_element(By.TAG_NAME, "body").text[:1500]
             except:
                 body_text = "본문 내용을 가져올 수 없습니다."
 
-            # Generate Reply
+            # Generate Reply (is_outbound=True 지정으로 방문 소통 전용 프롬프트 적용)
             intent = self.smart_reply.classify_intent(body_text)
-            reply_text = self.smart_reply.generate_reply(target_text=body_text, intent=intent, platform=platform)
+            reply_text = self.smart_reply.generate_reply(target_text=body_text, intent=intent, platform=platform, is_outbound=True)
             
             if not reply_text:
                 self.page.snack_bar = ft.SnackBar(ft.Text("❌ 댓글 생성 실패"), bgcolor=ft.Colors.RED)

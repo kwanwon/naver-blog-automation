@@ -1,8 +1,9 @@
 {
-  "version": "1.2.150",
-  "updated_at": "2026-07-23T22:50:00",
-  "release_date": "2026-07-23",
+  "version": "1.2.151",
+  "updated_at": "2026-07-24T11:30:00",
+  "release_date": "2026-07-24",
   "changelog": [
+    "✨ [Feature] v1.2.151: 이웃 블로그 방문 소통 시 본문 세부 컨테이너(.se-main-container 등) 정밀 수집 로직 적용 및 본문 구체적 내용 1~2개 필수 포함, PC 1.5~2줄(120~180자, 3~4문장) 정성스러운 댓글 생성으로 AI 프롬프트 대폭 강화",
     "🚀 [Critical Fix] v1.2.150: 주식 자동매매 봇 등 타 셀레니움 프로그램과의 프로필 공유 및 탭 합쳐짐 현상 완벽 방지를 위해 전용 프로필명을 naver_automation_profile로 최종 격리",
     "🚀 [Critical Fix] v1.2.149: 프로세스 정리 시 일반 크롬(주식 프로그램/개인 브라우저)을 무차별 종료하던 pkill -f chrome/taskkill chrome.exe 로직 완전 제거 및 selenium_profile 관련 프로세스만 정밀 타겟 종료하도록 긴급 수정",
     "🚀 [Critical Fix] v1.2.148: 셀레니움 크롬 사용자 데이터 디렉토리(user-data-dir)를 사용자 독립 경로(~/selenium_profile)로 변경하여 일반 크롬 브라우저와의 Profile Lock 충돌 완벽 방지 및 Mac 앱 업데이트 시 세션 유지 보장",
