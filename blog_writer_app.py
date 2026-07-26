@@ -17,12 +17,16 @@ from modules.marketing.comment_poster import CommentPoster
 from modules.marketing.reply_crawler import ReplyCrawler
 from selenium.webdriver.common.by import By
 
-# 🥋 수련계획표 AI 자동 생성 엔진 모듈 임포트
+# 🥋 수련계획표 AI 자동 생성 엔진 모듈 임포트 (빌드 시 PyInstaller 누락 방지를 위해 상단 명시)
 from modules.training_planner.curriculum_loader import (
     load_gym_profile, save_gym_profile, load_age_categories, save_age_categories,
     learn_from_files, get_curriculum_status, load_curriculum_md
 )
-from modules.training_planner.planner_engine import generate_full_year_plan
+from modules.training_planner.planner_engine import generate_full_year_plan, generate_plan_with_ai
+from modules.training_planner.calendar_writer import write_plan_to_excel
+from modules.schedule_parser import (
+    write_annual_schedule_to_excel, extract_text_from_file, parse_schedule_with_gpt
+)
 
 import subprocess
 import os

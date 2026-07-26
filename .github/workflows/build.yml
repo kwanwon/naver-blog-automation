@@ -176,7 +176,14 @@ jobs:
             --hidden-import selenium.webdriver.remote.webelement \
             --hidden-import certifi \
             --hidden-import pandas \
-            --hidden-import watchdog
+            --hidden-import watchdog \
+            --hidden-import openpyxl \
+            --hidden-import pdfplumber \
+            --hidden-import modules.schedule_parser \
+            --hidden-import modules.training_planner \
+            --hidden-import modules.training_planner.planner_engine \
+            --hidden-import modules.training_planner.calendar_writer \
+            --hidden-import modules.training_planner.curriculum_loader
           
       - name: Copy additional data files to app bundle
         run: |
