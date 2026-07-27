@@ -13162,16 +13162,24 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                             
                 threading.Thread(target=run_generation, daemon=True).start()
             
-            # 기존 파일 선택을 위한 네이티브 피커 실행 (Save As가 아닌 Open File)
-            threading.Thread(
-                target=lambda: run_native_file_picker(
-                    is_excel=True,
-                    is_save=False,
-                    default_name=default_save_name,
-                    on_select=start_monthly_generation
-                ),
-                daemon=True
-            ).start()
+            # 폴더 내 생성된 연간 엑셀 파일이 있으면 팝업 없이 바로 자동 선택, 없으면 네이티브 피커 실행
+            annual_file = os.path.join(folder_path, f"{year}년_연간_라이온짐_수련계획표.xlsx")
+            template_file = os.path.join(folder_path, "annual_plan_template.xlsx")
+            
+            if os.path.exists(annual_file):
+                start_monthly_generation(annual_file)
+            elif os.path.exists(template_file):
+                start_monthly_generation(template_file)
+            else:
+                threading.Thread(
+                    target=lambda: run_native_file_picker(
+                        is_excel=True,
+                        is_save=False,
+                        default_name=default_save_name,
+                        on_select=start_monthly_generation
+                    ),
+                    daemon=True
+                ).start()
 
         # 💡 연간 전체 일괄 생성 버튼 핸들러 (관장님 기획 반영!)
         def generate_full_year_click(e):
@@ -13244,16 +13252,9 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                             
                 threading.Thread(target=run_full_year, daemon=True).start()
                 
-            # 저장 경로 네이티브 피커 실행
-            threading.Thread(
-                target=lambda: run_native_file_picker(
-                    is_excel=True,
-                    is_save=True,
-                    default_name=default_save_name,
-                    on_select=start_full_year_generation
-                ),
-                daemon=True
-            ).start()
+            # 선택한 폴더 경로에 바로 엑셀 파일 생성 (중복 파일 선택 팝업 생략)
+            target_save_path = os.path.join(folder_path, default_save_name)
+            start_full_year_generation(target_save_path)
 
         # 템플릿 생성 핸들러 (annual_plan_template.xlsx 완전 포맷으로 생성)
         def on_create_template_click(e):
