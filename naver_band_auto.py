@@ -481,9 +481,9 @@ class NaverBandAutomation:
                 
                 if ready_btn:
                     print("✅ 모든 업로드 완료, 게시 준비됨")
-                    # 🔧 파일 개수 기반 동적 대기 시간 (2개당 1초 + 기본 15초, 최대 90초)
+                    # 🔧 파일 개수 기반 동적 대기 시간 (1초~5초 사이 랜덤)
                     total_files = len(photos) + len(videos) if 'photos' in dir() and 'videos' in dir() else 0
-                    dynamic_wait = min(15 + (total_files // 2), 90)  # 최대 90초
+                    dynamic_wait = random.randint(1, 5)
                     print(f"⏳ 안전 대기 {dynamic_wait}초... (파일 {total_files}개)")
                     time.sleep(dynamic_wait)
                     print("✅ 대기 완료, 게시 진행")
