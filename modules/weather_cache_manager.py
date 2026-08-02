@@ -460,11 +460,14 @@ class WeatherCacheManager:
         advice = "편안하고 기분 좋은 날씨"
         try:
             t_val = float(temp)
-            if t_val < 5: advice = "매우 쌀쌀하고 추운 날씨"
-            elif t_val < 12: advice = "쌀쌀함이 느껴지는 날씨"
-            elif t_val < 18: advice = "선선한 바람이 부는 날씨"
-            elif t_val < 25: advice = "포근하고 활동하기 좋은 날씨"
-            else: advice = "조금 더운 기운이 느껴지는 날씨"
+            if t_val >= 35: advice = "🚨 [폭염경보/극심한 무더위] 야외활동 자제 및 온열질환 매우 주의해야 하는 폭염 날씨"
+            elif t_val >= 33: advice = "🚨 [폭염주의보/무더위] 찌는 듯한 찜통더위로 수분 섭취와 건강관리가 필수인 무더운 날씨"
+            elif t_val >= 30: advice = "🔥 [무더위/여름철 고온] 덥고 습해 지치기 쉬운 무더운 날씨"
+            elif t_val >= 25: advice = "다소 더운 날씨"
+            elif t_val >= 18: advice = "포근하고 활동하기 좋은 날씨"
+            elif t_val >= 12: advice = "선선한 바람이 부는 날씨"
+            elif t_val >= 5: advice = "쌀쌀함이 느껴지는 날씨"
+            else: advice = "매우 쌀쌀하고 추운 추위 날씨"
         except:
             pass
             

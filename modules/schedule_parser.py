@@ -408,9 +408,26 @@ def write_annual_schedule_to_excel(excel_path: str, schedule_entries: list[dict]
 
 def get_holidays_for_month(y, m):
     """표준 달력 데이터 및 선거일 데이터를 포함한 해당 월의 공휴일 목록을 반환합니다."""
-    import holidays
-    # 한국 공휴일 객체 생성
-    kr_holidays = holidays.SouthKorea(years=y)
+    kr_holidays = {}
+    try:
+        import holidays
+        kr_holidays = holidays.SouthKorea(years=y)
+    except Exception as err:
+        print(f"⚠️ holidays 모듈 사용 불가 (기본 공휴일 맵으로 우회): {err}")
+        # 기본 고정 공휴일 맵
+        static_kr_holidays = {
+            (1, 1): "신정",
+            (3, 1): "삼일절",
+            (5, 5): "어린이날",
+            (6, 6): "현충일",
+            (8, 15): "광복절",
+            (10, 3): "개천절",
+            (10, 9): "한글날",
+            (12, 25): "성탄절"
+        }
+        for (sm, sd), hname in static_kr_holidays.items():
+            if sm == m:
+                kr_holidays[f"{y}-{sm:02d}-{sd:02d}"] = hname
     
     # [정밀 데이터] 법령 및 선거일 수동 반영 (표준 달력 참조)
     special_days = {

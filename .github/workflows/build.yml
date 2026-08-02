@@ -155,7 +155,7 @@ jobs:
           pip install psutil cryptography
           pip install pyperclip httpx
           pip install pandas watchdog
-          pip install openpyxl pdfplumber
+          pip install openpyxl pdfplumber holidays
           
       - name: Build with flet pack
         run: |
@@ -179,6 +179,7 @@ jobs:
             --hidden-import watchdog \
             --hidden-import openpyxl \
             --hidden-import pdfplumber \
+            --hidden-import holidays \
             --hidden-import modules.schedule_parser \
             --hidden-import modules.training_planner \
             --hidden-import modules.training_planner.planner_engine \
