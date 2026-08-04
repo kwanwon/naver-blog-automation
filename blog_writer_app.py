@@ -10743,9 +10743,12 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             folder_path = self.settings.get('manual_upload_folder', default_path)
             
             # 폴더 자동 생성
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path, exist_ok=True)
-                print(f"📁 수동 업로드 폴더 생성: {folder_path}")
+            try:
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path, exist_ok=True)
+                    print(f"📁 수동 업로드 폴더 생성: {folder_path}")
+            except Exception as e:
+                print(f"⚠️ 폴더 확인/생성 에러 (무시됨): {e}")
             
             return folder_path
         
@@ -10753,14 +10756,20 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             """수동 포스팅 백업 폴더 경로 반환"""
             base_folder = get_manual_upload_folder()
             backup_folder = os.path.join(os.path.dirname(base_folder), '밴드_수동이미지_백업')
-            os.makedirs(backup_folder, exist_ok=True)
+            try:
+                os.makedirs(backup_folder, exist_ok=True)
+            except Exception:
+                pass
             return backup_folder
         
         def get_manual_fail_folder():
             """수동 포스팅 실패 폴더 경로 반환"""
             base_folder = get_manual_upload_folder()
             fail_folder = os.path.join(os.path.dirname(base_folder), '밴드_수동이미지_실패')
-            os.makedirs(fail_folder, exist_ok=True)
+            try:
+                os.makedirs(fail_folder, exist_ok=True)
+            except Exception:
+                pass
             return fail_folder
         
         def move_images_to_folder(image_paths, target_folder):
@@ -10786,10 +10795,13 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             """폴더 내 이미지/영상 수 계산"""
             valid_exts = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".mov", ".avi"}
             count = 0
-            if os.path.exists(folder_path):
-                for f in os.listdir(folder_path):
-                    if os.path.splitext(f)[1].lower() in valid_exts:
-                        count += 1
+            try:
+                if os.path.exists(folder_path):
+                    for f in os.listdir(folder_path):
+                        if os.path.splitext(f)[1].lower() in valid_exts:
+                            count += 1
+            except Exception as e:
+                print(f"⚠️ 이미지 수 계산 중 에러 (무시됨): {e}")
             return count
         
         # 수동 업로드 폴더 경로 표시 필드 (읽기 전용)
