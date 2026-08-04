@@ -1,4 +1,5 @@
 import os
+import ssl
 import json
 import urllib.request
 import urllib.parse
@@ -80,7 +81,8 @@ class WeatherCacheManager:
             encoded = urllib.parse.quote(f"{refined_loc} 날씨")
             url = f"https://search.naver.com/search.naver?query={encoded}"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            ctx = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
                 html = resp.read().decode('utf-8', errors='replace')
             
             dust_patterns = [
@@ -151,7 +153,8 @@ class WeatherCacheManager:
             req = urllib.request.Request(req_url)
             
             logger.info(f"Querying KMA API for {refined_loc} ({nx},{ny}) at base time {base_date} {valid_base_time}")
-            with urllib.request.urlopen(req, timeout=10) as response:
+            ctx = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, timeout=10, context=ctx) as response:
                 response_data = json.loads(response.read().decode('utf-8'))
                 
             items = response_data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
@@ -259,7 +262,8 @@ class WeatherCacheManager:
         
         try:
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-            with urllib.request.urlopen(req, timeout=10) as response:
+            ctx = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, timeout=10, context=ctx) as response:
                 html = response.read().decode('utf-8', errors='replace')
             
             # Fetch fine dust
