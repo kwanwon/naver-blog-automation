@@ -496,9 +496,12 @@ def fix_layout_and_holidays(ws, year, month):
     # 테두리 스타일 정의 (구글 스프레드시트 호환을 위해 투명도 FF 추가)
     thin_side = Side(style='thin', color='FF000000')
     medium_side = Side(style='medium', color='FF000000')
+    gray_side = Side(style='thin', color='FFAAAAAA')  # 빈 칸용 회색 테두리
     
     thin_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+    medium_border = Border(left=medium_side, right=medium_side, top=medium_side, bottom=medium_side)  # 인쇄 강화용
     header_border = Border(left=thin_side, right=thin_side, top=medium_side, bottom=medium_side)
+    empty_border = Border(left=gray_side, right=gray_side, top=gray_side, bottom=gray_side)  # 빈 칸 회색 테두리
 
     # 0. 프린트 및 용지 설정 (A4 가로 꽉 차게)
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
@@ -565,12 +568,12 @@ def fix_layout_and_holidays(ws, year, month):
             
             val = date_cell.value
 
-            # 날짜가 없는 칸은 테두리와 배경색 제거 (디자인 깔끔하게)
+            # 날짜가 없는 칸은 배경색 제거 + 회색 테두리 유지 (인쇄 시 격자 구분)
             if not val or not isinstance(val, int):
                 date_cell.fill = PatternFill(fill_type=None)
                 content_cell.fill = PatternFill(fill_type=None)
-                date_cell.border = Border()
-                content_cell.border = Border()
+                date_cell.border = empty_border
+                content_cell.border = empty_border
                 continue
 
             # 기본 배경색 (일/토/평일)
