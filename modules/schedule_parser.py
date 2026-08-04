@@ -486,7 +486,11 @@ def get_holidays_for_month(y, m):
 def fix_layout_and_holidays(ws, year, month):
     """시트의 레이아웃(요일 헤더), 파스텔 테마 디자인, 공휴일 및 아이콘을 적용합니다."""
     from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
-    from openpyxl.drawing.image import Image as XLImage
+    try:
+        from openpyxl.drawing.image import Image as XLImage
+    except ImportError as e:
+        print(f"⚠️ 엑셀 이미지 삽입 모듈(Pillow) 없음 - 이미지 없이 진행합니다: {e}")
+        XLImage = None
     import os
 
     # 테두리 스타일 정의 (구글 스프레드시트 호환을 위해 투명도 FF 추가)
@@ -613,9 +617,10 @@ def fix_layout_and_holidays(ws, year, month):
                     
                     if icon_path and os.path.exists(icon_path):
                         try:
-                            img = XLImage(icon_path)
-                            img.width, img.height = 40, 40 # 작게 조절
-                            ws.add_image(img, content_cell.coordinate)
+                            if XLImage is not None:
+                                img = XLImage(icon_path)
+                                img.width, img.height = 40, 40 # 작게 조절
+                                ws.add_image(img, content_cell.coordinate)
                         except: pass
 
             # 외발자전거 등 특강 아이콘 (사용자 요청)
@@ -623,9 +628,10 @@ def fix_layout_and_holidays(ws, year, month):
                 icon_path = os.path.join(icon_dir, "unicycle.png")
                 if os.path.exists(icon_path):
                     try:
-                        img = XLImage(icon_path)
-                        img.width, img.height = 35, 35
-                        ws.add_image(img, content_cell.coordinate)
+                        if XLImage is not None:
+                            img = XLImage(icon_path)
+                            img.width, img.height = 35, 35
+                            ws.add_image(img, content_cell.coordinate)
                     except: pass
             
             # 셀 높이 조절 (내용이 잘 보위도록)
