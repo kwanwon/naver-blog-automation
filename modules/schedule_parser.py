@@ -835,105 +835,171 @@ def _init_annual_sheet(ws):
 
 
 def _init_monthly_sheet(ws, year: int, month: int):
-    """월간 달력 시트 초기화 (달력 그리드 + 하단 기계 판독 영역)"""
+    """월간 달력 시트 초기화 (파스텔 테마 디자인 + 달력 그리드 + 하단 기계 판독 영역)"""
+    from openpyxl.styles import PatternFill, Border, Side
     ws.title = f"{month}월"
-    
-    # 상단 타이틀
-    ws.merge_cells("A1:G1")
-    ws["A1"] = f"🦁 {year}년 {month}월 라이온짐 수련계획표"
-    ws["A1"].font = Font(bold=True, size=14)
-    ws["A1"].alignment = Alignment(horizontal="center")
-    
-    # 정밀 공휴일 정보 가져오기
+
+    # ── 파스텔 컬러 팔레트 정의 ──────────────────────────────────────
+    # 타이틀
+    fill_title      = PatternFill("solid", fgColor="2E4057")   # 딥 네이비 (타이틀 배경)
+    # 요일 헤더
+    fill_hdr_sun    = PatternFill("solid", fgColor="FFCDD2")   # 연한 핑크 (일)
+    fill_hdr_sat    = PatternFill("solid", fgColor="BBDEFB")   # 연한 하늘 (토)
+    fill_hdr_week   = PatternFill("solid", fgColor="E8F5E9")   # 연한 민트 (평일)
+    # 날짜 칸 (상단)
+    fill_sun_top    = PatternFill("solid", fgColor="FFEBEE")   # 연핑크 (일요일)
+    fill_sat_top    = PatternFill("solid", fgColor="E3F2FD")   # 연하늘 (토요일)
+    fill_week_top   = PatternFill("solid", fgColor="F9FBE7")   # 연라임 (평일)
+    fill_holiday_top= PatternFill("solid", fgColor="FCE4EC")   # 핫핑크 파스텔 (공휴일)
+    fill_empty_top  = PatternFill("solid", fgColor="FAFAFA")   # 거의 흰색 (빈 칸)
+    # 내용 칸 (하단)
+    fill_sun_bot    = PatternFill("solid", fgColor="FFF3F5")   # 아주 연핑크
+    fill_sat_bot    = PatternFill("solid", fgColor="F0F8FF")   # 아주 연하늘
+    fill_week_bot   = PatternFill("solid", fgColor="FEFFFE")   # 거의 흰색 (내용)
+    fill_holiday_bot= PatternFill("solid", fgColor="FFF8F8")   # 아주 연핑크 (공휴일 내용)
+    fill_empty_bot  = PatternFill("solid", fgColor="F5F5F5")   # 연회색 (빈 칸)
+
+    # ── 테두리 스타일 ─────────────────────────────────────────────────
+    thin_side    = Side(style='thin',   color='CCCCCC')
+    medium_side  = Side(style='medium', color='999999')
+    thick_side   = Side(style='medium', color='2E4057')
+    thin_border  = Border(left=thin_side,  right=thin_side,  top=thin_side,   bottom=thin_side)
+    outer_border = Border(left=thick_side, right=thick_side, top=thick_side,  bottom=thick_side)
+    hdr_border   = Border(left=thin_side,  right=thin_side,  top=medium_side, bottom=medium_side)
+    empty_border = Border(left=Side(style='thin', color='E0E0E0'),
+                          right=Side(style='thin', color='E0E0E0'),
+                          top=Side(style='thin',  color='E0E0E0'),
+                          bottom=Side(style='thin', color='E0E0E0'))
+
+    # ── 공휴일 정보 로드 ─────────────────────────────────────────────
     holidays = get_holidays_for_month(year, month)
 
-    # 요일 헤더
-    days = ["일", "월", "화", "수", "목", "금", "토"]
-    for i, day in enumerate(days, 1):
-        cell = ws.cell(row=2, column=i, value=day)
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
-        if i == 1: cell.font = Font(bold=True, color="FF0000") # 일요일 빨강
-        if i == 7: cell.font = Font(bold=True, color="0000FF") # 토요일 파랑
+    # ── 1. 타이틀 행 (Row 1) ─────────────────────────────────────────
+    ws.merge_cells("A1:G1")
+    title_cell = ws["A1"]
+    title_cell.value = f"🦁  {year}년 {month}월  라이온짐 수련계획표"
+    title_cell.font = Font(bold=True, size=16, color="FFFFFF")
+    title_cell.fill = fill_title
+    title_cell.alignment = Alignment(horizontal="center", vertical="center")
+    title_cell.border = outer_border
+    ws.row_dimensions[1].height = 40
 
-    # 달력 그리드 생성 (3~29행)
+    # ── 2. 요일 헤더 행 (Row 2) ──────────────────────────────────────
+    days = ["일", "월", "화", "수", "목", "금", "토"]
+    hdr_fills  = [fill_hdr_sun, fill_hdr_week, fill_hdr_week, fill_hdr_week,
+                  fill_hdr_week, fill_hdr_week, fill_hdr_sat]
+    hdr_colors = ["C62828", "2E7D32", "2E7D32", "2E7D32", "2E7D32", "2E7D32", "1565C0"]
+    for i, (day, fill, color) in enumerate(zip(days, hdr_fills, hdr_colors), 1):
+        cell = ws.cell(row=2, column=i, value=day)
+        cell.font = Font(bold=True, size=11, color=color)
+        cell.fill = fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = hdr_border
+    ws.row_dimensions[2].height = 22
+
+    # ── 3. 달력 그리드 생성 (Row 3~29) ───────────────────────────────
     calendar.setfirstweekday(calendar.SUNDAY)
     cal = calendar.monthcalendar(year, month)
     grid_map = {}
-    
     current_row = 3
-    for week in cal:
-        # 날짜 행
-        for i, day in enumerate(week, 1):
-            if day != 0:
-                cell = ws.cell(row=current_row, column=i, value=day)
-                cell.alignment = Alignment(horizontal="left", vertical="top")
-                
-                # 일요일(i=1) 또는 공휴일이면 빨간색
-                date_key = f"{year}-{month:02d}-{day:02d}"
-                is_holiday = date_key in holidays
-                if i == 1 or is_holiday:
-                    cell.font = Font(bold=True, color="FF0000")
-                else:
-                    cell.font = Font(bold=True)
-                
-                grid_map[day] = cell.coordinate
-        
-        content_row = current_row + 1
-        ws.row_dimensions[content_row].height = 60
-        
-        for i, day in enumerate(week, 1):
-            if day != 0:
-                content_cell = ws.cell(row=content_row, column=i)
-                grid_map[day] = content_cell.coordinate
-                
-                # 공휴일이면 내용 칸에 공휴일 이름 적고 빨간색 처리
-                date_key = f"{year}-{month:02d}-{day:02d}"
-                if date_key in holidays:
-                    content_cell.value = holidays[date_key]
-                    content_cell.font = Font(bold=True, color="FF0000")
-                    content_cell.alignment = Alignment(horizontal="center", vertical="center")
-                
-        current_row += 2 # 한 주당 2행 사용
 
-    # --- 하단 기계 판독 영역 (31행~61행) ---
+    for week in cal:
+        content_row = current_row + 1
+        ws.row_dimensions[current_row].height = 22
+        ws.row_dimensions[content_row].height = 65
+
+        for col_idx, day in enumerate(week, 1):
+            is_sun     = (col_idx == 1)
+            is_sat     = (col_idx == 7)
+            date_key   = f"{year}-{month:02d}-{day:02d}" if day != 0 else ""
+            is_holiday = date_key in holidays if date_key else False
+
+            date_cell    = ws.cell(row=current_row, column=col_idx)
+            content_cell = ws.cell(row=content_row, column=col_idx)
+
+            if day == 0:
+                # 빈 칸 (해당 월 날짜 없음)
+                date_cell.fill    = fill_empty_top
+                content_cell.fill = fill_empty_bot
+                date_cell.border    = empty_border
+                content_cell.border = empty_border
+                continue
+
+            # ── 배경색 결정
+            if is_holiday:
+                top_fill, bot_fill = fill_holiday_top, fill_holiday_bot
+            elif is_sun:
+                top_fill, bot_fill = fill_sun_top, fill_sun_bot
+            elif is_sat:
+                top_fill, bot_fill = fill_sat_top, fill_sat_bot
+            else:
+                top_fill, bot_fill = fill_week_top, fill_week_bot
+
+            # ── 날짜 숫자 셀
+            date_cell.value = day
+            date_cell.fill  = top_fill
+            date_cell.border = thin_border
+            txt_color = "C62828" if (is_sun or is_holiday) else ("1565C0" if is_sat else "37474F")
+            date_cell.font = Font(bold=True, size=10, color=txt_color)
+            date_cell.alignment = Alignment(horizontal="left", vertical="top", indent=1)
+            grid_map[day] = date_cell.coordinate
+
+            # ── 내용 셀
+            content_cell.fill   = bot_fill
+            content_cell.border = thin_border
+            content_cell.alignment = Alignment(wrapText=True, horizontal="center", vertical="center")
+
+            if is_holiday:
+                h_name = holidays[date_key]
+                # 이모지 매핑
+                emojis = {"신정":"🎊","설날":"🙇","삼일절":"🇰🇷","어린이날":"🎁",
+                          "부처님오신날":"🏮","현충일":"🇰🇷","광복절":"🇰🇷","추석":"🎑",
+                          "개천절":"🇰🇷","한글날":"📝","성탄절":"🎄","선거":"🗳️","대체":"📅"}
+                prefix = next((v for k, v in emojis.items() if k in h_name), "🎉")
+                content_cell.value = f"{prefix} {h_name}"
+                content_cell.font  = Font(bold=True, size=9, color="B71C1C")
+
+            grid_map[day] = content_cell.coordinate
+
+        current_row += 2
+
+    # ── 4. 열 너비 ────────────────────────────────────────────────────
+    for col in range(1, 8):
+        ws.column_dimensions[chr(64 + col)].width = 21
+
+    # ── 5. 하단 기계 판독 영역 (31행~) ───────────────────────────────
     ws.cell(row=31, column=1, value="날짜")
     ws.cell(row=31, column=2, value="1단계 (준비)")
     ws.cell(row=31, column=3, value="2단계 (체력)")
     ws.cell(row=31, column=4, value="3단계 (기술)")
     ws.cell(row=31, column=5, value="4단계 (마무리)")
-    
+
     for day in range(1, 32):
         try:
             d_obj = date(year, month, day)
             r = 31 + day
             ws.cell(row=r, column=1, value=d_obj.strftime("%Y-%m-%d"))
-            
-            # 수식 연결 (그리드의 해당 날짜 셀을 바라보게 함)
             if day in grid_map:
                 addr = grid_map[day]
-                # 4단계 모두 일단 동일한 셀을 바라보게 초기화
                 ws.cell(row=r, column=2, value=f"={addr}")
                 ws.cell(row=r, column=3, value=f"={addr}")
                 ws.cell(row=r, column=4, value=f"={addr}")
                 ws.cell(row=r, column=5, value=f"={addr}")
         except ValueError:
-            break # 해당 월의 마지막 날짜 지남
+            break
 
-    # 열 너비 설정
-    for col in range(1, 8):
-        ws.column_dimensions[chr(64 + col)].width = 15
-
-    # --- 인쇄 설정 (가로 방향, 1페이지 꽉 차게, 달력 영역만 인쇄) ---
+    # ── 6. 인쇄 설정 ─────────────────────────────────────────────────
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
-    ws.page_setup.paperSize = ws.PAPERSIZE_A4
-    ws.page_setup.fitToPage = True
-    ws.page_setup.fitToWidth = 1
+    ws.page_setup.paperSize   = ws.PAPERSIZE_A4
+    ws.page_setup.fitToPage   = True
+    ws.page_setup.fitToWidth  = 1
     ws.page_setup.fitToHeight = 1
     ws.print_options.horizontalCentered = True
-    ws.print_options.verticalCentered = True
-    # 달력 그리드 영역까지만 인쇄 영역 지정 (A1 ~ G15)
-    ws.print_area = "A1:G15"
+    ws.print_options.verticalCentered   = True
+    ws.print_area = "A1:G29"
+
+
+
 
 
 def sync_annual_sheet_to_monthly_tabs(excel_path: str, weekend_events: list = None, skip_annual: bool = False) -> bool:
