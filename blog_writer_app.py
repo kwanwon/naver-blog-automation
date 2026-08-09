@@ -3519,8 +3519,8 @@ class BlogWriterApp:
                 use_ai_comment = self.settings.get('idle_use_ai_comment', False)  # 방문 댓글에 AI 사용
                 use_ai_reply = self.settings.get('idle_use_ai_reply', False)  # 답글에 AI 사용
                 visit_count = self.settings.get('idle_visit_count', 3)
-                min_interval = self.settings.get('idle_min_interval', 300)  # 5분
-                max_interval = self.settings.get('idle_max_interval', 600)  # 10분
+                min_interval = self.settings.get('idle_min_interval', 1)  # 1초
+                max_interval = self.settings.get('idle_max_interval', 5)  # 5초
                 
                 if task.task_type == 'visit' or task.task_type == 'regular':
                     # 방문소통: 서로이웃 방문 + 좋아요 + 댓글
@@ -3621,8 +3621,8 @@ class BlogWriterApp:
                     visit_count = task.data.get('visit_count', 10) if task.data else 10
                     do_like = task.data.get('do_like', True) if task.data else True
                     use_ai = task.data.get('use_ai', True) if task.data else True
-                    min_interval = task.data.get('min_interval', 10) if task.data else 10
-                    max_interval = task.data.get('max_interval', 30) if task.data else 30
+                    min_interval = task.data.get('min_interval', 1) if task.data else 1
+                    max_interval = task.data.get('max_interval', 5) if task.data else 5
                     
                     print(f"📊 이웃방문 설정: 횟수={visit_count}, 좋아요={do_like}, AI={use_ai}")
                     
@@ -7524,14 +7524,14 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             label="최소 간격 (초)",
             hint_text="방문 사이 최소 대기 시간 (예: 30초)",
             width=150,
-            value=str(self.settings.get('idle_min_interval', 30))
+            value=str(self.settings.get('idle_min_interval', 1))
         )
         
         idle_max_interval = ft.TextField(
             label="최대 간격 (초)",
             hint_text="방문 사이 최대 대기 시간 (예: 60초)",
             width=150,
-            value=str(self.settings.get('idle_max_interval', 60))
+            value=str(self.settings.get('idle_max_interval', 5))
         )
         
         idle_do_like = ft.Checkbox(
@@ -7564,8 +7564,8 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         def save_idle_settings(e):
             try:
                 self.settings['idle_visit_count'] = int(idle_visit_count.value or 3)
-                self.settings['idle_min_interval'] = int(idle_min_interval.value or 300)
-                self.settings['idle_max_interval'] = int(idle_max_interval.value or 600)
+                self.settings['idle_min_interval'] = int(idle_min_interval.value or 1)
+                self.settings['idle_max_interval'] = int(idle_max_interval.value or 5)
                 self.settings['idle_do_like'] = idle_do_like.value
                 self.settings['idle_use_ai_comment'] = idle_use_ai_comment.value
                 self.settings['idle_use_ai_reply'] = idle_use_ai_reply.value
@@ -11596,11 +11596,11 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             
             # 설정값 가져오기 (초 단위)
             try:
-                min_int = int(idle_min_interval.value or 30)
-                max_int = int(idle_max_interval.value or 60)
+                min_int = int(idle_min_interval.value or 1)
+                max_int = int(idle_max_interval.value or 5)
             except:
-                min_int = 30
-                max_int = 60
+                min_int = 1
+                max_int = 5
             
             print(f"📊 소통 설정: 횟수={int(idle_visit_count.value)}, 간격={min_int}~{max_int}초, 좋아요={idle_do_like.value}, AI={idle_use_ai_comment.value}")
             
