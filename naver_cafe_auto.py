@@ -233,8 +233,34 @@ class NaverCafeAutomation:
                 print("❌ 내용 입력 실패 - 포스팅 중단")
                 return False
             
-            # 글자 크기 조정 (선택적)
+            # 글자 크기 조정 및 가운데 정렬 시도
             try:
+                # 텍스트 전체 선택 (정렬을 위해)
+                editor_area.click()
+                time.sleep(0.2)
+                ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('a').key_up(Keys.COMMAND).perform()
+                time.sleep(0.5)
+                
+                # 정렬 드롭다운이 닫혀있다면 열기 (스마트에디터 버전에 따라 다름)
+                self.driver.execute_script("""
+                    const dropdown = document.querySelector('button[title*="정렬"], .se-toolbar-option-align-justify-button, .se-toolbar-option-align-left-button');
+                    if (dropdown && !document.querySelector('button.se-toolbar-option-align-center-button')) {
+                        dropdown.click();
+                    }
+                """)
+                time.sleep(0.5)
+                
+                # 가운데 정렬 버튼 클릭
+                self.driver.execute_script("""
+                    const centerBtn = document.querySelector('button.se-toolbar-option-align-center-button') || 
+                                      document.querySelector('button[data-value="center"]');
+                    if (centerBtn) {
+                        centerBtn.click();
+                    }
+                """)
+                time.sleep(0.5)
+                
+                # 폰트 크기 변경 (보조 수단)
                 self.driver.execute_script("""
                     const editor = document.querySelector('.se-content') || 
                                    document.querySelector('.Editor_content__container') ||
@@ -243,11 +269,17 @@ class NaverCafeAutomation:
                         const paragraphs = editor.querySelectorAll('p, span, div');
                         paragraphs.forEach(p => {
                             p.style.setProperty('font-size', '19px', 'important');
+                            p.style.setProperty('text-align', 'center', 'important');
                         });
                     }
                 """)
-            except:
-                pass
+                
+                # 선택 해제 (오른쪽 화살표 키)
+                ActionChains(self.driver).send_keys(Keys.ARROW_RIGHT).perform()
+                time.sleep(0.5)
+            except Exception as align_e:
+                print(f"⚠️ 텍스트 서식 적용 중 오류: {align_e}")
+
             
             time.sleep(1)
             
