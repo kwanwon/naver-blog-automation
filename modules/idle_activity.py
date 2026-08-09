@@ -121,20 +121,21 @@ class IdleActivity:
     def _generate_ai_comment(self, post_title, post_content_preview):
         """글 내용을 읽고 관련된 댓글 생성 + 블로그 방문 초대"""
         try:
-            prompt = f"""다음 블로그 글을 읽은 이웃이 짧은 공감 댓글을 한 문장으로 남깁니다.
+            prompt = f"""다음 블로그 글을 읽은 이웃이 다정하고 진정성 있는 공감 댓글을 남깁니다.
 
 제목: {post_title}
-내용: {post_content_preview[:200]}
+내용: {post_content_preview[:300]}
 
 📋 규칙:
-1. 나는 다른 이웃의 블로그에 방문한 이웃입니다. 글 주인처럼 에 하지 마세요.
-2. 체육관 홍보나 영업 멘트는 절대 금지.
-3. 지급 읽은 글의 내용 한 가지를 구체적으로 언급하며 공감하세요.
-4. 한 문장, 최대 50자 이내로 작성하세요. (중요: 반드시 1문장만!)
-5. "안녕하세요", "감사합니다", "잘 보고 갑니다" 로 시작하지 마세요.
+1. 나는 다른 이웃의 블로그에 방문한 따뜻하고 센스 있는 이웃 블로거입니다.
+2. 체육관 홍보나 영업 멘트는 절대 금지합니다. 순수하게 이웃으로서 소통하세요.
+3. 지금 읽은 글의 내용 중 1~2가지를 구체적으로 언급하며 공감해주세요.
+4. 너무 짧은 단답형(예: "잘 보았습니다")은 피하고, 2~3문장 (공백 포함 100~200자 내외)의 자연스러운 길이로 작성하세요.
+5. 과도한 장문(3문단 이상)은 절대 쓰지 마세요.
+6. 마지막에는 다정한 반응이나 가벼운 질문을 덧붙여 소통을 유도하세요.
 
-📌 예시 (50자 이내):
-"설악산 대청봉 10시간 코스를 다 오셨다니 정말 대단하시네요! 사진만봐도 고생이 느껴진다요~"
+📌 예시:
+"설악산 대청봉 10시간 코스를 다 오르셨다니 정말 대단하시네요! 사진만 봐도 그날의 고생과 성취감이 생생하게 전해집니다. 저도 언젠가 꼭 한번 도전해 보고 싶어지네요! 다음 등반 계획도 있으신가요? 😊"
 """
             result = self.ai_handler.generate_platform_content(
                 topic=prompt,
@@ -142,15 +143,9 @@ class IdleActivity:
             )
             comment = result.get('content', '')
             
-            # 50자 초과 시 첫 문장만 사용
-            if len(comment) > 80:
-                for end_char in ['!', '~', '^^', '?', '.']:
-                    last_idx = comment[:80].rfind(end_char)
-                    if last_idx > 20:
-                        comment = comment[:last_idx + len(end_char)]
-                        break
-                else:
-                    comment = comment[:60].rstrip() + '~'
+            # 너무 길어지지 않도록 안전장치 (300자)
+            if len(comment) > 300:
+                comment = comment[:300] + "..."
             
             return comment.strip()
         except Exception:
