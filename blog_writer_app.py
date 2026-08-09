@@ -3349,13 +3349,28 @@ class BlogWriterApp:
                 band_auto = NaverBandAutomation(self.get_or_create_driver())
                 band_url = self.settings.get('band_url', '') or task.data.get('band_url', '')
                 
-                # 예약 시간 확인
+                # 예약 시간 확인 및 delta_days/task_type 계산
                 reservation_time = task.data.get('reservation_time')
+                
+                delta_days = 0
+                if reservation_time:
+                    try:
+                        t_parts = reservation_time.split(":")
+                        res_hour = int(t_parts[0])
+                        res_minute = int(t_parts[1])
+                        now = datetime.now()
+                        if res_hour < now.hour or (res_hour == now.hour and res_minute < now.minute):
+                            delta_days = 1
+                    except:
+                        pass
+                    task_type = self._get_time_based_task_type(reservation_time)
+                else:
+                    task_type = self._get_time_based_task_type()
                 
                 # 내용 생성
                 topic = self.select_sequential_topic('band') or "체육관 소개 및 일상"
-                print(f"🤖 [밴드] '{topic}' 주제로 내용 생성 중... (예약: {reservation_time or '즉시'}, 타입: {task.task_type})")
-                result = self.ai_handler.generate_platform_content(topic, platform='band', task_type=task.task_type, target_time=reservation_time)
+                print(f"🤖 [밴드] '{topic}' 주제로 내용 생성 중... (예약: {reservation_time or '즉시'}, 타입: {task_type}, delta: {delta_days})")
+                result = self.ai_handler.generate_platform_content(topic, platform='band', task_type=task_type, target_time=reservation_time, delta_days=delta_days)
                 
                 if not result or not result.get('content'):
                     print("❌ [밴드] AI 내용 생성에 실패했습니다.")
