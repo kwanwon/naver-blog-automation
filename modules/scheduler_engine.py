@@ -413,7 +413,7 @@ class SmartScheduler:
             except Exception as e:
                 print(f"⚠️ 매일 자동 시작 시간 계산 중 오류: {e}")
 
-        print(f"📅 매일 자동 시작 설정: {'활성화' if enabled else '비활성화'} (시간: {start_time}, 랜덤: ±{random_range}분)")
+        print(f"[Date] 매일 자동 시작 설정: {'활성화' if enabled else '비활성화'} (시간: {start_time}, 랜덤: ±{random_range}분)")
     
     def start_daily_auto_monitor(self):
         """매일 자동 시작 감시 스레드 시작"""
@@ -492,7 +492,7 @@ class SmartScheduler:
         """특별 예약 다중 시간대 설정"""
         self.special_reservation_enabled = enabled
         self.special_reservations = time_slots
-        print(f"📅 특별 예약 설정: {enabled} ({len(time_slots)}개 시간대)")
+        print(f"[Date] 특별 예약 설정: {enabled} ({len(time_slots)}개 시간대)")
     
     def start_special_reservation_monitor(self):
         """특별 예약 감시 스레드 시작"""

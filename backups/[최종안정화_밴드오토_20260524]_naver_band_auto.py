@@ -559,7 +559,7 @@ class NaverBandAutomation:
                     if target_dt_temp <= now:
                         is_tomorrow = True
                         target_dt_temp += timedelta(days=1)
-                        print(f"  📅 예약 시간이 현재보다 이전이므로 다음 날({target_dt_temp.strftime('%Y-%m-%d')})로 설정합니다.")
+                        print(f"  [Date] 예약 시간이 현재보다 이전이므로 다음 날({target_dt_temp.strftime('%Y-%m-%d')})로 설정합니다.")
                     
                     if is_tomorrow:
                         try:

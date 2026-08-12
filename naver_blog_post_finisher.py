@@ -1130,7 +1130,7 @@ class NaverBlogPostFinisher:
             if target_dt <= now:
                 target_dt += timedelta(days=1)
                 is_tomorrow = True
-                print(f"  📅 예약 시간이 현재보다 이전이므로 다음 날({target_dt.strftime('%Y-%m-%d')})로 설정합니다.")
+                print(f"  [Date] 예약 시간이 현재보다 이전이므로 다음 날({target_dt.strftime('%Y-%m-%d')})로 설정합니다.")
             
             print(f"  🎯 설정할 예약 시간: {target_dt.strftime('%Y-%m-%d')} {h:02d}:{m:02d}")
             
@@ -1222,7 +1222,7 @@ class NaverBlogPostFinisher:
                 # 네이버 형식: "2025. 12. 29"
                 date_str = target_dt.strftime('%Y. %m. %d')
                 
-                print(f"  📅 날짜 변경 시도: {date_str}")
+                print(f"  [Date] 날짜 변경 시도: {date_str}")
                 
                 # 1단계: 날짜 입력 필드 클릭하여 달력 열기
                 calendar_opened = self.driver.execute_script("""

@@ -306,7 +306,7 @@ class GoogleSheetsReader:
             self.all_sheets_data = {'Sheet1': self.data}
             
         today_str = datetime.now().strftime("%Y-%m-%d")
-        print(f"📅 오늘 날짜: {today_str}")
+        print(f"[Date] 오늘 날짜: {today_str}")
         
         # 모든 시트 순회 (첫 번째 탭은 건너뜀)
         sheets = list(self.all_sheets_data.items())
@@ -469,7 +469,7 @@ class GoogleSheetsReader:
             self.all_sheets_data = {'Sheet1': self.data}
         
         today_str = datetime.now().strftime("%Y-%m-%d")
-        print(f"📅 [시간대별] 오늘 날짜: {today_str}, 요청 시간대: {period}")
+        print(f"[Date] [시간대별] 오늘 날짜: {today_str}, 요청 시간대: {period}")
         
         # 컬럼 매핑 (다양한 헤더명 지원)
         column_mapping = {
@@ -589,7 +589,7 @@ if __name__ == "__main__":
             print("\n📋 전체 데이터 미리보기:")
             print(reader.data.head(10))
             
-            print("\n📅 오늘의 수련내용:")
+            print("\n[Date] 오늘의 수련내용:")
             content = reader.get_today_content()
             if content:
                 print(f"  → {content}")

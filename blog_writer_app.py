@@ -899,7 +899,7 @@ class BlogWriterApp:
 
     def _on_global_folder_picker_result(self, e: ft.FilePickerResultEvent):
         """전역 폴더 선택기 결과 처리"""
-        if getattr(self, 'current_folder_picker_target', None):
+        if e.path and getattr(self, 'current_folder_picker_target', None):
             self._on_drive_folder_selected(e, self.current_folder_picker_target)
             self.current_folder_picker_target = None
             
@@ -918,6 +918,8 @@ class BlogWriterApp:
             # 관련된 설정 키 찾아서 자동 저장
             if target_field == self.band_sheet_url:
                 self._save_setting('band_sheet_url', normalized_path)
+            elif getattr(target_field, 'data', None):
+                self._save_user_setting_individual(target_field.data, normalized_path)
             
             if target_field.page:
                 target_field.page.snack_bar = ft.SnackBar(content=ft.Text(f"✅ 파일이 선택되었습니다: {os.path.basename(normalized_path)}"))
@@ -959,132 +961,34 @@ class BlogWriterApp:
             print(f"⚠️ 사용자 설정 개별 저장 오류: {ex}")
 
     def _open_file_picker(self, e):
-        """파일 선택기 열기 (macOS: osascript 사용, 크로스 플랫폼 지원)"""
+        """파일 선택기 열기 (Flet 내장 FilePicker 사용)"""
         try:
             print("📁 파일 선택 버튼 클릭됨")
-            
-            # 형제 컨트롤(TextField) 찾기
             row = e.control.parent
             text_field = row.controls[0]
             
-            import threading
-            import subprocess
-            import unicodedata
-            
-            def run_file_picker():
-                try:
-                    file_path = None
-                    
-                    if sys.platform == 'darwin':  # macOS
-                        # AppleScript를 통해 네이티브 파일 선택 다이얼로그 실행
-                        script = '''
-                        tell application "System Events"
-                            activate
-                            set theFile to choose file with prompt "워터마크 이미지를 선택하세요:" of type {"public.image"}
-                            POSIX path of theFile
-                        end tell
-                        '''
-                        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
-                        if result.returncode == 0 and result.stdout.strip():
-                            # macOS NFD 정규화 문제를 NFC로 변환하여 해결 (한글 깨짐 방지)
-                            file_path = unicodedata.normalize('NFC', result.stdout.strip())
-                    
-                    if file_path:
-                        print(f"✅ 선택된 파일: {file_path}")
-                        # 메인 스레드에서 UI 업데이트 안전하게 실행
-                        def update_ui():
-                            text_field.value = file_path
-                            text_field.page.update()
-                            self._save_user_setting_individual(text_field.data, file_path) # data 필드에 key 이름 저장
-                            
-                        text_field.page.run_thread(update_ui)
-                except Exception as ex:
-                    print(f"⚠️ 파일 선택 다이얼로그 실행 중 오류: {ex}")
-                    
-            threading.Thread(target=run_file_picker, daemon=True).start()
-            
+            self.current_file_picker_target = text_field
+            if hasattr(self, 'file_picker'):
+                self.file_picker.pick_files(
+                    dialog_title="워터마크 이미지를 선택하세요",
+                    allowed_extensions=["png", "jpg", "jpeg", "gif", "bmp", "webp"],
+                    file_type=ft.FilePickerFileType.IMAGE
+                )
         except Exception as ex:
             print(f"⚠️ 파일 선택기 열기 실패: {ex}")
 
     def _open_folder_picker(self, e):
-        """폴더 선택기 열기 (macOS: osascript 사용, 크로스 플랫폼 지원)"""
+        """폴더 선택기 열기 (Flet 내장 FilePicker 사용)"""
         try:
             print("📂 폴더 선택 버튼 클릭됨")
-            
-            # 형제 컨트롤(TextField) 찾기
             row = e.control.parent
             text_field = row.controls[0]
             
-            import threading
-            import subprocess
-            import unicodedata
-            
-            def run_folder_picker():
-                try:
-                    folder_path = None
-                    
-                    if sys.platform == 'darwin':  # macOS
-                        # AppleScript를 통해 네이티브 폴더 선택 다이얼로그 실행
-                        script = '''
-                        tell application "System Events"
-                            activate
-                        end tell
-                        set folderPath to POSIX path of (choose folder with prompt "📁 감시할 폴더를 선택하세요")
-                        return folderPath
-                        '''
-                        result = subprocess.run(
-                            ['osascript', '-e', script],
-                            capture_output=True,
-                            text=True,
-                            timeout=60
-                        )
-                        
-                        if result.returncode == 0 and result.stdout.strip():
-                            folder_path = result.stdout.strip()
-                            # 경로 끝의 / 제거
-                            if folder_path.endswith('/'):
-                                folder_path = folder_path[:-1]
-                        else:
-                            print("⚠️ 폴더 선택이 취소됨")
-                            return
-                            
-                    else:  # Windows/Linux
-                        from tkinter import Tk, filedialog
-                        root = Tk()
-                        root.withdraw()
-                        folder_path = filedialog.askdirectory(title="감시할 폴더를 선택하세요")
-                        root.destroy()
-                        
-                        if not folder_path:
-                            print("⚠️ 폴더 선택이 취소됨")
-                            return
-                    
-                    if folder_path:
-                        # 한글 경로 정규화 (NFD → NFC)
-                        normalized_path = unicodedata.normalize('NFC', folder_path)
-                        print(f"✅ 선택된 폴더: {normalized_path}")
-                        
-                        # UI 및 탭 간 동기화 실행 (로직 재사용)
-                        self._on_drive_folder_selected(type('obj', (object,), {'path': normalized_path}), text_field)
-                        
-                        # 안내 메시지
-                        if text_field.page:
-                            text_field.page.snack_bar = ft.SnackBar(
-                                content=ft.Text(f"✅ 폴더가 선택되었습니다: {os.path.basename(normalized_path)}")
-                            )
-                            text_field.page.snack_bar.open = True
-                            text_field.page.update()
-                            
-                except subprocess.TimeoutExpired:
-                    print("⚠️ 폴더 선택 시간 초과")
-                except Exception as inner_ex:
-                    print(f"❌ 폴더 선택 오류: {inner_ex}")
-            
-            # 별도 스레드에서 실행 (UI 블로킹 방지)
-            threading.Thread(target=run_folder_picker, daemon=True).start()
-            
+            self.current_folder_picker_target = text_field
+            if hasattr(self, 'folder_picker'):
+                self.folder_picker.get_directory_path(dialog_title="감시할 폴더를 선택하세요")
         except Exception as ex:
-            print(f"❌ 폴더 선택기 열기 실패: {ex}")
+            print(f"⚠️ 폴더 선택기 열기 실패: {ex}")
 
     def _on_smart_image_scan_click(self, e):
         """로컬 이미지 폴더를 스캔하고 AI 키워드를 자동 학습시킵니다."""
@@ -4249,7 +4153,7 @@ class BlogWriterApp:
             try:
                 if self.clock_text and self.page_ref:
                     current_time = datetime.now()
-                    time_str = current_time.strftime("📅 %Y-%m-%d %p %I:%M:%S")
+                    time_str = current_time.strftime("[Date] %Y-%m-%d %p %I:%M:%S")
                     # 한국어 오전/오후 변환
                     time_str = time_str.replace("AM", "오전").replace("PM", "오후")
                     
@@ -4290,7 +4194,7 @@ class BlogWriterApp:
                     self.serial_status_text_ref.color = serial_status['color']
                     
                     if serial_status['days_remaining'] > 0:
-                        self.days_text_ref.value = f"📅 유효기간: {serial_status['days_remaining']}일 남음"
+                        self.days_text_ref.value = f"[Date] 유효기간: {serial_status['days_remaining']}일 남음"
                         self.days_text_ref.visible = True
                     else:
                         self.days_text_ref.value = ""
@@ -5122,7 +5026,7 @@ class BlogWriterApp:
         history_tab_content = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Text("📅 활동 내역 (최근 50개)", size=18, weight=ft.FontWeight.BOLD),
+                    ft.Text("[Date] 활동 내역 (최근 50개)", size=18, weight=ft.FontWeight.BOLD),
                     ft.IconButton(ft.Icons.REFRESH, on_click=refresh_history_click, tooltip="새로고침")
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 
@@ -6357,7 +6261,7 @@ class BlogWriterApp:
         
         # 실시간 시계 컴포넌트 생성
         self.clock_text = ft.Text(
-            value="📅 로딩 중...",
+            value="[Date] 로딩 중...",
             size=16,
             weight=ft.FontWeight.BOLD,
             color=ft.Colors.BLUE_600,
@@ -7329,10 +7233,8 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     try:
                         from geopy.geocoders import Nominatim
                     except ImportError:
-                        import sys
                         if getattr(sys, 'frozen', False):
                             raise Exception("앱 버전에 geopy 패키지가 포함되지 않아 위치 검색을 사용할 수 없습니다.")
-                        import subprocess
                         subprocess.check_call([sys.executable, "-m", "pip", "install", "geopy"])
                         from geopy.geocoders import Nominatim
 
@@ -7342,8 +7244,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     location = geolocator.geocode(search_addr)
                     
                     if not location:
-                        # 2차 시도: 상세주소(3층, B1 등) 때문에 실패했을 수 있으므로 숫자(번지/도로번호)까지만 남기고 잘라냄
-                        # 예: "강원도 양양군 양양읍 양양로 110 3층" -> "강원도 양양군 양양읍 양양로 110"
+                        import re
                         match = re.match(r'^(.+?[0-9]+(-[0-9]+)?).*', target_addr)
                         if match:
                             fallback_addr = match.group(1).strip()
@@ -7351,29 +7252,21 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                                 location = geolocator.geocode(fallback_addr)
                     
                     if location:
-                        def update_ui():
-                            gym_gps_coords.value = f"{location.latitude}, {location.longitude}"
-                            gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text("✅ 좌표 변환 완료!"))
-                            gym_gps_coords.page.snack_bar.open = True
-                            gym_gps_coords.page.update()
-                            self._save_user_setting_individual("gym_gps_coords", gym_gps_coords.value)
-                        
-                        gym_gps_coords.page.run_thread(update_ui)
-                    else:
-                        def update_fail():
-                            gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 주소에서 좌표를 찾을 수 없습니다. 도로명까지만 입력해보세요."))
-                            gym_gps_coords.page.snack_bar.open = True
-                            gym_gps_coords.page.update()
-                        gym_gps_coords.page.run_thread(update_fail)
-                except Exception as ex:
-                    def update_err():
-                        gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 좌표 변환 오류: {ex}"))
+                        gym_gps_coords.value = f"{location.latitude}, {location.longitude}"
+                        gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text("✅ 좌표 변환 완료!"))
                         gym_gps_coords.page.snack_bar.open = True
                         gym_gps_coords.page.update()
-                    gym_gps_coords.page.run_thread(update_err)
+                        self._save_user_setting_individual("gym_gps_coords", gym_gps_coords.value)
+                    else:
+                        gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 주소에서 좌표를 찾을 수 없습니다. 도로명까지만 입력해보세요."))
+                        gym_gps_coords.page.snack_bar.open = True
+                        gym_gps_coords.page.update()
+                except Exception as ex:
+                    gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 좌표 변환 오류: {ex}"))
+                    gym_gps_coords.page.snack_bar.open = True
+                    gym_gps_coords.page.update()
 
-            import threading
-            threading.Thread(target=run_geocoding, daemon=True).start()
+            run_geocoding()
 
         gps_auto_btn = ft.ElevatedButton(
             "주소로 좌표 가져오기",
@@ -9137,7 +9030,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 if task.data and 'times' in task.data:
                     detail_text = f"📦 {len(task.data['times'])}건 예약 포스팅"
                 elif task.data and 'reservation_time' in task.data:
-                    detail_text = f"📅 예약: {task.data['reservation_time']}"
+                    detail_text = f"[Date] 예약: {task.data['reservation_time']}"
                 # 🆕 횟수 정보 표시
                 elif task.data and 'visit_count' in task.data:
                     detail_text = f"🚶 {task.data['visit_count']}회 방문"
@@ -10176,7 +10069,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         scheduler_tab_content = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Text("📅 스마트 스케줄러 설정", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Text("[Date] 스마트 스케줄러 설정", size=20, weight=ft.FontWeight.BOLD),
                     ft.ElevatedButton("작업 추가", icon=ft.Icons.ADD, on_click=add_new_task)
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Container(
@@ -10302,7 +10195,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 import re
                 if re.match(r"^\d{1,2}:\d{2}$", band_single_reserve_time.value.strip()):
                      reservation_time = band_single_reserve_time.value.strip()
-                     print(f"🕒 수동 포스팅 예약 설정: {reservation_time}")
+                     print(f"[Time] 수동 포스팅 예약 설정: {reservation_time}")
                 else:
                     page.snack_bar = ft.SnackBar(content=ft.Text("예약 시간 형식이 올바르지 않습니다 (HH:MM)"), bgcolor=ft.Colors.RED)
                     page.snack_bar.open = True
@@ -11967,7 +11860,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         
         # 유효기간 표시 (인증된 경우에만)
         days_text = ft.Text(
-            value=f"📅 유효기간: {serial_status['days_remaining']}일 남음" if serial_status['days_remaining'] > 0 else "",
+            value=f"[Date] 유효기간: {serial_status['days_remaining']}일 남음" if serial_status['days_remaining'] > 0 else "",
             size=12,
             color=ft.Colors.GREY_600
         )
@@ -12518,7 +12411,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 if getattr(self, 'page', None):
                     self.page.update()
                 
-            location = self.ai_handler.settings.get('weather_location', '서울')
+            location = self.settings.get('weather_location', '서울')
             api_key = self.ai_handler.settings.get('kma_api_key', '')
             
             # 1. 날씨 캐시 갱신 (로컬 기상 데이터를 가져오고 캐시 갱신)
@@ -12844,7 +12737,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                                 activate
                             end tell
                             try
-                                set filePath to POSIX path of (choose file name default name "{default_name}" with prompt "📅 생성된 수련계획표를 저장할 파일명과 위치를 지정하세요")
+                                set filePath to POSIX path of (choose file name default name "{default_name}" with prompt "[Date] 생성된 수련계획표를 저장할 파일명과 위치를 지정하세요")
                                 return filePath
                             on error
                                 return ""
@@ -12856,7 +12749,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                                 activate
                             end tell
                             try
-                                set filePath to POSIX path of (choose file with prompt "📅 수련계획표 기존 엑셀 템플릿 파일을 선택하세요" of type {"org.openxmlformats.spreadsheetml.sheet", "com.microsoft.excel.xls"})
+                                set filePath to POSIX path of (choose file with prompt "[Date] 수련계획표 기존 엑셀 템플릿 파일을 선택하세요" of type {"org.openxmlformats.spreadsheetml.sheet", "com.microsoft.excel.xls"})
                                 return filePath
                             on error
                                 return ""
@@ -13367,7 +13260,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                                     ft.Row([routine_1_tf, routine_2_tf]),
                                     ft.Row([routine_3_tf, routine_4_tf]),
                                     
-                                    ft.Text("📅 주간 요일별 고정 루틴 설정 (해당 칸에 입력된 내용만 고정되며, 비워두면 AI가 채웁니다)", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Text("[Date] 주간 요일별 고정 루틴 설정 (해당 칸에 입력된 내용만 고정되며, 비워두면 AI가 채웁니다)", size=13, weight=ft.FontWeight.BOLD),
                                     weekly_routine_ui,
                                     
                                     ft.Divider(height=10),
@@ -13392,7 +13285,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                                     ]),
                                     ft.ElevatedButton("🚀 수련 매뉴얼 학습 및 AI 지식 베이스화", icon=ft.Icons.BOLT, on_click=learn_files_click, bgcolor=ft.Colors.PURPLE_700, color=ft.Colors.WHITE),
                                     ft.Divider(),
-                                    ft.Text("📅 [2단계 연간행사 달력 배치] 연간계획표(이미지/PDF) 스캔 및 엑셀 생성", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Text("[Date] [2단계 연간행사 달력 배치] 연간계획표(이미지/PDF) 스캔 및 엑셀 생성", size=13, weight=ft.FontWeight.BOLD),
                                     ft.Row([
                                         ft.ElevatedButton("📁 연간계획표(이미지 등) 선택", icon=ft.Icons.IMAGE, on_click=on_annual_picker_click, bgcolor=ft.Colors.GREY_700, color=ft.Colors.WHITE),
                                         annual_file_text,
@@ -13407,7 +13300,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                                         ft.Text("년도 달력에 연간 행사 적용 진행")
                                     ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                                     ft.ElevatedButton(
-                                        "📅 연간계획표 엑셀 첫페이지 및 달력 배치 (상세일정 제외)",
+                                        "[Date] 연간계획표 엑셀 첫페이지 및 달력 배치 (상세일정 제외)",
                                         icon=ft.Icons.AUTO_AWESOME_MOTION,
                                         on_click=lambda e: [auto_save_profile_internal(), generate_full_year_click(e)],
                                         bgcolor=ft.Colors.BLUE_900,
@@ -13423,9 +13316,9 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                             icon=ft.Icons.AUTO_AWESOME,
                             content=ft.Container(
                                 content=ft.Column([
-                                    ft.Text("📅 특정 월에 관장님 취향과 특수요청을 더해 수련 계획을 맞춤 변경합니다.", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Text("[Date] 특정 월에 관장님 취향과 특수요청을 더해 수련 계획을 맞춤 변경합니다.", size=13, weight=ft.FontWeight.BOLD),
                                     ft.Row([
-                                        ft.Text("📅 대상 기간:", size=13, weight=ft.FontWeight.BOLD),
+                                        ft.Text("[Date] 대상 기간:", size=13, weight=ft.FontWeight.BOLD),
                                         month_dropdown, ft.Text("월 수련계획 맞춤 생성")
                                     ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                                     special_note_tf,

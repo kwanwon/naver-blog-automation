@@ -253,7 +253,7 @@ class UpdateMonitor:
 - 실패: {stats.get('total_failures', 0)}회
 - 전체 성공률: {stats.get('success_rate', 0):.1f}%
 
-📅 최근 30일:
+[Date] 최근 30일:
 - 성공률: {stats.get('recent_success_rate', 0):.1f}%
 - 평균 업데이트 시간: {stats.get('average_update_duration', 'N/A')}초
 
@@ -269,7 +269,7 @@ class UpdateMonitor:
             
             if stats.get('last_successful_update'):
                 last_update = datetime.fromisoformat(stats['last_successful_update'])
-                report += f"\n🕒 마지막 성공 업데이트: {last_update.strftime('%Y-%m-%d %H:%M:%S')}"
+                report += f"\n[Time] 마지막 성공 업데이트: {last_update.strftime('%Y-%m-%d %H:%M:%S')}"
             
             return report
             

@@ -954,7 +954,7 @@ def _init_monthly_sheet(ws, year: int, month: int):
                 # 이모지 매핑
                 emojis = {"신정":"🎊","설날":"🙇","삼일절":"🇰🇷","어린이날":"🎁",
                           "부처님오신날":"🏮","현충일":"🇰🇷","광복절":"🇰🇷","추석":"🎑",
-                          "개천절":"🇰🇷","한글날":"📝","성탄절":"🎄","선거":"🗳️","대체":"📅"}
+                          "개천절":"🇰🇷","한글날":"📝","성탄절":"🎄","선거":"🗳️","대체":"[Date]"}
                 prefix = next((v for k, v in emojis.items() if k in h_name), "🎉")
                 content_cell.value = f"{prefix} {h_name}"
                 content_cell.font  = Font(bold=True, size=9, color="B71C1C")

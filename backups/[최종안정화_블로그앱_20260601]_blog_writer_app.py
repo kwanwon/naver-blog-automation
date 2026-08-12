@@ -4029,7 +4029,7 @@ class BlogWriterApp:
             try:
                 if self.clock_text and self.page_ref:
                     current_time = datetime.now()
-                    time_str = current_time.strftime("📅 %Y-%m-%d %p %I:%M:%S")
+                    time_str = current_time.strftime("[Date] %Y-%m-%d %p %I:%M:%S")
                     # 한국어 오전/오후 변환
                     time_str = time_str.replace("AM", "오전").replace("PM", "오후")
                     
@@ -4070,7 +4070,7 @@ class BlogWriterApp:
                     self.serial_status_text_ref.color = serial_status['color']
                     
                     if serial_status['days_remaining'] > 0:
-                        self.days_text_ref.value = f"📅 유효기간: {serial_status['days_remaining']}일 남음"
+                        self.days_text_ref.value = f"[Date] 유효기간: {serial_status['days_remaining']}일 남음"
                         self.days_text_ref.visible = True
                     else:
                         self.days_text_ref.value = ""
@@ -4902,7 +4902,7 @@ class BlogWriterApp:
         history_tab_content = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Text("📅 활동 내역 (최근 50개)", size=18, weight=ft.FontWeight.BOLD),
+                    ft.Text("[Date] 활동 내역 (최근 50개)", size=18, weight=ft.FontWeight.BOLD),
                     ft.IconButton(ft.Icons.REFRESH, on_click=refresh_history_click, tooltip="새로고침")
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 
@@ -5897,7 +5897,7 @@ class BlogWriterApp:
         
         # 실시간 시계 컴포넌트 생성
         self.clock_text = ft.Text(
-            value="📅 로딩 중...",
+            value="[Date] 로딩 중...",
             size=16,
             weight=ft.FontWeight.BOLD,
             color=ft.Colors.BLUE_600,
@@ -8792,7 +8792,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 if task.data and 'times' in task.data:
                     detail_text = f"📦 {len(task.data['times'])}건 예약 포스팅"
                 elif task.data and 'reservation_time' in task.data:
-                    detail_text = f"📅 예약: {task.data['reservation_time']}"
+                    detail_text = f"[Date] 예약: {task.data['reservation_time']}"
                 # 🆕 횟수 정보 표시
                 elif task.data and 'visit_count' in task.data:
                     detail_text = f"🚶 {task.data['visit_count']}회 방문"
@@ -9749,7 +9749,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         scheduler_tab_content = ft.Container(
             content=ft.Column([
                 ft.Row([
-                    ft.Text("📅 스마트 스케줄러 설정", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Text("[Date] 스마트 스케줄러 설정", size=20, weight=ft.FontWeight.BOLD),
                     ft.ElevatedButton("작업 추가", icon=ft.Icons.ADD, on_click=add_new_task)
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Container(
@@ -9875,7 +9875,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                 import re
                 if re.match(r"^\d{1,2}:\d{2}$", band_single_reserve_time.value.strip()):
                      reservation_time = band_single_reserve_time.value.strip()
-                     print(f"🕒 수동 포스팅 예약 설정: {reservation_time}")
+                     print(f"[Time] 수동 포스팅 예약 설정: {reservation_time}")
                 else:
                     page.snack_bar = ft.SnackBar(content=ft.Text("예약 시간 형식이 올바르지 않습니다 (HH:MM)"), bgcolor=ft.Colors.RED)
                     page.snack_bar.open = True
@@ -11484,7 +11484,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
         
         # 유효기간 표시 (인증된 경우에만)
         days_text = ft.Text(
-            value=f"📅 유효기간: {serial_status['days_remaining']}일 남음" if serial_status['days_remaining'] > 0 else "",
+            value=f"[Date] 유효기간: {serial_status['days_remaining']}일 남음" if serial_status['days_remaining'] > 0 else "",
             size=12,
             color=ft.Colors.GREY_600
         )
@@ -12361,7 +12361,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                                 activate
                             end tell
                             try
-                                set filePath to POSIX path of (choose file name default name "{default_name}" with prompt "📅 생성된 수련계획표를 저장할 파일명과 위치를 지정하세요")
+                                set filePath to POSIX path of (choose file name default name "{default_name}" with prompt "[Date] 생성된 수련계획표를 저장할 파일명과 위치를 지정하세요")
                                 return filePath
                             on error
                                 return ""
@@ -12373,7 +12373,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                                 activate
                             end tell
                             try
-                                set filePath to POSIX path of (choose file with prompt "📅 수련계획표 기존 엑셀 템플릿 파일을 선택하세요" of type {"org.openxmlformats.spreadsheetml.sheet", "com.microsoft.excel.xls"})
+                                set filePath to POSIX path of (choose file with prompt "[Date] 수련계획표 기존 엑셀 템플릿 파일을 선택하세요" of type {"org.openxmlformats.spreadsheetml.sheet", "com.microsoft.excel.xls"})
                                 return filePath
                             on error
                                 return ""
@@ -12891,7 +12891,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                                     ft.Row([routine_1_tf, routine_2_tf]),
                                     ft.Row([routine_3_tf, routine_4_tf]),
                                     
-                                    ft.Text("📅 주간 요일별 고정 루틴 설정 (해당 칸에 입력된 내용만 고정되며, 비워두면 AI가 채웁니다)", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Text("[Date] 주간 요일별 고정 루틴 설정 (해당 칸에 입력된 내용만 고정되며, 비워두면 AI가 채웁니다)", size=13, weight=ft.FontWeight.BOLD),
                                     weekly_routine_ui,
                                     
                                     ft.Divider(height=10),
@@ -12916,7 +12916,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                                     ]),
                                     ft.ElevatedButton("🚀 수련 매뉴얼 학습 및 AI 지식 베이스화", icon=ft.Icons.BOLT, on_click=learn_files_click, bgcolor=ft.Colors.PURPLE_700, color=ft.Colors.WHITE),
                                     ft.Divider(),
-                                    ft.Text("📅 [2단계 연간행사 달력 배치] 연간계획표(이미지/PDF) 스캔 및 엑셀 생성", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Text("[Date] [2단계 연간행사 달력 배치] 연간계획표(이미지/PDF) 스캔 및 엑셀 생성", size=13, weight=ft.FontWeight.BOLD),
                                     ft.Row([
                                         ft.ElevatedButton("📁 연간계획표(이미지 등) 선택", icon=ft.Icons.IMAGE, on_click=on_annual_picker_click, bgcolor=ft.Colors.GREY_700, color=ft.Colors.WHITE),
                                         annual_file_text,
@@ -12931,7 +12931,7 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                                         ft.Text("년도 달력에 연간 행사 적용 진행")
                                     ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                                     ft.ElevatedButton(
-                                        "📅 연간계획표 엑셀 첫페이지 및 달력 배치 (상세일정 제외)",
+                                        "[Date] 연간계획표 엑셀 첫페이지 및 달력 배치 (상세일정 제외)",
                                         icon=ft.Icons.AUTO_AWESOME_MOTION,
                                         on_click=lambda e: [auto_save_profile_internal(), generate_full_year_click(e)],
                                         bgcolor=ft.Colors.BLUE_900,
@@ -12947,9 +12947,9 @@ Local Touch: 체육관의 지역적 정체성을 자연스럽게 녹여내세요
                             icon=ft.Icons.AUTO_AWESOME,
                             content=ft.Container(
                                 content=ft.Column([
-                                    ft.Text("📅 특정 월에 관장님 취향과 특수요청을 더해 수련 계획을 맞춤 변경합니다.", size=13, weight=ft.FontWeight.BOLD),
+                                    ft.Text("[Date] 특정 월에 관장님 취향과 특수요청을 더해 수련 계획을 맞춤 변경합니다.", size=13, weight=ft.FontWeight.BOLD),
                                     ft.Row([
-                                        ft.Text("📅 대상 기간:", size=13, weight=ft.FontWeight.BOLD),
+                                        ft.Text("[Date] 대상 기간:", size=13, weight=ft.FontWeight.BOLD),
                                         month_dropdown, ft.Text("월 수련계획 맞춤 생성")
                                     ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
                                     special_note_tf,
