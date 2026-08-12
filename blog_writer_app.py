@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+import sys
+import io
+
+# 윈도우 인코딩 (시계 이모지 등 처리용)
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 import flet as ft # type: ignore
 from modules.ai_handler import AIHandler
 from modules.serial_auth import BlogSerialAuth
@@ -10846,18 +10853,25 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             page.update()
         
         def open_manual_upload_folder(e):
-            """수동 업로드 폴더를 Finder에서 열기"""
+            """수동 업로드 폴더를 Finder/Explorer에서 열기"""
             folder_path = get_manual_upload_folder()
+            import threading
             import subprocess
-            try:
-                subprocess.run(['open', folder_path])  # macOS
-            except:
+            
+            def _open_folder():
                 try:
-                    subprocess.run(['explorer', folder_path])  # Windows
-                except:
-                    page.snack_bar = ft.SnackBar(content=ft.Text(f"폴더 경로: {folder_path}"))
-                    page.snack_bar.open = True
-                    page.update()
+                    subprocess.run(['open', folder_path])  # macOS
+                except Exception:
+                    try:
+                        subprocess.run(['explorer', folder_path])  # Windows
+                    except Exception as ex:
+                        print(f"❌ 폴더 열기 실패: {ex}")
+            
+            threading.Thread(target=_open_folder, daemon=True).start()
+            # fallback UI 알림은 스레드 밖 메인 루프에서 즉시 띄우기
+            page.snack_bar = ft.SnackBar(content=ft.Text(f"폴더를 엽니다: {folder_path}"))
+            page.snack_bar.open = True
+            page.update()
         
         def refresh_manual_image_count(e):
             """이미지 수 새로고침"""

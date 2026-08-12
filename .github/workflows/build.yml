@@ -31,7 +31,7 @@ jobs:
           
       - name: Build with PyInstaller (Onedir mode)
         run: |
-          pyinstaller blog_writer_app.py --name BlogApp --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all flet_desktop --collect-all certifi --hidden-import pandas --hidden-import watchdog --hidden-import openpyxl --hidden-import pdfplumber --hidden-import holidays --hidden-import modules.schedule_parser --hidden-import modules.training_planner --hidden-import modules.training_planner.planner_engine --hidden-import modules.training_planner.calendar_writer --hidden-import modules.training_planner.curriculum_loader --hidden-import manual_session_helper --hidden-import setup_chrome_permissions --noconfirm
+          pyinstaller blog_writer_app.py --name BlogApp --noconsole --onedir --clean --icon assets/icon.ico --collect-all requests --collect-all flet --collect-all flet_desktop --collect-all certifi --collect-all selenium --collect-all webdriver_manager --hidden-import pandas --hidden-import watchdog --hidden-import openpyxl --hidden-import pdfplumber --hidden-import holidays --hidden-import modules.schedule_parser --hidden-import modules.training_planner --hidden-import modules.training_planner.planner_engine --hidden-import modules.training_planner.calendar_writer --hidden-import modules.training_planner.curriculum_loader --hidden-import manual_session_helper --hidden-import setup_chrome_permissions --noconfirm
 
           pyinstaller launcher.py --name BlogAutomation_Windows --noconsole --onefile --clean --icon assets/icon.ico --collect-all flet --collect-all flet_desktop --collect-all requests --collect-all certifi --noconfirm
         shell: cmd
