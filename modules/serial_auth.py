@@ -47,7 +47,17 @@ class BlogSerialAuth:
         
     def setup_logging(self):
         """로깅 설정"""
-        log_file = os.path.join(self.base_dir, "blog_serial_auth.log")
+        import sys
+        if getattr(sys, 'frozen', False):
+            # PyInstaller 빌드 환경: exe가 있는 폴더에 로그 저장
+            base_log_dir = os.path.dirname(sys.executable)
+        else:
+            # 소스 실행 환경
+            base_log_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            
+        log_dir = os.path.join(base_log_dir, 'modules')
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, "blog_serial_auth.log")
         logging.basicConfig(
             filename=log_file,
             level=logging.INFO,
