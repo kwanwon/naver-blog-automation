@@ -2,9 +2,11 @@
 import sys
 import io
 
-# 윈도우 인코딩 (시계 이모지 등 처리용)
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+# 윈도우 인코딩 (시계 이모지 등 처리용) - noconsole 모드 방어 코드 추가
+if sys.stdout and hasattr(sys.stdout, 'buffer'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if sys.stderr and hasattr(sys.stderr, 'buffer'):
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 import flet as ft # type: ignore
 from modules.ai_handler import AIHandler
