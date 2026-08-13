@@ -487,9 +487,31 @@ class BlogWriterApp:
 
     def _open_folder_picker_for(self, target_textfield: ft.TextField):
         """특정 텍스트필드를 위한 폴더 선택기 열기"""
-        self.current_folder_picker_target = target_textfield
-        # 기존 _open_folder_picker 로직을 활용하거나 직접 osascript 호출
-        self._open_folder_picker(type('obj', (object,), {'control': type('obj', (object,), {'parent': target_textfield.parent})}))
+        try:
+            print("📂 폴더 선택 버튼 클릭됨 (for textfield)")
+            self.current_folder_picker_target = target_textfield
+            if hasattr(self, 'folder_picker'):
+                self.folder_picker.get_directory_path(dialog_title="감시할 폴더를 선택하세요")
+        except Exception as ex:
+            print(f"⚠️ 폴더 선택기 열기 실패: {ex}")
+
+    def _open_folder_picker(self, e):
+        """폴더 선택기 열기 (Flet 내장 FilePicker 사용)"""
+        try:
+            print("📂 폴더 선택 버튼 클릭됨")
+            # e.control is the IconButton. e.control.parent is the Row.
+            # Find the TextField in the Row (usually the first control)
+            row = e.control.parent
+            text_field = next((c for c in row.controls if isinstance(c, ft.TextField)), None)
+            
+            if text_field:
+                self.current_folder_picker_target = text_field
+                if hasattr(self, 'folder_picker'):
+                    self.folder_picker.get_directory_path(dialog_title="감시할 폴더를 선택하세요")
+            else:
+                print("⚠️ 폴더 선택기 열기 실패: 연결된 텍스트 필드를 찾을 수 없습니다.")
+        except Exception as ex:
+            print(f"⚠️ 폴더 선택기 열기 실패: {ex}")
 
     def _toggle_blog_drive_watcher(self, e):
         """블로그용 실시간 드라이브 감시 시작/중지"""
@@ -984,30 +1006,20 @@ class BlogWriterApp:
         try:
             print("📁 파일 선택 버튼 클릭됨")
             row = e.control.parent
-            text_field = row.controls[0]
+            text_field = next((c for c in row.controls if isinstance(c, ft.TextField)), None)
             
-            self.current_file_picker_target = text_field
-            if hasattr(self, 'file_picker'):
-                self.file_picker.pick_files(
-                    dialog_title="워터마크 이미지를 선택하세요",
-                    allowed_extensions=["png", "jpg", "jpeg", "gif", "bmp", "webp"],
-                    file_type=ft.FilePickerFileType.IMAGE
-                )
+            if text_field:
+                self.current_file_picker_target = text_field
+                if hasattr(self, 'file_picker'):
+                    self.file_picker.pick_files(
+                        dialog_title="워터마크 이미지를 선택하세요",
+                        allowed_extensions=["png", "jpg", "jpeg", "gif", "bmp", "webp"],
+                        file_type=ft.FilePickerFileType.IMAGE
+                    )
+            else:
+                print("⚠️ 파일 선택기 열기 실패: 연결된 텍스트 필드를 찾을 수 없습니다.")
         except Exception as ex:
             print(f"⚠️ 파일 선택기 열기 실패: {ex}")
-
-    def _open_folder_picker(self, e):
-        """폴더 선택기 열기 (Flet 내장 FilePicker 사용)"""
-        try:
-            print("📂 폴더 선택 버튼 클릭됨")
-            row = e.control.parent
-            text_field = row.controls[0]
-            
-            self.current_folder_picker_target = text_field
-            if hasattr(self, 'folder_picker'):
-                self.folder_picker.get_directory_path(dialog_title="감시할 폴더를 선택하세요")
-        except Exception as ex:
-            print(f"⚠️ 폴더 선택기 열기 실패: {ex}")
 
     def _on_smart_image_scan_click(self, e):
         """로컬 이미지 폴더를 스캔하고 AI 키워드를 자동 학습시킵니다."""
