@@ -122,6 +122,12 @@ class BlogWriterApp:
         self.base_dir = self._get_base_directory()
         self.user_data_dir = self._get_app_data_dir()
         
+        # 구버전 데이터 마이그레이션 (제일 먼저 실행되어야 설정 파일들을 불러올 수 있음)
+        self._migrate_old_user_data()
+        
+        # 디렉토리 존재 확인 및 생성
+        self._ensure_directories()
+        
         # 시리얼 인증 초기화
         self.serial_auth = BlogSerialAuth()
 
@@ -135,11 +141,7 @@ class BlogWriterApp:
         # 자동 업데이트 확인 (백그라운드에서)
         self.check_for_updates()
         
-        # 구버전 데이터 마이그레이션
-        self._migrate_old_user_data()
-        
-        # 디렉토리 존재 확인 및 생성
-        self._ensure_directories()
+
         
         # 이미지 폴더 생성
         self.create_image_folders()
