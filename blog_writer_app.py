@@ -377,6 +377,28 @@ class BlogWriterApp:
         except Exception as e:
             print(f"설정 저장 중 오류: {e}")
     
+    def _open_file_picker_for(self, target_textfield: ft.TextField):
+        """특정 텍스트필드를 위한 파일 선택기 열기"""
+        try:
+            print("📂 파일 선택 버튼 클릭됨 (for textfield)")
+            self.current_file_picker_target = target_textfield
+            
+            if not hasattr(self, 'file_picker'):
+                self.file_picker = ft.FilePicker(on_result=self._on_global_file_picker_result)
+                
+            if self.file_picker not in self.page.overlay:
+                self.page.overlay.append(self.file_picker)
+                
+            self.page.update()
+            
+            self.file_picker.pick_files(
+                dialog_title="파일을 선택하세요",
+                allow_multiple=False
+            )
+            print("📂 pick_files 명령 전달 완료")
+        except Exception as ex:
+            print(f"⚠️ 파일 선택기 열기 실패: {ex}")
+
     def _save_setting(self, key: str, value):
         """개별 설정 저장 (UI on_blur 이벤트용)"""
         # 폴더 경로 설정의 경우 따옴표 자동 제거
@@ -426,6 +448,27 @@ class BlogWriterApp:
             print(f"❌ AI 글 생성 오류: {e}")
             return None
     
+    def _open_folder_picker_for(self, target_textfield: ft.TextField):
+        """특정 텍스트필드를 위한 폴더 선택기 열기"""
+        try:
+            print("📂 폴더 선택 버튼 클릭됨 (for textfield)")
+            self.current_folder_picker_target = target_textfield
+            
+            if not hasattr(self, 'folder_picker'):
+                self.folder_picker = ft.FilePicker(on_result=self._on_global_folder_picker_result)
+                
+            if self.folder_picker not in self.page.overlay:
+                self.page.overlay.append(self.folder_picker)
+                
+            self.page.update()
+            
+            print(f"🔍 FilePicker 상태: overlay={self.folder_picker in self.page.overlay}, page={self.folder_picker.page is not None}")
+            
+            self.folder_picker.get_directory_path(dialog_title="폴더를 선택하세요")
+            print("📂 get_directory_path 명령 전달 완료")
+        except Exception as ex:
+            print(f"⚠️ 폴더 선택기 열기 실패: {ex}")
+
     def _drive_post_to_band(self, content: str, image_paths: list):
         """드라이브 자동 포스팅용 밴드 포스팅"""
         try:
@@ -485,15 +528,6 @@ class BlogWriterApp:
             if self.cafe_drive_settings_row.page:
                 self.cafe_drive_settings_row.update()
 
-    def _open_folder_picker_for(self, target_textfield: ft.TextField):
-        """특정 텍스트필드를 위한 폴더 선택기 열기"""
-        try:
-            print("📂 폴더 선택 버튼 클릭됨 (for textfield)")
-            self.current_folder_picker_target = target_textfield
-            if hasattr(self, 'folder_picker'):
-                self.folder_picker.get_directory_path(dialog_title="감시할 폴더를 선택하세요")
-        except Exception as ex:
-            print(f"⚠️ 폴더 선택기 열기 실패: {ex}")
 
     def _open_folder_picker(self, e):
         """폴더 선택기 열기 (Flet 내장 FilePicker 사용)"""
@@ -6015,10 +6049,15 @@ class BlogWriterApp:
         self.folder_picker = ft.FilePicker(on_result=self._on_global_folder_picker_result)
         page.overlay.append(self.folder_picker)
         
-        # 전역 파일 선택기 초기화
         self.current_file_picker_target = None
         self.file_picker = ft.FilePicker(on_result=self._on_global_file_picker_result)
         page.overlay.append(self.file_picker)
+        
+        # 🆕 파일 선택기들을 프론트엔드에 등록하기 위해 명시적으로 업데이트
+        try:
+            page.update()
+        except Exception as e:
+            pass
         
         # 시리얼 인증 확인 (필수) - 앱 내부에서 처리
         if self.serial_auth.is_serial_required():
