@@ -239,6 +239,14 @@ class SerialAuthWindow:
             except:
                 pass
             
+            # BlogApp.exe 실행 후 런처는 완전 종료
+            import os, threading
+            def _exit():
+                import time
+                time.sleep(1)   # BlogApp.exe 실행 시간 확보
+                os._exit(0)     # 런처 프로세스 강제 종료
+            threading.Thread(target=_exit, daemon=True).start()
+            
             # Application Path Setup
             if getattr(sys, 'frozen', False):
                 # PyInstaller로 빌드된 환경 (Frozen)
