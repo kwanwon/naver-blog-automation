@@ -5,16 +5,10 @@ from pathlib import Path
 def get_app_data_dir() -> str:
     """
     Returns the platform-specific application data directory.
-    - Windows: %LOCALAPPDATA%/BlogAutomation
-    - macOS/Linux: ~/.blog_automation
+    - Windows & macOS: ~/Documents/블로그자동화_데이터
     """
-    if sys.platform == "win32":
-        local_app_data = os.environ.get('LOCALAPPDATA')
-        if not local_app_data:
-            local_app_data = os.path.expanduser('~\\AppData\\Local')
-        base_path = os.path.join(local_app_data, 'BlogAutomation')
-    else:
-        base_path = os.path.join(os.path.expanduser('~'), '.blog_automation')
+    documents_dir = os.path.join(os.path.expanduser('~'), 'Documents')
+    base_path = os.path.join(documents_dir, '블로그자동화_데이터')
     
     # Ensure base directory exists
     os.makedirs(base_path, exist_ok=True)

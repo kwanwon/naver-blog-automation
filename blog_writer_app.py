@@ -120,6 +120,7 @@ class BlogWriterApp:
         
         # 기본 디렉토리 설정
         self.base_dir = self._get_base_directory()
+        self.user_data_dir = self._get_app_data_dir()
         
         # 시리얼 인증 초기화
         self.serial_auth = BlogSerialAuth()
@@ -133,6 +134,9 @@ class BlogWriterApp:
         
         # 자동 업데이트 확인 (백그라운드에서)
         self.check_for_updates()
+        
+        # 구버전 데이터 마이그레이션
+        self._migrate_old_user_data()
         
         # 디렉토리 존재 확인 및 생성
         self._ensure_directories()
@@ -256,7 +260,7 @@ class BlogWriterApp:
         self.persona_manager = PersonaManager(self.base_dir)
         self.target_finder = TargetFinder()
         self.smart_reply = SmartReply(self.ai_handler, self.persona_manager)
-        self.history_manager = HistoryManager(os.path.join(self.base_dir, 'data', 'marketing_history.json'))
+        self.history_manager = HistoryManager(os.path.join(self.user_data_dir, 'data', 'marketing_history.json'))
         self.comment_poster = None # will be init in main or when driver is ready, but logic uses self.driver directly usually or passthrough
         # Actually CommentPoster needs driver, which changes. We can init it on demand.
 
@@ -329,7 +333,7 @@ class BlogWriterApp:
                     settings = json.load(f)
                     
             # 수동 이미지 폴더 기본값 보장 및 폴더 자동 생성 (블로그/카페 공용)
-            default_manual_folder = os.path.join(self.base_dir, '블로그_카페_수동이미지')
+            default_manual_folder = os.path.join(self.user_data_dir, '블로그_카페_수동이미지')
             if not os.path.exists(default_manual_folder):
                 try:
                     os.makedirs(default_manual_folder, exist_ok=True)
@@ -346,7 +350,7 @@ class BlogWriterApp:
         except Exception as e:
             print(f"설정 로드 중 오류: {e}")
             
-        default_manual_folder = os.path.join(self.base_dir, '블로그_카페_수동이미지')
+        default_manual_folder = os.path.join(self.user_data_dir, '블로그_카페_수동이미지')
         if not os.path.exists(default_manual_folder):
             try:
                 os.makedirs(default_manual_folder, exist_ok=True)
@@ -1506,6 +1510,47 @@ class BlogWriterApp:
             print(f"📝 스크립트 모드: {base_dir}")
             return base_dir
 
+    def _migrate_old_user_data(self):
+        """설치 폴더에 남아있는 구버전 사용자 데이터를 새 문서 폴더로 안전하게 자동 이전"""
+        import shutil
+        import os
+        folders_to_move = [
+            '블로그사진폴더', '밴드사진폴더', '카페사진폴더',
+            '수동이미지', '블로그_카페_수동이미지', '밴드_수동이미지',
+            '수동업로드', 'default_images', 'config', 'drafts', 'data', 'settings', 'logs'
+        ]
+        for folder in folders_to_move:
+            old_path = os.path.join(self.base_dir, folder)
+            new_path = os.path.join(self.user_data_dir, folder)
+            
+            if os.path.exists(old_path) and os.path.isdir(old_path):
+                try:
+                    if not os.path.exists(new_path):
+                        print(f"📦 [마이그레이션] 데이터 이전 중: {folder}")
+                        shutil.copytree(old_path, new_path)
+                    else:
+                        # 이미 새 폴더가 존재한다면 안의 내용물만 병합 (덮어쓰지 않음)
+                        for item in os.listdir(old_path):
+                            s = os.path.join(old_path, item)
+                            d = os.path.join(new_path, item)
+                            if not os.path.exists(d):
+                                if os.path.isdir(s):
+                                    shutil.copytree(s, d)
+                                else:
+                                    shutil.copy2(s, d)
+                except Exception as e:
+                    print(f"❌ [마이그레이션 실패] {folder}: {e}")
+
+        # env 파일 이동
+        old_env = os.path.join(self.base_dir, '.env')
+        new_env = os.path.join(self.user_data_dir, '.env')
+        if os.path.exists(old_env) and not os.path.exists(new_env):
+            import shutil
+            try:
+                shutil.copy2(old_env, new_env)
+            except Exception:
+                pass
+
     def _ensure_directories(self):
         """필요한 디렉토리들을 생성합니다"""
         directories = ['config', 'drafts', 'settings', 'logs']
@@ -2147,7 +2192,7 @@ class BlogWriterApp:
             os.makedirs(os.path.join(self.base_dir, 'config'), exist_ok=True)
             
             # 위치 정보 저장
-            with open(os.path.join(self.base_dir, 'config/image_positions.json'), 'w', encoding='utf-8') as f:
+            with open(os.path.join(self.user_data_dir, 'config/image_positions.json'), 'w', encoding='utf-8') as f:
                 json.dump(image_data, f, ensure_ascii=False, indent=2)
             
             return True
@@ -2158,8 +2203,8 @@ class BlogWriterApp:
     def load_image_positions(self, content):
         """저장된 이미지 위치 정보 로드"""
         try:
-            if os.path.exists(os.path.join(self.base_dir, 'config/image_positions.json')):
-                with open(os.path.join(self.base_dir, 'config/image_positions.json'), 'r', encoding='utf-8') as f:
+            if os.path.exists(os.path.join(self.user_data_dir, 'config/image_positions.json')):
+                with open(os.path.join(self.user_data_dir, 'config/image_positions.json'), 'r', encoding='utf-8') as f:
                     image_data = json.load(f)
                     
                 # 현재 컨텐츠의 해시값과 비교
@@ -2817,7 +2862,7 @@ class BlogWriterApp:
                         )
                         
                         # 기본 디렉토리 및 설정
-                        blog_auto.base_dir = self.base_dir
+                        blog_auto.base_dir = self.user_data_dir
                         blog_auto.settings = blog_auto.load_settings()
                         blog_auto.driver = driver  # 기존 드라이버 재사용
                         
@@ -3007,7 +3052,7 @@ class BlogWriterApp:
                             media_order=self.settings.get('blog_media_order', 'image_first')
                         )
                         
-                        blog_auto.base_dir = self.base_dir
+                        blog_auto.base_dir = self.user_data_dir
                         blog_auto.settings = blog_auto.load_settings()
                         blog_auto.driver = driver
                         
@@ -4225,7 +4270,7 @@ class BlogWriterApp:
     def create_image_folders(self):
         """10개의 이미지 폴더를 생성합니다."""
         try:
-            blog_photo_dir = os.path.join(self.base_dir, '블로그사진폴더')
+            blog_photo_dir = os.path.join(self.user_data_dir, '블로그사진폴더')
             if not os.path.exists(blog_photo_dir):
                 os.makedirs(blog_photo_dir)
                 print(f"블로그사진폴더 생성 완료: {blog_photo_dir}")
@@ -4245,7 +4290,7 @@ class BlogWriterApp:
         """현재 이미지 폴더 인덱스를 로드합니다."""
         try:
             suffix = "" if platform == 'blog' else f"_{platform}"
-            index_file = os.path.join(self.base_dir, f'config/current_folder_index{suffix}.txt')
+            index_file = os.path.join(self.user_data_dir, f'config/current_folder_index{suffix}.txt')
             if os.path.exists(index_file):
                 with open(index_file, 'r') as f:
                     return int(f.read().strip())
@@ -4258,7 +4303,7 @@ class BlogWriterApp:
         """현재 이미지 폴더 인덱스를 저장합니다."""
         try:
             suffix = "" if platform == 'blog' else f"_{platform}"
-            index_file = os.path.join(self.base_dir, f'config/current_folder_index{suffix}.txt')
+            index_file = os.path.join(self.user_data_dir, f'config/current_folder_index{suffix}.txt')
             with open(index_file, 'w') as f:
                 f.write(str(index))
         except Exception as e:
@@ -4268,7 +4313,7 @@ class BlogWriterApp:
         """사용된 이미지 폴더 이력을 로드합니다."""
         try:
             suffix = "" if platform == 'blog' else f"_{platform}"
-            used_folders_file = os.path.join(self.base_dir, f'config/used_folders{suffix}.json')
+            used_folders_file = os.path.join(self.user_data_dir, f'config/used_folders{suffix}.json')
             if os.path.exists(used_folders_file):
                 with open(used_folders_file, 'r') as f:
                     return json.load(f)
@@ -4281,7 +4326,7 @@ class BlogWriterApp:
         """사용된 이미지 폴더 이력을 저장합니다."""
         try:
             suffix = "" if platform == 'blog' else f"_{platform}"
-            used_folders_file = os.path.join(self.base_dir, f'config/used_folders{suffix}.json')
+            used_folders_file = os.path.join(self.user_data_dir, f'config/used_folders{suffix}.json')
             with open(used_folders_file, 'w') as f:
                 json.dump(data, f)
         except Exception as e:
@@ -4337,7 +4382,7 @@ class BlogWriterApp:
         try:
             from folder_manager import ImageFolderManager
             # folder_manager는 self.base_dir 기준으로 초기화
-            folder_manager = ImageFolderManager(base_dir=self.base_dir)
+            folder_manager = ImageFolderManager(base_dir=self.user_data_dir)
             
             # 1. 스마트 이미지 매칭 수행
             matched_folder_name = folder_manager.find_matching_folder(text=title, title=title)
@@ -4396,7 +4441,7 @@ class BlogWriterApp:
         # 기준 디렉토리 설정 (블로그는 '블로그사진폴더' 우선)
         base_search_dir = self.base_dir
         if platform == 'blog':
-            blog_photo_dir = os.path.join(self.base_dir, '블로그사진폴더')
+            blog_photo_dir = os.path.join(self.user_data_dir, '블로그사진폴더')
             if os.path.exists(blog_photo_dir):
                 base_search_dir = blog_photo_dir
                 
@@ -5854,7 +5899,7 @@ class BlogWriterApp:
                 media_position=media_pos.value if media_pos else 'middle',
                 media_order=media_ord.value if media_ord else 'image_first'
             )
-            blog_auto.base_dir = self.base_dir
+            blog_auto.base_dir = self.user_data_dir
             blog_auto.settings = blog_auto.load_settings()
             blog_auto.driver = driver
             
@@ -7020,7 +7065,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     env_content = f"OPENAI_API_KEY={api_key_field.value}\n"
                     if gemini_api_key_field.value:
                         env_content += f"GEMINI_API_KEY={gemini_api_key_field.value}\n"
-                    with open(os.path.join(self.base_dir, '.env'), 'w', encoding='utf-8') as f:
+                    with open(os.path.join(self.user_data_dir, '.env'), 'w', encoding='utf-8') as f:
                         f.write(env_content)
                 
                 # GPT 핸들러 재초기화
@@ -7109,8 +7154,8 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                         auto_final_publish_checkbox.value = app_settings.get('auto_final_publish', True)  # 🎯 최종 발행 설정 로드
                 
                 # API 키 로드
-                if os.path.exists(os.path.join(self.base_dir, '.env')):
-                    with open(os.path.join(self.base_dir, '.env'), 'r', encoding='utf-8') as f:
+                if os.path.exists(os.path.join(self.user_data_dir, '.env')):
+                    with open(os.path.join(self.user_data_dir, '.env'), 'r', encoding='utf-8') as f:
                         for line in f:
                             if line.startswith('OPENAI_API_KEY='):
                                 api_key_field.value = line.split('=', 1)[1].strip()
@@ -7862,7 +7907,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                         "content": content_input.value,
                         "last_saved": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
-                    with open(os.path.join(self.base_dir, 'drafts/auto_save.json'), 'w', encoding='utf-8') as f:
+                    with open(os.path.join(self.user_data_dir, 'drafts/auto_save.json'), 'w', encoding='utf-8') as f:
                         json.dump(save_data, f, ensure_ascii=False, indent=2)
                     
                     status_text.value = f"마지막 저장: {save_data['last_saved']}"
@@ -7872,8 +7917,8 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
 
         def load_draft():
             try:
-                if os.path.exists(os.path.join(self.base_dir, 'drafts/auto_save.json')):
-                    with open(os.path.join(self.base_dir, 'drafts/auto_save.json'), 'r', encoding='utf-8') as f:
+                if os.path.exists(os.path.join(self.user_data_dir, 'drafts/auto_save.json')):
+                    with open(os.path.join(self.user_data_dir, 'drafts/auto_save.json'), 'r', encoding='utf-8') as f:
                         save_data = json.load(f)
                         title_input.value = save_data.get('title', '')
                         content_input.value = save_data.get('content', '')
@@ -10670,7 +10715,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         def get_manual_upload_folder():
             """수동 업로드 전용 폴더 경로 반환"""
             # 기본값: 앱 폴더 내 '밴드_수동이미지'
-            default_path = os.path.join(self.base_dir, '밴드_수동이미지')
+            default_path = os.path.join(self.user_data_dir, '밴드_수동이미지')
             folder_path = self.settings.get('manual_upload_folder', default_path)
             
             # 폴더 자동 생성

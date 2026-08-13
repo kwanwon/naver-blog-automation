@@ -52,6 +52,7 @@ class NaverBlogAutomation:
     def __init__(self, auto_mode=True, image_insert_mode="random", use_stickers=False, custom_images_folder=None, naver_id=None, media_position="middle", media_order="image_first"):
         self.driver = None
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.user_data_dir = getattr(self, 'user_data_dir', self.base_dir)
         
         # 데이터 폴더를 AppData 기반으로 변경하여 퍼미션 에러 방지
         from utils.path_utils import get_data_dir
@@ -60,7 +61,7 @@ class NaverBlogAutomation:
         self.post_folder = os.path.join(self.data_dir, self.today)
         self.images_folder = os.path.join(self.post_folder, "images")
         
-        self.default_images_folder = os.path.join(self.base_dir, "default_images")  # 기본 설정은 base_dir 그대로 둠 (리소스 복사 관련)
+        self.default_images_folder = os.path.join(self.user_data_dir, \"default_images\")  # 기본 설정은 base_dir 그대로 둠 (리소스 복사 관련)
         self.custom_images_folder = custom_images_folder  # 커스텀 이미지 폴더 추가
         self.naver_id = naver_id  # 🆕 네이버 ID 저장
         self.used_images = []
@@ -139,7 +140,7 @@ class NaverBlogAutomation:
             if not os.path.exists(config_path):
                 # fallback paths
                 fallback_paths = [
-                    os.path.join(self.base_dir, 'config', 'user_settings.txt'),
+                    os.path.join(self.user_data_dir, 'config', 'user_settings.txt'),
                     resource_path('config/user_settings.txt')
                 ]
                 for p in fallback_paths:
