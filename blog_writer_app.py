@@ -13247,6 +13247,13 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             threading.Thread(target=_create, daemon=True).start()
 
         # 4. 레이아웃 설계 및 반환
+        def on_blue_btn_click(e):
+            try:
+                auto_save_profile_internal()
+            except Exception:
+                pass
+            generate_full_year_click(e)
+
         return ft.Container(
             content=ft.Column([
                 # 헤더
@@ -13313,13 +13320,6 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                                         year_dropdown,
                                         ft.Text("년도 달력에 연간 행사 적용 진행")
                                     ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
-                                    def on_blue_btn_click(e):
-                                        try:
-                                            auto_save_profile_internal()
-                                        except Exception:
-                                            pass
-                                        generate_full_year_click(e)
-
                                     ft.ElevatedButton(
                                         "[Date] 연간계획표 엑셀 첫페이지 및 달력 배치 (상세일정 제외)",
                                         icon=ft.Icons.AUTO_AWESOME_MOTION,
