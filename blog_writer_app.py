@@ -938,6 +938,19 @@ class BlogWriterApp:
                 file_type=ft.FilePickerFileType.CUSTOM
             )
 
+    def _load_user_setting_individual(self, key, default_value=None):
+        """개별 사용자 설정값을 불러옵니다."""
+        try:
+            import os, json
+            user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
+            if os.path.exists(user_settings_path):
+                with open(user_settings_path, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    return settings.get(key, default_value)
+        except Exception:
+            pass
+        return default_value
+
     def _save_user_setting_individual(self, key, value):
         """사용자 설정 개별 항목 자동 저장 (on_blur 용)"""
         try:
@@ -7266,7 +7279,8 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     gym_gps_coords.page.snack_bar.open = True
                     gym_gps_coords.page.update()
 
-            run_geocoding()
+            import threading
+            threading.Thread(target=run_geocoding, daemon=True).start()
 
         gps_auto_btn = ft.ElevatedButton(
             "주소로 좌표 가져오기",
@@ -12411,7 +12425,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 if getattr(self, 'page', None):
                     self.page.update()
                 
-            location = self.settings.get('weather_location', '서울')
+            location = self._load_user_setting_individual('weather_location', '서울')
             api_key = self.ai_handler.settings.get('kma_api_key', '')
             
             # 1. 날씨 캐시 갱신 (로컬 기상 데이터를 가져오고 캐시 갱신)
@@ -13299,10 +13313,17 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                                         year_dropdown,
                                         ft.Text("년도 달력에 연간 행사 적용 진행")
                                     ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                                    def on_blue_btn_click(e):
+                                        try:
+                                            auto_save_profile_internal()
+                                        except Exception:
+                                            pass
+                                        generate_full_year_click(e)
+
                                     ft.ElevatedButton(
                                         "[Date] 연간계획표 엑셀 첫페이지 및 달력 배치 (상세일정 제외)",
                                         icon=ft.Icons.AUTO_AWESOME_MOTION,
-                                        on_click=lambda e: [auto_save_profile_internal(), generate_full_year_click(e)],
+                                        on_click=on_blue_btn_click,
                                         bgcolor=ft.Colors.BLUE_900,
                                         color=ft.Colors.WHITE,
                                         height=45

@@ -309,6 +309,14 @@ class SerialAuthWindow:
             
             print("✅ 메인 프로그램 실행 요청 완료!")
             
+            import threading
+            import time
+            def _exit():
+                time.sleep(1)
+                import os
+                os._exit(0)
+            threading.Thread(target=_exit, daemon=True).start()
+            
         except Exception as e:
             print(f"❌ 메인 프로그램 실행 중 오류: {e}")
 
