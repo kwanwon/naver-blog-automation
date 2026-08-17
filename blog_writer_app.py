@@ -995,7 +995,15 @@ class BlogWriterApp:
                 self.cafe_drive_folder_path.update()
                 self._save_setting('cafe_drive_folder', normalized_path)
             else:
-                self._save_setting('drive_parent_folder', normalized_path)
+                # 드라이브 상위 경로 텍스트 필드인 경우에만 설정 저장
+                if getattr(text_field, 'label', '') == "상위 폴더 경로 (하위 폴더들을 자동 감지)":
+                    self._save_setting('drive_parent_folder', normalized_path)
+                # 수동 업로드 경로 등 기타 폴더 설정 동기화
+                elif hasattr(self, 'blog_manual_folder_path') and text_field == self.blog_manual_folder_path:
+                    self._save_setting('blog_manual_folder', normalized_path)
+                elif hasattr(self, 'cafe_manual_folder_path') and text_field == self.cafe_manual_folder_path:
+                    self._save_setting('cafe_manual_folder', normalized_path)
+                
                 text_field.update()
             
             # 안내 메시지
