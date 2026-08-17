@@ -1,7 +1,1 @@
-{
-    "version": "1.2.187",
-    "date": "2026-08-17",
-    "changes": [
-        "수동 포스팅 시 발생하는 name random is not defined 에러 수정"
-    ]
-}
+{"version": "1.2.188", "date": "2026-08-17", "changes": ["밴드 해시태그 UI 표시 버그 및 하단 안내문 조건 수정"]}
