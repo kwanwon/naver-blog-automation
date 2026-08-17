@@ -401,8 +401,18 @@ class NaverBandAutomation:
                         self._wait_for_upload_complete(timeout=upload_timeout)
                         
                         # 2. 업로드 팝업이 닫힌 후, 에디터 본문에 썸네일이 모두 렌더링될 때까지 탄력적 대기
-                        # 기본 3초 + 1장당 0.5초 추가 (관장님 제안 반영)
-                        render_wait_time = 3 + (len(photos) * 0.5)
+                        # 관장님 제안 반영: 개수에 따른 차등 가중치 적용
+                        num = len(photos)
+                        if num <= 15:
+                            multiplier = 1.0
+                        elif num <= 25:
+                            multiplier = 1.5
+                        elif num <= 35:
+                            multiplier = 2.0
+                        else:
+                            multiplier = 2.5
+                        
+                        render_wait_time = 5 + (num * multiplier)
                         print(f"⏳ 사진 렌더링 및 에디터 안정화 대기 중... ({render_wait_time:.1f}초)")
                         time.sleep(render_wait_time)
                         print("✅ 사진 업로드 및 렌더링 최종 완료")
@@ -419,7 +429,7 @@ class NaverBandAutomation:
                         videos = videos[:10]
                         
                     print(f"🎬 동영상 업로드 중 ({len(videos)}개)...")
-                    time.sleep(3)  # 사진 업로드 완료 후 안정화 대기 (3초로 줄임)
+                    time.sleep(5)  # 사진 업로드 완료 후 안정화 대기 (3초 -> 5초로 증가)
                     try:
                         # 숨겨진 동영상 file input 요소 찾기 - 새로 찾기 (stale 방지)
                         video_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postVideoInput_']")
