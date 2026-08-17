@@ -137,12 +137,11 @@ class BandPipeline:
             content_formatted = "\n".join(wrapped_lines)
             assembled_content += f"{content_formatted}"
 
-        # 유형 2에만 양해문구(band_footer_notice) 조립 (태그 바로 위에 위치)
-        if not is_type_1:
-            band_footer = user_settings.get('band_footer_notice', '').strip()
-            if band_footer:
-                # 모바일 가독성을 위한 여백 적용
-                assembled_content = assembled_content.rstrip() + f"\n\n{band_footer}"
+        # 양해문구(band_footer_notice) 조립 (태그 바로 위에 위치, 모든 밴드 글에 공통 적용)
+        band_footer = user_settings.get('band_footer_notice', '').strip()
+        if band_footer:
+            # 모바일 가독성을 위한 여백 적용
+            assembled_content = assembled_content.rstrip() + f"\n\n{band_footer}"
 
         # 4. 태그 5:5 믹스 병합 처리 (고정 5개 + AI 5개 = 총 10개 완벽 구현)
         raw_hashtags = user_settings.get('band_hashtags') or \

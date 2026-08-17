@@ -11341,7 +11341,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                         ft.TextField(
                             label="🏷️ 해시태그 (글 마지막에 추가, 8개씩 순환)",
                             hint_text="#태권도 #한국체대 #라이온짐 #수련",
-                            value=self.settings.get('band_hashtags', ''),
+                            value=self.settings.get('band_hashtags', self.settings.get('blog_tags', '')),
                             multiline=True,
                             min_lines=2,
                             max_lines=3,
