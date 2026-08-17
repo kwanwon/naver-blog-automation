@@ -386,26 +386,15 @@ class BlogWriterApp:
             if platform.system() == "Darwin":
                 import threading
                 import subprocess
-                import sys
                 def _run_picker():
                     try:
-                        python_exe = sys.executable
-                        if getattr(sys, 'frozen', False):
-                            python_exe = '/usr/bin/python3'
-                        
-                        # Build allowed extensions pattern if needed
-                        ext_code = ""
+                        script = 'set theFile to choose file with prompt "파일을 선택하세요"'
                         if allowed_extensions:
-                            # Tkinter filetypes format: [('Images', '*.png *.jpg')] or similar
-                            # Since we don't have descriptions easily available, just do: [('Files', '*.ext1 *.ext2')]
-                            ext_list = " ".join([f"*.{e}" for e in allowed_extensions])
-                            ext_code = f"filetypes=[('Allowed Files', '{ext_list}')],"
-                            
-                        cmd = [
-                            python_exe, '-c',
-                            f'import tkinter as tk; from tkinter import filedialog; root=tk.Tk(); root.geometry("1x1+{{}}+{{}}".format(root.winfo_screenwidth()//2, root.winfo_screenheight()//2)); root.attributes("-alpha", 0.0); root.wm_attributes("-topmost", 1); root.update(); path=filedialog.askopenfilename(parent=root, title="파일을 선택하세요", {ext_code}); print(path)'
-                        ]
-                        result = subprocess.run(cmd, capture_output=True, text=True)
+                            ext_str = "{" + ", ".join(f'"{ext}"' for ext in allowed_extensions) + "}"
+                            script += f' of type {ext_str}'
+                        script += '\nPOSIX path of theFile'
+                        
+                        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
                         if result.returncode == 0 and result.stdout.strip():
                             file_path = result.stdout.strip()
                             class MockFile:
@@ -419,7 +408,7 @@ class BlogWriterApp:
                             if hasattr(self, 'page') and self.page:
                                 self.page.update()
                     except Exception as e:
-                        print(f"Tkinter file picker error: {e}")
+                        print(f"macOS File Picker error: {e}")
                 threading.Thread(target=_run_picker, daemon=True).start()
                 return
 
@@ -501,19 +490,10 @@ class BlogWriterApp:
                 
                 import threading
                 import subprocess
-                import sys
                 def _run_picker():
                     try:
-                        # PyInstaller로 빌드된 경우 내장 파이썬 대신 시스템 파이썬 사용
-                        python_exe = sys.executable
-                        if getattr(sys, 'frozen', False):
-                            python_exe = '/usr/bin/python3'
-                            
-                        cmd = [
-                            python_exe, '-c',
-                            'import tkinter as tk; from tkinter import filedialog; root=tk.Tk(); root.geometry(f"1x1+{root.winfo_screenwidth()//2}+{root.winfo_screenheight()//2}"); root.attributes("-alpha", 0.0); root.wm_attributes("-topmost", 1); root.update(); path=filedialog.askdirectory(parent=root, title="폴더를 선택하세요"); print(path)'
-                        ]
-                        result = subprocess.run(cmd, capture_output=True, text=True)
+                        script = 'POSIX path of (choose folder with prompt "폴더를 선택하세요")'
+                        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
                         if result.returncode == 0 and result.stdout.strip():
                             folder = result.stdout.strip()
                             class MockEvent:
@@ -522,7 +502,7 @@ class BlogWriterApp:
                             self.current_folder_picker_target = target_textfield
                             self._on_global_folder_picker_result(MockEvent(folder))
                     except Exception as e:
-                        print(f"Subprocess picker error: {e}")
+                        print(f"macOS Folder Picker error: {e}")
                 
                 threading.Thread(target=_run_picker, daemon=True).start()
                 return
