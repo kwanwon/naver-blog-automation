@@ -61,7 +61,7 @@ class NaverBlogAutomation:
         self.post_folder = os.path.join(self.data_dir, self.today)
         self.images_folder = os.path.join(self.post_folder, "images")
         
-        self.default_images_folder = os.path.join(self.user_data_dir, \"default_images\")  # 기본 설정은 base_dir 그대로 둠 (리소스 복사 관련)
+        self.default_images_folder = os.path.join(self.user_data_dir, "default_images")  # 기본 설정은 base_dir 그대로 둠 (리소스 복사 관련)
         self.custom_images_folder = custom_images_folder  # 커스텀 이미지 폴더 추가
         self.naver_id = naver_id  # 🆕 네이버 ID 저장
         self.used_images = []

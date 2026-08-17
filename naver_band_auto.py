@@ -214,14 +214,19 @@ class NaverBandAutomation:
             editor = None
             for attempt in range(3):
                 try:
-                    editor = WebDriverWait(self.driver, 5).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, "div[contenteditable='true'], textarea._postWriteInput"))
+                    editor = WebDriverWait(self.driver, 8).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "div[contenteditable='true'], textarea._postWriteInput, div.contentEditor, .ProseMirror, .ck-content, [role='textbox']"))
                     )
-                    editor.click()
+                    try:
+                        editor.click()
+                    except Exception as click_err:
+                        print(f"⚠️ 일반 클릭 실패, JS 클릭/포커스 시도: {click_err}")
+                        self.driver.execute_script("arguments[0].scrollIntoView(true); arguments[0].focus(); arguments[0].click();", editor)
+                        
                     time.sleep(0.5)
                     break  # 클릭 성공 시 반복문 탈출
                 except Exception as e:
-                    print(f"⚠️ 에디터 클릭 실패, 재시도 중... ({attempt+1}/3)")
+                    print(f"⚠️ 에디터 클릭 실패, 재시도 중... ({attempt+1}/3) - 오류: {type(e).__name__} ({str(e).splitlines()[0] if str(e).splitlines() else ''})")
                     time.sleep(1.5)
             
             if not editor:
@@ -254,7 +259,12 @@ class NaverBandAutomation:
                             ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
                             time.sleep(1)
                             # 검증
-                            editor_text = editor.text.strip() if editor.text else ""
+                            try:
+                                editor_text = self.driver.execute_script("return arguments[0].innerText || arguments[0].textContent || '';", editor)
+                            except:
+                                editor_text = editor.text if editor.text else ""
+                            
+                            editor_text = editor_text.strip()
                             if len(editor_text) >= len(content) * 0.3:
                                 insert_success = True
                                 print(f"✅ pbcopy 성공 ({len(editor_text)}자)")

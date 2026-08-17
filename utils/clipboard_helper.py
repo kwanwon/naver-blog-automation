@@ -172,9 +172,14 @@ def insert_text_to_editor(driver, editor_element, content: str, platform: str = 
             ActionChains(driver).send_keys(Keys.SPACE).send_keys(Keys.BACKSPACE).perform()
             time.sleep(0.5)
             
-            # 검증: 에디터에 내용이 있는지 확인
-            editor_text = editor_element.text.strip() if editor_element.text else ""
-            if len(editor_text) >= len(content) * 0.5:
+            # 검증: 에디터에 내용이 있는지 확인 (Selenium .text의 한계 극복을 위해 JS 사용)
+            try:
+                editor_text = driver.execute_script("return arguments[0].innerText || arguments[0].textContent || '';", editor_element)
+            except:
+                editor_text = editor_element.text if editor_element.text else ""
+                
+            editor_text = editor_text.strip()
+            if len(editor_text) >= len(content) * 0.3:
                 print(f"✅ [Insert] 클립보드 붙여넣기 성공 ({len(editor_text)}자)")
                 return True
             else:

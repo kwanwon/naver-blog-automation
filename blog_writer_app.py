@@ -377,25 +377,64 @@ class BlogWriterApp:
         except Exception as e:
             print(f"설정 저장 중 오류: {e}")
     
-    def _open_file_picker_for(self, target_textfield: ft.TextField):
+    def _open_file_picker_for(self, target_textfield: ft.TextField, allowed_extensions=None, file_type=ft.FilePickerFileType.ANY):
         """특정 텍스트필드를 위한 파일 선택기 열기"""
         try:
             print("📂 파일 선택 버튼 클릭됨 (for textfield)")
+            
+            import platform
+            if platform.system() == "Darwin":
+                import threading
+                import subprocess
+                import sys
+                def _run_picker():
+                    try:
+                        python_exe = sys.executable
+                        if getattr(sys, 'frozen', False):
+                            python_exe = '/usr/bin/python3'
+                        
+                        # Build allowed extensions pattern if needed
+                        ext_code = ""
+                        if allowed_extensions:
+                            # Tkinter filetypes format: [('Images', '*.png *.jpg')] or similar
+                            # Since we don't have descriptions easily available, just do: [('Files', '*.ext1 *.ext2')]
+                            ext_list = " ".join([f"*.{e}" for e in allowed_extensions])
+                            ext_code = f"filetypes=[('Allowed Files', '{ext_list}')],"
+                            
+                        cmd = [
+                            python_exe, '-c',
+                            f'import tkinter as tk; from tkinter import filedialog; root=tk.Tk(); root.geometry("1x1+{{}}+{{}}".format(root.winfo_screenwidth()//2, root.winfo_screenheight()//2)); root.attributes("-alpha", 0.0); root.wm_attributes("-topmost", 1); root.update(); path=filedialog.askopenfilename(parent=root, title="파일을 선택하세요", {ext_code}); print(path)'
+                        ]
+                        result = subprocess.run(cmd, capture_output=True, text=True)
+                        if result.returncode == 0 and result.stdout.strip():
+                            file_path = result.stdout.strip()
+                            class MockFile:
+                                def __init__(self, path):
+                                    self.path = path
+                            class MockEvent:
+                                def __init__(self, files):
+                                    self.files = files
+                            self.current_file_picker_target = target_textfield
+                            self._on_global_file_picker_result(MockEvent([MockFile(file_path)]))
+                            if hasattr(self, 'page') and self.page:
+                                self.page.update()
+                    except Exception as e:
+                        print(f"Tkinter file picker error: {e}")
+                threading.Thread(target=_run_picker, daemon=True).start()
+                return
+
             self.current_file_picker_target = target_textfield
             
-            if not hasattr(self, 'file_picker'):
-                self.file_picker = ft.FilePicker(on_result=self._on_global_file_picker_result)
-                
-            if self.file_picker not in self.page.overlay:
-                self.page.overlay.append(self.file_picker)
-                
-            self.page.update()
-            
-            self.file_picker.pick_files(
-                dialog_title="파일을 선택하세요",
-                allow_multiple=False
-            )
-            print("📂 pick_files 명령 전달 완료")
+            if hasattr(self, 'file_picker'):
+                self.file_picker.pick_files(
+                    dialog_title="파일을 선택하세요",
+                    allow_multiple=False,
+                    allowed_extensions=allowed_extensions,
+                    file_type=file_type
+                )
+                print("📂 pick_files 명령 전달 완료")
+            else:
+                print("⚠️ 파일 선택기 열기 실패: file_picker가 초기화되지 않았습니다.")
         except Exception as ex:
             print(f"⚠️ 파일 선택기 열기 실패: {ex}")
 
@@ -452,20 +491,48 @@ class BlogWriterApp:
         """특정 텍스트필드를 위한 폴더 선택기 열기"""
         try:
             print("📂 폴더 선택 버튼 클릭됨 (for textfield)")
+            
+            import platform
+            if platform.system() == "Darwin":
+                if hasattr(self, 'page') and self.page:
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text("⏳ 폴더 선택 창을 엽니다. (화면 뒤에 숨어있을 수 있습니다)"))
+                    self.page.snack_bar.open = True
+                    self.page.update()
+                
+                import threading
+                import subprocess
+                import sys
+                def _run_picker():
+                    try:
+                        # PyInstaller로 빌드된 경우 내장 파이썬 대신 시스템 파이썬 사용
+                        python_exe = sys.executable
+                        if getattr(sys, 'frozen', False):
+                            python_exe = '/usr/bin/python3'
+                            
+                        cmd = [
+                            python_exe, '-c',
+                            'import tkinter as tk; from tkinter import filedialog; root=tk.Tk(); root.geometry(f"1x1+{root.winfo_screenwidth()//2}+{root.winfo_screenheight()//2}"); root.attributes("-alpha", 0.0); root.wm_attributes("-topmost", 1); root.update(); path=filedialog.askdirectory(parent=root, title="폴더를 선택하세요"); print(path)'
+                        ]
+                        result = subprocess.run(cmd, capture_output=True, text=True)
+                        if result.returncode == 0 and result.stdout.strip():
+                            folder = result.stdout.strip()
+                            class MockEvent:
+                                def __init__(self, path):
+                                    self.path = path
+                            self.current_folder_picker_target = target_textfield
+                            self._on_global_folder_picker_result(MockEvent(folder))
+                    except Exception as e:
+                        print(f"Subprocess picker error: {e}")
+                
+                threading.Thread(target=_run_picker, daemon=True).start()
+                return
+
             self.current_folder_picker_target = target_textfield
-            
-            if not hasattr(self, 'folder_picker'):
-                self.folder_picker = ft.FilePicker(on_result=self._on_global_folder_picker_result)
-                
-            if self.folder_picker not in self.page.overlay:
-                self.page.overlay.append(self.folder_picker)
-                
-            self.page.update()
-            
-            print(f"🔍 FilePicker 상태: overlay={self.folder_picker in self.page.overlay}, page={self.folder_picker.page is not None}")
-            
-            self.folder_picker.get_directory_path(dialog_title="폴더를 선택하세요")
-            print("📂 get_directory_path 명령 전달 완료")
+            if hasattr(self, 'folder_picker'):
+                self.folder_picker.get_directory_path(dialog_title="폴더를 선택하세요")
+                print("📂 get_directory_path 명령 전달 완료")
+            else:
+                print("⚠️ 폴더 선택기 열기 실패: folder_picker가 초기화되지 않았습니다.")
         except Exception as ex:
             print(f"⚠️ 폴더 선택기 열기 실패: {ex}")
 
@@ -539,9 +606,7 @@ class BlogWriterApp:
             text_field = next((c for c in row.controls if isinstance(c, ft.TextField)), None)
             
             if text_field:
-                self.current_folder_picker_target = text_field
-                if hasattr(self, 'folder_picker'):
-                    self.folder_picker.get_directory_path(dialog_title="감시할 폴더를 선택하세요")
+                self._open_folder_picker_for(text_field)
             else:
                 print("⚠️ 폴더 선택기 열기 실패: 연결된 텍스트 필드를 찾을 수 없습니다.")
         except Exception as ex:
@@ -992,13 +1057,7 @@ class BlogWriterApp:
         
     def _open_excel_file_picker(self, e, target_field: ft.TextField):
         """엑셀 파일 선택기 열기"""
-        self.current_file_picker_target = target_field
-        if hasattr(self, 'file_picker'):
-            self.file_picker.pick_files(
-                dialog_title="엑셀 파일 선택",
-                allowed_extensions=["xlsx", "xls", "csv"],
-                file_type=ft.FilePickerFileType.CUSTOM
-            )
+        self._open_file_picker_for(target_field, allowed_extensions=["xlsx", "xls", "csv"])
 
     def _load_user_setting_individual(self, key, default_value=None):
         """개별 사용자 설정값을 불러옵니다."""
@@ -1043,13 +1102,11 @@ class BlogWriterApp:
             text_field = next((c for c in row.controls if isinstance(c, ft.TextField)), None)
             
             if text_field:
-                self.current_file_picker_target = text_field
-                if hasattr(self, 'file_picker'):
-                    self.file_picker.pick_files(
-                        dialog_title="워터마크 이미지를 선택하세요",
-                        allowed_extensions=["png", "jpg", "jpeg", "gif", "bmp", "webp"],
-                        file_type=ft.FilePickerFileType.IMAGE
-                    )
+                self._open_file_picker_for(
+                    text_field,
+                    allowed_extensions=["png", "jpg", "jpeg", "gif", "bmp", "webp"],
+                    file_type=ft.FilePickerFileType.IMAGE
+                )
             else:
                 print("⚠️ 파일 선택기 열기 실패: 연결된 텍스트 필드를 찾을 수 없습니다.")
         except Exception as ex:
@@ -2771,31 +2828,45 @@ class BlogWriterApp:
                 time.sleep(60)  # 오류 발생 시 1분 대기
     
     def auto_post(self, page):
-        """자동 포스팅 실행 - 전송 버튼만 클릭"""
+        """자동 포스팅 실행 - 전송 버튼 클릭 후 실제 업로드 결과 반환"""
         try:
             print("🔘 타이머 자동 포스팅: 전송 버튼 클릭!")
-            
-            # UI에서 전송 버튼 클릭 시뮬레이션
-            if self.send_message_func:
-                # send_message 함수 호출 (전송 버튼과 동일한 동작)
-                self.send_message_func(None)
-                
-                print("✅ 전송 버튼 클릭 완료! 이후 자동 처리됩니다.")
-                
-                # 스낵바로 알림
-                if self.page_ref:
-                    self.page_ref.snack_bar = ft.SnackBar(
-                        content=ft.Text("✅ 자동 포스팅이 시작되었습니다!"),
-                        bgcolor=ft.Colors.GREEN_400
-                    )
-                    self.page_ref.snack_bar.open = True
-                    self.page_ref.update()
-                
-                return True
+
+            if not self.send_message_func:
+                print("❌ send_message_func 없음")
+                return False
+
+            # [Step 1] 이전 결과 초기화 (None = 진행 중)
+            self.last_upload_success = None
+
+            # [Step 2] 전송 버튼 클릭 (비동기 업로드 시작)
+            self.send_message_func(None)
+            print("✅ 전송 버튼 클릭 완료! 업로드 결과 대기 중...")
+
+            # [Step 3] 실제 업로드 완료까지 폴링 (최대 5분 = 300초)
+            waited = 0
+            poll_interval = 2  # 2초마다 확인
+            max_wait = 300
+            while waited < max_wait:
+                time.sleep(poll_interval)
+                waited += poll_interval
+                result = self.last_upload_success
+                if result is True:
+                    print(f"✅ [auto_post] 업로드 성공 확인 ({waited}초 소요)")
+                    return True
+                elif result is False:
+                    print(f"❌ [auto_post] 업로드 실패 확인 ({waited}초 소요)")
+                    return False
+                # result is None → 아직 처리 중
+
+            # 타임아웃
+            print(f"⏰ [auto_post] {max_wait}초 대기 후 타임아웃 → 실패 처리")
             return False
+
         except Exception as e:
             print(f"❌ 자동 포스팅 실행 중 오류: {str(e)}")
             return False
+
 
     def handle_scheduled_task(self, task):
         """스케줄러에 의해 트리거된 작업 처리"""
@@ -6053,12 +6124,6 @@ class BlogWriterApp:
         self.file_picker = ft.FilePicker(on_result=self._on_global_file_picker_result)
         page.overlay.append(self.file_picker)
         
-        # 🆕 파일 선택기들을 프론트엔드에 등록하기 위해 명시적으로 업데이트
-        try:
-            page.update()
-        except Exception as e:
-            pass
-        
         # 시리얼 인증 확인 (필수) - 앱 내부에서 처리
         if self.serial_auth.is_serial_required():
             print("🔐 시리얼 인증이 필요합니다. 인증 화면을 표시합니다...")
@@ -6873,8 +6938,8 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
 
         self.blog_drive_settings_row = ft.Row([
             self.blog_drive_folder_path,
-            # 폴더 선택 버튼 (템플릿 폴더)
-        ft.IconButton(ft.Icons.FOLDER_OPEN, on_click=lambda e: self._open_folder_picker_for(self.excel_folder_tf)),
+            # 폴더 선택 버튼
+            ft.IconButton(ft.Icons.FOLDER_OPEN, on_click=lambda e: self._open_folder_picker_for(self.blog_drive_folder_path)),
             self.blog_drive_watcher_btn
         ], visible=True)  # 🆕 드라이브 감시는 드롭다운과 독립적으로 항상 표시
         
@@ -7320,6 +7385,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         )
 
         def _auto_fill_gps(e):
+            print("📍 좌표 변환 버튼 클릭됨!")
             import re
             
             # 검색할 주소 추출 (address 필드 우선, 없으면 gym_gps_coords 필드의 한글 텍스트)
@@ -7327,15 +7393,25 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             if not target_addr and gym_gps_coords.value and re.search(r'[가-힣]', gym_gps_coords.value):
                 target_addr = gym_gps_coords.value
 
+            print(f"📍 검색할 주소: {target_addr}")
+
+            def show_snack(msg):
+                if gym_gps_coords.page:
+                    try:
+                        # Flet 0.28+ 호환용
+                        gym_gps_coords.page.open(ft.SnackBar(content=ft.Text(msg)))
+                    except Exception:
+                        # 하위 호환성 폴백
+                        gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text(msg))
+                        gym_gps_coords.page.snack_bar.open = True
+                        gym_gps_coords.page.update()
+
             if not target_addr:
-                gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text("먼저 상단의 '주소' 항목을 채워주시거나, 여기에 주소를 적어주세요."))
-                gym_gps_coords.page.snack_bar.open = True
-                gym_gps_coords.page.update()
+                print("📍 주소 정보가 없음. 스낵바 표시 시도.")
+                show_snack("먼저 상단의 '주소' 항목을 채워주시거나, 여기에 주소를 적어주세요.")
                 return
 
-            gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text(f"'{target_addr}' 좌표 검색 중... 잠시만 기다려주세요."))
-            gym_gps_coords.page.snack_bar.open = True
-            gym_gps_coords.page.update()
+            show_snack(f"'{target_addr}' 좌표 검색 중... 잠시만 기다려주세요.")
 
             def run_geocoding():
                 try:
@@ -7364,18 +7440,16 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     
                     if location:
                         gym_gps_coords.value = f"{location.latitude}, {location.longitude}"
-                        gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text("✅ 좌표 변환 완료!"))
-                        gym_gps_coords.page.snack_bar.open = True
-                        gym_gps_coords.page.update()
+                        print(f"📍 좌표 변환 성공: {gym_gps_coords.value}")
+                        show_snack("✅ 좌표 변환 완료!")
+                        gym_gps_coords.update()
                         self._save_user_setting_individual("gym_gps_coords", gym_gps_coords.value)
                     else:
-                        gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 주소에서 좌표를 찾을 수 없습니다. 도로명까지만 입력해보세요."))
-                        gym_gps_coords.page.snack_bar.open = True
-                        gym_gps_coords.page.update()
+                        print("📍 주소에서 좌표를 찾을 수 없습니다.")
+                        show_snack("❌ 주소에서 좌표를 찾을 수 없습니다. 도로명까지만 입력해보세요.")
                 except Exception as ex:
-                    gym_gps_coords.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 좌표 변환 오류: {ex}"))
-                    gym_gps_coords.page.snack_bar.open = True
-                    gym_gps_coords.page.update()
+                    print(f"📍 좌표 변환 오류: {ex}")
+                    show_snack(f"❌ 좌표 변환 오류: {ex}")
 
             import threading
             threading.Thread(target=run_geocoding, daemon=True).start()
@@ -8180,6 +8254,11 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     padding=10,
                     margin=ft.margin.only(bottom=10)
                 ))
+                
+                # [버그 픽스] AI 생성 또는 업로드 단계에서 예외 발생 시 타이머 폴러에 즉시 실패 통보
+                if hasattr(self, 'last_upload_success') and self.last_upload_success is None:
+                    self.last_upload_success = False
+
             
             # 자동 주제 모드이고 입력 필드를 지우는 경우에만 - 다음 자동 선택을 위해
             if auto_topic_checkbox.value:
@@ -10883,9 +10962,12 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         def refresh_manual_image_count(e):
             """이미지 수 새로고침"""
             refresh_manual_folder_display()
-            page.snack_bar = ft.SnackBar(content=ft.Text("🔄 이미지 수 새로고침 완료"))
-            page.snack_bar.open = True
-            page.update()
+            try:
+                page.open(ft.SnackBar(content=ft.Text("🔄 이미지 수 새로고침 완료")))
+            except Exception:
+                page.snack_bar = ft.SnackBar(content=ft.Text("🔄 이미지 수 새로고침 완료"))
+                page.snack_bar.open = True
+                page.update()
         
         def change_manual_upload_folder(e):
             """수동 업로드 폴더 경로 변경"""
@@ -10894,6 +10976,12 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 value=get_manual_upload_folder(),
                 hint_text="사진을 수동으로 업로드할 폴더",
                 expand=True
+            )
+            
+            folder_btn = ft.IconButton(
+                icon=ft.Icons.FOLDER_OPEN,
+                tooltip="폴더 찾기",
+                on_click=lambda e: self._open_folder_picker_for(folder_input)
             )
             
             def save_folder_path(e):
@@ -10905,19 +10993,24 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     refresh_manual_folder_display()
                     
                 folder_dialog.open = False
-                page.snack_bar = ft.SnackBar(content=ft.Text(f"✅ 폴더 설정됨: {new_path}"), bgcolor=ft.Colors.GREEN)
-                page.snack_bar.open = True
-                page.update()
+                try:
+                    page.open(ft.SnackBar(content=ft.Text(f"✅ 폴더 설정됨: {new_path}"), bgcolor=ft.Colors.GREEN))
+                except Exception:
+                    page.snack_bar = ft.SnackBar(content=ft.Text(f"✅ 폴더 설정됨: {new_path}"), bgcolor=ft.Colors.GREEN)
+                    page.snack_bar.open = True
+                    page.update()
+                else:
+                    page.update()
             
             folder_dialog = ft.AlertDialog(
                 title=ft.Text("📁 수동 업로드 폴더 설정"),
                 content=ft.Column([
                     ft.Text("수동 주제 포스팅에 사용할 이미지 폴더를 설정합니다.", size=12, color=ft.Colors.GREY_700),
-                    folder_input,
+                    ft.Row([folder_input, folder_btn]),
                     ft.Text("💡 이 폴더에 사진을 넣고 '수동 주제로 포스팅' 버튼을 누르세요.", size=11, color=ft.Colors.GREY_600),
                 ], spacing=10, tight=True),
                 actions=[
-                    ft.TextButton("취소", on_click=lambda _: setattr(folder_dialog, "open", False)),
+                    ft.TextButton("취소", on_click=lambda _: setattr(folder_dialog, "open", False) or page.update()),
                     ft.ElevatedButton("저장", on_click=save_folder_path)
                 ]
             )
@@ -13066,20 +13159,39 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
 
         def save_profile_click(e):
             auto_save_profile_internal()
-            self.page.snack_bar = ft.SnackBar(content=ft.Text("🎉 체육관 프로필이 성공적으로 저장되었습니다!"), bgcolor=ft.Colors.GREEN_700)
-            self.page.snack_bar.open = True
-            self.page.update()
+            
+            try:
+                from modules.training_planner.curriculum_loader import GYM_PROFILE_PATH
+                save_path = GYM_PROFILE_PATH
+            except ImportError:
+                save_path = "데이터베이스(settings 폴더 내)"
+                
+            msg = f"🎉 체육관 프로필이 성공적으로 저장되었습니다!\n경로: {save_path}"
+            
+            if hasattr(self, 'page') and self.page:
+                try:
+                    self.page.open(ft.SnackBar(content=ft.Text(msg), bgcolor=ft.Colors.GREEN_700))
+                except Exception:
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text(msg), bgcolor=ft.Colors.GREEN_700)
+                    self.page.snack_bar.open = True
+                    self.page.update()
 
         def learn_files_click(e):
             if not self.selected_files:
-                self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 학습할 PDF 파일을 먼저 선택해주세요."), bgcolor=ft.Colors.RED)
-                self.page.snack_bar.open = True
-                self.page.update()
+                try:
+                    self.page.open(ft.SnackBar(content=ft.Text("❌ 학습할 PDF 파일을 먼저 선택해주세요."), bgcolor=ft.Colors.RED))
+                except Exception:
+                    self.page.snack_bar = ft.SnackBar(content=ft.Text("❌ 학습할 PDF 파일을 먼저 선택해주세요."), bgcolor=ft.Colors.RED)
+                    self.page.snack_bar.open = True
+                    self.page.update()
                 return
                 
-            self.page.snack_bar = ft.SnackBar(content=ft.Text("🔄 AI 커리큘럼 스마트 학습 진행 중... (파일을 파싱하고 마크다운 변환 중)"), bgcolor=ft.Colors.BLUE_700)
-            self.page.snack_bar.open = True
-            self.page.update()
+            try:
+                self.page.open(ft.SnackBar(content=ft.Text("🔄 AI 커리큘럼 스마트 학습 진행 중... (파일을 파싱하고 마크다운 변환 중)"), bgcolor=ft.Colors.BLUE_700))
+            except Exception:
+                self.page.snack_bar = ft.SnackBar(content=ft.Text("🔄 AI 커리큘럼 스마트 학습 진행 중... (파일을 파싱하고 마크다운 변환 중)"), bgcolor=ft.Colors.BLUE_700)
+                self.page.snack_bar.open = True
+                self.page.update()
             
             def run_learning():
                 res = learn_from_files(self.selected_files, gym_profile)
@@ -13087,15 +13199,23 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     nonlocal curriculum_status
                     curriculum_status = get_curriculum_status()
                     curriculum_status_text.value = f"📊 학습 상태: 학습 완료 | 크기: {curriculum_status['kb_size']}KB ({curriculum_status['item_count']}줄) | 갱신: {curriculum_status['last_updated']}"
-                    self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 성공! {res['summary']}"), bgcolor=ft.Colors.GREEN_700)
-                    self.page.snack_bar.open = True
+                    try:
+                        self.page.open(ft.SnackBar(content=ft.Text(f"🎉 성공! {res['summary']}"), bgcolor=ft.Colors.GREEN_700))
+                    except Exception:
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"🎉 성공! {res['summary']}"), bgcolor=ft.Colors.GREEN_700)
+                        self.page.snack_bar.open = True
+                        self.page.update()
                     try:
                         self.page.update()
                     except Exception as ui_err:
                         print(f"⚠️ UI 업데이트 실패 수동 보정: {ui_err}")
                 else:
-                    self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 학습 실패: {res['summary']}"), bgcolor=ft.Colors.RED)
-                    self.page.snack_bar.open = True
+                    try:
+                        self.page.open(ft.SnackBar(content=ft.Text(f"❌ 학습 실패: {res['summary']}"), bgcolor=ft.Colors.RED))
+                    except Exception:
+                        self.page.snack_bar = ft.SnackBar(content=ft.Text(f"❌ 학습 실패: {res['summary']}"), bgcolor=ft.Colors.RED)
+                        self.page.snack_bar.open = True
+                        self.page.update()
                     try:
                         self.page.update()
                     except Exception as ui_err:
