@@ -1,1 +1,1 @@
-{"version": "1.2.186", "date": "2026-08-17", "changes": ["수련계획표 경로 지정 시 자동포스팅 설정 덮어써지는 버그 수정"]}
+{"version": "1.2.187", "date": "2026-08-17", "changes": ["수동 포스팅 시 발생하는 name random is not defined 에러 수정"]}
