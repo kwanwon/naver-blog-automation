@@ -139,6 +139,9 @@ class BandPipeline:
 
         # 양해문구(band_footer_notice) 조립 (태그 바로 위에 위치, 모든 밴드 글에 공통 적용)
         band_footer = user_settings.get('band_footer_notice', '').strip()
+        if not band_footer:
+            band_footer = "수련의 생생한 현장을 담았습니다. 사진 및 영상 화질이 다소 아쉬울 수 있으나, 열심히 수련하는 모습을 함께 나눕니다! 🙏"
+            
         if band_footer:
             # 모바일 가독성을 위한 여백 적용
             assembled_content = assembled_content.rstrip() + f"\n\n{band_footer}"

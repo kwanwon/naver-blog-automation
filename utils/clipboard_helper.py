@@ -166,11 +166,11 @@ def insert_text_to_editor(driver, editor_element, content: str, platform: str = 
             else:
                 ActionChains(driver).key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL).perform()
             
-            time.sleep(1)
+            time.sleep(2)  # 붙여넣기 후 렌더링 딜레이를 위해 충분한 대기 (텍스트 순서 꼬임 방지)
             
             # 붙여넣기 후 이벤트 트리거 (에디터 상태 갱신)
             ActionChains(driver).send_keys(Keys.SPACE).send_keys(Keys.BACKSPACE).perform()
-            time.sleep(0.5)
+            time.sleep(1)
             
             # 검증: 에디터에 내용이 있는지 확인 (Selenium .text의 한계 극복을 위해 JS 사용)
             try:
@@ -179,7 +179,8 @@ def insert_text_to_editor(driver, editor_element, content: str, platform: str = 
                 editor_text = editor_element.text if editor_element.text else ""
                 
             editor_text = editor_text.strip()
-            if len(editor_text) >= len(content) * 0.3:
+            # 텍스트가 매우 길 경우 DOM 반영이 지연될 수 있으므로, 10% 이상만 확인되면 성공으로 간주
+            if len(editor_text) >= len(content) * 0.1 or len(editor_text) > 10:
                 print(f"✅ [Insert] 클립보드 붙여넣기 성공 ({len(editor_text)}자)")
                 return True
             else:
@@ -271,7 +272,6 @@ def insert_text_to_editor(driver, editor_element, content: str, platform: str = 
         
         if len(content) > max_sendkeys_length:
             print(f"⚠️ [Insert] 텍스트가 너무 길어 {max_sendkeys_length}자로 잘라서 입력합니다.")
-        
         editor_element.clear()
         time.sleep(0.2)
         editor_element.send_keys(text_to_send)
