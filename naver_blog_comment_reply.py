@@ -874,10 +874,11 @@ class NaverBlogCommentReply:
         custom_instruction = self._load_custom_reply_instruction()
         
         # 기본 지침 (더 명확하게)
-        default_instruction = """- 댓글에 직접 공감하며 짧게 감사 표현
-- 반드시 20자 이내로 작성
-- 이모지 1개만 포함
-- 예시: "감사합니다😊", "좋은 말씀 감사해요💕", "응원 감사합니다🙏"
+        default_instruction = """- 댓글의 핵심 내용이나 뉘앙스를 파악하여 그에 맞는 자연스러운 답글 작성
+- 상대방의 말에 공감하거나 구체적으로 감사 표현
+- 1~2문장(30~50자 내외)으로 정성스럽게 작성
+- 적절한 이모지 1~2개 포함
+- 기계적인 단답형(예: 단순 '감사합니다') 지양
 - 답글만 출력 (설명, 제목, 본문 태그 없이)"""
         
         instruction = custom_instruction if custom_instruction else default_instruction
