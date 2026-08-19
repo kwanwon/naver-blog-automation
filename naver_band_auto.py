@@ -164,50 +164,53 @@ class NaverBandAutomation:
             self.driver.get(band_url)
             time.sleep(3)
             
-            # 1. 글쓰기 영역 클릭
+            # 1. 글쓰기 영역 클릭 (좌측 초록색 [글쓰기] 버튼 최우선 타겟팅)
             print("📝 글쓰기 영역 찾는 중...")
             write_area_selectors = [
-                "button.roundButton.-full._btnWritePost",  # 🆕 녹색 글쓰기 버튼
-                "button.cPostWriteEventWrapper._btnOpenWriteLayer",  # 🆕 글쓰기 레이어 열기
-                "div.buttonArea._btnOpenWriteLayer",  # 🆕 버튼 영역
-                "button._btnPostWrite",
-                "div.postWriteArea",
-                "textarea._postWriteInput",
-                "._btnPostWriteShow",
-                "button.uButtonPostWrite",
-                "[data-test-id='post-write-button']"
+                # 1순위: 좌측 메뉴의 큰 초록색 [글쓰기] 버튼 (아이콘 없음, 100% 안전)
+                "//button[contains(@class, 'roundButton') and contains(., '글쓰기')]",
+                "//button[contains(@class, '_btnWritePost')]",
+                "//a[contains(@class, '_btnWritePost')]",
+                "button.roundButton.-full._btnWritePost",
+                "button._btnWritePost",
+                "//button[normalize-space()='글쓰기']",
+                # 2순위: 중앙 '새로운 소식을 남겨보세요.' 텍스트 라벨 (하단 툴바 제외)
+                "//div[contains(@class, 'cPostWrite') or contains(@class, 'postWrite')]//*[contains(text(), '새로운 소식을') and not(self::button)]",
+                "//*[normalize-space()='새로운 소식을 남겨보세요.']",
+                "//button[contains(@class, 'cPostWriteEventWrapper') and contains(@class, '_btnOpenWriteLayer')]"
             ]
             
             write_btn = None
             for selector in write_area_selectors:
                 try:
-                    write_btn = WebDriverWait(self.driver, 3).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
+                    if selector.startswith("//"):
+                        elements = self.driver.find_elements(By.XPATH, selector)
+                    else:
+                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    
+                    for el in elements:
+                        # 툴바 내부의 요소는 절대 클릭하지 않음
+                        try:
+                            is_toolbar = self.driver.execute_script("return arguments[0].closest('.toolbarList, ._toolbarList') !== null;", el)
+                            if is_toolbar:
+                                continue
+                        except:
+                            pass
+                            
+                        if el.is_displayed() and el.is_enabled():
+                            write_btn = el
+                            break
                     if write_btn:
                         break
                 except:
                     continue
             
-            # 텍스트로 찾기 (백업)
-            if not write_btn:
-                try:
-                    print("🔍 텍스트('글쓰기', 'Post')로 영역 찾는 중...")
-                    search_texts = ["글쓰기", "Post", "새로운 소식을"]
-                    for text in search_texts:
-                        btns = self.driver.find_elements(By.XPATH, f"//*[contains(text(), '{text}')]")
-                        for btn in btns:
-                            if btn.is_displayed():
-                                write_btn = btn
-                                break
-                        if write_btn: break
-                except: pass
-
             if not write_btn:
                 print("❌ 글쓰기 영역을 찾을 수 없습니다. (현재 페이지에서 포스팅이 불가능할 수 있습니다)")
                 return False
                 
             # 글쓰기 버튼 클릭 (일반 클릭 및 JS 클릭 병행)
+            print(f"  ✅ 글쓰기 버튼 발견: {write_btn.text.strip() or write_btn.tag_name}")
             try:
                 write_btn.click()
             except:
