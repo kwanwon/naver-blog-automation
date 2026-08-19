@@ -179,12 +179,17 @@ def insert_text_to_editor(driver, editor_element, content: str, platform: str = 
                 editor_text = editor_element.text if editor_element.text else ""
                 
             editor_text = editor_text.strip()
-            # 텍스트가 매우 길 경우 DOM 반영이 지연될 수 있으므로, 10% 이상만 확인되면 성공으로 간주
-            if len(editor_text) >= len(content) * 0.1 or len(editor_text) > 10:
+            
+            # 본문의 첫 15자 중 특수문자 제외한 핵심 텍스트가 실제로 들어갔는지 검증
+            clean_sample = "".join(c for c in content[:20] if c.isalnum())
+            sample_matched = clean_sample in editor_text if clean_sample else False
+            length_valid = len(editor_text) >= min(len(content) * 0.4, 50)
+            
+            if sample_matched or (length_valid and len(editor_text) > 30):
                 print(f"✅ [Insert] 클립보드 붙여넣기 성공 ({len(editor_text)}자)")
                 return True
             else:
-                print(f"⚠️ [Insert] 클립보드 붙여넣기 후 검증 실패 ({len(editor_text)}자만 확인됨)")
+                print(f"⚠️ [Insert] 클립보드 붙여넣기 후 검증 실패 (확인된 글자수: {len(editor_text)}자 - 실제 본문 미반영)")
         except Exception as e:
             print(f"⚠️ [Insert] 클립보드 붙여넣기 오류: {e}")
     

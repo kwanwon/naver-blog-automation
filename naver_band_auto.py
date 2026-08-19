@@ -207,8 +207,21 @@ class NaverBandAutomation:
                 print("❌ 글쓰기 영역을 찾을 수 없습니다. (현재 페이지에서 포스팅이 불가능할 수 있습니다)")
                 return False
                 
-            self.driver.execute_script("arguments[0].click();", write_btn)
-            time.sleep(2)
+            # 글쓰기 버튼 클릭 (일반 클릭 및 JS 클릭 병행)
+            try:
+                write_btn.click()
+            except:
+                self.driver.execute_script("arguments[0].click();", write_btn)
+            time.sleep(1.5)
+            
+            # 글쓰기 폼이 standby 상태에서 풀릴 때까지 대기
+            try:
+                WebDriverWait(self.driver, 5).until_not(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".postWriteForm.-standby, ._postWriteForm.-standby"))
+                )
+            except:
+                pass
+            time.sleep(0.5)
             
             # 2. 내용 입력 (다중 폴백 - StaleElement 방지 재시도 로직 추가)
             print("⌨️ 내용 입력 중 (다중 폴백)...")
@@ -218,11 +231,12 @@ class NaverBandAutomation:
                     editor = WebDriverWait(self.driver, 8).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, "div[contenteditable='true'], textarea._postWriteInput, div.contentEditor, .ProseMirror, .ck-content, [role='textbox']"))
                     )
+                    self.driver.execute_script("arguments[0].scrollIntoView(true); arguments[0].focus();", editor)
+                    time.sleep(0.3)
                     try:
                         editor.click()
                     except Exception as click_err:
-                        print(f"⚠️ 일반 클릭 실패, JS 클릭/포커스 시도: {click_err}")
-                        self.driver.execute_script("arguments[0].scrollIntoView(true); arguments[0].focus(); arguments[0].click();", editor)
+                        self.driver.execute_script("arguments[0].click();", editor)
                         
                     time.sleep(0.5)
                     break  # 클릭 성공 시 반복문 탈출

@@ -5626,6 +5626,11 @@ class BlogWriterApp:
                 page.update()
                 
             def copy_log(e):
+                try:
+                    from utils.clipboard_helper import copy_to_clipboard
+                    copy_to_clipboard(log_text.value)
+                except:
+                    pass
                 page.set_clipboard(log_text.value)
                 page.snack_bar = ft.SnackBar(content=ft.Text("로그가 복사되었습니다."))
                 page.snack_bar.open = True
