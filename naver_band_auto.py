@@ -834,17 +834,32 @@ class NaverBandAutomation:
                     print("❌ 예약 설정에 실패하여 게시를 중단합니다. (다음 스케줄로 넘어갑니다)")
                     return False
 
-            # 5. 게시 버튼 클릭
+            # 4-7. 혹시 남아있는 서브 팝업(일정 첨부 등)이 있다면 안전하게 취소/정리
+            try:
+                sub_popups = self.driver.find_elements(By.XPATH, "//div[contains(@class, 'modal') or contains(@class, 'layer_wrap')]//button[contains(text(), '취소') or contains(@class, '-cancel')]")
+                for cancel_b in sub_popups:
+                    if cancel_b.is_displayed():
+                        try:
+                            cancel_b.click()
+                            time.sleep(0.5)
+                        except:
+                            pass
+            except:
+                pass
+
+            # 5. 게시(또는 예약) 버튼 클릭
             print("🚀 게시(또는 예약) 버튼 클릭 중...")
             submit_btn = None
             submit_selectors = [
                 "button._btnSubmitPost", 
+                "button.uButton.-confirm._btnSubmitPost",
+                "button.uButton.-sizeM._btnSubmitPost",
+                "//button[normalize-space()='예약']",
+                "//button[normalize-space()='게시']",
+                "//button[contains(@class, '_btnSubmitPost')]",
+                "//button[contains(text(), '예약') and not(contains(text(), '설정'))]",
                 "button.uButton.-confirm",
-                "button._btnPost",
-                "button.uButton.-sizeM._btnSubmitPost.-confirm",
-                "//button[contains(text(), '게시')]",
-                "//button[contains(text(), '완료')]",
-                "//button[contains(text(), '확인')]"  # 예약 시
+                "button._btnPost"
             ]
             
             # 버튼 활성화 대기 (최대 20초)
@@ -853,22 +868,25 @@ class NaverBandAutomation:
                 for selector in submit_selectors:
                     try:
                         if selector.startswith("//"):
-                            btn = self.driver.find_element(By.XPATH, selector)
+                            elements = self.driver.find_elements(By.XPATH, selector)
                         else:
-                            btn = self.driver.find_element(By.CSS_SELECTOR, selector)
+                            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
                         
-                        if btn.is_displayed():
-                            if btn.is_enabled():
-                                submit_btn = btn
-                                found_clickable = True
-                                break
-                            else:
-                                print(f"  ⏳ 버튼 발견됨(비활성 상태) - 대기 중... ({i+1}/20)")
+                        for btn in elements:
+                            if btn.is_displayed():
+                                # disabled 상태인지 확인
+                                is_disabled = btn.get_attribute("disabled") or "disabled" in (btn.get_attribute("class") or "")
+                                if not is_disabled:
+                                    submit_btn = btn
+                                    found_clickable = True
+                                    break
+                        if found_clickable:
+                            break
                     except:
                         continue
-                
                 if found_clickable:
                     break
+                print(f"  ⏳ 버튼 대기 중... ({i+1}/20)")
                 time.sleep(1)
             
             if not submit_btn:
