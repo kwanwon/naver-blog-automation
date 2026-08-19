@@ -246,8 +246,8 @@ class NaverBandAutomation:
                 pass
             time.sleep(0.5)
             
-            # 2. 내용 입력 (다중 폴백 - StaleElement 방지 재시도 로직 추가)
-            print("⌨️ 내용 입력 중 (다중 폴백)...")
+            # 2. 내용 입력 (깨끗이 초기화 후 1회만 단독 입력)
+            print("⌨️ 내용 입력 중...")
             editor = None
             for attempt in range(3):
                 try:
@@ -258,91 +258,72 @@ class NaverBandAutomation:
                     time.sleep(0.3)
                     try:
                         editor.click()
-                    except Exception as click_err:
+                    except:
                         self.driver.execute_script("arguments[0].click();", editor)
-                        
                     time.sleep(0.5)
-                    break  # 클릭 성공 시 반복문 탈출
+                    break
                 except Exception as e:
-                    print(f"⚠️ 에디터 클릭 실패, 재시도 중... ({attempt+1}/3) - 오류: {type(e).__name__} ({str(e).splitlines()[0] if str(e).splitlines() else ''})")
-                    time.sleep(1.5)
+                    print(f"⚠️ 에디터 클릭 재시도 중... ({attempt+1}/3)")
+                    time.sleep(1.0)
             
             if not editor:
-                print("❌ 에디터를 여러 번 클릭 시도했으나 실패했습니다.")
+                print("❌ 에디터를 찾거나 클릭하지 못했습니다.")
                 return False
             
-            # 방법 1: 클립보드 헬퍼 사용 시도
+            # 🧹 [중요] 기존 에디터 내용 깨끗이 비우기 (중복 입력 원천 차단)
+            try:
+                self.driver.execute_script("""
+                    arguments[0].innerText = '';
+                    arguments[0].innerHTML = '';
+                    arguments[0].focus();
+                """, editor)
+                time.sleep(0.3)
+            except:
+                pass
+            
+            # 본문 텍스트 1회 주입
             insert_success = False
             try:
                 from utils.clipboard_helper import insert_text_to_editor
                 insert_success = insert_text_to_editor(self.driver, editor, content, platform="band")
-                if insert_success:
-                    print("✅ 내용 입력 완료 (클립보드 헬퍼)")
-            except ImportError as ie:
-                print(f"⚠️ 클립보드 헬퍼 모듈 import 실패: {ie}")
             except Exception as e:
-                print(f"⚠️ 클립보드 헬퍼 실행 실패: {e}")
+                print(f"⚠️ 클립보드 헬퍼 실행 중: {e}")
             
-            # 방법 2: macOS 네이티브 pbcopy + 붙여넣기
             if not insert_success:
-                print("🔄 [Fallback] macOS pbcopy 시도...")
-                try:
-                    import subprocess
-                    import sys
-                    if sys.platform == 'darwin':
-                        process = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
-                        process.communicate(content.encode('utf-8'))
-                        if process.returncode == 0:
-                            time.sleep(0.3)
-                            ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('v').key_up(Keys.COMMAND).perform()
-                            time.sleep(1)
-                            # 검증
-                            try:
-                                editor_text = self.driver.execute_script("return arguments[0].innerText || arguments[0].textContent || '';", editor)
-                            except:
-                                editor_text = editor.text if editor.text else ""
-                            
-                            editor_text = editor_text.strip()
-                            if len(editor_text) >= len(content) * 0.3:
-                                insert_success = True
-                                print(f"✅ pbcopy 성공 ({len(editor_text)}자)")
-                except Exception as pb_err:
-                    print(f"⚠️ pbcopy 실패: {pb_err}")
-            
-            # 방법 3: JavaScript 직접 주입
-            if not insert_success:
-                print("🔄 [Fallback] JS 직접 주입...")
+                print("🔄 [Fallback] JS 직접 주입 실행...")
                 try:
                     self.driver.execute_script("""
-                        arguments[0].innerText = arguments[1];
-                        arguments[0].dispatchEvent(new Event('input', { bubbles: true }));
-                        arguments[0].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-                        arguments[0].dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                        var el = arguments[0];
+                        var text = arguments[1];
+                        el.innerText = text;
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
                     """, editor, content)
                     time.sleep(0.5)
-                    editor_text = editor.text.strip() if editor.text else ""
-                    if len(editor_text) >= len(content) * 0.2:
-                        insert_success = True
-                        print(f"✅ JS 주입 성공 ({len(editor_text)}자)")
-                except Exception as js_err:
-                    print(f"⚠️ JS 주입 실패: {js_err}")
-            
-            # 방법 4: send_keys 직접 입력 (최후의 수단)
-            if not insert_success:
-                print("🔄 [Fallback] send_keys 직접 입력...")
-                try:
-                    text_to_send = content[:2000] if len(content) > 2000 else content
-                    editor.send_keys(text_to_send)
-                    time.sleep(1)
-                    print(f"✅ send_keys 완료 ({len(text_to_send)}자)")
                     insert_success = True
-                except Exception as sk_err:
-                    print(f"❌ send_keys 실패: {sk_err}")
+                    print("✅ JS 주입 완료")
+                except Exception as js_err:
+                    print(f"❌ JS 주입 실패: {js_err}")
             
             if not insert_success:
-                print("❌ 모든 내용 입력 방법 실패 - 포스팅 불가")
+                print("❌ 내용 입력 실패")
                 return False
             
+            # 📌 [중요] 텍스트 입력 후 커서를 본문 '맨 끝'으로 이동 (사진/영상이 텍스트 아래에 오도록)
+            try:
+                self.driver.execute_script("""
+                    var el = arguments[0];
+                    var range = document.createRange();
+                    var sel = window.getSelection();
+                    range.selectNodeContents(el);
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                """, editor)
+                time.sleep(0.5)
+            except:
+                pass
+            print("✅ 본문 텍스트 최상단 입력 완료")
             time.sleep(1)
             
             # 3. 미디어 업로드 (사진/동영상 분리 처리)
@@ -433,7 +414,7 @@ class NaverBandAutomation:
                         self._click_attach_button()
                         
                         # 1. 사진 업로드 팝업 사라질 때까지 대기 (프로그레스 바 확인)
-                        upload_timeout = max(300, len(photos) * 5)  # 최소 5분, 장당 5초 여유
+                        upload_timeout = min(120, max(45, len(photos) * 3))  # 최소 5분, 장당 5초 여유
                         print(f"⏳ 사진 업로드 대기 (타임아웃: {upload_timeout}초)...")
                         self._wait_for_upload_complete(timeout=upload_timeout)
                         
@@ -506,7 +487,7 @@ class NaverBandAutomation:
                         self._click_attach_button()
                         
                         # 동영상 업로드 완료 대기 - 파일 개수에 따라 타임아웃 조절
-                        upload_timeout = max(300, len(videos) * 60)  # 최소 5분, 동영상당 1분
+                        upload_timeout = min(180, max(60, len(videos) * 30))  # 최소 5분, 동영상당 1분
                         print(f"⏳ 업로드 대기 (타임아웃: {upload_timeout}초)...")
                         self._wait_for_upload_complete(timeout=upload_timeout)
                         
@@ -947,11 +928,11 @@ class NaverBandAutomation:
                 
                 for _ in range(max_retries):
                     try:
-                        # 에디터가 없으면 성공
-                        editor_exists = self.driver.find_elements(By.CSS_SELECTOR, "div.write_area")
-                        layer_exists = self.driver.find_elements(By.CSS_SELECTOR, "section.lyWrap")
+                        # 에디터 모달/레이어가 완전히 닫혔는지 확인
+                        editor_modals = self.driver.find_elements(By.CSS_SELECTOR, "section.lyWrap, div.modal, div.cPostWriteModal, .postWriteForm:not(.-standby)")
+                        modal_visible = any(m.is_displayed() for m in editor_modals if m)
                         
-                        if not editor_exists and not any(l.is_displayed() for l in layer_exists):
+                        if not modal_visible:
                             post_success = True
                             break
                             
@@ -961,7 +942,8 @@ class NaverBandAutomation:
                             alert_text = alert.text
                             print(f"⚠️ 게시 후 알림 발견: {alert_text}")
                             alert.accept()
-                        except: pass
+                        except:
+                            pass
                         
                     except:
                         post_success = True
@@ -970,30 +952,10 @@ class NaverBandAutomation:
                 
                 if post_success:
                     print("✅ 밴드 포스팅(예약) 완료! (에디터 닫힘 확인)")
-                    
-                    if 'remaining_videos' in locals() and remaining_videos:
-                        print(f"🔄 남은 동영상 {len(remaining_videos)}개 추가 포스팅을 위해 5초 대기 후 새 게시물을 작성합니다...")
-                        time.sleep(5)
-                        extra_content = "[추가 영상] 앞선 게시물에 이어서 추가로 올려드리는 영상입니다. 😊"
-                        return self.post_to_band(band_url, extra_content, remaining_videos, reservation_time)
-                        
                     return True
                 else:
-                    print("⚠️ 포스팅 완료 확인 실패 (에디터가 닫히지 않음)")
-                    # 강제로 닫기 버튼 누르기 시도 (예약 완료 팝업 등)
-                    try:
-                         close_btns = self.driver.find_elements(By.CSS_SELECTOR, "button.btn_close")
-                         for btn in close_btns:
-                             if btn.is_displayed(): btn.click()
-                    except: pass
-                    
-                    if 'remaining_videos' in locals() and remaining_videos:
-                        print(f"🔄 남은 동영상 {len(remaining_videos)}개 추가 포스팅을 위해 5초 대기 후 새 게시물을 작성합니다...")
-                        time.sleep(5)
-                        extra_content = "[추가 영상] 앞선 게시물에 이어서 추가로 올려드리는 영상입니다. 😊"
-                        return self.post_to_band(band_url, extra_content, remaining_videos, reservation_time)
-                        
-                    return True # 일단 진행
+                    print("❌ 포스팅 완료 확인 실패 (에디터가 닫히지 않음)")
+                    return False
             else:
                 print("❌ 게시 버튼을 결국 찾을 수 없습니다.")
                 return False

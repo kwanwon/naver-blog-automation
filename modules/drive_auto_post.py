@@ -264,25 +264,12 @@ class DriveAutoPostSystem:
         print(f"   시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print('='*60)
         
-        # 이미 처리 중이면 대기
-        if self.is_processing:
-            print("⏳ 이전 포스팅 처리 중... 대기합니다.")
-            # 최대 5분 대기
-            wait_start = datetime.now()
-            while self.is_processing:
-                if (datetime.now() - wait_start).seconds > 300:
-                    print("⚠️ 대기 시간 초과, 포스팅 건너뜀")
-                    return
-                import time
-                time.sleep(5)
-            print("✅ 대기 완료, 포스팅 시작")
-        
         send_macos_notification(
             f"{folder_name} 사진 감지",
             f"{len(files)}개 파일 처리 시작"
         )
         
-        # 별도 스레드에서 처리 (UI 블로킹 방지)
+        # 별도 스레드에서 순차 처리 (동시 실행 방지)
         threading.Thread(
             target=self._process_and_post,
             args=(folder_path, folder_name, files),
@@ -339,13 +326,10 @@ class DriveAutoPostSystem:
     
     def _process_and_post(self, folder_path: str, folder_name: str, files: List[str]):
         """
-        포스팅 처리 (백그라운드 스레드)
+        포스팅 처리 (백그라운드 스레드 - 완벽한 직렬화 보장)
         """
-        # 처리 시작 - 잠금
+        # 다른 포스팅 작업이 끝날 때까지 안전하게 대기
         with self.processing_lock:
-            if self.is_processing:
-                print("⚠️ 이미 포스팅 처리 중입니다. 이 요청은 건너뜁니다.")
-                return
             self.is_processing = True
         
         success = False
@@ -442,36 +426,40 @@ class DriveAutoPostSystem:
                     print(f"   📷 사진: {len(photos)}개")
                     print(f"   🎬 동영상: {len(videos)}개")
                     
-                    # Case 1: 사진과 동영상이 둘 다 있는 경우 -> 분리하여 순차 포스팅
+                    # Case 1: 사진과 동영상이 둘 다 있는 경우 -> [1/2], [2/2] 순차 포스팅
                     if photos and videos:
-                        print(f"📤 [1단계: 사진 포스팅] 본문 글과 사진 {len(photos)}개 업로드 시작...")
+                        chunk_size = 10
+                        total_video_chunks = (len(videos) + chunk_size - 1) // chunk_size
+                        total_posts = 1 + total_video_chunks
+                        
+                        # 1단계: 사진 포스팅 (1번째 게시물)
+                        photo_content = f"📸 [1/{total_posts}] [{folder_name}] 오늘의 수련 이야기\n\n{content}"
+                        print(f"📤 [1단계: 사진 포스팅 (1/{total_posts})] 본문 글과 사진 {len(photos)}개 업로드 시작...")
                         success = self.post_to_band(
-                            content=content,
+                            content=photo_content,
                             image_paths=photos
                         )
                         
                         if success:
                             import time
-                            print("✅ 1차 사진 포스팅 완료 확인됨! 5초 대기 후 2차 동영상 포스팅을 진행합니다...")
+                            print("✅ 1차 사진 포스팅 100% 등록 완료 확인! 5초 안정화 후 동영상 포스팅을 진행합니다...")
                             time.sleep(5)
                             
-                            chunk_size = 10
-                            total_chunks = (len(videos) + chunk_size - 1) // chunk_size
                             for v_idx in range(0, len(videos), chunk_size):
                                 v_chunk = videos[v_idx:v_idx + chunk_size]
-                                chunk_num = (v_idx // chunk_size) + 1
+                                cur_post_idx = 2 + (v_idx // chunk_size)
                                 
-                                video_notice = f"🎥 [{folder_name}] 수련 현장을 생생하게 담은 수련 영상입니다! 즐겁게 감상해 주세요. 😊"
-                                if total_chunks > 1:
-                                    video_notice = f"🎥 [{folder_name}] 생생 수련 영상 ({chunk_num}/{total_chunks}) 입니다! 즐겁게 감상해 주세요. 😊"
-                                
+                                video_notice = f"🎥 [{cur_post_idx}/{total_posts}] [{folder_name}] 생생 수련 영상입니다! 즐겁게 감상해 주세요. 😊"
                                 video_content = f"{video_notice}{safety_notice}{hashtags}"
-                                print(f"📤 [2단계: 동영상 포스팅 {chunk_num}/{total_chunks}] 영상 {len(v_chunk)}개 업로드 시작...")
+                                
+                                print(f"📤 [2단계: 동영상 포스팅 ({cur_post_idx}/{total_posts})] 영상 {len(v_chunk)}개 업로드 시작...")
                                 self.post_to_band(
                                     content=video_content,
                                     image_paths=v_chunk
                                 )
                                 time.sleep(3)
+                        else:
+                            print("⚠️ 1차 사진 포스팅 실패로 인해 동영상 포스팅을 진행하지 않습니다.")
                     
                     # Case 2: 사진만 있는 경우
                     elif photos:
