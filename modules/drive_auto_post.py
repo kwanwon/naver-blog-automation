@@ -28,12 +28,14 @@ class DriveAutoPostSystem:
     6. 사진 백업 폴더로 이동
     """
     
-    def __init__(self, settings: dict = None):
+    def __init__(self, settings: dict = None, browser_lock=None):
         """
         Args:
             settings: 앱 설정 딕셔너리
+            browser_lock: 플랫폼 공용 브라우저 락 (RLock)
         """
         self.settings = settings or {}
+        self.browser_lock = browser_lock
         
         # 모듈 초기화
         self.watcher = DriveWatcher(debounce_seconds=180, polling_interval=10)
@@ -331,220 +333,216 @@ class DriveAutoPostSystem:
         # 다른 포스팅 작업이 끝날 때까지 안전하게 대기
         with self.processing_lock:
             self.is_processing = True
-        
-        success = False
-        
-        try:
-            # 🛡️ [안전장치] 폴더 내의 모든 미디어 파일 다시 확인 (누락 방지)
-            print(f"🔍 [{folder_name}] 폴더 전체 스캔 중...")
-            all_files_in_folder = []
-            valid_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
-                          '.mp4', '.mov', '.avi', '.mkv', '.m4v'}
             
-            if os.path.exists(folder_path):
+            # 🔒 브라우저 락으로 사진+동영상 전체 연속 포스팅 보호 (블로그/카페 끼어들기 차단)
+            lock_acquired = False
+            if self.browser_lock:
                 try:
-                    for f in os.listdir(folder_path):
-                        # 🔧 한글 파일명 NFC 정규화
-                        f_normalized = unicodedata.normalize('NFC', f)
-                        ext = os.path.splitext(f_normalized)[1].lower()
-                        if ext in valid_exts:
-                            full_path = os.path.join(folder_path, f)
-                            all_files_in_folder.append(full_path)
-                except Exception as scan_err:
-                    print(f"⚠️ 폴더 스캔 오류: {scan_err}")
+                    self.browser_lock.acquire()
+                    lock_acquired = True
+                except:
+                    pass
             
-            # 기존 감지된 파일과 합치기 (중복 제거)
-            # files는 이미 절대경로임
-            combined_files = set(files)
-            for f in all_files_in_folder:
-                combined_files.add(f)
+            success = False
             
-            files = list(combined_files)
-            print(f"📦 최종 처리 파일: {len(files)}개")
+            try:
+                # 🛡️ [안전장치] 폴더 내의 모든 미디어 파일 다시 확인 (누락 방지)
+                print(f"🔍 [{folder_name}] 폴더 전체 스캔 중...")
+                all_files_in_folder = []
+                valid_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
+                              '.mp4', '.mov', '.avi', '.mkv', '.m4v'}
+                
+                if os.path.exists(folder_path):
+                    try:
+                        for f in os.listdir(folder_path):
+                            # 🔧 한글 파일명 NFC 정규화
+                            f_normalized = unicodedata.normalize('NFC', f)
+                            ext = os.path.splitext(f_normalized)[1].lower()
+                            if ext in valid_exts:
+                                full_path = os.path.join(folder_path, f)
+                                all_files_in_folder.append(full_path)
+                    except Exception as scan_err:
+                        print(f"⚠️ 폴더 스캔 오류: {scan_err}")
+                
+                # 기존 감지된 파일과 합치기 (중복 제거)
+                # files는 이미 절대경로임
+                combined_files = set(files)
+                for f in all_files_in_folder:
+                    combined_files.add(f)
+                
+                files = list(combined_files)
+                print(f"📦 최종 처리 파일: {len(files)}개")
 
-            # 🔄 스프레드시트 매번 새로고침 (캐시 무시)
-            if self.sheets_reader.sheet_url:
-                print("📊 스프레드시트 새로고침 중...")
-                self.sheets_reader.fetch_data(force_refresh=True)
-            
-            # 1. 주제 결정 (수동 > 스프레드시트)
-            topic = self._get_topic(folder_name)
-            if not topic:
-                print(f"⚠️ 주제를 찾을 수 없습니다. 기본 주제 사용.")
-                topic = f"한국체대 라이온짐 {folder_name} 수련"
-            
-            print(f"📝 주제: {topic}")
-            
-            # 특별활동 여부 확인 (캠프, 키즈카페 등)
-            is_special_activity = any(keyword in folder_name.lower() or keyword in topic.lower() 
-                                      for keyword in ['캠프', '키즈카페', '견학', '체험', '행사'])
-            
-            # 안내문 (사용자 설정에서 가져옴, 특별활동에는 추가 안함)
-            safety_notice = ""
-            if not is_special_activity:
-                default_notice = "수련의 생생한 현장을 담았습니다. 사진 및 영상 화질이 다소 아쉬울 수 있으나, 열심히 수련하는 모습을 함께 나눕니다! 🙏"
-                user_notice = self.settings.get('band_footer_notice', default_notice)
-                if user_notice and user_notice.strip():
-                    safety_notice = "\n\n" + user_notice
-                    print(f"📝 하단 안내문 추가됨")
-            else:
-                print(f"ℹ️ 특별활동 - 하단 안내문 생략")
-            
-            # 해시태그 처리 (순환 시스템)
-            hashtags = self._get_rotating_hashtags()
-            if hashtags:
-                hashtags = "\n\n" + hashtags
-            
-            # 2. AI 글 생성
-            content = None
-            if self.generate_content:
-                print("🤖 AI 글 생성 중...")
-                try:
-                    result = self.generate_content(topic, folder_name)
-                    if result:
-                        content = result.get('content', '')
-                        # AI 생성 글 뒤에 안내문 추가는 band_pipeline에서 처리하므로 여기서 중복 추가하지 않음
-                except Exception as e:
-                    print(f"❌ AI 글 생성 오류: {e}")
-            
-            if not content:
-                print("⚠️ AI 글 생성 실패, 기본 내용 사용")
-                # 기본 내용 + 안내문 + 해시태그
-                content = f"""[{folder_name}] {topic}
-
-오늘도 열심히 수련했습니다! 💪{safety_notice}{hashtags}"""
-            
-            # 3. 밴드에 포스팅 (사진/동영상 분리 순차 포스팅)
-            if self.post_to_band:
-                print("📤 밴드 포스팅 중...")
-                try:
-                    # 사진/동영상 분리
-                    media = self._separate_media_files(files)
-                    photos = media['images']
-                    videos = media['videos']
-                    
-                    print(f"   📷 사진: {len(photos)}개")
-                    print(f"   🎬 동영상: {len(videos)}개")
-                    
-                    # Case 1: 사진과 동영상이 둘 다 있는 경우 -> [1/2], [2/2] 순차 포스팅
-                    if photos and videos:
-                        chunk_size = 10
-                        total_video_chunks = (len(videos) + chunk_size - 1) // chunk_size
-                        total_posts = 1 + total_video_chunks
+                # 🔄 스프레드시트 매번 새로고침 (캐시 무시)
+                if self.sheets_reader.sheet_url:
+                    print("📊 스프레드시트 새로고침 중...")
+                    self.sheets_reader.fetch_data(force_refresh=True)
+                
+                # 1. 주제 결정 (수동 > 스프레드시트)
+                topic = self._get_topic(folder_name)
+                if not topic:
+                    print(f"⚠️ 주제를 찾을 수 없습니다. 기본 주제 사용.")
+                    topic = f"한국체대 라이온짐 {folder_name} 수련"
+                
+                print(f"📝 주제: {topic}")
+                
+                # 특별활동 여부 확인 (캠프, 키즈카페 등)
+                is_special_activity = any(keyword in folder_name.lower() or keyword in topic.lower() 
+                                          for keyword in ['캠프', '키즈카페', '견학', '체험', '행사'])
+                
+                # 안내문 (사용자 설정에서 가져옴, 특별활동에는 추가 안함)
+                safety_notice = ""
+                if not is_special_activity:
+                    default_notice = "수련의 생생한 현장을 담았습니다. 사진 및 영상 화질이 다소 아쉬울 수 있으나, 열심히 수련하는 모습을 함께 나눕니다! 🙏"
+                    user_notice = self.settings.get('band_footer_notice', default_notice)
+                    if user_notice and user_notice.strip():
+                        safety_notice = "\n\n" + user_notice
+                        print(f"📝 하단 안내문 추가됨")
+                else:
+                    print(f"ℹ️ 특별활동 - 하단 안내문 생략")
+                
+                # 해시태그 처리 (순환 시스템)
+                hashtags = self._get_rotating_hashtags()
+                if hashtags:
+                    hashtags = "\n\n" + hashtags
+                
+                # 2. AI 글 생성
+                content = None
+                if self.generate_content:
+                    print("🤖 AI 글 생성 중...")
+                    try:
+                        result = self.generate_content(topic, folder_name)
+                        if result:
+                            content = result.get('content', '')
+                    except Exception as e:
+                        print(f"❌ AI 글 생성 오류: {e}")
+                
+                if not content:
+                    print("⚠️ AI 글 생성 실패, 기본 내용 사용")
+                    content = f"[{folder_name}] {topic}\n\n오늘도 열심히 수련했습니다! 💪{safety_notice}{hashtags}"
+                
+                # 3. 밴드에 포스팅 (사진/동영상 분리 순차 포스팅)
+                if self.post_to_band:
+                    print("📤 밴드 포스팅 중...")
+                    try:
+                        media = self._separate_media_files(files)
+                        photos = media['images']
+                        videos = media['videos']
                         
-                        # 1단계: 사진 포스팅 (1번째 게시물)
-                        photo_content = f"📸 [1/{total_posts}] [{folder_name}] 오늘의 수련 이야기\n\n{content}"
-                        print(f"📤 [1단계: 사진 포스팅 (1/{total_posts})] 본문 글과 사진 {len(photos)}개 업로드 시작...")
-                        success = self.post_to_band(
-                            content=photo_content,
-                            image_paths=photos
-                        )
+                        print(f"   📷 사진: {len(photos)}개")
+                        print(f"   🎬 동영상: {len(videos)}개")
                         
-                        if success:
-                            import time
-                            print("✅ 1차 사진 포스팅 100% 등록 완료 확인! 5초 안정화 후 동영상 포스팅을 진행합니다...")
-                            time.sleep(5)
+                        # Case 1: 사진과 동영상이 둘 다 있는 경우 -> [1/2], [2/2] 순차 포스팅
+                        if photos and videos:
+                            chunk_size = 10
+                            total_video_chunks = (len(videos) + chunk_size - 1) // chunk_size
+                            total_posts = 1 + total_video_chunks
                             
-                            for v_idx in range(0, len(videos), chunk_size):
-                                v_chunk = videos[v_idx:v_idx + chunk_size]
-                                cur_post_idx = 2 + (v_idx // chunk_size)
+                            # 1단계: 사진 포스팅 (1번째 게시물)
+                            photo_content = f"📸 [1/{total_posts}] [{folder_name}] 오늘의 수련 이야기\n\n{content}"
+                            print(f"📤 [1단계: 사진 포스팅 (1/{total_posts})] 본문 글과 사진 {len(photos)}개 업로드 시작...")
+                            success = self.post_to_band(
+                                content=photo_content,
+                                image_paths=photos
+                            )
+                            
+                            if success:
+                                import time
+                                print("✅ 1차 사진 포스팅 100% 등록 완료 확인! 5초 안정화 후 동영상 포스팅을 진행합니다...")
+                                time.sleep(5)
                                 
-                                video_notice = f"🎥 [{cur_post_idx}/{total_posts}] [{folder_name}] 생생 수련 영상입니다! 즐겁게 감상해 주세요. 😊"
-                                video_content = f"{video_notice}{safety_notice}{hashtags}"
-                                
-                                print(f"📤 [2단계: 동영상 포스팅 ({cur_post_idx}/{total_posts})] 영상 {len(v_chunk)}개 업로드 시작...")
-                                self.post_to_band(
-                                    content=video_content,
-                                    image_paths=v_chunk
-                                )
-                                time.sleep(3)
+                                for v_idx in range(0, len(videos), chunk_size):
+                                    v_chunk = videos[v_idx:v_idx + chunk_size]
+                                    cur_post_idx = 2 + (v_idx // chunk_size)
+                                    
+                                    video_notice = f"🎥 [{cur_post_idx}/{total_posts}] [{folder_name}] 생생 수련 영상입니다! 즐겁게 감상해 주세요. 😊"
+                                    video_content = f"{video_notice}{safety_notice}{hashtags}"
+                                    
+                                    print(f"📤 [2단계: 동영상 포스팅 ({cur_post_idx}/{total_posts})] 영상 {len(v_chunk)}개 업로드 시작...")
+                                    self.post_to_band(
+                                        content=video_content,
+                                        image_paths=v_chunk
+                                    )
+                                    time.sleep(3)
+                            else:
+                                print("⚠️ 1차 사진 포스팅 실패로 인해 동영상 포스팅을 진행하지 않습니다.")
+                        
+                        # Case 2: 사진만 있는 경우
+                        elif photos:
+                            print(f"📤 [사진 포스팅] 본문 글과 사진 {len(photos)}개 업로드 시작...")
+                            success = self.post_to_band(
+                                content=content,
+                                image_paths=photos
+                            )
+                            
+                        # Case 3: 동영상만 있는 경우
+                        elif videos:
+                            print(f"📤 [동영상 포스팅] 본문 글과 동영상 {len(videos)}개 업로드 시작...")
+                            success = self.post_to_band(
+                                content=content,
+                                image_paths=videos
+                            )
+                            
+                        # Case 4: 텍스트만 있는 경우
                         else:
-                            print("⚠️ 1차 사진 포스팅 실패로 인해 동영상 포스팅을 진행하지 않습니다.")
+                            print("📤 [텍스트 포스팅] 글 내용 업로드 시작...")
+                            success = self.post_to_band(
+                                content=content,
+                                image_paths=None
+                            )
+                            
+                    except Exception as e:
+                        print(f"❌ 밴드 포스팅 오류: {e}")
+                        success = False
+                else:
+                    print("⚠️ 밴드 포스팅 함수가 설정되지 않음")
+                    success = True
+                
+                # 4. 파일 처리
+                if success:
+                    print("✅ 포스팅 성공!")
+                    self.post_count += 1
+                    self.last_post_time = datetime.now()
                     
-                    # Case 2: 사진만 있는 경우
-                    elif photos:
-                        print(f"📤 [사진 포스팅] 본문 글과 사진 {len(photos)}개 업로드 시작...")
-                        success = self.post_to_band(
-                            content=content,
-                            image_paths=photos
-                        )
-                        
-                    # Case 3: 동영상만 있는 경우
-                    elif videos:
-                        print(f"📤 [동영상 포스팅] 본문 글과 동영상 {len(videos)}개 업로드 시작...")
-                        success = self.post_to_band(
-                            content=content,
-                            image_paths=videos
-                        )
-                        
-                    # Case 4: 텍스트만 있는 경우
-                    else:
-                        print("📤 [텍스트 포스팅] 글 내용 업로드 시작...")
-                        success = self.post_to_band(
-                            content=content,
-                            image_paths=None
-                        )
-                        
-                except Exception as e:
-                    print(f"❌ 밴드 포스팅 오류: {e}")
-                    success = False
-            else:
-                print("⚠️ 밴드 포스팅 함수가 설정되지 않음")
-                # 테스트 모드: 포스팅 없이 성공 처리
-                success = True
+                    self.file_manager.move_to_backup(files, folder_name)
+                    send_macos_notification(
+                        f"{folder_name} 업로드 성공",
+                        f"{len(files)}개 사진 포스팅 완료"
+                    )
+                    
+                    if self.on_post_success:
+                        self.on_post_success(folder_name, len(files))
+                else:
+                    print("❌ 포스팅 실패")
+                    self.file_manager.move_to_error(files, folder_name)
+                    send_macos_notification(
+                        f"{folder_name} 업로드 실패",
+                        "에러 폴더로 이동됨"
+                    )
+                    
+                    if self.on_post_fail:
+                        self.on_post_fail(folder_name, "포스팅 실패")
             
-            # 4. 파일 처리
-            if success:
-                print("✅ 포스팅 성공!")
-                self.post_count += 1
-                self.last_post_time = datetime.now()
+            except Exception as e:
+                print(f"❌ 처리 중 오류 발생: {e}")
+                import traceback
+                traceback.print_exc()
                 
-                # 백업 폴더로 이동
-                self.file_manager.move_to_backup(files, folder_name)
-                
-                send_macos_notification(
-                    f"{folder_name} 업로드 성공",
-                    f"{len(files)}개 사진 포스팅 완료"
-                )
-                
-                if self.on_post_success:
-                    self.on_post_success(folder_name, len(files))
-            else:
-                print("❌ 포스팅 실패")
-                
-                # 에러 폴더로 이동
-                self.file_manager.move_to_error(files, folder_name)
-                
-                send_macos_notification(
-                    f"{folder_name} 업로드 실패",
-                    "에러 폴더로 이동됨"
-                )
+                self.file_manager.move_to_error(files, f"{folder_name}_error")
+                send_macos_notification("자동 포스팅 오류", str(e)[:50])
                 
                 if self.on_post_fail:
-                    self.on_post_fail(folder_name, "포스팅 실패")
-        
-        except Exception as e:
-            print(f"❌ 처리 중 오류 발생: {e}")
-            import traceback
-            traceback.print_exc()
+                    self.on_post_fail(folder_name, str(e))
             
-            # 에러 발생 시 파일 보존
-            self.file_manager.move_to_error(files, f"{folder_name}_error")
-            
-            send_macos_notification(
-                "자동 포스팅 오류",
-                str(e)[:50]
-            )
-            
-            if self.on_post_fail:
-                self.on_post_fail(folder_name, str(e))
-        
-        finally:
-            # 처리 완료 - 잠금 해제
-            with self.processing_lock:
+            finally:
+                if lock_acquired and self.browser_lock:
+                    try:
+                        self.browser_lock.release()
+                    except:
+                        pass
                 self.is_processing = False
-            print(f"🔓 [{folder_name}] 포스팅 처리 완료, 다음 감지 대기 중...")
-    
+                print(f"🔓 [{folder_name}] 포스팅 처리 완료, 다음 감지 대기 중...")
+
     def _folder_to_period(self, folder_name: str) -> str:
         """
         폴더명을 시간대로 매핑

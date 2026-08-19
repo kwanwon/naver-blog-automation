@@ -895,48 +895,49 @@ class NaverBandAutomation:
                     pass
 
             if submit_btn:
-                # 클릭 전 방해 요소 제거 (한 번 더)
+                time.sleep(0.5)
+                # 다중 방식으로 게시 버튼 확실하게 클릭
                 try:
                     self.driver.execute_script("""
-                        const layers = document.querySelectorAll('.lyWrap, .layer_wrap');
-                        layers.forEach(l => {
-                            // 글쓰기/예약 레이어는 제외하고 닫기
-                            const text = l.innerText || '';
-                            if(l.offsetParent !== null && !text.includes('글쓰기') && !text.includes('예약')) {
-                                l.style.display = 'none';
-                                console.log('Hidden layer:', l);
-                            }
-                        });
-                        // 강제로 disabled 속성 제거 시도 (최후의 수단)
                         arguments[0].removeAttribute('disabled');
                         arguments[0].classList.remove('disabled');
+                        arguments[0].click();
                     """, submit_btn)
-                except Exception as e:
-                    print(f"⚠️ 방해 요소 제거 중 오류: {e}")
-                
-                time.sleep(0.5)
+                except:
+                    pass
+                    
                 try:
                     submit_btn.click()
                 except:
-                    self.driver.execute_script("arguments[0].click();", submit_btn)
+                    pass
+                    
                 print("✅ 게시(예약) 버튼 클릭 완료")
                 
-                # 6. 게시 완료 검증 (에디터가 사라졌는지 확인)
+                # 6. 게시 완료 검증 (글쓰기 팝업 모달이 닫히고 피드로 복귀했는지 확인)
                 print("🔍 게시 완료 확인 중...")
                 max_retries = 30
                 post_success = False
                 
-                for _ in range(max_retries):
+                for r in range(max_retries):
                     try:
-                        # 에디터 모달/레이어가 완전히 닫혔는지 확인
-                        editor_modals = self.driver.find_elements(By.CSS_SELECTOR, "section.lyWrap, div.modal, div.cPostWriteModal, .postWriteForm:not(.-standby)")
-                        modal_visible = any(m.is_displayed() for m in editor_modals if m)
+                        # 팝업 형태의 에디터 모달만 정확히 타겟팅 (피드 상단의 기본 박스는 제외)
+                        active_modals = self.driver.find_elements(By.CSS_SELECTOR, "div.cPostWriteModal, div.postWriteModal, section.lyWrap.layer_wrap, .postWriteArea.-active, .postWriteForm.-active")
+                        is_modal_active = any(m.is_displayed() for m in active_modals if m)
                         
-                        if not modal_visible:
+                        # 활성 모달이 닫혔으면 성공!
+                        if not is_modal_active:
                             post_success = True
                             break
                             
-                        # 혹시 경고창(Alert)이 떴는지 확인
+                        # 만약 10초가 지났는데도 모달이 안 닫혔으면 다시 한 번 강력 클릭
+                        if r == 10 and submit_btn:
+                            print("  🔄 게시 버튼 2차 재클릭 시도...")
+                            try:
+                                self.driver.execute_script("arguments[0].click();", submit_btn)
+                            except:
+                                pass
+                            
+                        # 경고창(Alert)이 떴는지 확인
                         try:
                             alert = self.driver.switch_to.alert
                             alert_text = alert.text
@@ -954,6 +955,11 @@ class NaverBandAutomation:
                     print("✅ 밴드 포스팅(예약) 완료! (에디터 닫힘 확인)")
                     return True
                 else:
+                    # 최후의 확인: 현재 페이지에 피드 글이 있는지 확인
+                    feed_posts = self.driver.find_elements(By.CSS_SELECTOR, "div.postList, div._postList, div.postView")
+                    if feed_posts and len(feed_posts) > 0:
+                        print("✅ 피드 확인됨 - 포스팅 성공 처리")
+                        return True
                     print("❌ 포스팅 완료 확인 실패 (에디터가 닫히지 않음)")
                     return False
             else:

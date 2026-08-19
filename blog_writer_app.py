@@ -448,7 +448,7 @@ class BlogWriterApp:
         try:
             from modules.drive_auto_post import DriveAutoPostSystem
             
-            self.drive_auto_post_system = DriveAutoPostSystem(self.settings)
+            self.drive_auto_post_system = DriveAutoPostSystem(self.settings, browser_lock=self.browser_lock)
             
             # 콜백 설정
             self.drive_auto_post_system.generate_content = self._drive_generate_content
