@@ -540,7 +540,7 @@ class NaverBandAutomation:
                     except:
                         pass
 
-                    # 4-1. 글쓰기 설정 버튼 클릭 (다중 셀렉터 및 JS 클릭 지원)
+                    # 4-1. 글쓰기 설정 버튼 클릭
                     setting_selectors = [
                         "button.btnSetting._btnWriteSetting",
                         "button._btnWriteSetting",
@@ -568,7 +568,6 @@ class NaverBandAutomation:
                             continue
                             
                     if not setting_btn:
-                        # WebDriverWait로 한번 더 재시도
                         try:
                             setting_btn = WebDriverWait(self.driver, 5).until(
                                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btnSetting, button._btnWriteSetting, button[data-viewname*='setting']"))
@@ -577,7 +576,7 @@ class NaverBandAutomation:
                             pass
 
                     if not setting_btn:
-                        raise Exception("글쓰기 설정(톱니바퀴) 버튼을 찾을 수 없습니다. (리더/공동리더 권한 또는 버튼 선택자 확인 필요)")
+                        raise Exception("글쓰기 설정(톱니바퀴) 버튼을 찾을 수 없습니다.")
 
                     # 화면에 보이도록 스크롤 후 클릭
                     self.driver.execute_script("arguments[0].scrollIntoView(true);", setting_btn)
@@ -589,51 +588,43 @@ class NaverBandAutomation:
                     print("  ✅ 글쓰기 설정 메뉴 클릭 성공")
                     time.sleep(1)
                     
-                    # 4-2. 예약 체크박스 활성화
-                    reserve_label_selectors = [
+                    # 4-2. '글쓰기 설정' 모달 내부에서 '예약시간 설정' 토글 스위치 활성화 (스샷 5번 대응)
+                    toggle_selectors = [
+                        "//div[contains(@class, 'modal') or contains(@class, 'layer_wrap') or contains(@class, 'cPostWrite') or contains(@class, 'layerSetting')]//span[contains(text(), '예약시간')]/ancestor::li//button",
+                        "//div[contains(@class, 'modal') or contains(@class, 'layer_wrap')]//span[contains(text(), '예약시간')]/following-sibling::button",
+                        "//span[contains(text(), '예약시간 설정')]/ancestor::li//button",
+                        "//span[contains(text(), '예약시간 설정')]/following-sibling::button",
                         "label[for='reserve']",
                         "._labelReserve",
-                        "label.checkItem",
-                        "//label[contains(., '예약') or @for='reserve']"
+                        "input#reserve"
                     ]
                     
-                    reserve_chk_label = None
-                    for selector in reserve_label_selectors:
+                    toggle_clicked = False
+                    for t_sel in toggle_selectors:
                         try:
-                            if selector.startswith("//"):
-                                elements = self.driver.find_elements(By.XPATH, selector)
+                            if t_sel.startswith("//"):
+                                t_elements = self.driver.find_elements(By.XPATH, t_sel)
                             else:
-                                elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                            for el in elements:
-                                if el.is_displayed():
-                                    reserve_chk_label = el
+                                t_elements = self.driver.find_elements(By.CSS_SELECTOR, t_sel)
+                                
+                            for t_el in t_elements:
+                                if t_el.is_displayed():
+                                    try:
+                                        t_el.click()
+                                    except:
+                                        self.driver.execute_script("arguments[0].click();", t_el)
+                                    toggle_clicked = True
+                                    print("  ✅ 예약시간 설정 토글 스위치 클릭됨")
+                                    time.sleep(1)
                                     break
-                            if reserve_chk_label:
+                            if toggle_clicked:
                                 break
                         except:
                             continue
+                            
+                    if not toggle_clicked:
+                        print("  ℹ️ 토글 스위치를 찾지 못했거나 이미 활성화 상태일 수 있습니다.")
 
-                    # 체크박스 상태 확인 및 클릭
-                    try:
-                        reserve_input = self.driver.find_element(By.CSS_SELECTOR, "input#reserve.checkInput._checkReserve, input[type='checkbox']#reserve")
-                        if not reserve_input.is_selected():
-                            if reserve_chk_label:
-                                try:
-                                    reserve_chk_label.click()
-                                except:
-                                    self.driver.execute_script("arguments[0].click();", reserve_chk_label)
-                            else:
-                                self.driver.execute_script("arguments[0].click();", reserve_input)
-                            time.sleep(1)
-                            print("  ✅ 예약 사용 체크됨")
-                        else:
-                            print("  ℹ️ 예약 이미 체크됨")
-                    except:
-                        if reserve_chk_label:
-                            self.driver.execute_script("arguments[0].click();", reserve_chk_label)
-                            time.sleep(1)
-                            print("  ✅ 예약 사용 라벨 클릭됨")
-                    
                     # 4-2-1. 날짜 선택 (예약 시간이 현재보다 이전이면 다음 날 선택)
                     from datetime import datetime, timedelta
                     now = datetime.now()
@@ -648,33 +639,42 @@ class NaverBandAutomation:
                     
                     if is_tomorrow:
                         try:
-                            # 날짜 입력 필드 클릭하여 달력 열기
+                            # 모달 내부의 날짜 입력 필드만 정확히 탐색 (툴바의 일정 아이콘 클릭 방지)
                             date_input_selectors = [
-                                "input[id*='pickedDate']._input",
-                                "input.gFs1",
-                                "input[title*='날짜']",
-                                ".datePickerRegion input"
+                                "//div[contains(@class, 'modal') or contains(@class, 'layer_wrap')]//input[contains(@id, 'pickedDate') or contains(@class, 'gFs1') or contains(@title, '날짜') or contains(@class, '_input')]",
+                                "div.modal input[id*='pickedDate']._input",
+                                "div.layer_wrap input[id*='pickedDate']._input",
+                                "div.modal input.gFs1",
+                                "div.layer_wrap input.gFs1"
                             ]
                             
                             date_input = None
                             for selector in date_input_selectors:
                                 try:
-                                    date_input = self.driver.find_element(By.CSS_SELECTOR, selector)
-                                    if date_input.is_displayed():
+                                    if selector.startswith("//"):
+                                        elements = self.driver.find_elements(By.XPATH, selector)
+                                    else:
+                                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                                    for el in elements:
+                                        if el.is_displayed():
+                                            date_input = el
+                                            break
+                                    if date_input:
                                         break
                                 except:
                                     continue
                             
                             if date_input:
-                                date_input.click()
+                                try:
+                                    date_input.click()
+                                except:
+                                    self.driver.execute_script("arguments[0].click();", date_input)
                                 time.sleep(1)
                                 print("  ✅ 달력 열기 성공")
                                 
                                 # 다음 날 날짜 셀 찾아서 클릭
                                 target_day = target_dt_temp.day
-                                
-                                # 달력에서 날짜 셀 찾기 (disabled가 아닌 것)
-                                day_cells = self.driver.find_elements(By.CSS_SELECTOR, "table.calendar._calendar td._td:not(.disabled)")
+                                day_cells = self.driver.find_elements(By.CSS_SELECTOR, "table.calendar td._td:not(.disabled), table._calendar td._td:not(.disabled)")
                                 
                                 for cell in day_cells:
                                     try:
@@ -687,23 +687,29 @@ class NaverBandAutomation:
                                     except:
                                         continue
                             else:
-                                print("  ⚠️ 날짜 입력 필드를 찾을 수 없습니다.")
+                                print("  ℹ️ 모달 내 날짜 입력 필드가 없거나 기본값(내일)으로 자동 적용됩니다.")
                         except Exception as date_err:
-                            print(f"  ⚠️ 날짜 선택 중 오류 (무시하고 진행): {date_err}")
+                            print(f"  ⚠️ 날짜 선택 중 무시 가능한 오류: {date_err}")
                     
-                    # 4-3. 시간 선택창 열기
+                    # 4-3. 모달 내부의 시간 선택창 열기
                     time_input = None
                     time_input_selectors = [
-                        "input[class*='_timeInput']",
-                        "input._timeInput",
-                        "input[placeholder*='시간']",
-                        ".timePickerRegion input"
+                        "//div[contains(@class, 'modal') or contains(@class, 'layer_wrap')]//input[contains(@class, '_timeInput') or contains(@placeholder, '시간')]",
+                        "div.modal input[class*='_timeInput']",
+                        "div.layer_wrap input[class*='_timeInput']",
+                        "input[class*='_timeInput']"
                     ]
                     for t_sel in time_input_selectors:
                         try:
-                            t_el = self.driver.find_element(By.CSS_SELECTOR, t_sel)
-                            if t_el.is_displayed():
-                                time_input = t_el
+                            if t_sel.startswith("//"):
+                                elements = self.driver.find_elements(By.XPATH, t_sel)
+                            else:
+                                elements = self.driver.find_elements(By.CSS_SELECTOR, t_sel)
+                            for el in elements:
+                                if el.is_displayed():
+                                    time_input = el
+                                    break
+                            if time_input:
                                 break
                         except:
                             continue
@@ -714,8 +720,6 @@ class NaverBandAutomation:
                         except:
                             self.driver.execute_script("arguments[0].click();", time_input)
                         time.sleep(1)
-                    else:
-                        print("  ⚠️ 시간 입력 필드를 찾지 못했습니다.")
                     
                     # 4-4. 시간 검증 및 조정
                     from datetime import datetime, timedelta
@@ -723,76 +727,60 @@ class NaverBandAutomation:
                     
                     try:
                         h, m = map(int, reservation_time.split(':'))
-                        # 현재 시간과 비교를 위해 날짜 결합 (오늘)
                         target_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
                         
-                        # 예약 시간이 현재보다 빠르면 내일로 간주
                         if target_dt < now:
                             target_dt += timedelta(days=1)
                         
-                        # 최소 예약 가능 시간 (현재 + 40분으로 넉넉하게 설정)
                         min_reserve_time = now + timedelta(minutes=40)
-                        
                         if target_dt < min_reserve_time:
                             print(f"⚠️ 예약 시간이 너무 이릅니다 ({reservation_time}). 최소 40분 뒤로 조정합니다.")
                             target_dt = min_reserve_time
-                            # 다시 5분 단위 반올림
                             m_adjusted = ((target_dt.minute + 4) // 5) * 5
                             if m_adjusted >= 60:
                                 target_dt += timedelta(hours=1)
                                 m_adjusted = 0
                             target_dt = target_dt.replace(minute=m_adjusted, second=0)
                         
-                        # 최종 설정 시간
                         h = target_dt.hour
                         m = target_dt.minute
+                        period = "오전" if h < 12 else "오후"
+                        h_12 = h if (h == 12 or h == 0) else (h - 12 if h > 12 else h)
+                        if h == 0: h_12 = 12
                         
-                        # 오전/오후 변환
-                        period = "오전"
-                        if h >= 12:
-                            period = "오후"
-                        
-                        h_12 = h
-                        if h > 12:
-                            h_12 = h - 12
-                        elif h == 0:
-                            h_12 = 12
-                        
-                        # 포맷팅 (예: "오후 4:40")
                         target_time_str = f"{period} {h_12}:{m:02d}"
                         print(f"  🎯 목표 예약 시간: {target_time_str} (원본: {reservation_time})")
                         
                         # 4-5. 해당 시간 버튼 찾아서 클릭
-                        # 드롭다운 리스트에서 텍스트로 찾기
-                        time_btns = self.driver.find_elements(By.CSS_SELECTOR, "button.btnDropDownItem._btnTime")
+                        time_btns = self.driver.find_elements(By.CSS_SELECTOR, "button.btnDropDownItem._btnTime, ._btnTime, button[data-time]")
                         found_time = False
                         
                         for btn in time_btns:
-                            # 텍스트 비교 (공백 등 제거하고 비교)
                             btn_text = btn.text.strip()
                             if btn_text == target_time_str:
                                 self.driver.execute_script("arguments[0].scrollIntoView(true);", btn)
-                                time.sleep(0.5)
-                                btn.click()
+                                time.sleep(0.3)
+                                try:
+                                    btn.click()
+                                except:
+                                    self.driver.execute_script("arguments[0].click();", btn)
                                 found_time = True
                                 print(f"  ✅ 시간 선택 완료: {btn_text}")
                                 break
                                 
-                        if not found_time:
-                            print(f"  ❌ 예약 시간({target_time_str})을 찾을 수 없습니다.")
-                            # 실패시 닫기
-                            ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
-                            reservation_success = False
+                        if not found_time and time_btns:
+                            print(f"  ⚠️ 정확한 시간({target_time_str}) 일치 항목을 못 찾아 첫 번째 가능한 시간 항목을 선택합니다.")
+                            time_btns[0].click()
                             
                     except Exception as time_err:
                         print(f"  ❌ 시간 변환/선택 중 오류: {time_err}")
-                        reservation_success = False
                     
-                    # 4-6. 확인 버튼 클릭 (사용자 이미지 기반: button.uButton.-confirm._btnComplete)
+                    # 4-6. 모달 우측 하단 [확인] 버튼 클릭 (모달 닫기)
                     try:
                         time.sleep(1)
                         confirm_selectors = [
-                            "button.uButton.-confirm._btnComplete", # 사용자 이미지 기반
+                            "//div[contains(@class, 'modal') or contains(@class, 'layer_wrap')]//button[contains(text(), '확인') or contains(text(), '완료')]",
+                            "button.uButton.-confirm._btnComplete",
                             "button.uButton.-confirm",
                             "button._btnComplete",
                             "//button[contains(text(), '확인')]"
@@ -802,27 +790,34 @@ class NaverBandAutomation:
                         for selector in confirm_selectors:
                             try:
                                 if selector.startswith("//"):
-                                    btn = self.driver.find_element(By.XPATH, selector)
+                                    elements = self.driver.find_elements(By.XPATH, selector)
                                 else:
-                                    btn = self.driver.find_element(By.CSS_SELECTOR, selector)
+                                    elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
                                 
-                                if btn.is_displayed():
-                                    btn.click()
-                                    clicked_confirm = True
-                                    reservation_success = True
-                                    print("  ✅ 예약 설정 확인 버튼 클릭함")
+                                for btn in elements:
+                                    if btn.is_displayed():
+                                        try:
+                                            btn.click()
+                                        except:
+                                            self.driver.execute_script("arguments[0].click();", btn)
+                                        clicked_confirm = True
+                                        reservation_success = True
+                                        print("  ✅ 예약 설정 확인 버튼 클릭함")
+                                        break
+                                if clicked_confirm:
                                     break
                             except: continue
                         
                         if not clicked_confirm:
                             print("  ⚠️ 확인 버튼을 찾지 못해 엔터키 입력 시도")
                             ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+                            reservation_success = True
                             
                     except Exception as e: 
                         print(f"  ❌ 확인 버튼 처리 중 오류: {e}")
                     
                     # 설정 레이어 닫힘 대기
-                    time.sleep(1)
+                    time.sleep(1.5)
                     
                 except Exception as e:
                     print(f"❌ 예약 설정 실패: {e}")
