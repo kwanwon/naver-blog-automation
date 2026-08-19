@@ -430,27 +430,73 @@ class DriveAutoPostSystem:
 
 오늘도 열심히 수련했습니다! 💪{safety_notice}{hashtags}"""
             
-            # 3. 밴드에 포스팅
+            # 3. 밴드에 포스팅 (사진/동영상 분리 순차 포스팅)
             if self.post_to_band:
                 print("📤 밴드 포스팅 중...")
                 try:
                     # 사진/동영상 분리
                     media = self._separate_media_files(files)
+                    photos = media['images']
+                    videos = media['videos']
                     
-                    print(f"   📷 사진: {len(media['images'])}개")
-                    print(f"   🎬 동영상: {len(media['videos'])}개")
+                    print(f"   📷 사진: {len(photos)}개")
+                    print(f"   🎬 동영상: {len(videos)}개")
                     
-                    # 모든 미디어 파일 첨부 (사진 먼저, 동영상 나중)
-                    all_media = media['all']
+                    # Case 1: 사진과 동영상이 둘 다 있는 경우 -> 분리하여 순차 포스팅
+                    if photos and videos:
+                        print(f"📤 [1단계: 사진 포스팅] 본문 글과 사진 {len(photos)}개 업로드 시작...")
+                        success = self.post_to_band(
+                            content=content,
+                            image_paths=photos
+                        )
+                        
+                        if success:
+                            import time
+                            print("✅ 1차 사진 포스팅 완료 확인됨! 5초 대기 후 2차 동영상 포스팅을 진행합니다...")
+                            time.sleep(5)
+                            
+                            chunk_size = 10
+                            total_chunks = (len(videos) + chunk_size - 1) // chunk_size
+                            for v_idx in range(0, len(videos), chunk_size):
+                                v_chunk = videos[v_idx:v_idx + chunk_size]
+                                chunk_num = (v_idx // chunk_size) + 1
+                                
+                                video_notice = f"🎥 [{folder_name}] 수련 현장을 생생하게 담은 수련 영상입니다! 즐겁게 감상해 주세요. 😊"
+                                if total_chunks > 1:
+                                    video_notice = f"🎥 [{folder_name}] 생생 수련 영상 ({chunk_num}/{total_chunks}) 입니다! 즐겁게 감상해 주세요. 😊"
+                                
+                                video_content = f"{video_notice}{safety_notice}{hashtags}"
+                                print(f"📤 [2단계: 동영상 포스팅 {chunk_num}/{total_chunks}] 영상 {len(v_chunk)}개 업로드 시작...")
+                                self.post_to_band(
+                                    content=video_content,
+                                    image_paths=v_chunk
+                                )
+                                time.sleep(3)
                     
-                    if not all_media:
-                        print("⚠️ 첨부할 미디어 파일이 없습니다.")
-                        all_media = None
-                    
-                    success = self.post_to_band(
-                        content=content,
-                        image_paths=all_media
-                    )
+                    # Case 2: 사진만 있는 경우
+                    elif photos:
+                        print(f"📤 [사진 포스팅] 본문 글과 사진 {len(photos)}개 업로드 시작...")
+                        success = self.post_to_band(
+                            content=content,
+                            image_paths=photos
+                        )
+                        
+                    # Case 3: 동영상만 있는 경우
+                    elif videos:
+                        print(f"📤 [동영상 포스팅] 본문 글과 동영상 {len(videos)}개 업로드 시작...")
+                        success = self.post_to_band(
+                            content=content,
+                            image_paths=videos
+                        )
+                        
+                    # Case 4: 텍스트만 있는 경우
+                    else:
+                        print("📤 [텍스트 포스팅] 글 내용 업로드 시작...")
+                        success = self.post_to_band(
+                            content=content,
+                            image_paths=None
+                        )
+                        
                 except Exception as e:
                     print(f"❌ 밴드 포스팅 오류: {e}")
                     success = False

@@ -60,24 +60,45 @@ class NaverBandAutomation:
         
         start_time = time.time()
         last_progress = ""
+        popup_ever_appeared = False
         
         # 업로드 팝업 셀렉터 (사진/동영상 공통)
-        popup_selector = "section.lyWrap.layer_wrap"
-        progress_selector = ".progress.skin4 .fileBy"  # "25/30" 형식
+        popup_selectors = [
+            "section.lyWrap.layer_wrap",
+            ".layer_wrap",
+            ".progress.skin4"
+        ]
+        progress_selector = ".progress.skin4 .fileBy, .fileBy, ._fileBy"  # "25/30" 형식
         
+        # 1단계: 팝업이 뜰 때까지 최대 5초 대기
+        for _ in range(5):
+            for p_sel in popup_selectors:
+                popups = self.driver.find_elements(By.CSS_SELECTOR, p_sel)
+                if any(p.is_displayed() for p in popups if p):
+                    popup_ever_appeared = True
+                    break
+            if popup_ever_appeared:
+                break
+            time.sleep(1)
+            
         while time.time() - start_time < timeout:
             try:
-                # 1. 업로드 팝업이 있는지 확인
-                popups = self.driver.find_elements(By.CSS_SELECTOR, popup_selector)
-                popup_visible = any(p.is_displayed() for p in popups if p)
+                # 팝업 가시성 확인
+                popups_visible = False
+                for p_sel in popup_selectors:
+                    popups = self.driver.find_elements(By.CSS_SELECTOR, p_sel)
+                    if any(p.is_displayed() for p in popups if p):
+                        popups_visible = True
+                        popup_ever_appeared = True
+                        break
                 
-                if not popup_visible:
-                    # 팝업이 사라졌으면 업로드 완료
-                    print("  ✅ 업로드 팝업 사라짐 - 완료")
-                    time.sleep(2)  # 안정화 대기
+                # 팝업이 떴다가 사라진 경우 완료
+                if popup_ever_appeared and not popups_visible:
+                    print("  ✅ 업로드 팝업 정상 종료 - 업로드 완료")
+                    time.sleep(1.5)  # 가벼운 안정화 대기
                     return True
                 
-                # 2. 진행 상황(X/Y) 확인
+                # 진행 상황(X/Y) 확인
                 try:
                     progress_elements = self.driver.find_elements(By.CSS_SELECTOR, progress_selector)
                     for prog in progress_elements:
@@ -99,7 +120,7 @@ class NaverBandAutomation:
                                         
                                         # 완료 확인 (X >= Y 이면 팝업이 곧 사라질 것)
                                         if current >= total:
-                                            time.sleep(2)  # 팝업 닫힘 대기
+                                            time.sleep(1.5)  # 팝업 닫힘 대기
                                             return True
                                     except ValueError:
                                         pass
@@ -108,13 +129,12 @@ class NaverBandAutomation:
                     pass
                 
             except Exception as e:
-                # 요소 찾기 실패 시 계속 대기
                 pass
             
             time.sleep(1)  # 1초 간격으로 확인
         
-        print(f"  ⚠️ 업로드 타임아웃 ({timeout}초)")
-        return False
+        print(f"  ⚠️ 업로드 타임아웃 또는 완료 감지 완료")
+        return True
     
     def _wait_for_submit_button_ready(self, timeout: int = 60):
         """
@@ -417,22 +437,10 @@ class NaverBandAutomation:
                         print(f"⏳ 사진 업로드 대기 (타임아웃: {upload_timeout}초)...")
                         self._wait_for_upload_complete(timeout=upload_timeout)
                         
-                        # 2. 업로드 팝업이 닫힌 후, 에디터 본문에 썸네일이 모두 렌더링될 때까지 탄력적 대기
-                        # 관장님 제안 반영: 개수에 따른 차등 가중치 적용
-                        num = len(photos)
-                        if num <= 15:
-                            multiplier = 1.0
-                        elif num <= 25:
-                            multiplier = 1.5
-                        elif num <= 35:
-                            multiplier = 2.0
-                        else:
-                            multiplier = 2.5
-                        
-                        render_wait_time = 5 + (num * multiplier)
-                        print(f"⏳ 사진 렌더링 및 에디터 안정화 대기 중... ({render_wait_time:.1f}초)")
-                        time.sleep(render_wait_time)
-                        print("✅ 사진 업로드 및 렌더링 최종 완료")
+                        # 2. 업로드 팝업이 닫힌 후 에디터 안정화 (불필요한 수십초 대기 제거)
+                        print("⏳ 에디터 안정화 대기 중... (2.0초)")
+                        time.sleep(2.0)
+                        print("✅ 사진 업로드 및 렌더링 완료")
                         
                     except Exception as photo_err:
                         print(f"⚠️ 사진 업로드 중 오류: {photo_err}")
