@@ -519,42 +519,106 @@ class NaverBandAutomation:
             if reservation_time:
                 print(f"⏰ 예약 설정 시작: {reservation_time}")
                 try:
-                    # 4-0. 방해 요소(팝업 등) 제거
+                    # 4-0. 글쓰기 폼 스크롤 하단으로 이동하여 버튼 가시성 확보
                     try:
-                        print("  🧹 팝업 정리 시도...")
-                        # ESC 키 전송으로 모달 닫기 시도
-                        ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+                        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                         time.sleep(0.5)
-                        
-                        # 닫기 버튼 등이 있으면 클릭
-                        close_btns = self.driver.find_elements(By.CSS_SELECTOR, "button.btn_close, button.btnClose, .layer_wrap .uButton.-cancel")
-                        for btn in close_btns:
-                            if btn.is_displayed():
-                                btn.click()
-                                time.sleep(0.5)
-                    except Exception as pop_err:
-                        print(f"  ⚠️ 팝업 정리 중 무시 가능한 오류: {pop_err}")
+                    except:
+                        pass
 
-                    # 4-1. 글쓰기 설정 버튼 클릭
-                    setting_btn = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btnSetting._btnWriteSetting"))
-                    )
-                    setting_btn.click()
+                    # 4-1. 글쓰기 설정 버튼 클릭 (다중 셀렉터 및 JS 클릭 지원)
+                    setting_selectors = [
+                        "button.btnSetting._btnWriteSetting",
+                        "button._btnWriteSetting",
+                        "button.btnSetting",
+                        "button[data-viewname*='setting']",
+                        "//button[contains(@class, 'btnSetting') or contains(@class, '_btnWriteSetting')]",
+                        "//button[contains(., '설정') or contains(@title, '설정') or contains(@aria-label, '설정')]"
+                    ]
+                    
+                    setting_btn = None
+                    for selector in setting_selectors:
+                        try:
+                            if selector.startswith("//"):
+                                elements = self.driver.find_elements(By.XPATH, selector)
+                            else:
+                                elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                            
+                            for el in elements:
+                                if el.is_displayed() or el.is_enabled():
+                                    setting_btn = el
+                                    break
+                            if setting_btn:
+                                break
+                        except:
+                            continue
+                            
+                    if not setting_btn:
+                        # WebDriverWait로 한번 더 재시도
+                        try:
+                            setting_btn = WebDriverWait(self.driver, 5).until(
+                                EC.element_to_be_clickable((By.CSS_SELECTOR, "button.btnSetting, button._btnWriteSetting, button[data-viewname*='setting']"))
+                            )
+                        except:
+                            pass
+
+                    if not setting_btn:
+                        raise Exception("글쓰기 설정(톱니바퀴) 버튼을 찾을 수 없습니다. (리더/공동리더 권한 또는 버튼 선택자 확인 필요)")
+
+                    # 화면에 보이도록 스크롤 후 클릭
+                    self.driver.execute_script("arguments[0].scrollIntoView(true);", setting_btn)
+                    time.sleep(0.5)
+                    try:
+                        setting_btn.click()
+                    except:
+                        self.driver.execute_script("arguments[0].click();", setting_btn)
+                    print("  ✅ 글쓰기 설정 메뉴 클릭 성공")
                     time.sleep(1)
                     
-                    # 4-2. 예약 체크박스 활성화 (이미 체크되어 있는지 확인 필요할 수 있음)
-                    reserve_chk_label = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, "label[for='reserve']")) # input은 숨겨져 있을 수 있어 label 클릭 유도
-                    )
+                    # 4-2. 예약 체크박스 활성화
+                    reserve_label_selectors = [
+                        "label[for='reserve']",
+                        "._labelReserve",
+                        "label.checkItem",
+                        "//label[contains(., '예약') or @for='reserve']"
+                    ]
                     
-                    # 체크박스 상태 확인 (input#reserve.checkInput._checkReserve)
-                    reserve_input = self.driver.find_element(By.CSS_SELECTOR, "input#reserve.checkInput._checkReserve")
-                    if not reserve_input.is_selected():
-                        reserve_chk_label.click()
-                        time.sleep(1)
-                        print("  ✅ 예약 사용 체크됨")
-                    else:
-                        print("  ℹ️ 예약 이미 체크됨")
+                    reserve_chk_label = None
+                    for selector in reserve_label_selectors:
+                        try:
+                            if selector.startswith("//"):
+                                elements = self.driver.find_elements(By.XPATH, selector)
+                            else:
+                                elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                            for el in elements:
+                                if el.is_displayed():
+                                    reserve_chk_label = el
+                                    break
+                            if reserve_chk_label:
+                                break
+                        except:
+                            continue
+
+                    # 체크박스 상태 확인 및 클릭
+                    try:
+                        reserve_input = self.driver.find_element(By.CSS_SELECTOR, "input#reserve.checkInput._checkReserve, input[type='checkbox']#reserve")
+                        if not reserve_input.is_selected():
+                            if reserve_chk_label:
+                                try:
+                                    reserve_chk_label.click()
+                                except:
+                                    self.driver.execute_script("arguments[0].click();", reserve_chk_label)
+                            else:
+                                self.driver.execute_script("arguments[0].click();", reserve_input)
+                            time.sleep(1)
+                            print("  ✅ 예약 사용 체크됨")
+                        else:
+                            print("  ℹ️ 예약 이미 체크됨")
+                    except:
+                        if reserve_chk_label:
+                            self.driver.execute_script("arguments[0].click();", reserve_chk_label)
+                            time.sleep(1)
+                            print("  ✅ 예약 사용 라벨 클릭됨")
                     
                     # 4-2-1. 날짜 선택 (예약 시간이 현재보다 이전이면 다음 날 선택)
                     from datetime import datetime, timedelta
@@ -614,9 +678,30 @@ class NaverBandAutomation:
                             print(f"  ⚠️ 날짜 선택 중 오류 (무시하고 진행): {date_err}")
                     
                     # 4-3. 시간 선택창 열기
-                    time_input = self.driver.find_element(By.CSS_SELECTOR, "input[class*='_timeInput']")
-                    time_input.click()
-                    time.sleep(1)
+                    time_input = None
+                    time_input_selectors = [
+                        "input[class*='_timeInput']",
+                        "input._timeInput",
+                        "input[placeholder*='시간']",
+                        ".timePickerRegion input"
+                    ]
+                    for t_sel in time_input_selectors:
+                        try:
+                            t_el = self.driver.find_element(By.CSS_SELECTOR, t_sel)
+                            if t_el.is_displayed():
+                                time_input = t_el
+                                break
+                        except:
+                            continue
+                    
+                    if time_input:
+                        try:
+                            time_input.click()
+                        except:
+                            self.driver.execute_script("arguments[0].click();", time_input)
+                        time.sleep(1)
+                    else:
+                        print("  ⚠️ 시간 입력 필드를 찾지 못했습니다.")
                     
                     # 4-4. 시간 검증 및 조정
                     from datetime import datetime, timedelta
