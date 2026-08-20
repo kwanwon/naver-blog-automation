@@ -180,50 +180,63 @@ class NaverBandAutomation:
             reservation_time: 예약 시간 (문자열, "HH:MM" 24시간 형식). None이면 즉시 발행.
         """
         try:
-            print(f"🌐 밴드로 이동 중: {band_url}")
-            self.driver.get(band_url)
+            # 🌐 URL 정규화: /post 등 서브 경로를 제거하여 메인 밴드 홈으로 확실하게 이동
+            import re
+            clean_band_url = re.sub(r'/post.*$', '', band_url).rstrip('/')
+            print(f"🌐 밴드로 이동 중: {clean_band_url}")
+            self.driver.get(clean_band_url)
             time.sleep(3)
             
-            # 1. 글쓰기 영역 클릭 (좌측 초록색 [글쓰기] 버튼 최우선 타겟팅)
+            # 1. 글쓰기 영역 클릭 (최대 10초간 대기하며 탐색)
             print("📝 글쓰기 영역 찾는 중...")
             write_area_selectors = [
-                # 1순위: 좌측 메뉴의 큰 초록색 [글쓰기] 버튼 (아이콘 없음, 100% 안전)
+                # 1순위: 좌측 메뉴의 큰 초록색 [글쓰기] 버튼
                 "//button[contains(@class, 'roundButton') and contains(., '글쓰기')]",
                 "//button[contains(@class, '_btnWritePost')]",
                 "//a[contains(@class, '_btnWritePost')]",
                 "button.roundButton.-full._btnWritePost",
                 "button._btnWritePost",
+                "button[data-viewname='DPostWriteButtonView']",
                 "//button[normalize-space()='글쓰기']",
-                # 2순위: 중앙 '새로운 소식을 남겨보세요.' 텍스트 라벨 (하단 툴바 제외)
+                # 2순위: 중앙 '새로운 소식을 남겨보세요.' 텍스트 라벨 및 상단 글쓰기 박스
+                "div.postWriteArea",
+                "div.cPostWrite",
+                "div.postWriteForm",
+                "button._btnOpenWriteLayer",
+                "//button[contains(@class, 'cPostWriteEventWrapper')]",
                 "//div[contains(@class, 'cPostWrite') or contains(@class, 'postWrite')]//*[contains(text(), '새로운 소식을') and not(self::button)]",
                 "//*[normalize-space()='새로운 소식을 남겨보세요.']",
                 "//button[contains(@class, 'cPostWriteEventWrapper') and contains(@class, '_btnOpenWriteLayer')]"
             ]
             
             write_btn = None
-            for selector in write_area_selectors:
-                try:
-                    if selector.startswith("//"):
-                        elements = self.driver.find_elements(By.XPATH, selector)
-                    else:
-                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                    
-                    for el in elements:
-                        # 툴바 내부의 요소는 절대 클릭하지 않음
-                        try:
-                            is_toolbar = self.driver.execute_script("return arguments[0].closest('.toolbarList, ._toolbarList') !== null;", el)
-                            if is_toolbar:
-                                continue
-                        except:
-                            pass
-                            
-                        if el.is_displayed() and el.is_enabled():
-                            write_btn = el
+            for attempt in range(10):
+                for selector in write_area_selectors:
+                    try:
+                        if selector.startswith("//"):
+                            elements = self.driver.find_elements(By.XPATH, selector)
+                        else:
+                            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                        
+                        for el in elements:
+                            # 툴바 내부의 요소(일정, 투표 등)는 절대 클릭하지 않음
+                            try:
+                                is_toolbar = self.driver.execute_script("return arguments[0].closest('.toolbarList, ._toolbarList') !== null;", el)
+                                if is_toolbar:
+                                    continue
+                            except:
+                                pass
+                                
+                            if el.is_displayed():
+                                write_btn = el
+                                break
+                        if write_btn:
                             break
-                    if write_btn:
-                        break
-                except:
-                    continue
+                    except:
+                        continue
+                if write_btn:
+                    break
+                time.sleep(1)
             
             if not write_btn:
                 print("❌ 글쓰기 영역을 찾을 수 없습니다. (현재 페이지에서 포스팅이 불가능할 수 있습니다)")
