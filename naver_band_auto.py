@@ -283,7 +283,7 @@ class NaverBandAutomation:
                 print("❌ 에디터를 찾거나 클릭하지 못했습니다.")
                 return False
             
-            # 🧹 [중요] 기존 에디터 내용 깨끗이 비우기 (중복 입력 원천 차단)
+            # 🧹 [중요] 기존 에디터 내용 깨끗이 비우기
             try:
                 self.driver.execute_script("""
                     arguments[0].innerText = '';
@@ -294,16 +294,23 @@ class NaverBandAutomation:
             except:
                 pass
             
-            # 본문 텍스트 1회 주입
-            insert_success = False
+            # 본문 텍스트 단 1회 주입 (Cmd+V 우선 실행, 비어있을 때만 JS 주입으로 중복 원천 차단)
             try:
-                from utils.clipboard_helper import insert_text_to_editor
-                insert_success = insert_text_to_editor(self.driver, editor, content, platform="band")
-            except Exception as e:
-                print(f"⚠️ 클립보드 헬퍼 실행 중: {e}")
-            
-            if not insert_success:
-                print("🔄 [Fallback] JS 직접 주입 실행...")
+                from utils.clipboard_helper import copy_to_clipboard
+                copy_to_clipboard(content)
+                time.sleep(0.3)
+                # macOS Cmd+V 또는 Win Ctrl+V
+                is_mac = sys.platform == 'darwin'
+                mod_key = Keys.COMMAND if is_mac else Keys.CONTROL
+                ActionChains(self.driver).key_down(mod_key).send_keys('v').key_up(mod_key).perform()
+                time.sleep(0.8)
+            except Exception as clip_err:
+                print(f"⚠️ 클립보드 붙여넣기 시도 실패: {clip_err}")
+                
+            # 내용이 실제로 들어갔는지 확인 (비어있을 때만 1회 JS로 주입)
+            current_text = editor.text.strip()
+            if not current_text or len(current_text) < 5:
+                print("🔄 에디터가 비어있어 JS 직접 주입 1회 실행...")
                 try:
                     self.driver.execute_script("""
                         var el = arguments[0];
@@ -313,14 +320,10 @@ class NaverBandAutomation:
                         el.dispatchEvent(new Event('change', { bubbles: true }));
                     """, editor, content)
                     time.sleep(0.5)
-                    insert_success = True
-                    print("✅ JS 주입 완료")
                 except Exception as js_err:
                     print(f"❌ JS 주입 실패: {js_err}")
             
-            if not insert_success:
-                print("❌ 내용 입력 실패")
-                return False
+            print("✅ 본문 텍스트 1회 입력 완료 (중복 차단됨)")
             
             # 📌 [중요] 텍스트 입력 후 커서를 본문 '맨 끝'으로 이동 (사진/영상이 텍스트 아래에 오도록)
             try:
@@ -332,18 +335,19 @@ class NaverBandAutomation:
                     range.collapse(false);
                     sel.removeAllRanges();
                     sel.addRange(range);
+                    el.focus();
                 """, editor)
                 time.sleep(0.5)
-            except:
-                pass
-            print("✅ 본문 텍스트 최상단 입력 완료")
-            time.sleep(1)
+            except Exception as cursor_err:
+                print(f"⚠️ 커서 이동 중 오류: {cursor_err}")
             
-            # 3. 미디어 업로드 (사진/동영상 분리 처리)
+            # 3. 이미지 및 동영상 첨부 (동영상 10개 제한 처리)
             if image_paths and len(image_paths) > 0:
-                # 사진과 동영상 분리
-                image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.bmp'}
-                video_exts = {'.mp4', '.mov', '.avi', '.mkv', '.m4v', '.wmv', '.flv'}
+                print(f"📷 미디어 파일 {len(image_paths)}개 첨부 시작...")
+                
+                # 이미지와 동영상 분리
+                image_exts = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.heic', '.heif'}
+                video_exts = {'.mp4', '.mov', '.avi', '.wmv', '.mkv', '.m4v'}
                 
                 photos = [p for p in image_paths if os.path.splitext(p)[1].lower() in image_exts]
                 videos = [p for p in image_paths if os.path.splitext(p)[1].lower() in video_exts]
@@ -355,7 +359,7 @@ class NaverBandAutomation:
                     print(f"📷 사진 업로드 중 ({len(photos)}개)...")
                     try:
                         # 숨겨진 file input 요소 찾기
-                        photo_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postPhotoInput_']")
+                        photo_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postPhotoInput_'], input[type='file'][accept*='image']")
                         
                         if photo_input:
                             # input 요소를 보이게 만들기 (send_keys가 작동하도록)
@@ -370,69 +374,50 @@ class NaverBandAutomation:
                             photo_input.send_keys(file_paths)
                             print(f"✅ {len(photos)}개 사진 파일 전송됨")
                             
-                            # input 요소 원래대로 복원
+                            # input 요소 복원
                             try:
-                                self.driver.execute_script("""
-                                    var el = arguments[0];
-                                    el.style.cssText = '';
-                                """, photo_input)
+                                self.driver.execute_script("arguments[0].style.cssText = '';", photo_input)
                             except:
                                 pass
                         
-                        # 파일 선택 후 첨부하기 버튼이 활성화될 때까지 대기
-                        # (팝업 감지가 안 되어도 실제 업로드는 진행 중일 수 있음)
+                        # 첨부하기 버튼 및 팝업 대기 (최대 30초)
                         print(f"⏳ 첨부하기 버튼 활성화 대기 중... (파일 {len(photos)}개)")
+                        time.sleep(2)
                         
-                        # 파일 개수에 따라 최대 대기 시간 설정 (최소 60초, 파일당 3초)
-                        max_wait = max(60, len(photos) * 3)
-                        attach_button_found = False
-                        
-                        for wait_count in range(max_wait):
-                            try:
-                                # 첨부하기 버튼 찾기
-                                attach_selectors = [
-                                    "button.uButton.-confirm._submitBtn",
-                                    "button._submitBtn",
-                                    "//button[contains(text(), '첨부하기')]"
-                                ]
-                                for selector in attach_selectors:
-                                    try:
-                                        if selector.startswith("//"):
-                                            btn = self.driver.find_element(By.XPATH, selector)
-                                        else:
-                                            btn = self.driver.find_element(By.CSS_SELECTOR, selector)
-                                        
-                                        if btn and btn.is_displayed() and btn.is_enabled():
-                                            attach_button_found = True
-                                            print(f"✅ 첨부하기 버튼 활성화됨 ({wait_count+1}초 경과)")
+                        attach_clicked = False
+                        for wait_count in range(30):
+                            attach_selectors = [
+                                "button.uButton.-confirm._submitBtn",
+                                "button._submitBtn",
+                                "button.uButton.-confirm",
+                                "//button[contains(text(), '첨부하기')]",
+                                "//button[contains(text(), '확인')]"
+                            ]
+                            for selector in attach_selectors:
+                                try:
+                                    if selector.startswith("//"):
+                                        elements = self.driver.find_elements(By.XPATH, selector)
+                                    else:
+                                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                                    for btn in elements:
+                                        if btn.is_displayed():
+                                            self.driver.execute_script("arguments[0].click();", btn)
+                                            attach_clicked = True
+                                            print(f"✅ 첨부하기 버튼 클릭 완료 ({wait_count+1}초 경과)")
                                             break
-                                    except:
-                                        continue
-                                
-                                if attach_button_found:
-                                    break
-                                    
-                            except:
-                                pass
-                            
+                                    if attach_clicked:
+                                        break
+                                except:
+                                    continue
+                            if attach_clicked:
+                                break
                             time.sleep(1)
-                            if wait_count > 0 and wait_count % 15 == 0:
-                                print(f"  ⏳ 대기 중... {wait_count}초 경과")
                         
-                        if not attach_button_found:
-                            print(f"⚠️ 첨부하기 버튼을 {max_wait}초 내에 찾지 못함, 계속 진행...")
-                        
-                        # "첨부하기" 버튼 클릭 (이 시점에 이미 업로드 완료됨)
-                        time.sleep(1)
-                        self._click_attach_button()
-                        
-                        # 1. 사진 업로드 팝업 사라질 때까지 대기 (프로그레스 바 확인)
-                        upload_timeout = min(120, max(45, len(photos) * 3))  # 최소 5분, 장당 5초 여유
+                        # 사진 업로드 팝업 사라질 때까지 대기
+                        upload_timeout = min(180, max(60, len(photos) * 4))
                         print(f"⏳ 사진 업로드 대기 (타임아웃: {upload_timeout}초)...")
                         self._wait_for_upload_complete(timeout=upload_timeout)
                         
-                        # 2. 업로드 팝업이 닫힌 후 에디터 안정화 (불필요한 수십초 대기 제거)
-                        print("⏳ 에디터 안정화 대기 중... (2.0초)")
                         time.sleep(2.0)
                         print("✅ 사진 업로드 및 렌더링 완료")
                         
