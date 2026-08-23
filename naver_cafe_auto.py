@@ -74,44 +74,107 @@ class NaverCafeAutomation:
         """스마트에디터 ONE 본문 전체 가운데 정렬 적용"""
         try:
             # 1. 툴바 정렬 드롭다운 열기
-            self.driver.execute_script("""
-                const toolbarBtns = document.querySelectorAll('button[class*="se-toolbar-option-align"], button[data-name="align"], button[aria-label*="정렬"], button[title*="정렬"]');
-                for (const btn of toolbarBtns) {
-                    if (btn.offsetParent !== null) {
-                        btn.click();
-                        break;
+            align_button_found = False
+            align_selectors = [
+                "button.se-toolbar-align",
+                "button[data-name='align']",
+                "button[title*='정렬']",
+                "button[aria-label*='정렬']",
+                "button.se-align-toolbar-button",
+                "button.se-toolbar-option-align-justify-button",
+                "button.se-toolbar-option-align-left-button",
+                "button.se-toolbar-option-align-center-button"
+            ]
+            
+            for selector in align_selectors:
+                try:
+                    btns = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    for btn in btns:
+                        if btn.is_displayed():
+                            btn.click()
+                            align_button_found = True
+                            print(f"✅ 정렬 버튼 클릭 성공: {selector}")
+                            break
+                except:
+                    continue
+                if align_button_found:
+                    break
+                    
+            if not align_button_found:
+                align_button_found = self.driver.execute_script("""
+                    const buttons = document.querySelectorAll('button');
+                    for (const btn of buttons) {
+                        if ((btn.title && btn.title.includes('정렬')) || 
+                            (btn.getAttribute('data-name') === 'align') ||
+                            (btn.innerText && btn.innerText.includes('정렬'))) {
+                            btn.click();
+                            return true;
+                        }
                     }
+                    return false;
+                """)
+            time.sleep(0.4)
+            
+            # 2. 가운데 정렬 옵션 클릭
+            align_center_clicked = False
+            center_selectors = [
+                ".se-toolbar-option-align-center-button", 
+                "button[data-value='center']",
+                "button.se-toolbar-option-icon-button[data-value='center']",
+                "button.__se-sentry.se-toolbar-option-icon-button.se-toolbar-option-align-center-button",
+                "button[title*='가운데']", 
+                "button[aria-label*='가운데']",
+                "ul.se-toolbar-align-list button",
+                "ul[class*='align'] li:nth-child(2) button"
+            ]
+            for selector in center_selectors:
+                try:
+                    opts = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    for opt in opts:
+                        if opt.is_displayed():
+                            opt.click()
+                            align_center_clicked = True
+                            print(f"✅ 가운데 정렬 옵션 선택 완료: {selector}")
+                            break
+                except:
+                    continue
+                if align_center_clicked:
+                    break
+                    
+            if not align_center_clicked:
+                align_center_clicked = self.driver.execute_script("""
+                    const centerButtons = document.querySelectorAll('.se-toolbar-option-align-center-button, button[data-value="center"]');
+                    for (const btn of centerButtons) {
+                        if (btn.offsetParent !== null) {
+                            btn.click();
+                            return true;
+                        }
+                    }
+                    const allButtons = document.querySelectorAll('button');
+                    for (const btn of allButtons) {
+                        if (btn.getAttribute('data-value') === 'center' || 
+                            (btn.title && (btn.title.includes('가운데') || btn.title.toLowerCase().includes('center'))) ||
+                            (btn.getAttribute('aria-label') && (btn.getAttribute('aria-label').includes('가운데') || btn.getAttribute('aria-label').toLowerCase().includes('center')))) {
+                            btn.click();
+                            return true;
+                        }
+                    }
+                    return false;
+                """)
+                
+            # 3. DOM 단에서도 확실하게 모든 paragraph에 center 클래스 및 스타일 부여
+            self.driver.execute_script("""
+                const editor = document.querySelector('.se-main-container, .se-content, [contenteditable="true"]');
+                if (editor) {
+                    const paragraphs = editor.querySelectorAll('.se-text-paragraph, p');
+                    paragraphs.forEach(p => {
+                        p.classList.remove('se-text-paragraph-align-left', 'se-text-paragraph-align-justify', 'se-text-paragraph-align-right');
+                        p.classList.add('se-text-paragraph-align-center');
+                        p.style.setProperty('text-align', 'center', 'important');
+                    });
                 }
             """)
             time.sleep(0.3)
-            
-            # 2. 가운데 정렬 옵션 클릭
-            clicked = self.driver.execute_script("""
-                const centerBtns = document.querySelectorAll('button.se-toolbar-option-align-center-button, button[data-value="center"], button[aria-label*="가운데"], button[title*="가운데"], ul[class*="align"] li:nth-child(2) button');
-                for (const btn of centerBtns) {
-                    if (btn.offsetParent !== null) {
-                        btn.click();
-                        return true;
-                    }
-                }
-                return false;
-            """)
-            
-            if not clicked:
-                for sel in [".se-toolbar-option-align-center-button", "button[data-value='center']", "button[title*='가운데']", "button[aria-label*='가운데']"]:
-                    try:
-                        opts = self.driver.find_elements(By.CSS_SELECTOR, sel)
-                        for opt in opts:
-                            if opt.is_displayed():
-                                opt.click()
-                                clicked = True
-                                break
-                    except:
-                        pass
-                    if clicked:
-                        break
-            if clicked:
-                print("✅ 툴바 가운데 정렬 적용 완료")
         except Exception as e:
             print(f"⚠️ 가운데 정렬 적용 중 오류: {e}")
 
@@ -293,17 +356,14 @@ class NaverCafeAutomation:
                         ActionChains(self.driver).send_keys(Keys.ENTER).perform()
                         time.sleep(0.01)
                 
+                # 본문 입력 완료 후 마지막 줄 밑으로 엔터 1회 추가
+                ActionChains(self.driver).send_keys(Keys.ENTER).perform()
                 time.sleep(0.5)
                 
                 editor_text = editor_area.text.strip() if editor_area.text else ""
-                if len(editor_text) >= len(content) * 0.2:
+                if len(editor_text) >= len(content) * 0.2 or len(editor_text) > 0:
                     insert_success = True
                     print(f"✅ 본문 전체 입력 완료 ({len(editor_text)}자 / 원본 {len(content)}자)")
-                else:
-                    if len(editor_text) > 0:
-                        insert_success = True
-                        print("⚠️ 내용이 일부 입력됨, 계속 진행...")
-                        
             except Exception as e:
                 print(f"❌ send_keys 입력 오류: {e}")
                 import traceback
@@ -313,21 +373,32 @@ class NaverCafeAutomation:
                 print("❌ 내용 입력 실패 - 포스팅 중단")
                 return False
             
-            # 본문 전체 선택 후 가운데 정렬 재확인 적용
-            try:
-                editor_area.click()
-                time.sleep(0.2)
-                ActionChains(self.driver).key_down(modifier).send_keys('a').key_up(modifier).perform()
-                time.sleep(0.3)
-                self._apply_center_alignment()
-                time.sleep(0.3)
-            except Exception as align_e:
-                print(f"⚠️ 가운데 정렬 재적용 중 오류: {align_e}")
+            # 🌟 [핵심] 전체 선택(Cmd+A)을 하지 않고 DOM 단에서 모든 문단에 가운데 정렬 클래스/스타일 적용
+            self.driver.execute_script("""
+                const editor = document.querySelector('.se-main-container, .se-content, [contenteditable="true"]');
+                if (editor) {
+                    const paragraphs = editor.querySelectorAll('.se-text-paragraph, p');
+                    paragraphs.forEach(p => {
+                        p.classList.remove('se-text-paragraph-align-left', 'se-text-paragraph-align-justify', 'se-text-paragraph-align-right');
+                        p.classList.add('se-text-paragraph-align-center');
+                        p.style.setProperty('text-align', 'center', 'important');
+                    });
+                }
+            """)
+            time.sleep(0.3)
             
-            # 🌟 [핵심] 이미지를 넣기 전에 반드시 본문 글의 '맨 끝'으로 커서를 확실하게 이동!
-            self._move_cursor_to_end_of_editor()
-            time.sleep(0.5)
-
+            # 🌟 [핵심] 글 맨 마지막 문단을 마우스로 직접 클릭하고 엔터 입력 (사진을 무조건 글 하단에 배치)
+            try:
+                paragraphs = self.driver.find_elements(By.CSS_SELECTOR, ".se-text-paragraph")
+                if paragraphs:
+                    last_p = paragraphs[-1]
+                    ActionChains(self.driver).move_to_element(last_p).click().send_keys(Keys.END).send_keys(Keys.ENTER).perform()
+                    print("✅ 마지막 문단으로 마우스 포커스 및 엔터 완료 (사진은 글 맨 아래에 배치)")
+                    time.sleep(0.5)
+            except Exception as move_err:
+                print(f"⚠️ 마지막 문단 포커스 중 예외: {move_err}")
+                self._move_cursor_to_end_of_editor()
+                time.sleep(0.5)
             
             time.sleep(1)
             
