@@ -4,6 +4,7 @@
 """
 
 import os
+import time
 import threading
 import unicodedata  # 한글 Unicode 정규화용
 from datetime import datetime
@@ -350,7 +351,7 @@ class DriveAutoPostSystem:
                 print(f"🔍 [{folder_name}] 폴더 전체 스캔 중...")
                 all_files_in_folder = []
                 valid_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
-                              '.mp4', '.mov', '.avi', '.mkv', '.m4v'}
+                              '.mp4', '.mov', '.avi', '.mkv', '.m4v', '.wmv', '.webm'}
                 
                 if os.path.exists(folder_path):
                     try:
@@ -390,16 +391,17 @@ class DriveAutoPostSystem:
                 is_special_activity = any(keyword in folder_name.lower() or keyword in topic.lower() 
                                           for keyword in ['캠프', '키즈카페', '견학', '체험', '행사'])
                 
-                # 안내문 (사용자 설정에서 가져옴, 특별활동에는 추가 안함)
+                # 안내문 (사용자 설정에서 가져옴, 특별활동이나 미디어가 없는 글에는 추가 안함)
                 safety_notice = ""
-                if not is_special_activity:
+                has_media = len(files) > 0
+                if not is_special_activity and has_media:
                     default_notice = "수련의 생생한 현장을 담았습니다. 사진 및 영상 화질이 다소 아쉬울 수 있으나, 열심히 수련하는 모습을 함께 나눕니다! 🙏"
                     user_notice = self.settings.get('band_footer_notice', default_notice)
                     if user_notice and user_notice.strip():
                         safety_notice = "\n\n" + user_notice
                         print(f"📝 하단 안내문 추가됨")
                 else:
-                    print(f"ℹ️ 특별활동 - 하단 안내문 생략")
+                    print(f"ℹ️ 특별활동 또는 미디어 없음 - 하단 안내문 생략")
                 
                 # 해시태그 처리 (순환 시스템)
                 hashtags = self._get_rotating_hashtags()
@@ -421,71 +423,98 @@ class DriveAutoPostSystem:
                     print("⚠️ AI 글 생성 실패, 기본 내용 사용")
                     content = f"[{folder_name}] {topic}\n\n오늘도 열심히 수련했습니다! 💪{safety_notice}{hashtags}"
                 
-                # 3. 밴드에 포스팅 (사진/동영상 분리 순차 포스팅)
+                # 3. 밴드에 포스팅 (사진과 동영상을 1개의 완성된 게시물로 통합 포스팅)
                 if self.post_to_band:
                     print("📤 밴드 포스팅 중...")
                     try:
                         media = self._separate_media_files(files)
                         photos = media['images']
                         videos = media['videos']
+                        all_media = media['all']
                         
-                        print(f"   📷 사진: {len(photos)}개")
-                        print(f"   🎬 동영상: {len(videos)}개")
+                        print(f"   📷 사진: {len(photos)}개, 🎬 동영상: {len(videos)}개 (총 {len(all_media)}개)")
                         
-                        # Case 1: 사진과 동영상이 둘 다 있는 경우 -> [1/2], [2/2] 순차 포스팅
+                        # Case 1: 사진과 동영상이 둘 다 있는 경우
+                        # (네이버 밴드 피드는 최신글이 맨 위에 오므로, 동영상들을 먼저 올리고 메인이야기[1/N]를 가장 마지막에 올려야 피드 최상단에 [1/N]이 위치합니다)
                         if photos and videos:
                             chunk_size = 10
                             total_video_chunks = (len(videos) + chunk_size - 1) // chunk_size
                             total_posts = 1 + total_video_chunks
                             
-                            # 1단계: 사진 포스팅 (1번째 게시물)
+                            # 동영상 청크 목록 생성
+                            video_chunks = []
+                            for v_idx in range(0, len(videos), chunk_size):
+                                chunk_num = 2 + (v_idx // chunk_size)
+                                video_chunks.append((chunk_num, videos[v_idx:v_idx + chunk_size]))
+                            
+                            # 1단계: 동영상 포스팅 (동영상 청크들을 역순으로 등록하여 피드에서 [2/N], [3/N] 순서로 자연스럽게 정렬)
+                            video_success = True
+                            for cur_post_idx, v_chunk in reversed(video_chunks):
+                                video_notice = f"🎥 [{cur_post_idx}/{total_posts}] [{folder_name}] 생생 수련 영상입니다! 즐겁게 감상해 주세요. 😊"
+                                video_content = f"{video_notice}{safety_notice}{hashtags}"
+                                
+                                print(f"📤 [동영상 포스팅 ({cur_post_idx}/{total_posts})] 영상 {len(v_chunk)}개 업로드 시작...")
+                                v_res = self.post_to_band(
+                                    content=video_content,
+                                    image_paths=v_chunk
+                                )
+                                if not v_res:
+                                    video_success = False
+                                    print(f"⚠️ 동영상 ({cur_post_idx}/{total_posts}) 포스팅 실패")
+                                    
+                                time.sleep(15)
+                            
+                            # 2단계: 사진 및 메인 수련 이야기 포스팅 (피드 최상단 [1/N] 노출을 위해 가장 마지막에 등록)
                             photo_content = f"📸 [1/{total_posts}] [{folder_name}] 오늘의 수련 이야기\n\n{content}"
-                            print(f"📤 [1단계: 사진 포스팅 (1/{total_posts})] 본문 글과 사진 {len(photos)}개 업로드 시작...")
+                            print(f"📤 [메인 수련 이야기 및 사진 포스팅 (1/{total_posts})] 본문 글과 사진 {len(photos)}개 업로드 시작...")
+                            photo_success = self.post_to_band(
+                                content=photo_content,
+                                image_paths=photos
+                            )
+                            
+                            success = photo_success  # 메인 수련이야기(사진)가 성공하면 전체 성공 판정
+                                
+                        # Case 2: 사진만 있는 경우
+                        elif photos:
+                            photo_content = f"📸 [{folder_name}] 오늘의 수련 이야기\n\n{content}"
+                            print(f"📤 [사진 단독 포스팅] 본문 글과 사진 {len(photos)}개 업로드 시작...")
                             success = self.post_to_band(
                                 content=photo_content,
                                 image_paths=photos
                             )
                             
-                            if success:
-                                import time
-                                print("✅ 1차 사진 포스팅 100% 등록 완료 확인! 5초 안정화 후 동영상 포스팅을 진행합니다...")
-                                time.sleep(5)
-                                
+                        # Case 3: 동영상만 있는 경우 (10개 초과 시 자동 분할 포스팅)
+                        elif videos:
+                            if len(videos) > 10:
+                                chunk_size = 10
+                                total_chunks = (len(videos) + chunk_size - 1) // chunk_size
+                                video_chunks = []
                                 for v_idx in range(0, len(videos), chunk_size):
-                                    v_chunk = videos[v_idx:v_idx + chunk_size]
-                                    cur_post_idx = 2 + (v_idx // chunk_size)
-                                    
-                                    video_notice = f"🎥 [{cur_post_idx}/{total_posts}] [{folder_name}] 생생 수련 영상입니다! 즐겁게 감상해 주세요. 😊"
-                                    video_content = f"{video_notice}{safety_notice}{hashtags}"
-                                    
-                                    print(f"📤 [2단계: 동영상 포스팅 ({cur_post_idx}/{total_posts})] 영상 {len(v_chunk)}개 업로드 시작...")
-                                    self.post_to_band(
-                                        content=video_content,
+                                    chunk_num = 1 + (v_idx // chunk_size)
+                                    video_chunks.append((chunk_num, videos[v_idx:v_idx + chunk_size]))
+                                
+                                video_success = True
+                                for cur_post_idx, v_chunk in reversed(video_chunks):
+                                    video_notice = f"🎥 [{cur_post_idx}/{total_chunks}] [{folder_name}] 생생 수련 영상\n\n{content}"
+                                    print(f"📤 [동영상 분할 포스팅 ({cur_post_idx}/{total_chunks})] 영상 {len(v_chunk)}개 업로드 시작...")
+                                    v_res = self.post_to_band(
+                                        content=video_notice,
                                         image_paths=v_chunk
                                     )
-                                    time.sleep(3)
+                                    if not v_res:
+                                        video_success = False
+                                    time.sleep(15)
+                                success = video_success
                             else:
-                                print("⚠️ 1차 사진 포스팅 실패로 인해 동영상 포스팅을 진행하지 않습니다.")
-                        
-                        # Case 2: 사진만 있는 경우
-                        elif photos:
-                            print(f"📤 [사진 포스팅] 본문 글과 사진 {len(photos)}개 업로드 시작...")
-                            success = self.post_to_band(
-                                content=content,
-                                image_paths=photos
-                            )
-                            
-                        # Case 3: 동영상만 있는 경우
-                        elif videos:
-                            print(f"📤 [동영상 포스팅] 본문 글과 동영상 {len(videos)}개 업로드 시작...")
-                            success = self.post_to_band(
-                                content=content,
-                                image_paths=videos
-                            )
+                                print(f"📤 [동영상 단독 포스팅] 본문 글과 동영상 {len(videos)}개 업로드 시작...")
+                                success = self.post_to_band(
+                                    content=content,
+                                    image_paths=videos
+                                )
                             
                         # Case 4: 텍스트만 있는 경우
                         else:
-                            print("📤 [텍스트 포스팅] 글 내용 업로드 시작...")
+                            print("📤 [텍스트 포스팅] 본문 글 내용 단독 업로드 시작...")
                             success = self.post_to_band(
                                 content=content,
                                 image_paths=None
@@ -686,7 +715,7 @@ class DriveAutoPostSystem:
         # 폴더 내 미디어 파일 수집
         files = []
         valid_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif',
-                      '.mp4', '.mov', '.avi', '.mkv', '.m4v'}
+                      '.mp4', '.mov', '.avi', '.mkv', '.m4v', '.wmv', '.webm'}
         
         for f in os.listdir(folder_path):
             if Path(f).suffix.lower() in valid_exts:

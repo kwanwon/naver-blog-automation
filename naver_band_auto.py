@@ -1,5 +1,6 @@
 import time
 import os
+import sys
 import traceback
 import random
 from selenium import webdriver
@@ -13,36 +14,56 @@ class NaverBandAutomation:
     def __init__(self, driver):
         self.driver = driver
     
-    def _click_attach_button(self):
-        """첨부하기 버튼 클릭 헬퍼"""
+    def _wait_for_attach_button_ready(self, timeout: int = 60):
+        """첨부 레이어 팝업('사진 올리기' / '동영상 올리기')의 [첨부하기] 버튼이 활성화될 때까지 대기"""
+        start_time = time.time()
         attach_btn_selectors = [
-            "button.uButton.-confirm._submitBtn",  # 스크린샷 기반
             "button._submitBtn",
-            "button.uButton.-confirm",
+            "button.uButton.-confirm._submitBtn",
+            ".modalFooter button._submitBtn",
+            ".modalFooter button.uButton.-confirm",
+            "//button[normalize-space()='첨부하기']",
             "//button[contains(text(), '첨부하기')]",
-            "//button[contains(text(), '확인')]"
+            "//div[contains(@class, 'layer') or contains(@class, 'modal') or contains(@class, 'Wrap') or contains(@class, 'dialog') or contains(@class, 'popup') or contains(@class, 'uLayer')]//button[contains(text(), '첨부')]"
         ]
         
-        for selector in attach_btn_selectors:
+        while time.time() - start_time < timeout:
+            for selector in attach_btn_selectors:
+                try:
+                    if selector.startswith("//"):
+                        elements = self.driver.find_elements(By.XPATH, selector)
+                    else:
+                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    
+                    for btn in elements:
+                        if btn.is_displayed():
+                            # 🛡️ [핵심 안전장치] 메인 글쓰기 [게시] 버튼(_btnSubmitPost)은 절대 첨부 버튼으로 오인하지 않음
+                            btn_class = btn.get_attribute("class") or ""
+                            btn_text = btn.text.strip()
+                            if "_btnSubmitPost" in btn_class or "게시" in btn_text:
+                                continue
+                            
+                            is_disabled = btn.get_attribute("disabled") or "disabled" in btn_class
+                            if not is_disabled:
+                                return btn
+                except:
+                    continue
+            time.sleep(1.0)
+        return None
+
+    def _click_attach_button(self):
+        """첨부 레이어 팝업의 [첨부하기] 버튼 클릭 헬퍼"""
+        btn = self._wait_for_attach_button_ready(timeout=15)
+        if btn:
             try:
-                if selector.startswith("//"):
-                    attach_btn = WebDriverWait(self.driver, 3).until(
-                        EC.element_to_be_clickable((By.XPATH, selector))
-                    )
-                else:
-                    attach_btn = WebDriverWait(self.driver, 3).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
-                
-                if attach_btn and attach_btn.is_displayed():
-                    self.driver.execute_script("arguments[0].click();", attach_btn)
-                    print("✅ 첨부하기 버튼 클릭 완료")
-                    time.sleep(1)
-                    return True
+                btn.click()
             except:
-                continue
+                self.driver.execute_script("arguments[0].click();", btn)
+            print("✅ 첨부 팝업 [첨부하기] 버튼 클릭 완료")
+            time.sleep(1.5)
+            return True
         
-        print("⚠️ 첨부하기 버튼을 찾지 못함")
+        print("⚠️ 첨부하기 버튼을 찾지 못함 (직접 첨부 형태이거나 팝업 없음)")
         return False
     
     def _wait_for_upload_complete(self, timeout: int = 300):
@@ -259,80 +280,142 @@ class NaverBandAutomation:
                 pass
             time.sleep(0.5)
             
-            # 2. 내용 입력 (깨끗이 초기화 후 1회만 단독 입력)
+            # 2. 내용 입력 (모달 내부의 활성 에디터 정확히 탐색)
             print("⌨️ 내용 입력 중...")
             editor = None
-            for attempt in range(3):
-                try:
-                    editor = WebDriverWait(self.driver, 8).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, "div[contenteditable='true'], textarea._postWriteInput, div.contentEditor, .ProseMirror, .ck-content, [role='textbox']"))
-                    )
-                    self.driver.execute_script("arguments[0].scrollIntoView(true); arguments[0].focus();", editor)
-                    time.sleep(0.3)
+            editor_selectors = [
+                # 1순위: 모달 팝업 내부의 에디터
+                "div.cPostWriteModal div[contenteditable='true']",
+                "div.postWriteModal div[contenteditable='true']",
+                "div.layer_wrap div[contenteditable='true']",
+                "section.lyWrap div[contenteditable='true']",
+                "div.cPostWriteModal [role='textbox']",
+                "div.postWriteModal [role='textbox']",
+                "div.layer_wrap [role='textbox']",
+                "section.lyWrap [role='textbox']",
+                # 2순위: 활성 폼 내부의 에디터
+                ".postWriteArea.-active div[contenteditable='true']",
+                ".postWriteForm.-active div[contenteditable='true']",
+                ".cPostWrite.-active div[contenteditable='true']",
+                # 3순위: 전체 영역에서 보이는 에디터
+                "div[contenteditable='true']",
+                "div.contentEditor",
+                ".ProseMirror",
+                ".ck-content",
+                "[role='textbox']",
+                "textarea._postWriteInput"
+            ]
+            
+            for attempt in range(5):
+                for selector in editor_selectors:
                     try:
-                        editor.click()
+                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                        for el in elements:
+                            if el.is_displayed():
+                                editor = el
+                                break
+                        if editor:
+                            break
                     except:
-                        self.driver.execute_script("arguments[0].click();", editor)
-                    time.sleep(0.5)
-                    break
-                except Exception as e:
-                    print(f"⚠️ 에디터 클릭 재시도 중... ({attempt+1}/3)")
-                    time.sleep(1.0)
+                        continue
+                if editor:
+                    try:
+                        self.driver.execute_script("arguments[0].scrollIntoView(true); arguments[0].focus();", editor)
+                        time.sleep(0.3)
+                        try:
+                            editor.click()
+                        except:
+                            self.driver.execute_script("arguments[0].click();", editor)
+                        time.sleep(0.5)
+                        break
+                    except Exception as e:
+                        print(f"⚠️ 에디터 포커스 재시도 중... ({attempt+1}/5)")
+                        editor = None
+                time.sleep(1.0)
             
             if not editor:
-                print("❌ 에디터를 찾거나 클릭하지 못했습니다.")
+                print("❌ 활성화된 에디터를 찾거나 클릭하지 못했습니다.")
                 return False
             
-            # 🧹 [중요] 기존 에디터 내용 깨끗이 비우기
+            # 🧹 [중요] 기존 에디터 내용 비우기 (DOM 구조 유지를 위해 send_keys 활용)
+            is_mac = sys.platform == 'darwin'
+            mod_key = Keys.COMMAND if is_mac else Keys.CONTROL
+            
             try:
-                self.driver.execute_script("""
-                    arguments[0].innerText = '';
-                    arguments[0].innerHTML = '';
-                    arguments[0].focus();
-                """, editor)
-                time.sleep(0.3)
+                editor.send_keys(mod_key, 'a')
+                time.sleep(0.2)
+                editor.send_keys(Keys.BACK_SPACE)
+                time.sleep(0.2)
             except:
                 pass
             
-            # 본문 텍스트 단 1회 주입 (Cmd+V 우선 실행, 비어있을 때만 JS 주입으로 중복 원천 차단)
+            # 본문 텍스트 주입 (1순위: JS execCommand, 2순위: 클립보드 ActionChains, 3순위: send_keys 직접 타이핑, 4순위: DOM HTML 주입)
             try:
-                from utils.clipboard_helper import copy_to_clipboard
-                copy_to_clipboard(content)
-                time.sleep(0.3)
-                # macOS Cmd+V 또는 Win Ctrl+V
-                is_mac = sys.platform == 'darwin'
-                mod_key = Keys.COMMAND if is_mac else Keys.CONTROL
-                ActionChains(self.driver).key_down(mod_key).send_keys('v').key_up(mod_key).perform()
-                time.sleep(0.8)
-            except Exception as clip_err:
-                print(f"⚠️ 클립보드 붙여넣기 시도 실패: {clip_err}")
+                # 1순위: 브라우저 창 포커스와 무관하게 100% 본문을 타이핑하는 execCommand 실행
+                inserted = self.driver.execute_script("""
+                    var el = arguments[0];
+                    var text = arguments[1];
+                    el.focus();
+                    var success = document.execCommand('insertText', false, text);
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    return success;
+                """, editor, content)
+                time.sleep(0.5)
+            except Exception as ex_err:
+                print(f"⚠️ execCommand 시도 실패: {ex_err}")
                 
-            # 내용이 실제로 들어갔는지 확인 (비어있을 때만 1회 JS로 주입)
-            current_text = editor.text.strip()
-            if not current_text or len(current_text) < 5:
-                print("🔄 에디터가 비어있어 JS 직접 주입 1회 실행...")
+            # 실제 본문 내용의 앞 5글자가 에디터에 들어갔는지 정확히 검증 (Band 플레이스홀더 텍스트 배제)
+            sample_check = content.strip()[:5]
+            if not sample_check or sample_check not in (editor.text or ""):
+                print("🔄 텍스트 미반영 확인 -> 클립보드 붙여넣기 시도...")
                 try:
-                    self.driver.execute_script("""
-                        var el = arguments[0];
-                        var text = arguments[1];
-                        el.innerText = text;
-                        el.dispatchEvent(new Event('input', { bubbles: true }));
-                        el.dispatchEvent(new Event('change', { bubbles: true }));
-                    """, editor, content)
+                    from utils.clipboard_helper import copy_to_clipboard
+                    copy_to_clipboard(content)
+                    time.sleep(0.2)
+                    ActionChains(self.driver).key_down(mod_key).send_keys('v').key_up(mod_key).perform()
                     time.sleep(0.5)
-                except Exception as js_err:
-                    print(f"❌ JS 주입 실패: {js_err}")
+                except:
+                    pass
+
+            if not sample_check or sample_check not in (editor.text or ""):
+                print("🔄 텍스트 미반영 확인 -> editor.send_keys 직접 타이핑 실행...")
+                try:
+                    editor.click()
+                    time.sleep(0.2)
+                    editor.send_keys(content)
+                    time.sleep(0.8)
+                except Exception as send_err:
+                    print(f"⚠️ send_keys 타이핑 오류, HTML 단락 직접 주입 실행: {send_err}")
+                    try:
+                        self.driver.execute_script("""
+                            var el = arguments[0];
+                            var text = arguments[1];
+                            var lines = text.split('\\n');
+                            var html = lines.map(function(line) {
+                                return '<p>' + (line ? line : '<br>') + '</p>';
+                            }).join('');
+                            el.innerHTML = html;
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                        """, editor, content)
+                        time.sleep(0.5)
+                    except Exception as js_err:
+                        print(f"❌ JS 주입 실패: {js_err}")
             
-            print("✅ 본문 텍스트 1회 입력 완료 (중복 차단됨)")
+            print("✅ 본문 텍스트 1회 입력 완료 (검증 완료)")
             
-            # 📌 [중요] 텍스트 입력 후 커서를 본문 '맨 끝'으로 이동 (사진/영상이 텍스트 아래에 오도록)
+            # 📌 [중요] 텍스트 입력 후 커서를 본문 '맨 끝'으로 확실히 이동 (사진/영상이 텍스트 아래에 오도록)
             try:
                 self.driver.execute_script("""
                     var el = arguments[0];
+                    var p = document.createElement('p');
+                    p.innerHTML = '<br>';
+                    el.appendChild(p);
+                    
                     var range = document.createRange();
                     var sel = window.getSelection();
-                    range.selectNodeContents(el);
-                    range.collapse(false);
+                    range.setStart(p, 0);
+                    range.collapse(true);
                     sel.removeAllRanges();
                     sel.addRange(range);
                     el.focus();
@@ -362,64 +445,45 @@ class NaverBandAutomation:
                         photo_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postPhotoInput_'], input[type='file'][accept*='image']")
                         
                         if photo_input:
-                            # input 요소를 보이게 만들기 (send_keys가 작동하도록)
-                            self.driver.execute_script("""
-                                var el = arguments[0];
-                                el.style.cssText = 'opacity: 1 !important; width: 200px !important; height: 50px !important; position: relative !important; z-index: 9999 !important; display: block !important;';
-                            """, photo_input)
-                            time.sleep(1)
+                            self.driver.execute_script("arguments[0].style.display = 'block'; arguments[0].style.opacity = '1';", photo_input)
+                            time.sleep(0.5)
                             
-                            # 여러 파일 경로를 줄바꿈으로 연결하여 전송
                             file_paths = "\n".join(photos)
                             photo_input.send_keys(file_paths)
-                            print(f"✅ {len(photos)}개 사진 파일 전송됨")
+                            print(f"✅ {len(photos)}개 사진 파일 전송 완료")
                             
-                            # input 요소 복원
-                            try:
-                                self.driver.execute_script("arguments[0].style.cssText = '';", photo_input)
-                            except:
-                                pass
-                        
-                        # 첨부하기 버튼 및 팝업 대기 (최대 30초)
-                        print(f"⏳ 첨부하기 버튼 활성화 대기 중... (파일 {len(photos)}개)")
-                        time.sleep(2)
-                        
-                        attach_clicked = False
-                        for wait_count in range(30):
-                            attach_selectors = [
-                                "button.uButton.-confirm._submitBtn",
-                                "button._submitBtn",
-                                "button.uButton.-confirm",
-                                "//button[contains(text(), '첨부하기')]",
-                                "//button[contains(text(), '확인')]"
-                            ]
-                            for selector in attach_selectors:
+                            # 팝업 내 사진 업로드 및 [첨부하기] 버튼 활성화 대기
+                            photo_wait = max(30, len(photos) * 3)
+                            print(f"⏳ 사진 팝업 업로드 및 [첨부하기] 버튼 활성화 대기 (최대 {photo_wait}초)...")
+                            attach_btn = self._wait_for_attach_button_ready(timeout=photo_wait)
+                            
+                            if attach_btn:
+                                print("✅ 사진 팝업 [첨부하기] 버튼 활성화 확인 -> 클릭 진행!")
                                 try:
-                                    if selector.startswith("//"):
-                                        elements = self.driver.find_elements(By.XPATH, selector)
-                                    else:
-                                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                                    for btn in elements:
-                                        if btn.is_displayed():
-                                            self.driver.execute_script("arguments[0].click();", btn)
-                                            attach_clicked = True
-                                            print(f"✅ 첨부하기 버튼 클릭 완료 ({wait_count+1}초 경과)")
-                                            break
-                                    if attach_clicked:
-                                        break
+                                    attach_btn.click()
                                 except:
-                                    continue
-                            if attach_clicked:
-                                break
-                            time.sleep(1)
+                                    self.driver.execute_script("arguments[0].click();", attach_btn)
+                                time.sleep(2.0)
+                                
+                                # 팝업 레이어가 닫힐 때까지 대기
+                                try:
+                                    WebDriverWait(self.driver, 15).until_not(
+                                        EC.presence_of_element_located((By.CSS_SELECTOR, "section.lyWrap.layer_wrap, div.layer_wrap, div.modalWrap"))
+                                    )
+                                    print("✅ 사진 팝업 레이어 닫힘 확인")
+                                except:
+                                    pass
+                            else:
+                                print("⚠️ 사진 첨부하기 버튼 활성화 지연, 팝업 강제 클릭 시도")
+                                self._click_attach_button()
+                                time.sleep(2.0)
                         
-                        # 사진 업로드 팝업 사라질 때까지 대기
-                        upload_timeout = min(180, max(60, len(photos) * 4))
-                        print(f"⏳ 사진 업로드 대기 (타임아웃: {upload_timeout}초)...")
+                        # 사진 본문 렌더링 및 완료 대기
+                        upload_timeout = min(180, max(60, len(photos) * 3))
+                        print(f"⏳ 사진 본문 렌더링 대기 (타임아웃: {upload_timeout}초)...")
                         self._wait_for_upload_complete(timeout=upload_timeout)
-                        
                         time.sleep(2.0)
-                        print("✅ 사진 업로드 및 렌더링 완료")
+                        print("✅ 사진 업로드 및 본문 렌더링 완료")
                         
                     except Exception as photo_err:
                         print(f"⚠️ 사진 업로드 중 오류: {photo_err}")
@@ -433,10 +497,9 @@ class NaverBandAutomation:
                         videos = videos[:10]
                         
                     print(f"🎬 동영상 업로드 중 ({len(videos)}개)...")
-                    time.sleep(5)  # 사진 업로드 완료 후 안정화 대기 (3초 -> 5초로 증가)
+                    time.sleep(3)
                     try:
-                        # 숨겨진 동영상 file input 요소 찾기 - 새로 찾기 (stale 방지)
-                        video_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postVideoInput_']")
+                        video_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postVideoInput_'], input[type='file'][accept*='video']")
                         
                         if video_input:
                             # 여러 파일 경로를 줄바꿈으로 연결하여 전송
@@ -480,17 +543,38 @@ class NaverBandAutomation:
                         except:
                             pass
                         
-                        # "첨부하기" 버튼 클릭
-                        time.sleep(1)
-                        self._click_attach_button()
+                        # 동영상 팝업 처리 및 [첨부하기] 활성화 대기
+                        video_wait = max(60, len(videos) * 45)
+                        print(f"⏳ 동영상 팝업 처리 및 [첨부하기] 버튼 활성화 대기 (최대 {video_wait}초)...")
+                        attach_btn = self._wait_for_attach_button_ready(timeout=video_wait)
+                        
+                        if attach_btn:
+                            print(f"✅ 동영상 팝업 [첨부하기] 버튼 활성화 확인 -> 클릭 진행!")
+                            try:
+                                attach_btn.click()
+                            except:
+                                self.driver.execute_script("arguments[0].click();", attach_btn)
+                            time.sleep(2.0)
+                            
+                            try:
+                                WebDriverWait(self.driver, 15).until_not(
+                                    EC.presence_of_element_located((By.CSS_SELECTOR, "section.lyWrap.layer_wrap, div.layer_wrap, div.modalWrap"))
+                                )
+                                print("✅ 동영상 팝업 레이어 닫힘 확인")
+                            except:
+                                pass
+                        else:
+                            print("⚠️ 동영상 첨부하기 버튼 활성화 타임아웃, 팝업 강제 클릭 시도")
+                            self._click_attach_button()
+                            time.sleep(2.0)
                         
                         # 동영상 업로드 완료 대기 - 파일 개수에 따라 타임아웃 조절
-                        upload_timeout = min(180, max(60, len(videos) * 30))  # 최소 5분, 동영상당 1분
-                        print(f"⏳ 업로드 대기 (타임아웃: {upload_timeout}초)...")
+                        upload_timeout = min(300, max(120, len(videos) * 45))
+                        print(f"⏳ 동영상 메인 렌더링 대기 (타임아웃: {upload_timeout}초)...")
                         self._wait_for_upload_complete(timeout=upload_timeout)
                         
-                        # 동영상 첨부 완료 후 안정화 대기 (파일 개수 기반)
-                        stabilize_time = min(10, max(5, len(videos) * 3))  # 5~10초 범위
+                        # 동영상 첨부 완료 후 안정화 대기
+                        stabilize_time = min(10, max(5, len(videos) * 2))
                         print(f"⏳ 동영상 첨부 완료, {stabilize_time}초 안정화 대기...")
                         time.sleep(stabilize_time)
                         print("✅ 동영상 첨부 완료")
@@ -605,7 +689,8 @@ class NaverBandAutomation:
                                         self.driver.execute_script("arguments[0].click();", t_el)
                                     toggle_clicked = True
                                     print("  ✅ 예약시간 설정 토글 스위치 클릭됨")
-                                    time.sleep(1)
+                                    # 동영상 업로드 후 브라우저 안정화를 위한 충분한 대기
+                                    time.sleep(30)
                                     break
                             if toggle_clicked:
                                 break
@@ -911,54 +996,44 @@ class NaverBandAutomation:
                     
                 print("✅ 게시(예약) 버튼 클릭 완료")
                 
-                # 6. 게시 완료 검증 (글쓰기 팝업 모달이 닫히고 피드로 복귀했는지 확인)
+                # 6. 게시 완료 검증 (에디터가 실제로 사라졌는지 확인)
                 print("🔍 게시 완료 확인 중...")
-                max_retries = 30
+                max_retries = 25
                 post_success = False
                 
                 for r in range(max_retries):
+                    # 1순위: 에디터 요소 자체가 DOM에서 사라지거나 보이지 않게 되었는지 확인
                     try:
-                        # 팝업 형태의 에디터 모달만 정확히 타겟팅 (피드 상단의 기본 박스는 제외)
-                        active_modals = self.driver.find_elements(By.CSS_SELECTOR, "div.cPostWriteModal, div.postWriteModal, section.lyWrap.layer_wrap, .postWriteArea.-active, .postWriteForm.-active")
-                        is_modal_active = any(m.is_displayed() for m in active_modals if m)
-                        
-                        # 활성 모달이 닫혔으면 성공!
-                        if not is_modal_active:
-                            post_success = True
-                            break
-                            
-                        # 만약 10초가 지났는데도 모달이 안 닫혔으면 다시 한 번 강력 클릭
-                        if r == 10 and submit_btn:
-                            print("  🔄 게시 버튼 2차 재클릭 시도...")
-                            try:
-                                self.driver.execute_script("arguments[0].click();", submit_btn)
-                            except:
-                                pass
-                            
-                        # 경고창(Alert)이 떴는지 확인
-                        try:
-                            alert = self.driver.switch_to.alert
-                            alert_text = alert.text
-                            print(f"⚠️ 게시 후 알림 발견: {alert_text}")
-                            alert.accept()
-                        except:
-                            pass
-                        
+                        is_editor_open = editor.is_displayed()
                     except:
+                        # StaleElementReferenceException -> 페이지가 피드로 새로고침/갱신됨 = 성공!
+                        is_editor_open = False
+                    
+                    if not is_editor_open:
                         post_success = True
                         break
+                        
+                    # 만약 8초가 지났는데도 에디터가 안 닫혔으면 submit 버튼 2차 클릭
+                    if r == 8 and submit_btn:
+                        print("  🔄 게시 버튼 2차 재클릭 시도...")
+                        try:
+                            self.driver.execute_script("arguments[0].click();", submit_btn)
+                        except:
+                            pass
+                            
                     time.sleep(1)
                 
                 if post_success:
                     print("✅ 밴드 포스팅(예약) 완료! (에디터 닫힘 확인)")
                     return True
                 else:
-                    # 최후의 확인: 현재 페이지에 피드 글이 있는지 확인
-                    feed_posts = self.driver.find_elements(By.CSS_SELECTOR, "div.postList, div._postList, div.postView")
-                    if feed_posts and len(feed_posts) > 0:
-                        print("✅ 피드 확인됨 - 포스팅 성공 처리")
-                        return True
-                    print("❌ 포스팅 완료 확인 실패 (에디터가 닫히지 않음)")
+                    print("❌ 포스팅 완료 확인 실패 (에디터 모달이 닫히지 않음 - 글이나 파일이 누락되어 네이버에서 거부했을 수 있습니다)")
+                    # 다음 포스팅을 위해 꼬인 상태 초기화 (새로고침)
+                    try:
+                        self.driver.refresh()
+                        time.sleep(3)
+                    except:
+                        pass
                     return False
             else:
                 print("❌ 게시 버튼을 결국 찾을 수 없습니다.")
