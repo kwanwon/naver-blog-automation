@@ -70,6 +70,88 @@ class NaverCafeAutomation:
         time.sleep(0.1)
         file_input.send_keys(file_path)
         
+    def _apply_center_alignment(self):
+        """스마트에디터 ONE 본문 전체 가운데 정렬 적용"""
+        try:
+            # 1. 툴바 정렬 드롭다운 열기
+            self.driver.execute_script("""
+                const toolbarBtns = document.querySelectorAll('button[class*="se-toolbar-option-align"], button[data-name="align"], button[aria-label*="정렬"], button[title*="정렬"]');
+                for (const btn of toolbarBtns) {
+                    if (btn.offsetParent !== null) {
+                        btn.click();
+                        break;
+                    }
+                }
+            """)
+            time.sleep(0.3)
+            
+            # 2. 가운데 정렬 옵션 클릭
+            clicked = self.driver.execute_script("""
+                const centerBtns = document.querySelectorAll('button.se-toolbar-option-align-center-button, button[data-value="center"], button[aria-label*="가운데"], button[title*="가운데"], ul[class*="align"] li:nth-child(2) button');
+                for (const btn of centerBtns) {
+                    if (btn.offsetParent !== null) {
+                        btn.click();
+                        return true;
+                    }
+                }
+                return false;
+            """)
+            
+            if not clicked:
+                for sel in [".se-toolbar-option-align-center-button", "button[data-value='center']", "button[title*='가운데']", "button[aria-label*='가운데']"]:
+                    try:
+                        opts = self.driver.find_elements(By.CSS_SELECTOR, sel)
+                        for opt in opts:
+                            if opt.is_displayed():
+                                opt.click()
+                                clicked = True
+                                break
+                    except:
+                        pass
+                    if clicked:
+                        break
+            if clicked:
+                print("✅ 툴바 가운데 정렬 적용 완료")
+        except Exception as e:
+            print(f"⚠️ 가운데 정렬 적용 중 오류: {e}")
+
+    def _move_cursor_to_end_of_editor(self):
+        """에디터 본문의 맨 마지막으로 커서를 이동하여 이미지가 글 맨 밑에 들어가도록 보장"""
+        try:
+            import platform
+            modifier = Keys.COMMAND if platform.system() == "Darwin" else Keys.CONTROL
+            end_arrow = Keys.ARROW_DOWN if platform.system() == "Darwin" else Keys.END
+            
+            # 1. JS로 마지막 문단 끝으로 커서 이동
+            self.driver.execute_script("""
+                const editor = document.querySelector('.se-main-container') || 
+                               document.querySelector('.se-content') || 
+                               document.querySelector('[contenteditable="true"]');
+                if (editor) {
+                    const paragraphs = editor.querySelectorAll('.se-text-paragraph, p');
+                    if (paragraphs.length > 0) {
+                        const lastP = paragraphs[paragraphs.length - 1];
+                        const range = document.createRange();
+                        const sel = window.getSelection();
+                        range.selectNodeContents(lastP);
+                        range.collapse(false);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                        lastP.focus();
+                    }
+                }
+            """)
+            time.sleep(0.3)
+            
+            # 2. 키보드 액션으로 맨 밑 줄로 이동 후 줄바꿈(엔터) 추가
+            ActionChains(self.driver).key_down(modifier).send_keys(end_arrow).key_up(modifier).perform()
+            time.sleep(0.2)
+            ActionChains(self.driver).send_keys(Keys.ENTER).perform()
+            time.sleep(0.3)
+            print("✅ 에디터 본문 맨 마지막으로 커서 이동 완료 (사진을 글 하단에 배치)")
+        except Exception as e:
+            print(f"⚠️ 커서 맨 끝 이동 중 오류: {e}")
+
     def post_to_cafe(self, cafe_url: str, menu_id: str, title: str, content: str, image_paths: list = None):
         """
         네이버 카페에 글을 게시합니다. (이미지가 10장 초과 시 자동 분할 포스팅 지원)
@@ -80,13 +162,18 @@ class NaverCafeAutomation:
         print(f"ℹ️ 업로드할 이미지가 {len(image_paths)}장입니다. 10장 단위로 분할하여 포스팅합니다.")
         chunk_size = 10
         chunks = [image_paths[i:i + chunk_size] for i in range(0, len(image_paths), chunk_size)]
+        total_chunks = len(chunks)
         
         success = True
         for idx, chunk in enumerate(chunks):
-            current_title = title if idx == 0 else f"{title} (이어지는 사진 {idx+1})"
-            current_content = content if idx == 0 else f"이전 게시글에 이어지는 사진입니다."
+            if total_chunks > 1:
+                current_title = f"{title} ({idx+1}/{total_chunks})"
+                current_content = content if idx == 0 else "이전 게시글에 이어지는 사진입니다. 😊"
+            else:
+                current_title = title
+                current_content = content
             
-            print(f"🚀 [Cafe] 파트 {idx+1}/{len(chunks)} 포스팅 중... (이미지 {len(chunk)}장)")
+            print(f"🚀 [Cafe] 파트 {idx+1}/{total_chunks} 포스팅 중... (이미지 {len(chunk)}장)")
             res = self._do_single_post(cafe_url, menu_id, current_title, current_content, chunk)
             if not res:
                 print(f"❌ [Cafe] 파트 {idx+1} 포스팅 실패.")
@@ -101,20 +188,21 @@ class NaverCafeAutomation:
 
     def _do_single_post(self, cafe_url: str, menu_id: str, title: str, content: str, image_paths: list = None):
         try:
+            import platform
+            modifier = Keys.COMMAND if platform.system() == "Darwin" else Keys.CONTROL
+            
             # 0. clubid 추출
             club_id = self._get_club_id(cafe_url)
             if not club_id:
                 print("❌ 카페 ID(clubid)를 찾을 수 없습니다.")
                 return False
 
-            # 1. 카페 글쓰기 페이지로 직접 이동 (새로운 URL 형식 지원)
+            # 1. 카페 글쓰기 페이지로 직접 이동
             write_url = f"https://cafe.naver.com/ca-fe/cafes/{club_id}/menus/{menu_id}/articles/write"
             print(f"🌐 카페 글쓰기 페이지로 이동 중: {write_url}")
             self.driver.get(write_url)
             time.sleep(5)
             
-            # 🟢 새로운 에디터는 iFrame이 없습니다 (ca-fe URL 기준)
-            # 만약 구버전 URL인 경우에만 iFrame 전환 시도
             if "ca-fe" not in write_url:
                 try:
                     if "cafe_main" in self.driver.page_source:
@@ -131,9 +219,7 @@ class NaverCafeAutomation:
                 )
                 title_input.click()
                 time.sleep(0.5)
-                # JS를 사용하여 제목 입력 (기존 내용 제거 및 확실한 입력)
                 self.driver.execute_script("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", title_input, title)
-                # 혹시 모르니 send_keys 한 번 더 (이벤트 발생용)
                 title_input.send_keys(Keys.SPACE)
                 title_input.send_keys(Keys.BACKSPACE)
             except Exception as e:
@@ -141,14 +227,12 @@ class NaverCafeAutomation:
                 title_input.send_keys(title)
             time.sleep(1)
             
-            # 3. 내용 입력 (스마트에디터 ONE - 키보드 직접 입력만 사용!)
-            # 중요: React 기반 에디터는 클립보드/JS 삽입으로 상태 인식 불가
-            # 따라서 send_keys 키보드 입력만 사용 (pyautogui는 한글 미지원)
-            print("⌨️ 내용 입력 중 (send_keys 전용)...")
+            # 3. 내용 입력
+            print("⌨️ 내용 입력 중...")
             
             # 에디터 영역 찾기
             editor_selectors = [
-                ".se-component-content .se-text-paragraph",  # 스마트에디터 ONE 본문
+                ".se-component-content .se-text-paragraph",
                 ".se-content",
                 ".Editor_content__container", 
                 ".se-viewer",
@@ -174,52 +258,48 @@ class NaverCafeAutomation:
             
             # 에디터 클릭 및 포커스
             editor_area.click()
-            time.sleep(1)
-            
-            # 기존 내용 삭제 (Cmd+A -> Backspace)
-            ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('a').key_up(Keys.COMMAND).send_keys(Keys.BACKSPACE).perform()
             time.sleep(0.5)
             
-            # === 핵심: send_keys 분할 입력 (유일한 방법) ===
-            print("⌨️ send_keys 분할 입력 시작...")
+            # 기존 내용 삭제 (OS별 단축키 대응)
+            ActionChains(self.driver).key_down(modifier).send_keys('a').key_up(modifier).send_keys(Keys.BACKSPACE).perform()
+            time.sleep(0.3)
+            
+            # 글 작성 전 미리 가운데 정렬 적용
+            self._apply_center_alignment()
+            time.sleep(0.3)
+            
+            # === send_keys 분할 본문 전체 입력 ===
+            print("⌨️ 본문 내용 전체 입력 시작...")
             insert_success = False
             
             try:
-                # 다시 에디터 클릭 (포커스 확인)
                 editor_area.click()
                 time.sleep(0.3)
                 
-                # 줄 단위로 입력
                 lines = content.split('\n')
                 total_lines = len(lines)
                 
                 for i, line in enumerate(lines):
-                    # 진행 상황 표시 (10줄마다)
                     if i % 10 == 0:
                         print(f"  📝 입력 중... {i}/{total_lines}줄")
                     
                     if line.strip():
-                        # 300자씩 나누어 입력 (더 안정적)
                         chunks = [line[j:j+300] for j in range(0, len(line), 300)]
                         for chunk in chunks:
                             ActionChains(self.driver).send_keys(chunk).perform()
-                            time.sleep(0.03)  # 청크 사이 대기
+                            time.sleep(0.02)
                     
-                    # 마지막 줄이 아니면 Enter
                     if i < len(lines) - 1:
                         ActionChains(self.driver).send_keys(Keys.ENTER).perform()
                         time.sleep(0.01)
                 
                 time.sleep(0.5)
                 
-                # 검증
                 editor_text = editor_area.text.strip() if editor_area.text else ""
                 if len(editor_text) >= len(content) * 0.2:
                     insert_success = True
-                    print(f"✅ send_keys 입력 완료 ({len(editor_text)}자 / 원본 {len(content)}자)")
+                    print(f"✅ 본문 전체 입력 완료 ({len(editor_text)}자 / 원본 {len(content)}자)")
                 else:
-                    print(f"⚠️ 입력 후 검증 실패 (확인된 글자: {len(editor_text)}자)")
-                    # 검증 실패해도 일단 진행 (에디터 텍스트 추출이 불완전할 수 있음)
                     if len(editor_text) > 0:
                         insert_success = True
                         print("⚠️ 내용이 일부 입력됨, 계속 진행...")
@@ -233,52 +313,20 @@ class NaverCafeAutomation:
                 print("❌ 내용 입력 실패 - 포스팅 중단")
                 return False
             
-            # 글자 크기 조정 및 가운데 정렬 시도
+            # 본문 전체 선택 후 가운데 정렬 재확인 적용
             try:
-                # 텍스트 전체 선택 (정렬을 위해)
                 editor_area.click()
                 time.sleep(0.2)
-                ActionChains(self.driver).key_down(Keys.COMMAND).send_keys('a').key_up(Keys.COMMAND).perform()
-                time.sleep(0.5)
-                
-                # 정렬 드롭다운이 닫혀있다면 열기 (스마트에디터 버전에 따라 다름)
-                self.driver.execute_script("""
-                    const dropdown = document.querySelector('button[title*="정렬"], .se-toolbar-option-align-justify-button, .se-toolbar-option-align-left-button');
-                    if (dropdown && !document.querySelector('button.se-toolbar-option-align-center-button')) {
-                        dropdown.click();
-                    }
-                """)
-                time.sleep(0.5)
-                
-                # 가운데 정렬 버튼 클릭
-                self.driver.execute_script("""
-                    const centerBtn = document.querySelector('button.se-toolbar-option-align-center-button') || 
-                                      document.querySelector('button[data-value="center"]');
-                    if (centerBtn) {
-                        centerBtn.click();
-                    }
-                """)
-                time.sleep(0.5)
-                
-                # 폰트 크기 변경 (보조 수단)
-                self.driver.execute_script("""
-                    const editor = document.querySelector('.se-content') || 
-                                   document.querySelector('.Editor_content__container') ||
-                                   document.querySelector('[contenteditable="true"]');
-                    if(editor) {
-                        const paragraphs = editor.querySelectorAll('p, span, div');
-                        paragraphs.forEach(p => {
-                            p.style.setProperty('font-size', '19px', 'important');
-                            p.style.setProperty('text-align', 'center', 'important');
-                        });
-                    }
-                """)
-                
-                # 선택 해제 (오른쪽 화살표 키)
-                ActionChains(self.driver).send_keys(Keys.ARROW_RIGHT).perform()
-                time.sleep(0.5)
+                ActionChains(self.driver).key_down(modifier).send_keys('a').key_up(modifier).perform()
+                time.sleep(0.3)
+                self._apply_center_alignment()
+                time.sleep(0.3)
             except Exception as align_e:
-                print(f"⚠️ 텍스트 서식 적용 중 오류: {align_e}")
+                print(f"⚠️ 가운데 정렬 재적용 중 오류: {align_e}")
+            
+            # 🌟 [핵심] 이미지를 넣기 전에 반드시 본문 글의 '맨 끝'으로 커서를 확실하게 이동!
+            self._move_cursor_to_end_of_editor()
+            time.sleep(0.5)
 
             
             time.sleep(1)
