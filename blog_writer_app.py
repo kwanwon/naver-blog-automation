@@ -798,7 +798,7 @@ class BlogWriterApp:
         # 2. 내용 생성
         print(f"🤖 [DriveWatcher] 카페 주제 '{topic}'으로 내용 생성 중...")
         try:
-            result = self.ai_handler.generate_platform_content(topic, platform='cafe')
+            result = self.ai_handler.generate_platform_content(topic, platform='cafe', task_type='detection')
             title = result.get('title', f"[{folder_name}] 새로운 소식")
             content = result.get('content', '')
         except Exception as e:

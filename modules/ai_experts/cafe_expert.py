@@ -180,10 +180,15 @@ class CafeExpert(BaseAIExpert):
         # 🟢 Task Type에 따른 카페 특화 지시사항 분기
         if task_type == 'detection':
             task_instruction = f"""
-[포스팅 성격: 현장 스케치 (드라이브 사진 감지)]
-- 아이들이 체육관에서 운동하는 사진/영상을 올리는 현장 스케치용 글입니다.
-- 절대 장황한 교육 칼럼이나 정보성 글을 길게 쓰지 마세요! (최대 3~4줄 이내로 짧고 담백하게 작성)
-- "오늘도 아이들이 씩씩하게 운동했습니다", "땀 흘리는 모습이 멋집니다" 등 현장의 활기찬 분위기와 칭찬 위주로 가볍게 작성하세요.
+[포스팅 성격: 현장 스케치 및 사진/동영상 공유 (드라이브 사진 감지)]
+- 본 포스팅은 아이들의 생생한 수련/활동 현장 사진과 영상을 공유하기 위한 가벼운 현장 스케치 글입니다.
+- 🚨 [칼럼/사설/홈케어팁 절대 금지]: 장황한 교육 칼럼, 훈계, 거창한 교훈(성장, 존중, 배려 등 사설) 및 1분 홈케어 팁을 절대로 넣지 마세요.
+- 🚨 [단어 중복 반복 절대 금지]: 특정 단어(예: '바다수영' 등)를 문장마다 기계적으로 무한 반복하지 마세요. 사람이 자연스럽게 쓴 것처럼 유려하고 부드러운 어조로 서술하세요.
+- [적정 분량]: 방문자가 사진과 영상을 감상하는 데 방해되지 않도록, **2~3개의 짧고 정갈한 문단(공백 포함 150~250자 내외)**으로 담백하게 작성하세요.
+- [구성]:
+  1. 오늘 어디서 어떤 활동을 즐겁게 진행했는지 자연스러운 소개
+  2. 아이들이 집중하며 활기차게 땀 흘린 대견한 모습 칭찬
+  3. 아래 사진과 영상으로 생생한 모습을 확인해보시라는 따뜻한 마무리
 """
         else:
             time_hook = ""
@@ -232,34 +237,42 @@ class CafeExpert(BaseAIExpert):
                     target_hour = int(h_match.group(1))
             except:
                 pass
-        # 지능형 훅 (날씨)
-        is_forecast = self._check_is_forecast(target_time)
-        # 지역 정보 동적 추출 (우선순위: UI설정 > 주소 > 태그)
-        user_settings = self._load_user_settings()
-        weather_loc = settings.get('weather_location', '').strip()
-        if not weather_loc:
-            # 1. user_settings.txt의 주소(address)에서 추출
-            address = user_settings.get('address', '')
-            if address:
-                addr_parts = address.split()
-                weather_loc = addr_parts[1] if len(addr_parts) >= 2 else addr_parts[0]
-            
-            # 2. 주소도 없는 경우 태그에서 지역명 추출 시도
+        # 지능형 훅 (날씨 및 뉴스 - 일반 포스팅에만 적용)
+        if task_type != 'detection':
+            is_forecast = self._check_is_forecast(target_time)
+            user_settings = self._load_user_settings()
+            weather_loc = settings.get('weather_location', '').strip()
             if not weather_loc:
-                tags = user_settings.get('blog_tags', '')
-                if tags:
-                    first_tag = tags.split(',')[0].strip()
-                    weather_loc = re.sub(r'(합기도|체육관|태권도|유도|검도|스포츠|격투기)', '', first_tag).strip()
+                address = user_settings.get('address', '')
+                if address:
+                    addr_parts = address.split()
+                    weather_loc = addr_parts[1] if len(addr_parts) >= 2 else addr_parts[0]
+                if not weather_loc:
+                    tags = user_settings.get('blog_tags', '')
+                    if tags:
+                        first_tag = tags.split(',')[0].strip()
+                        weather_loc = re.sub(r'(합기도|체육관|태권도|유도|검도|스포츠|격투기)', '', first_tag).strip()
 
-        if weather_loc:
-            weather_hook = self._cafe_build_weather_hook_message(weather_loc, is_forecast, target_hour=target_hour, delta_days=delta_days)
-            if weather_hook: system_message += weather_hook
+            if weather_loc:
+                weather_hook = self._cafe_build_weather_hook_message(weather_loc, is_forecast, target_hour=target_hour, delta_days=delta_days)
+                if weather_hook: system_message += weather_hook
 
-        # 지능형 훅 (뉴스)
-        news_hook = self._build_news_hook_message('cafe')
-        if news_hook: system_message += news_hook
+            news_hook = self._build_news_hook_message('cafe')
+            if news_hook: system_message += news_hook
 
-        base_prompt = f"""[주제: {topic}]
+        if task_type == 'detection':
+            base_prompt = f"""[주제(활동내용): {topic}]
+위 현장 스케치 지침에 따라 자연스럽고 담백한 카페 포스팅을 작성해 주세요.
+
+[필수 작성 지침]
+- 첫 번째 줄에는 반드시 글의 제목을 작성해주세요. (형식: 제목: 여기에 제목 작성)
+- 두 번째 줄부터 본문을 작성해 주세요.
+- 분량: 사진과 영상이 돋보이도록 공백 포함 150~250자 내외 (2~3개 짧은 문단).
+- 1분 홈케어 팁이나 장황한 칼럼은 절대 쓰지 마세요.
+- 특정 단어가 기계적으로 반복되지 않도록 자연스러운 사람이 쓴 어조(~했어요, ~했습니다)로 완성하세요.
+"""
+        else:
+            base_prompt = f"""[주제: {topic}]
 위 지침에 따라 카페 포스팅 내용을 작성해 주세요.
 
 [출력 형식 및 작성 팁]
