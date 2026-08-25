@@ -5460,6 +5460,18 @@ class BlogWriterApp:
             except Exception:
                 pass
         
+        # Collect nicknames for live on-page duplicate verification
+        my_nicknames = []
+        if hasattr(self, 'settings') and self.settings:
+            if self.settings.get('naver_id'):
+                my_nicknames.append(self.settings.get('naver_id'))
+            if self.settings.get('blog_name'):
+                my_nicknames.append(self.settings.get('blog_name'))
+        if hasattr(self, 'persona_manager') and self.persona_manager:
+            p_data = self.persona_manager.get_persona()
+            if p_data and p_data.get('gym_name'):
+                my_nicknames.append(p_data.get('gym_name'))
+
         # Driver check
         driver = self.get_or_create_driver()
         if not driver:
@@ -5485,6 +5497,28 @@ class BlogWriterApp:
                 except:
                     pass
             
+            # 🌟 [사전 검사] 실시간 웹페이지에서 이미 작성한 본인 댓글 발견 시 즉시 스킵 (AI 토큰 절약 및 중복 완벽 방지)
+            if self.comment_poster._check_already_commented_on_page(platform, my_nicknames=my_nicknames):
+                print(f"⏩ [지역 마케팅] '{title}': 실시간 페이지 상에 이미 본인 댓글이 존재하여 스킵 처리합니다.")
+                self.history_manager.add_entry({
+                    "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "keyword": keyword if keyword else "직접 선택",
+                    "title": title,
+                    "link": url,
+                    "comment": "(기존 작성 댓글 확인되어 자동 스킵 기록됨)"
+                })
+                if index is not None and hasattr(self, 'processed_indices'):
+                    self.processed_indices.add(index)
+                self.page.snack_bar = ft.SnackBar(ft.Text(f"⏩ '{title}': 이미 본인 댓글이 작성되어 있어 스킵했습니다."), bgcolor=ft.Colors.BLUE_GREY_700)
+                try:
+                    self._render_marketing_history()
+                    if hasattr(self, 'current_search_results'):
+                        self._render_marketing_results(self.current_search_results, getattr(self, 'current_keyword', None))
+                    self.page.update()
+                except:
+                    pass
+                return
+
             # Scrape content (본문 영역 우선 수집)
             body_text = ""
             try:
@@ -5521,23 +5555,35 @@ class BlogWriterApp:
             self.page.snack_bar.open = True
             self.page.update()
             
-            success, msg = self.comment_poster.post_comment(url, reply_text, platform=platform)
+            success, msg = self.comment_poster.post_comment(url, reply_text, platform=platform, my_nicknames=my_nicknames)
             
             if success:
-                # 3. Log to History
-                self.history_manager.add_entry({
-                    "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    "keyword": keyword if keyword else "직접 선택",
-                    "title": title,
-                    "link": url,
-                    "comment": reply_text
-                })
-                
-                # 4. Mark as Processed (UI Update)
-                if index is not None and hasattr(self, 'processed_indices'):
-                    self.processed_indices.add(index)
-                
-                self.page.snack_bar = ft.SnackBar(ft.Text(f"✅ 댓글 작성 완료! (활동 내역에 저장됨)"), bgcolor=ft.Colors.GREEN)
+                if msg == "ALREADY_COMMENTED":
+                    self.history_manager.add_entry({
+                        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "keyword": keyword if keyword else "직접 선택",
+                        "title": title,
+                        "link": url,
+                        "comment": "(기존 작성 댓글 확인되어 자동 스킵 기록됨)"
+                    })
+                    if index is not None and hasattr(self, 'processed_indices'):
+                        self.processed_indices.add(index)
+                    self.page.snack_bar = ft.SnackBar(ft.Text(f"⏩ '{title}': 이미 본인 댓글이 있어 스킵했습니다."), bgcolor=ft.Colors.BLUE_GREY_700)
+                else:
+                    # 3. Log to History
+                    self.history_manager.add_entry({
+                        "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "keyword": keyword if keyword else "직접 선택",
+                        "title": title,
+                        "link": url,
+                        "comment": reply_text
+                    })
+                    
+                    # 4. Mark as Processed (UI Update)
+                    if index is not None and hasattr(self, 'processed_indices'):
+                        self.processed_indices.add(index)
+                    
+                    self.page.snack_bar = ft.SnackBar(ft.Text(f"✅ 댓글 작성 완료! (활동 내역에 저장됨)"), bgcolor=ft.Colors.GREEN)
                 
                 # Refresh UI Lists
                 try:

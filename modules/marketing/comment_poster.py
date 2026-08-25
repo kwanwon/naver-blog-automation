@@ -10,7 +10,82 @@ class CommentPoster:
     def __init__(self, driver):
         self.driver = driver
 
-    def post_comment(self, url, comment_text, platform='blog'):
+    def _check_already_commented_on_page(self, platform='blog', my_nicknames=None):
+        """
+        현재 열려있는 웹페이지의 댓글 목록(DOM)을 스캔하여,
+        로그인된 본인의 댓글이 이미 작성되어 있는지 실시간으로 확인합니다.
+        """
+        try:
+            if my_nicknames is None:
+                my_nicknames = []
+            clean_nicknames = [n.strip().lower() for n in my_nicknames if n and len(n.strip()) >= 2]
+
+            if platform == 'blog':
+                # 1. 네이버 블로그 u_cbox 내 본인 댓글 마커 확인
+                mine_items = self.driver.find_elements(By.CSS_SELECTOR, ".u_cbox_mine, [data-mine='true'], .u_cbox_type_mine, .u_cbox_comment_mine")
+                if mine_items:
+                    print("⏩ [CommentPoster] 블로그 페이지에서 본인 작성 댓글 마커(.u_cbox_mine) 감지")
+                    return True
+                
+                # 2. 본인 댓글에만 노출되는 삭제 버튼 확인
+                delete_buttons = self.driver.find_elements(By.CSS_SELECTOR, ".u_cbox_btn_delete, .u_cbox_delete, .u_cbox_btn_redelete")
+                if delete_buttons:
+                    print("⏩ [CommentPoster] 블로그 페이지에서 본인 댓글 삭제 버튼 감지")
+                    return True
+
+                # 3. 댓글 작성자 닉네임 일치 확인
+                if clean_nicknames:
+                    author_elems = self.driver.find_elements(By.CSS_SELECTOR, ".u_cbox_name, .u_cbox_nick, .u_cbox_writer")
+                    for elem in author_elems:
+                        text = elem.text.strip().lower()
+                        if text and any(nick in text for nick in clean_nicknames):
+                            print(f"⏩ [CommentPoster] 블로그 댓글 목록에서 본인 닉네임({elem.text}) 일치 감지")
+                            return True
+
+            elif platform == 'cafe':
+                # 1. 네이버 카페 내 본인 댓글 마커 확인
+                mine_items = self.driver.find_elements(By.CSS_SELECTOR, ".CommentItem--mine, .comment_mine, .u_cbox_mine, [data-mine='true']")
+                if mine_items:
+                    print("⏩ [CommentPoster] 카페 페이지에서 본인 작성 댓글 마커(.CommentItem--mine) 감지")
+                    return True
+
+                # 2. 카페 댓글 삭제 버튼 확인
+                delete_buttons = self.driver.find_elements(By.CSS_SELECTOR, ".comment_list a.btn_delete, .CommentItem button.btn_delete, .CommentItem .btn_del, .u_cbox_btn_delete")
+                if delete_buttons:
+                    print("⏩ [CommentPoster] 카페 페이지에서 본인 댓글 삭제 버튼 감지")
+                    return True
+
+                # 3. 카페 댓글 닉네임 일치 확인
+                if clean_nicknames:
+                    author_elems = self.driver.find_elements(By.CSS_SELECTOR, "a.comment_nickname, span.text_nickname, .u_cbox_name, .u_cbox_nick")
+                    for elem in author_elems:
+                        text = elem.text.strip().lower()
+                        if text and any(nick in text for nick in clean_nicknames):
+                            print(f"⏩ [CommentPoster] 카페 댓글 목록에서 본인 닉네임({elem.text}) 일치 감지")
+                            return True
+
+            elif platform == 'band':
+                # 1. 밴드 내 본인 댓글 마커/삭제버튼 확인
+                mine_items = self.driver.find_elements(By.CSS_SELECTOR, "button.btnDelete, button[data-uinfo*='mine'], div.cComment.-mine")
+                if mine_items:
+                    print("⏩ [CommentPoster] 밴드 게시글에서 본인 작성 댓글 감지")
+                    return True
+
+                # 2. 밴드 댓글 닉네임 일치 확인
+                if clean_nicknames:
+                    author_elems = self.driver.find_elements(By.CSS_SELECTOR, ".cComment .author, .commentWrap .name")
+                    for elem in author_elems:
+                        text = elem.text.strip().lower()
+                        if text and any(nick in text for nick in clean_nicknames):
+                            print(f"⏩ [CommentPoster] 밴드 댓글 목록에서 본인 닉네임({elem.text}) 일치 감지")
+                            return True
+
+        except Exception as e:
+            print(f"⚠️ [CommentPoster] 실시간 댓글 검사 중 오류 (무시하고 계속 진행): {e}")
+
+        return False
+
+    def post_comment(self, url, comment_text, platform='blog', my_nicknames=None):
         """
         Navigates to the post and submits a comment based on platform.
         Returns (success, message).
@@ -24,25 +99,29 @@ class CommentPoster:
             time.sleep(random.uniform(2, 4)) # Wait for page load
             
             if platform == 'blog':
-                return self._post_blog_comment(comment_text)
+                return self._post_blog_comment(comment_text, my_nicknames=my_nicknames)
             elif platform == 'cafe':
-                return self._post_cafe_comment(comment_text)
+                return self._post_cafe_comment(comment_text, my_nicknames=my_nicknames)
             elif platform == 'band':
-                return self._post_band_comment(comment_text)
+                return self._post_band_comment(comment_text, my_nicknames=my_nicknames)
             else:
-                return self._post_blog_comment(comment_text) # Default
+                return self._post_blog_comment(comment_text, my_nicknames=my_nicknames) # Default
 
         except Exception as e:
             print(f"❌ [CommentPoster] 작성 중 오류: {e}")
             return False, f"댓글 작성 중 오류: {str(e)}"
 
-    def _post_blog_comment(self, comment_text):
+    def _post_blog_comment(self, comment_text, my_nicknames=None):
         # Switch to main iframe if it exists
         try:
             self.driver.switch_to.frame("mainFrame")
             print("✅ [CommentPoster] iframe 전환 성공")
         except:
             pass 
+
+        # 🌟 실시간 DOM 상 본인 댓글 존재 여부 1차 사전 점검
+        if self._check_already_commented_on_page('blog', my_nicknames=my_nicknames):
+            return True, "ALREADY_COMMENTED"
 
         # Find the comment button/area
         print("🔍 [CommentPoster] 댓글 버튼 찾는 중...")
@@ -76,6 +155,10 @@ class CommentPoster:
                 except Exception as e:
                     print(f"Error clicking comment button: {e}")
 
+        # 댓글 영역 열린 후 2차 점검
+        if self._check_already_commented_on_page('blog', my_nicknames=my_nicknames):
+            return True, "ALREADY_COMMENTED"
+
         # Now look for the input text area again
         if not text_area:
             print("🔍 [CommentPoster] 입력창 찾는 중...")
@@ -103,7 +186,7 @@ class CommentPoster:
 
         return self._fill_and_submit(text_area, comment_text, "button.u_cbox_btn_upload, a.u_cbox_btn_upload")
 
-    def _post_cafe_comment(self, comment_text):
+    def _post_cafe_comment(self, comment_text, my_nicknames=None):
         # Switch to cafe_main iframe if it exists
         try:
             self.driver.switch_to.default_content() # Reset frame first
@@ -112,13 +195,10 @@ class CommentPoster:
         except:
             print("⚠️ [CommentPoster] cafe_main 프레임 전환 실패 (본문이 iFrame이 아닐 수 있음)")
             pass
-            
-        # Check for membership/permission barriers common in Naver Cafe
-        try:
-            # Check for "Join" button or "Level Up" messages if feasible
-            pass
-        except:
-            pass
+
+        # 🌟 실시간 DOM 상 본인 댓글 존재 여부 사전 점검
+        if self._check_already_commented_on_page('cafe', my_nicknames=my_nicknames):
+            return True, "ALREADY_COMMENTED"
 
         # Try to find input area
         text_area = None
@@ -127,8 +207,6 @@ class CommentPoster:
                 EC.presence_of_element_located((By.CSS_SELECTOR, "textarea.comment_inbox_text, div.comment_inbox_text"))
             )
             
-            # Check if text_area is disabled or has specific placeholder indicating no permission
-            # e.g. "멤버만 작성할 수 있습니다."
             placeholder = text_area.get_attribute("placeholder")
             if placeholder and ("가입" in placeholder or "멤버" in placeholder or "권한" in placeholder or "등업" in placeholder):
                  msg = f"댓글 작성 권한 없음: {placeholder}"
@@ -136,14 +214,17 @@ class CommentPoster:
                  return False, msg
 
         except:
-            # If text area is not found, likely not a member or restricted post
             msg = "댓글 입력창 미발견 (카페 가입 또는 등업 필요 예상)"
             print(f"❌ [CommentPoster] 실패: {msg}")
             return False, msg
             
         return self._fill_and_submit(text_area, comment_text, "a.btn_register, button.btn_register", is_cafe=True)
 
-    def _post_band_comment(self, comment_text):
+    def _post_band_comment(self, comment_text, my_nicknames=None):
+        # Band is strict SPA, no iframes usually
+        # 🌟 실시간 DOM 상 본인 댓글 존재 여부 사전 점검
+        if self._check_already_commented_on_page('band', my_nicknames=my_nicknames):
+            return True, "ALREADY_COMMENTED"
         # Band is strict SPA, no iframes usually but logic is tricky
         try:
             # Input area
