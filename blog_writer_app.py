@@ -5462,15 +5462,23 @@ class BlogWriterApp:
         
         # Collect nicknames for live on-page duplicate verification
         my_nicknames = []
-        if hasattr(self, 'settings') and self.settings:
-            if self.settings.get('naver_id'):
-                my_nicknames.append(self.settings.get('naver_id'))
-            if self.settings.get('blog_name'):
-                my_nicknames.append(self.settings.get('blog_name'))
-        if hasattr(self, 'persona_manager') and self.persona_manager:
-            p_data = self.persona_manager.get_persona()
-            if p_data and p_data.get('gym_name'):
-                my_nicknames.append(p_data.get('gym_name'))
+        try:
+            if hasattr(self, 'settings') and self.settings:
+                if self.settings.get('naver_id'):
+                    my_nicknames.append(self.settings.get('naver_id'))
+                if self.settings.get('blog_name'):
+                    my_nicknames.append(self.settings.get('blog_name'))
+                if self.settings.get('gym_sport'):
+                    my_nicknames.append(self.settings.get('gym_sport'))
+            if hasattr(self, 'persona_manager') and self.persona_manager:
+                p_data = self.persona_manager.load_persona()
+                if p_data:
+                    if p_data.get('business_name'):
+                        my_nicknames.append(p_data.get('business_name'))
+                    if p_data.get('gym_name'):
+                        my_nicknames.append(p_data.get('gym_name'))
+        except Exception as e:
+            print(f"⚠️ 닉네임 수집 중 예외 (무시): {e}")
 
         # Driver check
         driver = self.get_or_create_driver()

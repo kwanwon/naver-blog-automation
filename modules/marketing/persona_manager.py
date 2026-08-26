@@ -59,6 +59,10 @@ class PersonaManager:
         except Exception as e:
             self.logger.error(f"페르소나 로드 실패: {e}")
             return {}
+
+    def get_persona(self) -> Dict[str, Any]:
+        """페르소나 데이터 조회 (load_persona의 호환성 별칭)"""
+        return self.load_persona()
             
     def save_persona(self, data: Dict[str, Any]) -> bool:
         """페르소나 데이터 저장"""
