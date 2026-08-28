@@ -308,6 +308,11 @@ class BaseAIExpert:
                 for k in ['kma_api_key', 'brave_key', 'gemini_api_key', 'weather_location']:
                     if k in user_settings and user_settings[k]:
                         default_settings[k] = user_settings[k]
+                if (not default_settings.get('weather_location') or default_settings.get('weather_location') == '서울') and user_settings.get('address'):
+                    from utils.geo_utils import extract_weather_location
+                    extracted = extract_weather_location(user_settings.get('address'))
+                    if extracted:
+                        default_settings['weather_location'] = extracted
         except Exception as e:
             logger.error(f"사용자 설정 파일 로드 중 오류 발생: {str(e)}")
         

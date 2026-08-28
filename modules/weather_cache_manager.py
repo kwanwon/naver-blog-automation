@@ -19,9 +19,12 @@ class WeatherCacheManager:
     @staticmethod
     def get_cache_file_path():
         """Returns the absolute path to the weather cache file."""
-        # Locate the config directory in the project structure
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        config_dir = os.path.join(base_dir, "config")
+        try:
+            from utils.path_utils import get_config_dir
+            config_dir = get_config_dir()
+        except Exception:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            config_dir = os.path.join(base_dir, "config")
         os.makedirs(config_dir, exist_ok=True)
         return os.path.join(config_dir, "weather_cache.json")
 

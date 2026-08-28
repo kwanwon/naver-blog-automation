@@ -7434,11 +7434,12 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
         def _auto_fill_gps(e):
             print("📍 좌표 변환 버튼 클릭됨!")
             import re
+            from utils.geo_utils import geocode_address, extract_weather_location
             
             # 검색할 주소 추출 (address 필드 우선, 없으면 gym_gps_coords 필드의 한글 텍스트)
-            target_addr = address.value
+            target_addr = address.value.strip() if address.value else ""
             if not target_addr and gym_gps_coords.value and re.search(r'[가-힣]', gym_gps_coords.value):
-                target_addr = gym_gps_coords.value
+                target_addr = gym_gps_coords.value.strip()
 
             print(f"📍 검색할 주소: {target_addr}")
 
@@ -7462,35 +7463,28 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
 
             def run_geocoding():
                 try:
-                    import subprocess
-                    import sys
-                    try:
-                        from geopy.geocoders import Nominatim
-                    except ImportError:
-                        if getattr(sys, 'frozen', False):
-                            raise Exception("앱 버전에 geopy 패키지가 포함되지 않아 위치 검색을 사용할 수 없습니다.")
-                        subprocess.check_call([sys.executable, "-m", "pip", "install", "geopy"])
-                        from geopy.geocoders import Nominatim
-
-                    geolocator = Nominatim(user_agent="naver_blog_automation_app")
-                    
-                    search_addr = target_addr
-                    location = geolocator.geocode(search_addr)
-                    
-                    if not location:
-                        import re
-                        match = re.match(r'^(.+?[0-9]+(-[0-9]+)?).*', target_addr)
-                        if match:
-                            fallback_addr = match.group(1).strip()
-                            if fallback_addr != search_addr:
-                                location = geolocator.geocode(fallback_addr)
-                    
-                    if location:
-                        gym_gps_coords.value = f"{location.latitude}, {location.longitude}"
-                        print(f"📍 좌표 변환 성공: {gym_gps_coords.value}")
-                        show_snack("✅ 좌표 변환 완료!")
-                        gym_gps_coords.update()
+                    geo_res = geocode_address(target_addr)
+                    if geo_res:
+                        lat, lon, disp_name = geo_res
+                        gym_gps_coords.value = f"{lat:.6f}, {lon:.6f}"
+                        print(f"📍 좌표 변환 성공: {gym_gps_coords.value} ({disp_name})")
                         self._save_user_setting_individual("gym_gps_coords", gym_gps_coords.value)
+                        
+                        # 🌤️ 날씨 지역(weather_location)도 주소에서 자동 추출하여 설정 동기화
+                        loc_name = extract_weather_location(target_addr)
+                        if loc_name:
+                            weather_location.value = loc_name
+                            self._save_user_setting_individual("weather_location", loc_name)
+                            print(f"🌤️ 날씨 지역 자동 설정됨: {loc_name}")
+
+                        show_snack(f"✅ 좌표 및 날씨 지역({loc_name}) 변환 완료!")
+                        try:
+                            gym_gps_coords.update()
+                            weather_location.update()
+                            if getattr(self, 'page', None):
+                                self.page.update()
+                        except Exception:
+                            pass
                     else:
                         print("📍 주소에서 좌표를 찾을 수 없습니다.")
                         show_snack("❌ 주소에서 좌표를 찾을 수 없습니다. 도로명까지만 입력해보세요.")
@@ -12663,7 +12657,16 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 if getattr(self, 'page', None):
                     self.page.update()
                 
-            location = self._load_user_setting_individual('weather_location', '서울')
+            location = self._load_user_setting_individual('weather_location', '').strip()
+            if not location or location == '서울':
+                user_addr = self._load_user_setting_individual('address', '').strip()
+                if user_addr:
+                    from utils.geo_utils import extract_weather_location
+                    extracted = extract_weather_location(user_addr)
+                    if extracted:
+                        location = extracted
+            if not location:
+                location = '서울'
             api_key = self.ai_handler.settings.get('kma_api_key', '')
             
             # 1. 날씨 캐시 갱신 (로컬 기상 데이터를 가져오고 캐시 갱신)

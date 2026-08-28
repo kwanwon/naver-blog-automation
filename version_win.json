@@ -1,1 +1,1 @@
-{"version": "1.2.212", "date": "2026-08-26", "changes": ["지역 마케팅 AI 자동 소통 버튼 PersonaManager 메서드 호출 오류(get_persona) 수정 및 안정화"]}
+{"version": "1.2.213", "date": "2026-08-28", "changes": ["Windows 설치 시 16개 표준 데이터 폴더 자동 생성 보장", "Windows 환경 GPS 좌표(위도, 경도) 및 날씨 지역 크로스 플랫폼 자동 변환 연동 개선"]}

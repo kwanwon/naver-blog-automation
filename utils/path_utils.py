@@ -2,6 +2,26 @@ import os
 import sys
 from pathlib import Path
 
+# 🟢 블로그자동화_데이터 필수 16개 표준 폴더 목록 (Windows / macOS 공통 완벽 보장)
+DEFAULT_APP_DATA_SUBDIRS = [
+    '밴드_수동이미지',
+    '밴드_수동이미지_백업',
+    '밴드_수동이미지_실패',
+    '밴드사진폴더',
+    '블로그_카페_수동이미지',
+    '블로그사진폴더',
+    '수동업로드',
+    '수동이미지',
+    '카페사진폴더',
+    'config',
+    'data',
+    'default_images',
+    'drafts',
+    'logs',
+    'settings',
+    'temp'
+]
+
 def get_app_data_dir() -> str:
     """
     Returns the platform-specific application data directory.
@@ -12,6 +32,15 @@ def get_app_data_dir() -> str:
     
     # Ensure base directory exists
     os.makedirs(base_path, exist_ok=True)
+
+    # Ensure all 16 standard subdirectories exist
+    for sub in DEFAULT_APP_DATA_SUBDIRS:
+        sub_path = os.path.join(base_path, sub)
+        try:
+            os.makedirs(sub_path, exist_ok=True)
+        except Exception:
+            pass
+
     return base_path
 
 def get_log_dir() -> str:
