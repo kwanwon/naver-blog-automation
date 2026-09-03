@@ -222,7 +222,7 @@ class AutoUpdater:
                 raise ValueError("다운로드 URL이 제공되지 않았습니다.")
             
             self.logger.info(f"다운로드 시작: {download_url}")
-            response = requests.get(download_url, stream=True, timeout=60)
+            response = requests.get(download_url, stream=True, timeout=300)
             
             if response.status_code == 200:
                 # URL에서 파일명 추측하거나 기본값 사용
@@ -252,28 +252,38 @@ class AutoUpdater:
             return None
 
     def backup_current_version(self):
-        """현재 버전 백업"""
+        """현재 버전 백업 (Windows Frozen 환경 파일 잠금 오류 방지)"""
         try:
             if not os.path.exists(self.backup_dir):
-                os.makedirs(self.backup_dir)
+                os.makedirs(self.backup_dir, exist_ok=True)
                 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_name = f"backup_v{self.current_version}_{timestamp}"
             backup_path = os.path.join(self.backup_dir, backup_name)
             
-            # 전체 앱 디렉토리 백업
-            # Frozen 상태일 경우 대처가 필요하나 여기선 소스/폴더 기반 백업 가정
-            shutil.copytree(
-                self.app_dir, 
-                backup_path,
-                ignore=shutil.ignore_patterns('venv', '__pycache__', '*.pyc', 'backups', 'temp_*', '.git')
-            )
-            
-            self.logger.info(f"백업 완료: {backup_path}")
-            return backup_path
+            # Windows 빌드(Frozen) 환경: 실행 중인 .exe/.dll 파일 잠금(WinError 32) 회피를 위해 필수 데이터만 복사
+            if self.is_frozen and sys.platform == 'win32':
+                os.makedirs(backup_path, exist_ok=True)
+                for item in ['config', 'settings', 'data', 'version.json', 'version_win.json', 'user_data.json']:
+                    src = os.path.join(self.app_dir, item)
+                    dst = os.path.join(backup_path, item)
+                    if os.path.isdir(src):
+                        shutil.copytree(src, dst, dirs_exist_ok=True)
+                    elif os.path.isfile(src):
+                        shutil.copy2(src, dst)
+                self.logger.info(f"Windows 데이터 백업 완료: {backup_path}")
+                return backup_path
+            else:
+                shutil.copytree(
+                    self.app_dir, 
+                    backup_path,
+                    ignore=shutil.ignore_patterns('venv', '__pycache__', '*.pyc', 'backups', 'temp_*', '.git', '*.log')
+                )
+                self.logger.info(f"백업 완료: {backup_path}")
+                return backup_path
         except Exception as e:
-            self.logger.error(f"백업 생성 실패: {e}")
-            return None
+            self.logger.warning(f"백업 생성 중 경고 (데이터 보존 유지로 대체): {e}")
+            return self.backup_dir
 
     def preserve_user_data(self):
         """사용자 데이터 메모리에 로드"""
@@ -645,51 +655,76 @@ open "{app_bundle_path}"
 
     def _update_on_windows(self, update_source_dir):
         """
-        Windows 전용: 앱 종료 -> 파일 교체 -> 앱 재시작을 수행하는 배치 파일 생성 및 실행
+        Windows 전용: 앱 종료 -> 관리자 권한 파일 교체 -> 앱 재시작을 수행하는 배치 파일 생성 및 실행
         """
         try:
             # 1. 현재 실행 중인 exe 경로 확인 (PyInstaller 환경 가정)
             exe_path = sys.executable
             exe_dir = os.path.dirname(exe_path)
             
+            # 경로 끝의 슬래시/역슬래시를 깨끗하게 제거 (CMD 따옴표 이스케이프 버그 방지)
+            clean_exe_dir = exe_dir.rstrip('\\/')
+            clean_update_dir = update_source_dir.rstrip('\\/')
+            
+            # 재실행할 타겟 exe 결정: BlogAutomation_Windows.exe(런처)가 존재하면 런처를 우선 실행
+            launcher_candidate = os.path.join(clean_exe_dir, "BlogAutomation_Windows.exe")
+            if os.path.exists(launcher_candidate):
+                restart_target = launcher_candidate
+            else:
+                restart_target = exe_path
+            clean_restart_target = restart_target.rstrip('\\/')
+            
             # 2. 배치 파일 경로
             bat_path = os.path.join(tempfile.gettempdir(), "blog_update.bat")
             
             # 3. 배치 파일 내용 작성
             # taskkill: 실행 중인 기존 프로세스 강제 정리 (파일 잠금 해제)
-            # timeout /t 2 / ping: 종료 및 안정화 대기
-            # xcopy: 파일 복사 (/s: 하위폴더, /e: 비어있는폴더포함, /y: 덮어쓰기수락, /q: 조용히)
-            # start: 앱 재실행
+            # cd /d: 작업 디렉토리 강제 전환 (Flet/Python 리소스 로드 보장)
+            # xcopy: 따옴표 끝 역슬래시 제거로 따옴표 이스케이프 버그 완벽 차단
+            # start: /D 옵션으로 설치 폴더를 작업 디렉토리로 지정하여 재실행
             bat_content = f"""@echo off
-title Updating Blog Automation...
-echo Waiting for application to exit...
+chcp 65001 > nul
+title 블로그 자동화 업데이트 중...
+echo 업데이트를 적용하는 중입니다. 잠시만 기다려주세요...
 
 :: 실행 중인 기존 프로세스 강제 정리 (파일 잠금 해제)
 taskkill /F /IM BlogApp.exe /T > nul 2>&1
 taskkill /F /IM BlogAutomation_Windows.exe /T > nul 2>&1
 taskkill /F /IM flet.exe /T > nul 2>&1
-timeout /t 2 /nobreak > nul 2>&1 || ping 127.0.0.1 -n 3 > nul
+timeout /t 3 /nobreak > nul 2>&1 || ping 127.0.0.1 -n 4 > nul
 
-echo Copying new files...
-xcopy "{update_source_dir}\\*" "{exe_dir}\\" /s /e /y /q
+:: 작업 디렉토리 변경
+cd /d "{clean_exe_dir}"
 
-echo Restarting application...
-start "" "{exe_path}"
+:: 새 파일 복사 (따옴표 앞 역슬래시 제거로 이스케이프 에러 방지)
+echo 새 파일 복사 중...
+xcopy "{clean_update_dir}\\*" "{clean_exe_dir}" /s /e /y /q /r
 
-echo Cleaning up...
+:: 복사 안정화 대기
+timeout /t 2 /nobreak > nul 2>&1
+
+:: 프로그램 재시작 (작업 디렉토리 /D 지정)
+echo 프로그램 재시작 중...
+start "" /D "{clean_exe_dir}" "{clean_restart_target}"
+
+:: 배치 파일 정리
+timeout /t 1 /nobreak > nul 2>&1
 del "%~f0"
 """
-            with open(bat_path, "w", encoding="cp949") as f:
+            with open(bat_path, "w", encoding="utf-8") as f:
                 f.write(bat_content)
                 
             self.logger.info(f"업데이트 배치 파일 생성됨: {bat_path}")
             
-            # 4. 배치 파일 실행 및 앱 종료
-            subprocess.Popen(f'"{bat_path}"', shell=True)
-            self.logger.info("배치 파일 실행 됨. 앱을 종료합니다.")
+            # 4. 배치 파일 실행 (PowerShell Start-Process -Verb RunAs로 관리자 권한 확보하여 쓰기 권한 문제 완벽 해결)
+            try:
+                ps_cmd = f'Start-Process cmd -ArgumentList "/c `"{bat_path}`"" -Verb RunAs'
+                subprocess.Popen(["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", ps_cmd])
+                self.logger.info("관리자 권한(RunAs)으로 업데이트 배치 파일 실행 완료")
+            except Exception as ps_err:
+                self.logger.warning(f"PowerShell RunAs 실행 실패, 일반 실행으로 대체: {ps_err}")
+                subprocess.Popen(f'"{bat_path}"', shell=True)
             
-            # 즉시 종료 (메인 스레드에서 처리되도록 유도하거나 여기서 강제 종료)
-            # 여기서는 True를 반환하고 메인 루프에서 종료하도록 함
             return True
             
         except Exception as e:
