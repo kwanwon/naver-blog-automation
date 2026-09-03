@@ -419,6 +419,18 @@ class BaseAIExpert:
     def _load_user_settings(self):
         user_settings = {}
         try:
+            # 🆕 1순위: 중앙 관리된 사용자 데이터 경로 (Windows / macOS 공통 표준)
+            try:
+                from utils.path_utils import get_user_settings_path
+                central_path = get_user_settings_path()
+                if central_path and os.path.exists(central_path):
+                    with open(central_path, 'r', encoding='utf-8') as f:
+                        user_settings = json.load(f)
+                    logger.info(f"🔥 사용자 설정 파일 로드 성공 (중앙 경로): {central_path}")
+                    return user_settings
+            except Exception as ex_central:
+                logger.debug(f"중앙 사용자 설정 경로 로드 시도 실패: {ex_central}")
+
             app_bundle_config = get_app_bundle_config_path()
             possible_paths = [
                 os.path.join(os.path.expanduser("~"), '.blog_automation', 'config', 'user_settings.txt'),

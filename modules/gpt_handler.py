@@ -417,6 +417,18 @@ class GPTHandler:
         user_settings = {}
         
         try:
+            # 🆕 1순위: 중앙 관리된 사용자 데이터 경로 (Windows / macOS 공통 표준)
+            try:
+                from utils.path_utils import get_user_settings_path
+                central_path = get_user_settings_path()
+                if central_path and os.path.exists(central_path):
+                    with open(central_path, 'r', encoding='utf-8') as f:
+                        user_settings = json.load(f)
+                    print(f"🔥 사용자 설정 파일 로드 성공 (중앙 경로): {central_path}")
+                    return user_settings
+            except Exception as ex_central:
+                pass
+
             # 스크립트 파일의 위치를 기준으로 경로 계산
             script_dir = os.path.dirname(os.path.abspath(__file__))  # modules 디렉토리
             parent_dir = os.path.dirname(script_dir)  # naver-blog-automation 디렉토리

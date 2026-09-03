@@ -1052,6 +1052,11 @@ class BlogWriterApp:
         try:
             import os, json
             user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
+            if not os.path.exists(user_settings_path):
+                fallback = os.path.join(self.base_dir, 'config', 'user_settings.txt')
+                if os.path.exists(fallback):
+                    user_settings_path = fallback
+
             if os.path.exists(user_settings_path):
                 with open(user_settings_path, 'r', encoding='utf-8') as f:
                     settings = json.load(f)
@@ -5972,14 +5977,41 @@ class BlogWriterApp:
             # --- 2. 첫 문장 및 슬로건 강제 삽입 (통합 파이프라인 단일 처리) ---
             try:
                 user_settings = self.ai_handler._load_user_settings()
+                if not user_settings:
+                    try:
+                        from utils.path_utils import get_user_settings_path
+                        u_path = get_user_settings_path()
+                        if os.path.exists(u_path):
+                            with open(u_path, 'r', encoding='utf-8') as f:
+                                user_settings = json.load(f)
+                    except Exception:
+                        user_settings = {}
+
                 f_sent = user_settings.get('blog_first_sentence', user_settings.get('first_sentence', '')).strip()
                 s_sent = user_settings.get('blog_slogan', user_settings.get('slogan', '')).strip()
                 
+                # 3중 안전 방어: 설정 파일에서 읽지 못한 경우 UI 입력 필드 직접 확인
+                if not f_sent:
+                    f_field = getattr(self, 'blog_first_sentence', None)
+                    if f_field and f_field.value:
+                        f_sent = f_field.value.strip()
+                    else:
+                        f_sent = (self._load_user_setting_individual('blog_first_sentence', '') or '').strip()
+
+                if not s_sent:
+                    s_field = getattr(self, 'blog_slogan', None)
+                    if s_field and s_field.value:
+                        s_sent = s_field.value.strip()
+                    else:
+                        s_sent = (self._load_user_setting_individual('blog_slogan', '') or '').strip()
+
                 if f_sent and f_sent not in content_str:
                     content_str = f"{f_sent}\n\n{content_str}"
+                    print(f"✅ 블로그 첫 문구 적용 완료: {f_sent[:30]}...")
                     
                 if s_sent and s_sent not in content_str:
                     content_str = f"{content_str}\n\n{s_sent}"
+                    print(f"✅ 블로그 슬로건 적용 완료: {s_sent[:30]}...")
             except Exception as e:
                 print(f"⚠️ 첫 문장/슬로건 삽입 중 오류: {e}")
             
@@ -7891,6 +7923,11 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             try:
                 # 🆕 글로벌 설정 경로 사용
                 user_settings_path = os.path.join(self._get_app_data_dir(), 'config', 'user_settings.txt')
+                if not os.path.exists(user_settings_path):
+                    fallback = os.path.join(self.base_dir, 'config', 'user_settings.txt')
+                    if os.path.exists(fallback):
+                        user_settings_path = fallback
+
                 if os.path.exists(user_settings_path):
                     with open(user_settings_path, 'r', encoding='utf-8') as f:
                         settings = json.load(f)

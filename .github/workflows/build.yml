@@ -74,6 +74,16 @@ jobs:
           copy naver_blog_auto.py dist\BlogAutomation_Windows\
           copy naver_blog_auto_image.py dist\BlogAutomation_Windows\
           copy naver_blog_post_finisher.py dist\BlogAutomation_Windows\
+          if not exist "dist\BlogAutomation_Windows\블로그사진폴더" mkdir "dist\BlogAutomation_Windows\블로그사진폴더"
+          if not exist "dist\BlogAutomation_Windows\밴드사진폴더" mkdir "dist\BlogAutomation_Windows\밴드사진폴더"
+          if not exist "dist\BlogAutomation_Windows\블로그_카페_수동이미지" mkdir "dist\BlogAutomation_Windows\블로그_카페_수동이미지"
+          if not exist "dist\BlogAutomation_Windows\카페사진폴더" mkdir "dist\BlogAutomation_Windows\카페사진폴더"
+          if not exist "dist\BlogAutomation_Windows\밴드_수동이미지" mkdir "dist\BlogAutomation_Windows\밴드_수동이미지"
+          if not exist "dist\BlogAutomation_Windows\수동이미지" mkdir "dist\BlogAutomation_Windows\수동이미지"
+          if not exist "dist\BlogAutomation_Windows\수동업로드" mkdir "dist\BlogAutomation_Windows\수동업로드"
+          if not exist "dist\BlogAutomation_Windows\default_images" mkdir "dist\BlogAutomation_Windows\default_images"
+          if not exist "dist\BlogAutomation_Windows\data" mkdir "dist\BlogAutomation_Windows\data"
+          if not exist "dist\BlogAutomation_Windows\drafts" mkdir "dist\BlogAutomation_Windows\drafts"
           del /F dist\BlogAutomation_Windows\modules\.developer_mode 2>nul
         shell: cmd
       

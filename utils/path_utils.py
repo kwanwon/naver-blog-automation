@@ -41,6 +41,34 @@ def get_app_data_dir() -> str:
         except Exception:
             pass
 
+    # 🆕 필수 설정 파일 자동 시딩 (초기 설치 후 user_settings.txt 또는 app_settings.json이 없을 때 기본값 안전 복사)
+    try:
+        import shutil
+        config_dir = os.path.join(base_path, 'config')
+        dest_user_settings = os.path.join(config_dir, 'user_settings.txt')
+        if not os.path.exists(dest_user_settings):
+            src_user = get_resource_path('config/user_settings.txt')
+            if not os.path.exists(src_user) and getattr(sys, 'frozen', False):
+                candidate = os.path.join(os.path.dirname(sys.executable), 'config', 'user_settings.txt')
+                if os.path.exists(candidate):
+                    src_user = candidate
+            if os.path.exists(src_user):
+                shutil.copy2(src_user, dest_user_settings)
+                print(f"✅ 기본 user_settings.txt 자동 시딩 완료: {dest_user_settings}")
+
+        dest_app_settings = os.path.join(config_dir, 'app_settings.json')
+        if not os.path.exists(dest_app_settings):
+            src_app = get_resource_path('config/app_settings.json')
+            if not os.path.exists(src_app) and getattr(sys, 'frozen', False):
+                candidate = os.path.join(os.path.dirname(sys.executable), 'config', 'app_settings.json')
+                if os.path.exists(candidate):
+                    src_app = candidate
+            if os.path.exists(src_app):
+                shutil.copy2(src_app, dest_app_settings)
+                print(f"✅ 기본 app_settings.json 자동 시딩 완료: {dest_app_settings}")
+    except Exception as ex_seed:
+        pass
+
     return base_path
 
 def get_log_dir() -> str:
