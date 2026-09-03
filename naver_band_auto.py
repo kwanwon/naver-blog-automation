@@ -148,6 +148,19 @@ class NaverBandAutomation:
                             break
                 except:
                     pass
+                    
+                # 팝업 내부의 로딩/프로그레스바 완료 및 [첨부하기] 준비 감지
+                try:
+                    loading_spinners = self.driver.find_elements(By.CSS_SELECTOR, "section.lyWrap.layer_wrap .loading, section.lyWrap.layer_wrap .spin, section.lyWrap.layer_wrap .progressbar, section.lyWrap.layer_wrap .progress_bar")
+                    has_loading = any(s.is_displayed() for s in loading_spinners if s)
+                    if popup_ever_appeared and not has_loading:
+                        ready_attach = self.driver.find_elements(By.CSS_SELECTOR, "section.lyWrap.layer_wrap button._submitBtn.-confirm, section.lyWrap.layer_wrap button.uButton.-confirm._submitBtn")
+                        if ready_attach and any(b.is_displayed() for b in ready_attach):
+                            print("  ✅ 팝업 내 파일 업로드 완료 및 [첨부하기] 버튼 준비 확인")
+                            time.sleep(1.0)
+                            return True
+                except:
+                    pass
                 
             except Exception as e:
                 pass
