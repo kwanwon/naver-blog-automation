@@ -656,14 +656,19 @@ open "{app_bundle_path}"
             bat_path = os.path.join(tempfile.gettempdir(), "blog_update.bat")
             
             # 3. 배치 파일 내용 작성
-            # ping 127.0.0.1 -n 3: 3초 대기 (앱 종료 시간 확보)
+            # taskkill: 실행 중인 기존 프로세스 강제 정리 (파일 잠금 해제)
+            # timeout /t 2 / ping: 종료 및 안정화 대기
             # xcopy: 파일 복사 (/s: 하위폴더, /e: 비어있는폴더포함, /y: 덮어쓰기수락, /q: 조용히)
             # start: 앱 재실행
-            bat_content = f"""
-@echo off
+            bat_content = f"""@echo off
 title Updating Blog Automation...
 echo Waiting for application to exit...
-ping 127.0.0.1 -n 3 > nul
+
+:: 실행 중인 기존 프로세스 강제 정리 (파일 잠금 해제)
+taskkill /F /IM BlogApp.exe /T > nul 2>&1
+taskkill /F /IM BlogAutomation_Windows.exe /T > nul 2>&1
+taskkill /F /IM flet.exe /T > nul 2>&1
+timeout /t 2 /nobreak > nul 2>&1 || ping 127.0.0.1 -n 3 > nul
 
 echo Copying new files...
 xcopy "{update_source_dir}\\*" "{exe_dir}\\" /s /e /y /q

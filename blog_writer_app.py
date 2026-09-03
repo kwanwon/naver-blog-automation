@@ -12418,22 +12418,37 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                         ]
                         
                         if is_built_app and sys.platform == 'win32':
-                             # 윈도우 빌드 앱은 자동 재시작 스크립트가 실행됨
-                             dialog_content.append(ft.Text("잠시 후 프로그램이 자동으로 재시작됩니다.", weight=ft.FontWeight.BOLD))
+                            # 윈도우 빌드 앱은 자동 재시작 스크립트가 실행됨
+                            dialog_content.append(ft.Text("잠시 후 프로그램이 자동으로 종료 및 재시작됩니다.", weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_700))
                         elif is_built_app:
                             # Mac 등 기타 (다운로드 유도 없음, 이미 교체됨)
                             dialog_content.append(ft.Text("프로그램을 재시작해주세요.", weight=ft.FontWeight.BOLD))
                         else:
                             dialog_content.append(ft.Text("프로그램을 재시작해주세요.", weight=ft.FontWeight.BOLD))
                         
+                        def on_success_confirm_click(_):
+                            if is_built_app and sys.platform == 'win32':
+                                os._exit(0)
+                            else:
+                                self.close_dialog(page, success_dialog)
+
                         success_dialog = ft.AlertDialog(
                             title=ft.Text("✅ 업데이트 준비 완료"),
                             content=ft.Column(dialog_content, tight=True),
-                            actions=[ft.TextButton("확인", on_click=lambda _: self.close_dialog(page, success_dialog))]
+                            actions=[ft.TextButton("확인", on_click=on_success_confirm_click)]
                         )
                         page.overlay.append(success_dialog)
                         success_dialog.open = True
                         page.update()
+                        
+                        if is_built_app and sys.platform == 'win32':
+                            # 윈도우 빌드 앱: 배치 파일(blog_update.bat)이 2초 후 프로세스를 교체하므로
+                            # 2초 후 앱 프로세스를 강제 종료(os._exit(0))하여 파일 잠금을 해제합니다.
+                            import threading
+                            def delayed_exit_for_windows():
+                                time.sleep(2.0)
+                                os._exit(0)
+                            threading.Thread(target=delayed_exit_for_windows, daemon=True).start()
                     else:
                         # 실패
                         fail_dialog = ft.AlertDialog(
