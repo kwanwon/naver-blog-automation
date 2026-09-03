@@ -461,13 +461,56 @@ class NaverBandAutomation:
                             except Exception:
                                 pass
 
-                        # 밴드 웹에서 사진은 동영상과 달리 [첨부하기] 팝업이 없으므로 바로 업로드 완료 프로그레스 대기로 진입
-                        upload_timeout = max(90, min(360, len(photos) * 5))
-                        print(f"⏳ 사진 업로드 및 본문 렌더링 대기 (타임아웃: {upload_timeout}초)...")
+                        # 1단계: 사진 파일 업로드 및 팝업 렌더링 대기
+                        upload_timeout = max(60, min(300, len(photos) * 5))
+                        print(f"⏳ 사진 업로드 및 팝업 렌더링 대기 (타임아웃: {upload_timeout}초)...")
                         self._wait_for_upload_complete(timeout=upload_timeout)
-                        time.sleep(2.0)
+                        time.sleep(1.0)
                         
-                        # 본문 사진 렌더링 확인 (최대 30초)
+                        # 2단계: [사진 올리기] 팝업이 뜬 경우 [첨부하기] 버튼 클릭
+                        print("⏳ 사진 팝업 [첨부하기] 버튼 클릭 시도...")
+                        attach_btn = None
+                        attach_selectors = [
+                            "section.lyWrap.layer_wrap button._submitBtn",
+                            "div.layer_wrap button._submitBtn",
+                            "button.uButton.-confirm._submitBtn",
+                            "button._submitBtn",
+                            "//section[contains(@class, 'layer_wrap')]//button[contains(text(), '첨부')]",
+                            "//div[contains(@class, 'layer_wrap')]//button[contains(text(), '첨부')]"
+                        ]
+                        for a_sel in attach_selectors:
+                            try:
+                                if a_sel.startswith("//"):
+                                    elements = self.driver.find_elements(By.XPATH, a_sel)
+                                else:
+                                    elements = self.driver.find_elements(By.CSS_SELECTOR, a_sel)
+                                for btn in elements:
+                                    if btn.is_displayed():
+                                        attach_btn = btn
+                                        break
+                                if attach_btn:
+                                    break
+                            except:
+                                continue
+                                
+                        if attach_btn:
+                            print("✅ 사진 팝업 [첨부하기] 버튼 클릭 진행!")
+                            try:
+                                attach_btn.click()
+                            except:
+                                self.driver.execute_script("arguments[0].click();", attach_btn)
+                            time.sleep(2.0)
+                            
+                        # 3단계: 사진 팝업 레이어가 닫힐 때까지 대기
+                        try:
+                            WebDriverWait(self.driver, 15).until_not(
+                                EC.presence_of_element_located((By.CSS_SELECTOR, "section.lyWrap.layer_wrap, div.layer_wrap:not(.postWriteModal)"))
+                            )
+                            print("✅ 사진 팝업 레이어 닫힘 확인")
+                        except:
+                            pass
+                        
+                        # 4단계: 본문 사진 렌더링 확인 (최대 30초)
                         print("🔍 에디터 본문 내 사진 렌더링 확인 중...")
                         verify_start = time.time()
                         photos_detected = False
