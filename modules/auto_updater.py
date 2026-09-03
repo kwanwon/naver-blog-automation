@@ -685,7 +685,7 @@ del "%~f0"
             self.logger.info(f"업데이트 배치 파일 생성됨: {bat_path}")
             
             # 4. 배치 파일 실행 및 앱 종료
-            subprocess.Popen(bat_path, shell=True)
+            subprocess.Popen(f'"{bat_path}"', shell=True)
             self.logger.info("배치 파일 실행 됨. 앱을 종료합니다.")
             
             # 즉시 종료 (메인 스레드에서 처리되도록 유도하거나 여기서 강제 종료)
