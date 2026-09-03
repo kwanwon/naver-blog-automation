@@ -171,6 +171,7 @@ class NaverBandAutomation:
             "button.uButton.-confirm._btnSubmitPost:not([disabled])",
             "button.uButton.-sizeM._btnSubmitPost:not([disabled])",
             "button.uButton.-sizeM._btnSubmitPost.-confirm:not([disabled])",
+            "button._btnSubmitPost.-confirm",
             "button._btnPost:not([disabled])",
             "//button[contains(@class, '_btnSubmitPost') and not(@disabled)]"
         ]
@@ -180,10 +181,15 @@ class NaverBandAutomation:
         while time.time() - start_time < timeout:
             for selector in submit_selectors:
                 try:
-                    btn = self.driver.find_element(By.CSS_SELECTOR, selector)
+                    if selector.startswith("//"):
+                        btn = self.driver.find_element(By.XPATH, selector)
+                    else:
+                        btn = self.driver.find_element(By.CSS_SELECTOR, selector)
                     if btn and btn.is_displayed() and btn.is_enabled():
-                        print("✅ 게시 버튼 활성화됨")
-                        return btn
+                        cls = btn.get_attribute("class") or ""
+                        if "disabled" not in cls:
+                            print("✅ 게시 버튼 활성화됨")
+                            return btn
                 except:
                     continue
             
@@ -510,20 +516,41 @@ class NaverBandAutomation:
                         except:
                             pass
                         
-                        # 4단계: 본문 사진 렌더링 확인 (최대 30초)
+                        # 4단계: 본문 사진 렌더링 확인 (최대 25초)
                         print("🔍 에디터 본문 내 사진 렌더링 확인 중...")
                         verify_start = time.time()
                         photos_detected = False
-                        while time.time() - verify_start < 30:
+                        photo_selectors = [
+                            "img._thumbnail", 
+                            ".cke_widget_element img", 
+                            "div.bandWidgetContent img", 
+                            "[contenteditable='true'] img", 
+                            ".postWriteEditor img", 
+                            "._postWriteEditor img",
+                            ".photoList", 
+                            ".postPhoto", 
+                            "img._attachedImage"
+                        ]
+                        photo_query = ", ".join(photo_selectors)
+                        while time.time() - verify_start < 25:
                             try:
-                                rendered_imgs = self.driver.find_elements(By.CSS_SELECTOR, ".photoList, .postPhoto, img._attachedImage, div[data-viewname*='photo'], div._photoWrap, div.mediaWrap img")
+                                rendered_imgs = self.driver.find_elements(By.CSS_SELECTOR, photo_query)
                                 if rendered_imgs:
                                     photos_detected = True
                                     print(f"✅ 에디터 본문 내 사진 첨부 확인 완료 ({len(rendered_imgs)}개 요소 감지)")
                                     break
                             except Exception:
                                 pass
-                            time.sleep(1.5)
+                            # 추가 안전장치: 게시 버튼이 이미 파란색 활성화(-confirm) 상태라면 첨부 완료 판정
+                            try:
+                                active_submit = self.driver.find_elements(By.CSS_SELECTOR, "button._btnSubmitPost.-confirm, button.uButton.-confirm._btnSubmitPost")
+                                if active_submit and active_submit[0].is_displayed() and active_submit[0].is_enabled():
+                                    photos_detected = True
+                                    print("✅ 게시 버튼 활성화 감지로 사진 첨부 완료 판정")
+                                    break
+                            except Exception:
+                                pass
+                            time.sleep(1.0)
                             
                         if not photos_detected:
                             print("❌ 에디터 본문에 사진이 들어가지 않았습니다. 빈 글 발행을 방지하기 위해 중단합니다.")
@@ -650,17 +677,35 @@ class NaverBandAutomation:
                         # 4단계: 에디터 본문 내 동영상 렌더링 검증 (최대 25초)
                         print("🔍 에디터 본문 내 동영상 첨부 확인 중...")
                         videos_detected = False
+                        video_selectors = [
+                            "div.mediaContentItem", 
+                            "div[class*='video']", 
+                            "div._videoPlayer", 
+                            "div.mediaWrap", 
+                            "div.bandWidgetContent", 
+                            ".cke_widget_element"
+                        ]
+                        video_query = ", ".join(video_selectors)
                         verify_start = time.time()
                         while time.time() - verify_start < 25:
                             try:
-                                rendered_vids = self.driver.find_elements(By.CSS_SELECTOR, "div.mediaContentItem, div[class*='video'], div._videoPlayer, div.mediaWrap")
+                                rendered_vids = self.driver.find_elements(By.CSS_SELECTOR, video_query)
                                 if rendered_vids:
                                     videos_detected = True
                                     print(f"✅ 에디터 본문 내 동영상 정상 첨부 확인 ({len(rendered_vids)}개 요소 감지)")
                                     break
                             except Exception:
                                 pass
-                            time.sleep(1.5)
+                            # 추가 안전장치: 게시 버튼이 이미 파란색 활성화(-confirm) 상태라면 첨부 완료 판정
+                            try:
+                                active_submit = self.driver.find_elements(By.CSS_SELECTOR, "button._btnSubmitPost.-confirm, button.uButton.-confirm._btnSubmitPost")
+                                if active_submit and active_submit[0].is_displayed() and active_submit[0].is_enabled():
+                                    videos_detected = True
+                                    print("✅ 게시 버튼 활성화 감지로 동영상 첨부 완료 판정")
+                                    break
+                            except Exception:
+                                pass
+                            time.sleep(1.0)
                             
                         if not videos_detected:
                             print("❌ 에디터 본문에 동영상이 첨부되지 않았습니다. 빈 글 발행을 방지하기 위해 중단합니다.")
