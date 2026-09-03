@@ -13086,39 +13086,85 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     )
                     if result.returncode == 0 and result.stdout.strip():
                         file_path = result.stdout.strip()
-                else:  # Windows/Linux용 네이티브 tkinter 대화상자 호출
-                    from tkinter import Tk, filedialog
-                    root = Tk()
-                    root.withdraw()
-                    if is_excel:
+                else:  # Windows용: 서브 스레드에서도 100% 안전하고 맨 앞으로 뜨는 PowerShell 다이얼로그
+                    import subprocess
+                    if is_folder:
+                        ps_cmd = '''
+                        Add-Type -AssemblyName System.Windows.Forms
+                        $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
+                        $dlg.Description = "📂 엑셀 템플릿 폴더를 선택하세요"
+                        $form = New-Object System.Windows.Forms.Form
+                        $form.TopMost = $true
+                        if ($dlg.ShowDialog($form) -eq [System.Windows.Forms.DialogResult]::OK) {
+                            Write-Output $dlg.SelectedPath
+                        }
+                        '''
+                    elif is_excel:
                         if is_save:  # 💡 [저장 경로 선택 모드] 엑셀을 저장할 위치와 파일명 커스텀 선택
-                            file_path = filedialog.asksaveasfilename(
-                                title="수련계획표 엑셀 파일 저장 위치 및 파일명 입력",
-                                defaultextension=".xlsx",
-                                filetypes=[("Excel Files", "*.xlsx")],
-                                initialfile=default_name
-                            )
+                            ps_filter = "Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*"
+                            ps_cmd = f'''
+                            Add-Type -AssemblyName System.Windows.Forms
+                            $dlg = New-Object System.Windows.Forms.SaveFileDialog
+                            $dlg.Title = "{default_name}"
+                            $dlg.Filter = "{ps_filter}"
+                            $dlg.FileName = "{default_name}"
+                            $form = New-Object System.Windows.Forms.Form
+                            $form.TopMost = $true
+                            if ($dlg.ShowDialog($form) -eq [System.Windows.Forms.DialogResult]::OK) {{
+                                Write-Output $dlg.FileName
+                            }}
+                            '''
                         else:  # [파일 선택 모드] 엑셀 템플릿 위치 선택
-                            file_path = filedialog.askopenfilename(
-                                title="수련계획표 기존 엑셀 템플릿 파일을 선택하세요",
-                                filetypes=[("Excel Files", "*.xlsx;*.xls")]
-                            )
+                            ps_filter = "Excel Files (*.xlsx;*.xls)|*.xlsx;*.xls|All Files (*.*)|*.*"
+                            ps_cmd = f'''
+                            Add-Type -AssemblyName System.Windows.Forms
+                            $dlg = New-Object System.Windows.Forms.OpenFileDialog
+                            $dlg.Title = "수련계획표 기존 엑셀 템플릿 파일을 선택하세요"
+                            $dlg.Filter = "{ps_filter}"
+                            $form = New-Object System.Windows.Forms.Form
+                            $form.TopMost = $true
+                            if ($dlg.ShowDialog($form) -eq [System.Windows.Forms.DialogResult]::OK) {{
+                                Write-Output $dlg.FileName
+                            }}
+                            '''
                     else:
-                        file_path = filedialog.askopenfilename(
-                            title="연간계획표(이미지/PDF) 또는 텍스트 파일을 선택하세요",
-                            filetypes=[("Image/PDF Files", "*.png;*.jpg;*.jpeg;*.pdf"), ("All Supported Files", "*.png;*.jpg;*.jpeg;*.pdf;*.txt;*.xlsx;*.hwp")]
-                        )
-                    root.destroy()
+                        if allowed_exts:
+                            pattern = ";".join([f"*.{ext}" for ext in allowed_exts])
+                            ps_filter = f"Supported Files ({pattern})|{pattern}|All Files (*.*)|*.*"
+                        else:
+                            ps_filter = "All Files (*.*)|*.*"
+                        ps_cmd = f'''
+                        Add-Type -AssemblyName System.Windows.Forms
+                        $dlg = New-Object System.Windows.Forms.OpenFileDialog
+                        $dlg.Title = "파일을 선택하세요"
+                        $dlg.Filter = "{ps_filter}"
+                        $form = New-Object System.Windows.Forms.Form
+                        $form.TopMost = $true
+                        if ($dlg.ShowDialog($form) -eq [System.Windows.Forms.DialogResult]::OK) {{
+                            Write-Output $dlg.FileName
+                        }}
+                        '''
+                    
+                    run_kwargs = {"capture_output": True, "text": True}
+                    if sys.platform == 'win32':
+                        run_kwargs["creationflags"] = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
+                    proc = subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], **run_kwargs)
+                    file_path = proc.stdout.strip() if proc.returncode == 0 and proc.stdout.strip() else None
                 
                 if file_path:
                     normalized_path = unicodedata.normalize('NFC', file_path)
                     
                     # 💡 저장 경로 선택 모드인 경우 확장자 안전 보정
                     if is_excel:
-                        if not normalized_path.lower().endswith('.xlsx'):
+                        if not normalized_path.lower().endswith('.xlsx') and not is_folder:
                             normalized_path += '.xlsx'
                         print(f"✅ 네이티브 엑셀 경로 선택 성공 (저장={is_save}): {normalized_path}")
                         print(f"✅ 네이티브 파일 선택 성공: {normalized_path}")
+                    
+                    if is_folder:
+                        self.excel_folder_tf.value = normalized_path
+                        auto_save_profile_internal()
+                        print(f"✅ 네이티브 폴더 선택 성공: {normalized_path}")
                     
                     try:
                         self.page.update()
@@ -13161,7 +13207,13 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             
         def on_excel_picker_click(e):
             print("🚀 엑셀 템플릿 선택 버튼 클릭됨 (네이티브 스레드 기동)")
-            threading.Thread(target=lambda: run_native_file_picker(is_folder=True), daemon=True).start()
+            def handle_folder(p):
+                if p:
+                    self.excel_folder_tf.value = p
+                    auto_save_profile_internal()
+                    try: self.page.update()
+                    except: pass
+            threading.Thread(target=lambda: run_native_file_picker(is_folder=True, on_select=handle_folder), daemon=True).start()
 
         # [수련계획표 자동 생성 옵션]
         self.excel_folder_tf = ft.TextField(label="📂 엑셀 템플릿 폴더 경로", value=gym_profile.get("excel_folder", ""), expand=True)
