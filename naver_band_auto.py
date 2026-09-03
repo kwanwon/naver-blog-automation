@@ -439,54 +439,129 @@ class NaverBandAutomation:
                 
                 # 3-1. 사진 첨부 (사진이 있는 경우)
                 if photos:
-                    print(f"📷 사진 업로드 중 ({len(photos)}개)...")
-                    try:
-                        # 숨겨진 file input 요소 찾기
-                        photo_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postPhotoInput_'], input[type='file'][accept*='image']")
-                        
-                        if photo_input:
-                            self.driver.execute_script("arguments[0].style.display = 'block'; arguments[0].style.opacity = '1';", photo_input)
-                            time.sleep(0.5)
-                            
-                            file_paths = "\n".join(photos)
-                            photo_input.send_keys(file_paths)
-                            print(f"✅ {len(photos)}개 사진 파일 전송 완료")
-                            
-                            # 팝업 내 사진 업로드 및 [첨부하기] 버튼 활성화 대기
-                            photo_wait = max(30, len(photos) * 3)
-                            print(f"⏳ 사진 팝업 업로드 및 [첨부하기] 버튼 활성화 대기 (최대 {photo_wait}초)...")
-                            attach_btn = self._wait_for_attach_button_ready(timeout=photo_wait)
-                            
-                            if attach_btn:
-                                print("✅ 사진 팝업 [첨부하기] 버튼 활성화 확인 -> 클릭 진행!")
+                    if sys.platform == 'win32':
+                        # 🪟 [Windows 전용] 대용량/고화질 사진 업로드 안정성 강화 (타임아웃 확대 및 검증)
+                        print(f"📷 [Windows] 사진 업로드 중 ({len(photos)}개)...")
+                        try:
+                            # 숨겨진 file input 요소 찾기
+                            photo_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postPhotoInput_'], input[type='file'][accept*='image']")
+
+                            if photo_input:
+                                self.driver.execute_script("arguments[0].style.display = 'block'; arguments[0].style.opacity = '1';", photo_input)
+                                time.sleep(0.5)
+
+                                file_paths = "\n".join(photos)
+                                photo_input.send_keys(file_paths)
+                                print(f"✅ [Windows] {len(photos)}개 사진 파일 전송 완료")
+
+                                # change 이벤트 트리거
                                 try:
-                                    attach_btn.click()
-                                except:
-                                    self.driver.execute_script("arguments[0].click();", attach_btn)
-                                time.sleep(2.0)
-                                
-                                # 팝업 레이어가 닫힐 때까지 대기
-                                try:
-                                    WebDriverWait(self.driver, 15).until_not(
-                                        EC.presence_of_element_located((By.CSS_SELECTOR, "section.lyWrap.layer_wrap, div.layer_wrap, div.modalWrap"))
-                                    )
-                                    print("✅ 사진 팝업 레이어 닫힘 확인")
-                                except:
+                                    self.driver.execute_script("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", photo_input)
+                                except Exception:
                                     pass
-                            else:
-                                print("⚠️ 사진 첨부하기 버튼 활성화 지연, 팝업 강제 클릭 시도")
-                                self._click_attach_button()
-                                time.sleep(2.0)
-                        
-                        # 사진 본문 렌더링 및 완료 대기
-                        upload_timeout = min(180, max(60, len(photos) * 3))
-                        print(f"⏳ 사진 본문 렌더링 대기 (타임아웃: {upload_timeout}초)...")
-                        self._wait_for_upload_complete(timeout=upload_timeout)
-                        time.sleep(2.0)
-                        print("✅ 사진 업로드 및 본문 렌더링 완료")
-                        
-                    except Exception as photo_err:
-                        print(f"⚠️ 사진 업로드 중 오류: {photo_err}")
+
+                                # 고화질 다량 사진 업로드를 위해 충분한 타임아웃 부여 (장당 7초, 최소 120초, 최대 360초)
+                                photo_wait = max(120, min(360, len(photos) * 7))
+                                print(f"⏳ [Windows] 사진 팝업 업로드 및 [첨부하기] 버튼 활성화 대기 (최대 {photo_wait}초)...")
+                                attach_btn = self._wait_for_attach_button_ready(timeout=photo_wait)
+
+                                if attach_btn:
+                                    print("✅ [Windows] 사진 팝업 [첨부하기] 버튼 활성화 확인 -> 클릭 진행!")
+                                    try:
+                                        attach_btn.click()
+                                    except Exception:
+                                        self.driver.execute_script("arguments[0].click();", attach_btn)
+                                    time.sleep(3.0)
+
+                                    # 팝업 레이어가 닫힐 때까지 대기
+                                    try:
+                                        WebDriverWait(self.driver, 15).until_not(
+                                            EC.presence_of_element_located((By.CSS_SELECTOR, "section.lyWrap.layer_wrap, div.layer_wrap, div.modalWrap"))
+                                        )
+                                        print("✅ [Windows] 사진 팝업 레이어 닫힘 확인")
+                                    except:
+                                        pass
+                                else:
+                                    print("⚠️ [Windows] 사진 첨부하기 버튼 활성화 타임아웃 - 팝업 강제 클릭 시도")
+                                    self._click_attach_button()
+                                    time.sleep(3.0)
+
+                            # 사진 본문 렌더링 완료 대기
+                            upload_timeout = max(120, min(360, len(photos) * 5))
+                            print(f"⏳ [Windows] 사진 본문 렌더링 대기 (타임아웃: {upload_timeout}초)...")
+                            self._wait_for_upload_complete(timeout=upload_timeout)
+                            time.sleep(2.0)
+
+                            # 에디터 본문 내 사진 렌더링 검증 (최대 30초 대기)
+                            print("🔍 [Windows] 에디터 본문 내 사진 렌더링 확인 중...")
+                            verify_start = time.time()
+                            photos_detected = False
+                            while time.time() - verify_start < 30:
+                                try:
+                                    rendered_imgs = self.driver.find_elements(By.CSS_SELECTOR, ".photoList, .postPhoto, img._attachedImage, div[data-viewname*='photo'], div._photoWrap, div.mediaWrap img")
+                                    if rendered_imgs:
+                                        photos_detected = True
+                                        print(f"✅ [Windows] 에디터 본문 내 사진 첨부 확인 완료 ({len(rendered_imgs)}개 요소 감지)")
+                                        break
+                                except Exception:
+                                    pass
+                                time.sleep(1.5)
+                            if not photos_detected:
+                                print("⚠️ [Windows] 에디터 내 사진 렌더링 감지 지연 (계속 진행)")
+
+                            print("✅ [Windows] 사진 업로드 및 본문 렌더링 완료")
+
+                        except Exception as photo_err:
+                            print(f"⚠️ [Windows] 사진 업로드 중 오류: {photo_err}")
+                    else:
+                        print(f"📷 사진 업로드 중 ({len(photos)}개)...")
+                        try:
+                            # 숨겨진 file input 요소 찾기
+                            photo_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postPhotoInput_'], input[type='file'][accept*='image']")
+                            
+                            if photo_input:
+                                self.driver.execute_script("arguments[0].style.display = 'block'; arguments[0].style.opacity = '1';", photo_input)
+                                time.sleep(0.5)
+                                
+                                file_paths = "\n".join(photos)
+                                photo_input.send_keys(file_paths)
+                                print(f"✅ {len(photos)}개 사진 파일 전송 완료")
+                                
+                                # 팝업 내 사진 업로드 및 [첨부하기] 버튼 활성화 대기
+                                photo_wait = max(30, len(photos) * 3)
+                                print(f"⏳ 사진 팝업 업로드 및 [첨부하기] 버튼 활성화 대기 (최대 {photo_wait}초)...")
+                                attach_btn = self._wait_for_attach_button_ready(timeout=photo_wait)
+                                
+                                if attach_btn:
+                                    print("✅ 사진 팝업 [첨부하기] 버튼 활성화 확인 -> 클릭 진행!")
+                                    try:
+                                        attach_btn.click()
+                                    except:
+                                        self.driver.execute_script("arguments[0].click();", attach_btn)
+                                    time.sleep(2.0)
+                                    
+                                    # 팝업 레이어가 닫힐 때까지 대기
+                                    try:
+                                        WebDriverWait(self.driver, 15).until_not(
+                                            EC.presence_of_element_located((By.CSS_SELECTOR, "section.lyWrap.layer_wrap, div.layer_wrap, div.modalWrap"))
+                                        )
+                                        print("✅ 사진 팝업 레이어 닫힘 확인")
+                                    except:
+                                        pass
+                                else:
+                                    print("⚠️ 사진 첨부하기 버튼 활성화 지연, 팝업 강제 클릭 시도")
+                                    self._click_attach_button()
+                                    time.sleep(2.0)
+                            
+                            # 사진 본문 렌더링 및 완료 대기
+                            upload_timeout = min(180, max(60, len(photos) * 3))
+                            print(f"⏳ 사진 본문 렌더링 대기 (타임아웃: {upload_timeout}초)...")
+                            self._wait_for_upload_complete(timeout=upload_timeout)
+                            time.sleep(2.0)
+                            print("✅ 사진 업로드 및 본문 렌더링 완료")
+                            
+                        except Exception as photo_err:
+                            print(f"⚠️ 사진 업로드 중 오류: {photo_err}")
                 
                 # 3-2. 동영상 첨부 (동영상이 있는 경우)
                 remaining_videos = []

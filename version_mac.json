@@ -1,1 +1,1 @@
-{"version": "1.2.216", "date": "2026-09-03", "changes": ["Windows 수련계획표 파일/폴더 선택기 서브 스레드 충돌 및 창 숨김 버그 수정(PowerShell TopMost 대화상자 적용)"]}
+{"version": "1.2.217", "date": "2026-09-03", "changes": ["Windows 네이버 밴드 대용량/고화질 사진 업로드 타임아웃 보장, change 이벤트 및 첨부 렌더링 검증 방어 로직 적용"]}
