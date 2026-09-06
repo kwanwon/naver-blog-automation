@@ -13740,6 +13740,21 @@ if __name__ == "__main__":
     import multiprocessing
     multiprocessing.freeze_support()
     
+    # [Windows 전용] 중복 실행 방지 (Single Instance Mutex)
+    if sys.platform == 'win32':
+        import ctypes
+        _global_single_instance_mutex_name = "BlogAutomation_SingleInstance_Mutex_Global"
+        _global_single_instance_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, _global_single_instance_mutex_name)
+        _last_error = ctypes.windll.kernel32.GetLastError()
+        ERROR_ALREADY_EXISTS = 183
+
+        if _last_error == ERROR_ALREADY_EXISTS:
+            try:
+                print("⚠️ 이미 프로그램이 실행 중입니다. 중복 실행을 차단하고 종료합니다.")
+            except Exception:
+                pass
+            sys.exit(0)
+    
     # 프로그램 시작 전 업데이트 확인 (안전 모드: 확인만 하고 자동설치 안 함)
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
