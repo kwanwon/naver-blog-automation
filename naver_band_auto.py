@@ -445,7 +445,10 @@ class NaverBandAutomation:
             except Exception as cursor_err:
                 print(f"⚠️ 커서 이동 중 오류: {cursor_err}")
             
-            # 3. 이미지 및 동영상 첨부 (동영상 10개 제한 처리)
+            # 3. 이미지 및 동영상 첨부 (기본 리스트 초기화)
+            photos = []
+            videos = []
+            
             if image_paths and len(image_paths) > 0:
                 print(f"📷 미디어 파일 {len(image_paths)}개 첨부 시작...")
                 

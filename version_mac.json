@@ -1,1 +1,1 @@
-{"version": "1.2.224", "date": "2026-09-06", "changes": ["Windows 프로그램 중복 실행 방지(Single-Instance Mutex) 적용으로 BlogApp.exe 다중 프로세스 충돌 차단"]}
+{"version": "1.2.225", "date": "2026-10-02", "changes": ["네이버 밴드 이미지 없는 텍스트 포스팅/예약 시 UnboundLocalError(videos 변수 미정의) 버그 수정"]}
