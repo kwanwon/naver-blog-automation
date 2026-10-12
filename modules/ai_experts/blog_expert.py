@@ -483,12 +483,15 @@ class BlogExpert(BaseAIExpert):
         if not selected_model_ids:
             selected_model_ids = ai_settings.get('selected_models', [])
             
-        # 만약 사용자가 아무것도 선택하지 않았다면, 오리지널 기본 모델 리스트로 폴백
+        # 만약 사용자가 아무것도 선택하지 않았다면, 오리지널 기본 모델 리스트로 폴백 (Google 3.1 우선 -> GPT 순)
         if not selected_model_ids:
-            selected_model_ids = ["gemini-2.5-pro", "gemini-2.5-flash", "gpt-4o", "gpt-4o-mini"]
+            selected_model_ids = ["gemini-3.1-flash-lite", "gpt-4o-mini", "gpt-4o"]
             
         models_to_use = []
         for mid in selected_model_ids:
+            # 서비스 종료된 gemini-2.0-flash 계열 모델 자동 치환
+            if mid in ["gemini-2.0-flash", "gemini-2.0-flash-lite"]:
+                mid = "gemini-3.1-flash-lite"
             # Config.AI_MODELS에서 provider 정보 동적 탐색 (기본값 openai)
             provider = Config.AI_MODELS.get(mid, {}).get("provider", "openai")
             models_to_use.append({"provider": provider, "model": mid})

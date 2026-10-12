@@ -65,9 +65,19 @@ class Config:
     
     # Gemini API 키 (환경 변수에서 가져옴)
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.1-flash-lite')
     
-    # AI 모델 정보
+    # AI 모델 정보 (Google 3.1 버전을 최우선 1순위로 배치)
     AI_MODELS = {
+        "gemini-3.1-flash-lite": {
+            "provider": "gemini",
+            "name": "Gemini 3.1 Flash-Lite",
+            "context": "1M",
+            "free": True,
+            "input_cost_per_1k_krw": 0.0,
+            "output_cost_per_1k_krw": 0.0,
+            "daily_limit": 1500
+        },
         "gpt-4o-mini": {
             "provider": "openai",
             "name": "GPT-4o Mini",

@@ -7262,6 +7262,7 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                     env_content = f"OPENAI_API_KEY={api_key_field.value}\n"
                     if gemini_api_key_field.value:
                         env_content += f"GEMINI_API_KEY={gemini_api_key_field.value}\n"
+                    env_content += "GEMINI_MODEL=gemini-3.1-flash-lite\n"
                     with open(os.path.join(self.user_data_dir, '.env'), 'w', encoding='utf-8') as f:
                         f.write(env_content)
                 

@@ -1,1 +1,1 @@
-{"version": "1.2.225", "date": "2026-10-02", "changes": ["네이버 밴드 이미지 없는 텍스트 포스팅/예약 시 UnboundLocalError(videos 변수 미정의) 버그 수정"]}
+{"version": "1.2.226", "date": "2026-10-12", "changes": ["Google Gemini API 모델 gemini-3.1-flash-lite 버전 교체 및 우선순위/폴백 최적화"]}

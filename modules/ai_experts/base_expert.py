@@ -194,6 +194,9 @@ class BaseAIExpert:
         original_models = self.settings.get('selected_models', [])
         self.selected_models = []
         for m in original_models:
+            # 서비스 종료된 gemini-2.0-flash 계열 모델 자동 치환
+            if m in ["gemini-2.0-flash", "gemini-2.0-flash-lite"]:
+                m = "gemini-3.1-flash-lite"
             if m in Config.AI_MODELS:
                 self.selected_models.append(m)
             else:
@@ -206,7 +209,7 @@ class BaseAIExpert:
                 self.selected_models.append(m)
                 
         if not self.selected_models:
-            self.selected_models = [Config.GPT_MODEL]
+            self.selected_models = [Config.GEMINI_MODEL, Config.GPT_MODEL]
             
         # 3. 인덱스 및 키 동기화
         if self.current_model_index >= len(self.selected_models):
@@ -668,29 +671,56 @@ class BaseAIExpert:
         target_api_key = api_key if api_key else self.gemini_api_key
         if not target_api_key:
             raise ValueError("Gemini API 키가 설정되지 않았습니다.")
-        try:
-            import google.generativeai as genai
-        except ImportError as e:
-            raise ImportError("google-generativeai 패키지가 필요합니다. pip install google-generativeai") from e
+            
+        # 🟢 [모델 버전 긴급 패치] 서비스 종료된 gemini-2.0-flash 계열을 gemini-3.1-flash-lite로 강제 치환
+        if model_name in ["gemini-2.0-flash", "gemini-2.0-flash-lite", "models/gemini-2.0-flash", "models/gemini-2.0-flash-lite"]:
+            model_name = "gemini-3.1-flash-lite"
         
-        genai.configure(api_key=target_api_key)
         current_date_str = datetime.now().strftime("%Y년 %m월 %d일")
         date_instruction = f"\n\n[System: 시점 고정]\n오늘은 {current_date_str}입니다. 글의 시점은 반드시 오늘({current_date_str})을 기준으로 작성되어야 합니다."
-        if system_message:
-            system_message += date_instruction
-        else:
-            system_message = date_instruction
-        model = genai.GenerativeModel(model_name)
-        prompt_text = f"{system_message}\n\n{user_prompt}"
-        response = model.generate_content(
-            prompt_text,
-            generation_config={"temperature": 0.7, "max_output_tokens": 8192, "top_p": 0.9},
-            request_options={"timeout": 60}
-        )
-        content = self._extract_gemini_text(response)
-        if not content:
-            raise ValueError("Gemini 응답에서 본문을 추출할 수 없습니다.")
-        return content.strip()
+        full_system = f"{system_message}{date_instruction}" if system_message else date_instruction
+        prompt_text = f"{full_system}\n\n{user_prompt}"
+
+        # 1. Google Generative AI 네이티브 SDK 호출 시도
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=target_api_key)
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(
+                prompt_text,
+                generation_config={"temperature": 0.7, "max_output_tokens": 8192, "top_p": 0.9},
+                request_options={"timeout": 60}
+            )
+            content = self._extract_gemini_text(response)
+            if content and content.strip():
+                return content.strip()
+        except Exception as native_err:
+            logger.warning(f"⚠️ [BaseAIExpert] Gemini 네이티브 SDK 호출 실패, OpenAI 호환 엔드포인트 폴백 시도: {native_err}")
+
+        # 2. OpenAI SDK 호환 Google AI Studio 엔드포인트 폴백 호출 (https://generativelanguage.googleapis.com/v1beta/openai/)
+        try:
+            if OpenAI:
+                client = OpenAI(
+                    api_key=target_api_key,
+                    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                    timeout=60.0
+                )
+                resp = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": full_system},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=4000
+                )
+                if resp.choices and resp.choices[0].message and resp.choices[0].message.content:
+                    return resp.choices[0].message.content.strip()
+        except Exception as openai_compat_err:
+            logger.error(f"❌ [BaseAIExpert] Gemini OpenAI 호환 엔드포인트 호출도 실패: {openai_compat_err}")
+            raise openai_compat_err
+
+        raise ValueError(f"Gemini({model_name}) 응답에서 본문을 추출할 수 없습니다.")
 
     def _extract_gemini_text(self, response: Any) -> str:
         if hasattr(response, "text") and response.text:
