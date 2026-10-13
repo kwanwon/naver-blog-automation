@@ -325,7 +325,7 @@ class CafeExpert(BaseAIExpert):
                     body_content = self._apply_stability_filter(body_content, 'cafe')
                     body_content = self._cafe_readability_filter(body_content) # 🟢 밴드/카페 전용 가독성 필터 사용
                     self._increment_usage(model_name)
-                    self.current_model_index = (model_idx + 1) % len(models_to_use)
+                    self.current_model_index = 0
                     
                     return {
                         "title": generated_title,

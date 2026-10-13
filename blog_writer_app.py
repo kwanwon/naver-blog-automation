@@ -7330,8 +7330,19 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                         idle_instructions.value = settings.get('idle_instructions', '')
                         promotional_ratio.value = str(settings.get('promotional_ratio', '3'))
                         informational_ratio.value = settings.get('informational_ratio', '7')
-                        # 모델 선택 복원
-                        selected_models = settings.get('selected_models', [])
+                        # 모델 선택 복원 (Windows / Mac 구버전 제미나이 모델 자동 마이그레이션)
+                        raw_selected = settings.get('selected_models', [])
+                        legacy_gemini = {
+                            "gemini-2.0-flash", "gemini-2.0-flash-lite",
+                            "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"
+                        }
+                        selected_models = []
+                        for m in raw_selected:
+                            m_mapped = "gemini-3.1-flash-lite" if m in legacy_gemini else m
+                            if m_mapped not in selected_models:
+                                selected_models.append(m_mapped)
+                        if not any("gemini" in m.lower() for m in selected_models):
+                            selected_models.insert(0, "gemini-3.1-flash-lite")
                         for mid, cb in model_checkboxes.items():
                             cb.value = mid in selected_models
                         gemini_api_key_field.value = settings.get('gemini_api_key', '')

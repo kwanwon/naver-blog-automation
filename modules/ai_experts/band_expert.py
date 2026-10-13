@@ -500,7 +500,7 @@ class BandExpert(BaseAIExpert):
                         body = self._band_readability_filter(body)
                     
                     self._increment_usage(model_name)
-                    self.current_model_index = (model_idx + 1) % len(models_to_use)
+                    self.current_model_index = 0
 
                     return {
                         "title": f"[{platform}] {topic}",

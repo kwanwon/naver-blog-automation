@@ -487,19 +487,33 @@ class BlogExpert(BaseAIExpert):
         if not selected_model_ids:
             selected_model_ids = ["gemini-3.1-flash-lite", "gpt-4o-mini", "gpt-4o"]
             
-        models_to_use = []
+        legacy_gemini_set = {
+            "gemini-2.0-flash", "gemini-2.0-flash-lite",
+            "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro",
+            "models/gemini-2.0-flash", "models/gemini-2.0-flash-lite"
+        }
+        normalized_ids = []
         for mid in selected_model_ids:
-            # 서비스 종료된 gemini-2.0-flash 계열 모델 자동 치환
-            if mid in ["gemini-2.0-flash", "gemini-2.0-flash-lite"]:
+            if mid in legacy_gemini_set:
                 mid = "gemini-3.1-flash-lite"
-            # Config.AI_MODELS에서 provider 정보 동적 탐색 (기본값 openai)
-            provider = Config.AI_MODELS.get(mid, {}).get("provider", "openai")
+            if mid not in normalized_ids:
+                normalized_ids.append(mid)
+
+        # Google 3.1 버전을 항상 최우선(1순위)으로 배치하고, 문제 시 GPT로 폴백
+        gemini_ids = [m for m in normalized_ids if "gemini" in m.lower()]
+        openai_ids = [m for m in normalized_ids if "gemini" not in m.lower()]
+        if not gemini_ids:
+            gemini_ids = ["gemini-3.1-flash-lite"]
+        if not openai_ids:
+            openai_ids = ["gpt-4o-mini"]
+        ordered_model_ids = gemini_ids + openai_ids
+
+        models_to_use = []
+        for mid in ordered_model_ids:
+            provider = "gemini" if "gemini" in mid.lower() else Config.AI_MODELS.get(mid, {}).get("provider", "openai")
             models_to_use.append({"provider": provider, "model": mid})
 
-        start_model_index = self.current_model_index
-        for i in range(len(models_to_use)):
-            model_idx = (start_model_index + i) % len(models_to_use)
-            model_cfg = models_to_use[model_idx]
+        for model_idx, model_cfg in enumerate(models_to_use):
             provider = model_cfg["provider"]
             model_name = model_cfg["model"]
 
@@ -514,7 +528,7 @@ class BlogExpert(BaseAIExpert):
                 continue
 
             try:
-                logger.info(f"🔄 [BlogExpert] Generating content using backup loop model: {model_name} (Index: {model_idx})")
+                logger.info(f"🔄 [BlogExpert] Generating content using model: {model_name} (Priority: {model_idx + 1})")
                 
                 if provider == "openai":
                     resp = self.openai_client.chat.completions.create(
@@ -542,7 +556,7 @@ class BlogExpert(BaseAIExpert):
                     body = body.strip()
                     
                     self._increment_usage(model_name)
-                    self.current_model_index = (model_idx + 1) % len(models_to_use)
+                    self.current_model_index = 0
                     
                     cleaned_tags = [t.strip().replace('#', '') for t in tags if t.strip()]
                     

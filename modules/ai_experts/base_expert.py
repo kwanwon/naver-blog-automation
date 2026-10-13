@@ -190,13 +190,31 @@ class BaseAIExpert:
         # 1. 설정 동기화
         self.settings = self._load_settings()
         
-        # 2. 모델 목록 동기화
+        # 2. 모델 목록 동기화 및 자동 마이그레이션 (Windows / Mac 구버전 설정 완벽 대응)
         original_models = self.settings.get('selected_models', [])
-        self.selected_models = []
+        migrated_models = []
+        legacy_gemini_models = {
+            "gemini-2.0-flash", "gemini-2.0-flash-lite",
+            "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro",
+            "models/gemini-2.0-flash", "models/gemini-2.0-flash-lite"
+        }
         for m in original_models:
-            # 서비스 종료된 gemini-2.0-flash 계열 모델 자동 치환
-            if m in ["gemini-2.0-flash", "gemini-2.0-flash-lite"]:
+            if m in legacy_gemini_models:
                 m = "gemini-3.1-flash-lite"
+            if m not in migrated_models:
+                migrated_models.append(m)
+
+        # Google 3.1 모델을 최우선(1순위)으로 배치하고, 문제 시 GPT로 폴백되도록 정렬
+        gemini_list = [m for m in migrated_models if "gemini" in m.lower()]
+        openai_list = [m for m in migrated_models if "gemini" not in m.lower()]
+        if not gemini_list:
+            gemini_list = [Config.GEMINI_MODEL]
+        if not openai_list:
+            openai_list = ["gpt-4o-mini"]
+        ordered_models = gemini_list + openai_list
+
+        self.selected_models = []
+        for m in ordered_models:
             if m in Config.AI_MODELS:
                 self.selected_models.append(m)
             else:
@@ -209,12 +227,11 @@ class BaseAIExpert:
                 self.selected_models.append(m)
                 
         if not self.selected_models:
-            self.selected_models = [Config.GEMINI_MODEL, Config.GPT_MODEL]
+            self.selected_models = [Config.GEMINI_MODEL, "gpt-4o-mini"]
             
-        # 3. 인덱스 및 키 동기화
-        if self.current_model_index >= len(self.selected_models):
-            self.current_model_index = 0
-        self.model = self.selected_models[self.current_model_index]
+        # 3. 인덱스 및 키 동기화 (항상 0번 인덱스인 Google 3.1부터 최우선 시도)
+        self.current_model_index = 0
+        self.model = self.selected_models[0]
         
         self.gemini_api_key = self.settings.get('gemini_api_key', '') or Config.GEMINI_API_KEY
         self.custom_prompt = self._load_custom_prompt()
@@ -282,7 +299,37 @@ class BaseAIExpert:
                 with open(settings_path, 'r', encoding='utf-8') as f:
                     loaded_settings = json.load(f)
                     loaded_settings = deobfuscate_dict_fields(loaded_settings)
-                    default_settings.update(loaded_settings)
+                
+                # Windows / Mac 구버전 selected_models 자동 마이그레이션 및 1순위 정렬
+                raw_models = loaded_settings.get('selected_models', [])
+                if raw_models:
+                    legacy_set = {
+                        "gemini-2.0-flash", "gemini-2.0-flash-lite",
+                        "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro",
+                        "models/gemini-2.0-flash", "models/gemini-2.0-flash-lite"
+                    }
+                    cleaned = []
+                    for m in raw_models:
+                        m_new = "gemini-3.1-flash-lite" if m in legacy_set else m
+                        if m_new not in cleaned:
+                            cleaned.append(m_new)
+                    g_models = [m for m in cleaned if "gemini" in m.lower()]
+                    o_models = [m for m in cleaned if "gemini" not in m.lower()]
+                    if not g_models:
+                        g_models = ["gemini-3.1-flash-lite"]
+                    if not o_models:
+                        o_models = ["gpt-4o-mini"]
+                    final_models = g_models + o_models
+                    if final_models != raw_models:
+                        loaded_settings['selected_models'] = final_models
+                        try:
+                            with open(settings_path, 'w', encoding='utf-8') as wf:
+                                json.dump(loaded_settings, wf, ensure_ascii=False, indent=2)
+                            logger.info(f"✅ [Auto-Migration] ai_settings.txt 모델 설정을 최신화했습니다: {final_models}")
+                        except Exception:
+                            pass
+
+                default_settings.update(loaded_settings)
                 logger.info(f"GPT 설정 파일 로드 성공: {settings_path}")
         except Exception as e:
             logger.error(f"GPT 설정 파일 로드 중 오류 발생: {str(e)}")
@@ -672,8 +719,8 @@ class BaseAIExpert:
         if not target_api_key:
             raise ValueError("Gemini API 키가 설정되지 않았습니다.")
             
-        # 🟢 [모델 버전 긴급 패치] 서비스 종료된 gemini-2.0-flash 계열을 gemini-3.1-flash-lite로 강제 치환
-        if model_name in ["gemini-2.0-flash", "gemini-2.0-flash-lite", "models/gemini-2.0-flash", "models/gemini-2.0-flash-lite"]:
+        # 🟢 [모델 버전 긴급 패치] 구버전 및 종료된 gemini 모델을 gemini-3.1-flash-lite로 강제 치환
+        if model_name in ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro", "models/gemini-2.0-flash", "models/gemini-2.0-flash-lite"]:
             model_name = "gemini-3.1-flash-lite"
         
         current_date_str = datetime.now().strftime("%Y년 %m월 %d일")

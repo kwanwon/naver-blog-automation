@@ -59,7 +59,7 @@ class SocialExpert(BaseAIExpert):
                 if content:
                     content = self._apply_stability_filter(content, 'idle')
                     self._increment_usage(model_name)
-                    self.current_model_index = (model_idx + 1) % len(models_to_use)
+                    self.current_model_index = 0
                     
                     # 최종 검증: 만약 AI가 지침을 어기고 '안녕하세요', '반갑네요' 등으로 시작하면 강제 제거
                     for greeting in ['안녕하세요', '반갑습니다', '반갑네요', '반가워요']:
@@ -82,7 +82,7 @@ class SocialExpert(BaseAIExpert):
         self._reload_all_settings()
         
         models_to_use = selected_models if selected_models else self.selected_models
-        if not models_to_use: models_to_use = [Config.GPT_MODEL]
+        if not models_to_use: models_to_use = [Config.GEMINI_MODEL, "gpt-4o-mini"]
             
         for step in range(len(models_to_use)):
             if self.stop_event.is_set():
@@ -107,7 +107,7 @@ class SocialExpert(BaseAIExpert):
 
                 if content:
                     self._increment_usage(model_name)
-                    self.current_model_index = (model_idx + 1) % len(models_to_use)
+                    self.current_model_index = 0
                     return content
             except Exception as e:
                 logger.error(f"답글 생성 오류 ({model_name}): {e}")

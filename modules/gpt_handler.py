@@ -125,19 +125,34 @@ class GPTHandler:
         # 모델 선택 로드
         self.selected_models = self.settings.get('selected_models', [])
         
-        # 삭제된/미지원 모델 정리 (경고만 하고 유지)
+        # 삭제된/미지원 모델 정리 및 Google 3.1 최우선 정렬
         original_models = self.selected_models
-        self.selected_models = []
+        legacy_gemini = {
+            "gemini-2.0-flash", "gemini-2.0-flash-lite",
+            "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro",
+            "models/gemini-2.0-flash", "models/gemini-2.0-flash-lite"
+        }
+        migrated_models = []
         for m in original_models:
-            # 서비스 종료된 gemini-2.0-flash 계열 모델 자동 치환
-            if m in ["gemini-2.0-flash", "gemini-2.0-flash-lite"]:
+            if m in legacy_gemini:
                 m = "gemini-3.1-flash-lite"
+            if m not in migrated_models:
+                migrated_models.append(m)
+
+        gemini_list = [m for m in migrated_models if "gemini" in m.lower()]
+        openai_list = [m for m in migrated_models if "gemini" not in m.lower()]
+        if not gemini_list:
+            gemini_list = [Config.GEMINI_MODEL]
+        if not openai_list:
+            openai_list = ["gpt-4o-mini"]
+        ordered_models = gemini_list + openai_list
+
+        self.selected_models = []
+        for m in ordered_models:
             if m in Config.AI_MODELS:
                 self.selected_models.append(m)
             else:
-                # 설정에 없어도 이름 기반으로 공급자 추론하여 허용
                 inferred_provider = "gemini" if "gemini" in m.lower() else "openai"
-                # 런타임에 Config에 추가 (임시 지원)
                 Config.AI_MODELS[m] = {
                     "provider": inferred_provider,
                     "name": m,
@@ -146,9 +161,9 @@ class GPTHandler:
                 self.selected_models.append(m)
                 logger.warning(f"⚠️ 설정에 없는 모델 '{m}'이 감지되었습니다. 임시로 {inferred_provider} 공급자로 등록합니다.")
         if not self.selected_models:
-            self.selected_models = [Config.GEMINI_MODEL, Config.GPT_MODEL]
+            self.selected_models = [Config.GEMINI_MODEL, "gpt-4o-mini"]
         self.current_model_index = 0
-        self.model = self.selected_models[self.current_model_index]
+        self.model = self.selected_models[0]
         import inspect
         caller = None
         try:
@@ -803,9 +818,9 @@ class GPTHandler:
                             body = f"{body}\n\n" + " ".join(fixed_tags)
                             print(f"🔥 밴드 태그 적용: {' '.join(fixed_tags)}")
                 
-                # 성공 시 다음 호출은 그다음 모델부터 시작
+                # 성공 시에도 항상 1순위(Google 3.1)부터 시도하도록 0 유지
                 self._increment_usage(model_name)  # 🟢 사용량 증가
-                self.current_model_index = (model_idx + 1) % total
+                self.current_model_index = 0
                 self._dbg(
                     "gpt_handler.generate_blog_post",
                     "success",
@@ -1336,8 +1351,8 @@ class GPTHandler:
         if not target_api_key:
             raise ValueError("Gemini API 키가 설정되지 않았습니다.")
             
-        # 🟢 [모델 버전 긴급 패치] 서비스 종료된 gemini-2.0-flash 계열을 gemini-3.1-flash-lite로 강제 치환
-        if model_name in ["gemini-2.0-flash", "gemini-2.0-flash-lite", "models/gemini-2.0-flash", "models/gemini-2.0-flash-lite"]:
+        # 🟢 [모델 버전 긴급 패치] 구버전 및 종료된 gemini 모델을 gemini-3.1-flash-lite로 강제 치환
+        if model_name in ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro", "models/gemini-2.0-flash", "models/gemini-2.0-flash-lite"]:
             model_name = "gemini-3.1-flash-lite"
     
         # [System] 날짜 정보 자동 주입 (시점 오류 방지)
@@ -1698,9 +1713,9 @@ class GPTHandler:
                     continue
 
                 if content:
-                    # 성공 시 다음 모델 인덱스 업데이트
+                    # 성공 시에도 항상 1순위(Google 3.1)부터 시도하도록 0 유지
                     self._increment_usage(model_name)
-                    self.current_model_index = (model_idx + 1) % total
+                    self.current_model_index = 0
                     return content
                     
             except Exception as e:

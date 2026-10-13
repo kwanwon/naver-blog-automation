@@ -17,12 +17,15 @@ else:
     # 스크립트로 실행된 경우
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# .env 파일 경로
+# .env 파일 경로 (프로젝트/실행폴더 및 Windows/Mac 공통 데이터 폴더 모두 지원)
 env_path = os.path.join(base_dir, '.env')
-print(f"ENV 파일 경로: {env_path}")
+user_data_env_path = os.path.join(os.path.expanduser('~'), 'Documents', '블로그자동화_데이터', '.env')
 
-# .env 파일에서 환경 변수 로드
-load_dotenv(dotenv_path=env_path)
+if os.path.exists(user_data_env_path):
+    load_dotenv(dotenv_path=user_data_env_path)
+if os.path.exists(env_path):
+    load_dotenv(dotenv_path=env_path, override=True)
+print(f"ENV 파일 경로: {env_path if os.path.exists(env_path) else user_data_env_path}")
 
 class Config:
     """애플리케이션 설정"""

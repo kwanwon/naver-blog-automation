@@ -1,1 +1,1 @@
-{"version": "1.2.226", "date": "2026-10-12", "changes": ["Google Gemini API 모델 gemini-3.1-flash-lite 버전 교체 및 우선순위/폴백 최적화"]}
+{"version": "1.2.227", "date": "2026-10-13", "changes": ["Windows/Mac 크로스 플랫폼 구버전 Gemini 설정 자동 마이그레이션 및 Google 3.1 1순위 고정 패치"]}
