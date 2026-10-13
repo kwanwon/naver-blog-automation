@@ -463,10 +463,47 @@ class NaverBandAutomation:
                 
                 # 3-1. 사진 첨부 (사진이 있는 경우)
                 if photos:
+                    # 🔧 [크로스플랫폼] 한글 파일명 및 경로 NFC 정규화 + 실존 여부 철저 검증
+                    import unicodedata
+                    valid_photos = []
+                    for p in photos:
+                        norm_p = unicodedata.normalize('NFC', p) if isinstance(p, str) else p
+                        if os.path.exists(norm_p):
+                            valid_photos.append(os.path.abspath(norm_p))
+                        elif os.path.exists(p):
+                            valid_photos.append(os.path.abspath(p))
+                        else:
+                            print(f"⚠️ 사진 파일 미존재 건너뜀: {p}")
+                    photos = valid_photos
+
                     print(f"📷 사진 업로드 중 ({len(photos)}개)...")
                     try:
                         # 숨겨진 file input 요소 찾기
-                        photo_input = self.driver.find_element(By.CSS_SELECTOR, "input[id^='postPhotoInput_'], input[type='file'][accept*='image']")
+                        photo_input = None
+                        photo_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input[id^='postPhotoInput_'], input[type='file'][accept*='image']")
+                        if photo_inputs:
+                            photo_input = photo_inputs[0]
+                        else:
+                            # 툴바의 사진 아이콘 클릭 시도 후 재검색
+                            photo_btn_selectors = [
+                                "button._btnOpenPhoto",
+                                "button[data-viewname='DPostWriteToolbarPhotoView']",
+                                ".toolbarList button[class*='photo']",
+                                "//button[contains(., '사진')]"
+                            ]
+                            for p_btn_sel in photo_btn_selectors:
+                                try:
+                                    btns = self.driver.find_elements(By.XPATH if p_btn_sel.startswith("//") else By.CSS_SELECTOR, p_btn_sel)
+                                    for b in btns:
+                                        if b.is_displayed():
+                                            self.driver.execute_script("arguments[0].click();", b)
+                                            time.sleep(1.0)
+                                            break
+                                except:
+                                    pass
+                            photo_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input[id^='postPhotoInput_'], input[type='file'][accept*='image']")
+                            if photo_inputs:
+                                photo_input = photo_inputs[0]
                         
                         if photo_input:
                             self.driver.execute_script("arguments[0].style.display = 'block'; arguments[0].style.opacity = '1';", photo_input)
@@ -479,7 +516,10 @@ class NaverBandAutomation:
                             
                             # change 이벤트 트리거
                             try:
-                                self.driver.execute_script("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", photo_input)
+                                self.driver.execute_script("""
+                                    var event = new Event('change', { bubbles: true });
+                                    arguments[0].dispatchEvent(event);
+                                """, photo_input)
                             except Exception:
                                 pass
 
@@ -508,8 +548,10 @@ class NaverBandAutomation:
                                     elements = self.driver.find_elements(By.CSS_SELECTOR, a_sel)
                                 for btn in elements:
                                     if btn.is_displayed():
-                                        attach_btn = btn
-                                        break
+                                        b_cls = btn.get_attribute("class") or ""
+                                        if "_btnSubmitPost" not in b_cls:
+                                            attach_btn = btn
+                                            break
                                 if attach_btn:
                                     break
                             except:
@@ -522,6 +564,11 @@ class NaverBandAutomation:
                             except:
                                 self.driver.execute_script("arguments[0].click();", attach_btn)
                             time.sleep(2.0)
+                        else:
+                            # 🛡️ [동영상과 동일한 안전장치] 첨부 버튼 대기 헬퍼 연동
+                            print("⏳ 사진 첨부하기 버튼 활성화 대기 및 클릭 시도...")
+                            self._click_attach_button()
+                            time.sleep(2.0)
                             
                         # 3단계: 사진 팝업 레이어가 닫힐 때까지 대기
                         try:
@@ -532,8 +579,8 @@ class NaverBandAutomation:
                         except:
                             pass
                         
-                        # 4단계: 본문 사진 렌더링 확인 (최대 25초)
-                        print("🔍 에디터 본문 내 사진 렌더링 확인 중...")
+                        # 4단계: 본문 사진 렌더링 확인 (최대 30초)
+                        print(f"🔍 에디터 본문 내 사진({len(photos)}개) 렌더링 확인 중...")
                         verify_start = time.time()
                         photos_detected = False
                         photo_selectors = [
@@ -543,33 +590,28 @@ class NaverBandAutomation:
                             "[contenteditable='true'] img", 
                             ".postWriteEditor img", 
                             "._postWriteEditor img",
+                            ".photoList img",
                             ".photoList", 
                             ".postPhoto", 
                             "img._attachedImage"
                         ]
                         photo_query = ", ".join(photo_selectors)
-                        while time.time() - verify_start < 25:
+                        while time.time() - verify_start < 30:
                             try:
                                 rendered_imgs = self.driver.find_elements(By.CSS_SELECTOR, photo_query)
-                                if rendered_imgs:
+                                visible_imgs = [img for img in rendered_imgs if img.is_displayed()]
+                                if visible_imgs:
                                     photos_detected = True
-                                    print(f"✅ 에디터 본문 내 사진 첨부 확인 완료 ({len(rendered_imgs)}개 요소 감지)")
+                                    print(f"✅ 에디터 본문 내 사진 첨부 확인 완료 ({len(visible_imgs)}개 요소 감지)")
                                     break
                             except Exception:
                                 pass
-                            # 추가 안전장치: 게시 버튼이 이미 파란색 활성화(-confirm) 상태라면 첨부 완료 판정
-                            try:
-                                active_submit = self.driver.find_elements(By.CSS_SELECTOR, "button._btnSubmitPost.-confirm, button.uButton.-confirm._btnSubmitPost")
-                                if active_submit and active_submit[0].is_displayed() and active_submit[0].is_enabled():
-                                    photos_detected = True
-                                    print("✅ 게시 버튼 활성화 감지로 사진 첨부 완료 판정")
-                                    break
-                            except Exception:
-                                pass
+                            # ⚠️ [Fix] 본문 글만 있어도 게시 버튼이 켜지는 현상으로 인한 허위 판정 버그 완전 제거
+                            # 오직 에디터 본문에 실제 사진 요소가 렌더링되어야만 첨부 완료 판정
                             time.sleep(1.0)
                             
                         if not photos_detected:
-                            print("❌ 에디터 본문에 사진이 들어가지 않았습니다. 빈 글 발행을 방지하기 위해 중단합니다.")
+                            print("❌ 에디터 본문에 사진이 렌더링되지 않았습니다. 빈 글/사진 누락 발행을 방지하기 위해 중단합니다.")
                             return False
                             
                         print("✅ 사진 업로드 및 본문 렌더링 완료")
