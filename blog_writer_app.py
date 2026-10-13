@@ -13767,24 +13767,31 @@ if __name__ == "__main__":
                 pass
             sys.exit(0)
     
-    # 프로그램 시작 전 업데이트 확인 (안전 모드: 확인만 하고 자동설치 안 함)
+    # 프로그램 시작 시 자동 업데이트 확인 및 실행 (무한 루프 방지 & Fail-Safe 보장)
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        version_file = os.path.join(current_dir, 'version.json')
+        current_version = '1.0.0'
         
-        # 버전 로드 로직 (get_current_version과 동일한 로직 적용)
+        # 버전 로드 로직 (Frozen 배포 환경 포함한 다중 경로 탐색)
         try:
-            possible_paths = [
+            possible_paths = []
+            if getattr(sys, 'frozen', False):
+                exe_dir = os.path.dirname(sys.executable)
+                possible_paths.append(os.path.join(exe_dir, 'version.json'))
+                possible_paths.append(os.path.join(exe_dir, '..', 'Frameworks', 'version.json')) # macOS
+                possible_paths.append(os.path.join(exe_dir, '_internal', 'version.json')) # PyInstaller onedir
+            possible_paths.extend([
                 os.path.join(current_dir, 'version.json'),
                 os.path.join(os.getcwd(), 'version.json')
-            ]
+            ])
             
             for path in possible_paths: 
                 if os.path.exists(path):
                     with open(path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
-                        current_version = data.get('version', '1.0.0')
-                        if current_version != '1.0.0':
+                        loaded_ver = data.get('version', '1.0.0')
+                        if loaded_ver != '1.0.0':
+                            current_version = loaded_ver
                             print(f"🚀 앱 시작 버전 로드: {path} (v{current_version})")
                             break
         except Exception as e:
@@ -13792,17 +13799,62 @@ if __name__ == "__main__":
                 
         updater = AutoUpdater(current_version)
         
-        # 업데이트 가능 여부만 확인
+        # 업데이트 가능 여부 확인
         is_available, new_ver = updater.check_update_available()
         
-        if is_available:
-            print(f"✨ 새 버전(v{new_ver})이 있습니다!")
-            print("   (설정 탭에서 업데이트를 진행해주세요)")
+        if is_available and new_ver:
+            print(f"✨ 새 버전 발견: v{current_version} -> v{new_ver}")
+            is_built_app = getattr(sys, 'frozen', False)
+            force_in_dev = os.environ.get("FORCE_AUTO_UPDATE", "0") == "1"
+            
+            if is_built_app or force_in_dev:
+                # 무한 재실행 루프 방지 락 검사
+                lock_file = os.path.join(tempfile.gettempdir(), "blog_auto_update.lock")
+                skip_auto_update = False
+                try:
+                    if os.path.exists(lock_file):
+                        with open(lock_file, 'r', encoding='utf-8') as lf:
+                            lock_data = json.load(lf)
+                            last_ver = lock_data.get("target_version")
+                            last_time = lock_data.get("timestamp", 0)
+                            # 최근 60초 이내에 동일 버전으로 업데이트를 시도했었다면 무한 루프 방지 차단
+                            if last_ver == new_ver and (time.time() - last_time < 60):
+                                print(f"⚠️ 최근 동일 버전(v{new_ver}) 업데이트 시도 기록 감지. 무한 루프 방지를 위해 자동 업데이트를 건너뜁니다.")
+                                skip_auto_update = True
+                except Exception as lock_err:
+                    print(f"⚠️ 락 파일 검사 중 경고 (무시됨): {lock_err}")
+                
+                if not skip_auto_update:
+                    try:
+                        # 락 파일 기록
+                        with open(lock_file, 'w', encoding='utf-8') as lf:
+                            json.dump({"target_version": new_ver, "timestamp": time.time()}, lf)
+                    except Exception:
+                        pass
+                        
+                    print(f"🚀 [시작 시 자동 업데이트] 새 버전(v{new_ver}) 다운로드 및 적용 시작...")
+                    success, msg = updater.check_and_update()
+                    if success:
+                        print(f"✅ 업데이트 적용 완료: {msg}")
+                        print("🔄 프로그램을 안전하게 재실행합니다...")
+                        time.sleep(1.0)
+                        os._exit(0)
+                    else:
+                        print(f"⚠️ 자동 업데이트 적용 실패 (현재 버전으로 앱 실행): {msg}")
+            else:
+                print("💡 개발 환경(Source) 감지: 코드 덮어쓰기 방지를 위해 시작 시 자동 업데이트 건너뜀 (상단 UI 버튼 이용 가능)")
         else:
             print(f"✅ 현재 최신 버전(v{current_version})입니다.")
+            # 정상 최신 버전 기동 시 기존 락 파일 정리
+            lock_file = os.path.join(tempfile.gettempdir(), "blog_auto_update.lock")
+            if os.path.exists(lock_file):
+                try:
+                    os.remove(lock_file)
+                except Exception:
+                    pass
             
     except Exception as e:
-        print(f"⚠️ 업데이트 확인 중 오류 (무시됨): {e}")
+        print(f"⚠️ 시작 시 업데이트 확인 중 오류 (무시됨): {e}")
             
     
     # 메인 앱 실행
