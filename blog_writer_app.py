@@ -12160,6 +12160,26 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
             color=ft.Colors.GREY_600
         )
         
+        # 사용 설명서 웹사이트 버튼 생성
+        def open_manual_url(_):
+            try:
+                import webbrowser
+                webbrowser.open("https://kwanwon.github.io/naver-blog-automation/")
+            except Exception as ex:
+                print(f"⚠️ 설명서 열기 실패: {ex}")
+
+        manual_button = ft.ElevatedButton(
+            text="📖 사용 설명서",
+            icon=ft.Icons.MENU_BOOK,
+            on_click=open_manual_url,
+            bgcolor=ft.Colors.TEAL_600,
+            color=ft.Colors.WHITE,
+            style=ft.ButtonStyle(
+                shape=ft.RoundedRectangleBorder(radius=8)
+            ),
+            tooltip="공식 웹 사용 설명서 & 구글 API 가이드 열기"
+        )
+
         # 업데이트 버튼 생성
         update_button = ft.ElevatedButton(
             text="🔄 업데이트 확인",
@@ -12193,8 +12213,9 @@ Outro (Actionable Tip): 오늘 밤 아이에게 해줄 수 있는 작은 격려�
                 # 중앙: 시계
                 self.clock_text,
                 
-                # 오른쪽: 기능 버튼들 (로그, 업데이트)
+                # 오른쪽: 기능 버튼들 (설명서, 로그, 업데이트)
                 ft.Row([
+                    manual_button,
                     log_button,
                     update_button
                 ], spacing=5)
