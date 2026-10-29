@@ -2,8 +2,8 @@ import os
 import google.generativeai as genai
 import json
 
-# API Key from settings (hardcoded for quick check based on view_file output)
-API_KEY = "AIzaSyB_ZdimKUWiKMUP-OfmAPA_9SsYdWfnGIg"
+# API Key from settings or environment
+API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 try:
     genai.configure(api_key=API_KEY)

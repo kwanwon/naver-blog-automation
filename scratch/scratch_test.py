@@ -6,9 +6,9 @@ sys.path.append("/Users/gm2hapkido/Desktop/라이온개발자")
 from modules.ai_experts.blog_expert import BlogExpert
 from config.config import Config
 
-# API 키 설정
-Config.GEMINI_API_KEY = "AIzaSyDkT_4Fhi9GdPY6dI7KdG8gmwuPVCAofTc"
-Config.GPT_API_KEY = "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"
+# API 키 설정 (테스트 시 환경 변수 또는 실제 설정 파일에서 로드)
+Config.GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+Config.GPT_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 print("🧪 [Test] BlogExpert 생성 테스트 시작...")
 expert = BlogExpert(use_dummy=False)
