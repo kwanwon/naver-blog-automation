@@ -71,10 +71,11 @@
         </span>
         <span class="bg-teal-100 text-teal-800 text-xs font-bold px-2 py-0.5 rounded-full border border-teal-200">v1.2.230</span>
       </div>
-      <nav class="hidden md:flex items-center space-x-6 text-sm font-semibold text-slate-600">
+      <nav class="hidden md:flex items-center space-x-5 text-sm font-semibold text-slate-600">
         <a href="#download" class="hover:text-teal-600 transition">다운로드</a>
         <a href="#gemini-guide" class="hover:text-teal-600 transition">구글 API 발급</a>
-        <a href="#ui-guide" class="hover:text-teal-600 transition">기능별 상세 가이드</a>
+        <a href="#media-guide" class="text-amber-700 hover:text-amber-800 font-bold transition">📸 이미지/감지모드 필독</a>
+        <a href="#ui-guide" class="hover:text-teal-600 transition">기능별 가이드</a>
         <a href="#ai-prompts" class="hover:text-teal-600 transition">AI 맞춤 지침</a>
         <a href="#faq" class="hover:text-teal-600 transition">FAQ</a>
       </nav>
@@ -263,6 +264,303 @@
       </div>
     </section>
 
+    <!-- 2.5 [필독] 이미지 넣는 방법 & 감지모드(블로그·밴드·카페) 완벽 가이드 -->
+    <section id="media-guide" class="scroll-mt-24 space-y-8">
+      <div class="glass-card rounded-3xl p-6 md:p-10 shadow-sm border border-amber-300 bg-gradient-to-br from-white via-amber-50/30 to-orange-50/20">
+        <div class="text-center mb-8 pb-6 border-b border-amber-200/80">
+          <div class="inline-flex items-center space-x-1.5 bg-amber-100 text-amber-800 font-extrabold text-xs uppercase px-3 py-1 rounded-full border border-amber-300 mb-2">
+            <span>⚠️ 관장님 필수 필독 가이드</span>
+          </div>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+            📸 이미지 넣는 방법 & 감지모드(블로그·밴드·카페) 완벽 가이드
+          </h2>
+          <p class="text-slate-600 text-sm mt-2 max-w-2xl mx-auto leading-relaxed">
+            어디 폴더에 사진을 넣어야 하는지(Windows vs Mac 경로), 폴더를 만들면 어떻게 작동하는지, 그리고 플랫폼별 동영상/사진 지원 규격을 명확하게 안내해 드립니다.
+          </p>
+        </div>
+
+        <!-- 1. 플랫폼별 미디어(사진/영상) 지원 규격표 -->
+        <div class="space-y-4 mb-10">
+          <h3 class="text-lg md:text-xl font-bold text-slate-900 flex items-center space-x-2">
+            <span class="text-amber-600">⚡</span>
+            <span>1. 플랫폼별 미디어(사진 / 동영상) 지원 규격 (절대 규칙)</span>
+          </h3>
+          <p class="text-xs md:text-sm text-slate-600 leading-relaxed">
+            네이버 각 서비스의 공식 에디터 특성에 따라 동영상 지원 여부가 다릅니다. 아래 규격을 꼭 확인해 주세요.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <!-- 네이버 블로그 -->
+            <div class="bg-white rounded-2xl p-5 border-2 border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-2xl">📝</span>
+                    <span class="font-extrabold text-slate-900 text-base">네이버 블로그</span>
+                  </div>
+                  <span class="bg-rose-100 text-rose-800 text-xs font-bold px-2 py-0.5 rounded border border-rose-200">동영상 불가 ❌</span>
+                </div>
+                <div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-xs text-rose-900 font-semibold mb-3">
+                  📷 오직 이미지(사진)만 가능 (5~15장 권장)
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  <strong>왜 동영상은 안 되나요?</strong><br>
+                  네이버 블로그 스마트에디터 ONE은 동영상 업로드 시 네이버 자체 비디오 서버의 긴 인코딩 대기 시간이 발생하여 자동화 프로세스가 멈추거나 세션이 튕길 위험이 큽니다. 따라서 100% 안전한 고화질 사진 업로드만 지원합니다.
+                </p>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+                지원 확장자: .jpg, .jpeg, .png, .webp
+              </div>
+            </div>
+
+            <!-- 네이버 카페 -->
+            <div class="bg-white rounded-2xl p-5 border-2 border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-2xl">☕</span>
+                    <span class="font-extrabold text-slate-900 text-base">네이버 카페</span>
+                  </div>
+                  <span class="bg-rose-100 text-rose-800 text-xs font-bold px-2 py-0.5 rounded border border-rose-200">동영상 불가 ❌</span>
+                </div>
+                <div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-xs text-rose-900 font-semibold mb-3">
+                  📷 오직 이미지(사진)만 가능 (3~10장 권장)
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  <strong>카페 에디터 최적화:</strong><br>
+                  카페 게시판 역시 안전한 포스팅 및 도장 로고 워터마크 자동 삽입, GPS 메타데이터 주입이 이미지 기준으로 동작하므로 사진 파일만 등록됩니다.
+                </p>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+                지원 확장자: .jpg, .jpeg, .png, .webp
+              </div>
+            </div>
+
+            <!-- 네이버 밴드 -->
+            <div class="bg-white rounded-2xl p-5 border-2 border-teal-500 shadow-sm flex flex-col justify-between relative overflow-hidden">
+              <div class="absolute top-0 right-0 bg-teal-600 text-white text-[10px] font-black px-3 py-0.5 rounded-bl-lg">
+                인기 최고
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-2xl">👥</span>
+                    <span class="font-extrabold text-slate-900 text-base">네이버 밴드</span>
+                  </div>
+                  <span class="bg-teal-100 text-teal-800 text-xs font-bold px-2 py-0.5 rounded border border-teal-200">영상+사진 동시 ⭕</span>
+                </div>
+                <div class="bg-teal-50 border border-teal-200 rounded-xl p-3 text-xs text-teal-900 font-bold mb-3">
+                  🎬 동영상 + 📷 사진 동시 업로드 완벽 지원!
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  <strong>지능형 분할 포스팅 탑재:</strong><br>
+                  네이버 밴드는 영상과 사진을 둘 다 지원합니다. 특히 영상이 10개를 넘으면 [3/3], [2/3] 등으로 자동 분할하여 먼저 올리고, 메인 수련 이야기와 사진([1/3])을 가장 마지막에 올려 부모님 피드 최상단에 메인 글이 오도록 자동 정렬합니다.
+                </p>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-teal-700 font-semibold">
+                지원 확장자: .mp4, .mov, .avi, .jpg, .png 등
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. OS별 사진 넣는 정확한 경로 안내 (Windows vs Mac) -->
+        <div class="space-y-4 mb-10">
+          <h3 class="text-lg md:text-xl font-bold text-slate-900 flex items-center space-x-2">
+            <span class="text-amber-600">📂</span>
+            <span>2. 어디 폴더에 넣나요? OS별(윈도우 vs 맥) 실제 경로 비교</span>
+          </h3>
+          <p class="text-xs md:text-sm text-slate-600 leading-relaxed">
+            수동으로 사진을 넣거나 구글 드라이브 동기화 폴더를 지정할 때 아래 경로를 그대로 사용하시면 됩니다.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+            <!-- 윈도우 (Windows) 경로 -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div class="flex items-center space-x-2 pb-3 border-b border-slate-100">
+                <span class="text-2xl">🪟</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-900 text-base">Windows (윈도우) 경로 안내</h4>
+                  <p class="text-[11px] text-slate-500">탐색기(내 PC)에서 확인 가능한 실제 위치</p>
+                </div>
+              </div>
+
+              <div class="space-y-3 text-xs text-slate-700">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                  <span class="font-bold text-slate-900 block">① 프로그램 공식 전용 데이터 폴더 (자동 생성)</span>
+                  <div class="bg-white border border-slate-300 p-2 rounded font-mono text-[11px] text-slate-800 break-all select-all">
+                    내 PC &gt; 문서 &gt; 블로그자동화_데이터 &gt; 블로그_카페_수동이미지
+                  </div>
+                  <p class="text-[11px] text-slate-500">실제 절대 경로: <code>C:\Users\&lt;내계정명&gt;\Documents\블로그자동화_데이터</code></p>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                  <span class="font-bold text-slate-900 block">② 기본 다운로드(Downloads) 폴더</span>
+                  <div class="bg-white border border-slate-300 p-2 rounded font-mono text-[11px] text-slate-800 break-all select-all">
+                    내 PC &gt; 다운로드 (Downloads)
+                  </div>
+                  <p class="text-[11px] text-slate-500">실제 절대 경로: <code>C:\Users\&lt;내계정명&gt;\Downloads</code></p>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                  <span class="font-bold text-slate-900 block">③ 구글 드라이브 데스크톱 연동 시 (추천)</span>
+                  <div class="bg-white border border-slate-300 p-2 rounded font-mono text-[11px] text-slate-800 break-all select-all">
+                    내 PC &gt; Google Drive (G: 드라이브) &gt; 내 드라이브 &gt; 수련사진
+                  </div>
+                  <p class="text-[11px] text-slate-500">스마트폰에서 구글 드라이브로 올리면 윈도우 G: 드라이브로 즉시 동기화됩니다.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 맥 (macOS) 경로 -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              <div class="flex items-center space-x-2 pb-3 border-b border-slate-100">
+                <span class="text-2xl">🍎</span>
+                <div>
+                  <h4 class="font-extrabold text-slate-900 text-base">macOS (맥) 경로 안내</h4>
+                  <p class="text-[11px] text-slate-500">Finder(파인더)에서 확인 가능한 실제 위치</p>
+                </div>
+              </div>
+
+              <div class="space-y-3 text-xs text-slate-700">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                  <span class="font-bold text-slate-900 block">① 프로그램 공식 전용 데이터 폴더 (자동 생성)</span>
+                  <div class="bg-white border border-slate-300 p-2 rounded font-mono text-[11px] text-slate-800 break-all select-all">
+                    Finder &gt; 문서 &gt; 블로그자동화_데이터 &gt; 블로그_카페_수동이미지
+                  </div>
+                  <p class="text-[11px] text-slate-500">실제 절대 경로: <code>/Users/&lt;내계정명&gt;/Documents/블로그자동화_데이터</code></p>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                  <span class="font-bold text-slate-900 block">② 기본 다운로드(Downloads) 폴더</span>
+                  <div class="bg-white border border-slate-300 p-2 rounded font-mono text-[11px] text-slate-800 break-all select-all">
+                    Finder &gt; 다운로드 (Downloads)
+                  </div>
+                  <p class="text-[11px] text-slate-500">실제 절대 경로: <code>/Users/&lt;내계정명&gt;/Downloads</code></p>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                  <span class="font-bold text-slate-900 block">③ 구글 드라이브 연동 시 (추천)</span>
+                  <div class="bg-white border border-slate-300 p-2 rounded font-mono text-[11px] text-slate-800 break-all select-all">
+                    Finder &gt; 위치 &gt; Google Drive &gt; 내 드라이브 &gt; 수련사진
+                  </div>
+                  <p class="text-[11px] text-slate-500">맥용 Google Drive 앱이 실행되어 있으면 Finder 사이드바에 즉시 표시됩니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 이미지 폴더를 만들어 사진을 넣으면 어떻게 작동하는가? -->
+        <div class="space-y-4 mb-10">
+          <h3 class="text-lg md:text-xl font-bold text-slate-900 flex items-center space-x-2">
+            <span class="text-amber-600">⚙️</span>
+            <span>3. 이미지 폴더를 만들어 사진을 넣으면 어떻게 작동하나요?</span>
+          </h3>
+          <p class="text-xs md:text-sm text-slate-600 leading-relaxed">
+            관장님이 <code>20261029_낙법수련</code> 또는 <code>3시부</code> 폴더를 만들고 사진 10장을 넣었을 때 프로그램 내부에서 일어나는 5단계 프로세스입니다.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 pt-2 text-xs">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <span class="w-6 h-6 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs mb-2">1</span>
+                <span class="font-bold text-slate-900 block mb-1">폴더 생성 및 복사</span>
+                <p class="text-slate-600 leading-relaxed text-[11px]">지정 경로에 날짜나 부서명으로 폴더를 만들고 사진을 넣습니다.</p>
+              </div>
+              <span class="text-teal-600 font-bold mt-2 text-[10px]">파일명 자동 인식</span>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <span class="w-6 h-6 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs mb-2">2</span>
+                <span class="font-bold text-slate-900 block mb-1">순서 정렬 &amp; 무결성</span>
+                <p class="text-slate-600 leading-relaxed text-[11px]">파일명 순서나 촬영 시간순으로 정렬하며 깨진 파일은 자동 제외합니다.</p>
+              </div>
+              <span class="text-teal-600 font-bold mt-2 text-[10px]">시간순 자동 정렬</span>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <span class="w-6 h-6 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs mb-2">3</span>
+                <span class="font-bold text-slate-900 block mb-1">EXIF 정리 &amp; GPS</span>
+                <p class="text-slate-600 leading-relaxed text-[11px]">스마트폰 불필요 메타데이터를 정리하고 체육관 위치 GPS를 최적 주입합니다.</p>
+              </div>
+              <span class="text-teal-600 font-bold mt-2 text-[10px]">노출 최적화</span>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <span class="w-6 h-6 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs mb-2">4</span>
+                <span class="font-bold text-slate-900 block mb-1">문맥 사이 자동 삽입</span>
+                <p class="text-slate-600 leading-relaxed text-[11px]">AI가 작성한 본문 서론, 본론, 결론 단락 사이에 1~2장씩 번갈아가며 자동 배치합니다.</p>
+              </div>
+              <span class="text-teal-600 font-bold mt-2 text-[10px]">스마트에디터 발행</span>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <span class="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs mb-2">5</span>
+                <span class="font-bold text-emerald-900 block mb-1">백업 폴더 자동 이동</span>
+                <p class="text-slate-600 leading-relaxed text-[11px]">발행 성공 시 원본 사진을 <code>백업</code> 폴더로 옮겨 중복 사용을 100% 방지합니다.</p>
+              </div>
+              <span class="text-emerald-700 font-bold mt-2 text-[10px]">중복 재발행 방지</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 감지모드(Watch Mode) 완벽 정리 (블로그, 밴드, 카페) -->
+        <div class="space-y-4">
+          <h3 class="text-lg md:text-xl font-bold text-slate-900 flex items-center space-x-2">
+            <span class="text-amber-600">🤖</span>
+            <span>4. 감지모드(Watch Mode) 완전 정복 - 블로그, 밴드, 카페</span>
+          </h3>
+          <p class="text-xs md:text-sm text-slate-600 leading-relaxed">
+            <strong>감지모드란?</strong> 프로그램을 켜두기만 하면, 관장님이 스마트폰으로 구글 드라이브나 감시 폴더에 사진/영상을 넣는 순간 <strong>마우스 조작 없이 스스로 글을 쓰고 발행하는 100% 무인 자동화 모드</strong>입니다.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <!-- 밴드 감지모드 -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+              <div class="flex items-center space-x-2">
+                <span class="text-2xl">👥</span>
+                <span class="font-extrabold text-slate-900 text-sm md:text-base">네이버 밴드 감지모드</span>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                • <strong>작동 흐름:</strong> 스마트폰으로 구글 드라이브(예: 3시부)에 사진/영상 업로드 &gt; <strong>60초 디바운스 대기</strong>(파일 전송 완료 확인) &gt; AI 글 작성 &gt; 동영상 분할 업로드 &gt; 본문+사진 피드 최상단 발행 &gt; 백업 이동.<br>
+                • <strong>특징:</strong> 매일 학부모님께 수련 현장을 생생하게 공유하는 데 가장 최적화되어 있습니다.
+              </p>
+            </div>
+
+            <!-- 블로그 감지모드 -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+              <div class="flex items-center space-x-2">
+                <span class="text-2xl">📝</span>
+                <span class="font-extrabold text-slate-900 text-sm md:text-base">네이버 블로그 감지모드</span>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                • <strong>작동 흐름:</strong> 블로그 지정 감시 폴더에 사진 감지 &gt; 구글 시트 주제 또는 로컬 주제 풀 반영 &gt; Gemini 3.1 AI 글 작성 &gt; 스마트에디터 ONE 자동 업로드 &gt; 태그/플레이스 삽입 &gt; 발행 완료.<br>
+                • <strong>주의사항:</strong> <strong>동영상은 제외되며 오직 사진(이미지)만 처리</strong>됩니다.
+              </p>
+            </div>
+
+            <!-- 카페 감지모드 -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+              <div class="flex items-center space-x-2">
+                <span class="text-2xl">☕</span>
+                <span class="font-extrabold text-slate-900 text-sm md:text-base">네이버 카페 감지모드</span>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                • <strong>작동 흐름:</strong> 카페 지정 감시 폴더에 사진 감지 &gt; 도장 로고 워터마크 자동 합성 &gt; 카페 지정 게시판 선택 &gt; 본문 작성 및 사진 등록 &gt; 완료.<br>
+                • <strong>주의사항:</strong> <strong>동영상은 제외되며 오직 사진(이미지)만 처리</strong>됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
     <!-- 3. 화면별(UI) 상세 사용 가이드 (버튼식 상세 가이드 & 목업 포함!) -->
     <section id="ui-guide" class="scroll-mt-24 space-y-10">
       <div class="text-center mb-6">
@@ -369,7 +667,10 @@
           <div class="flex items-center space-x-3.5">
             <span class="text-3xl">📝</span>
             <div>
-              <h3 class="text-lg md:text-xl font-bold text-slate-900 group-open:text-emerald-700 transition">2. [블로그 포스팅] 탭 - 네이버 블로그 완전 자동 포스팅</h3>
+              <div class="flex items-center space-x-2">
+                <h3 class="text-lg md:text-xl font-bold text-slate-900 group-open:text-emerald-700 transition">2. [블로그 포스팅] 탭 - 네이버 블로그 완전 자동 포스팅</h3>
+                <span class="bg-rose-100 text-rose-800 text-[11px] font-bold px-2 py-0.5 rounded border border-rose-200">동영상 불가 / 이미지만 가능</span>
+              </div>
               <p class="text-xs text-slate-500 mt-0.5">수련 사진 폴더 지정 → 구글 최신 AI 글 작성 → 네이버 스마트에디터 원클릭 발행</p>
             </div>
           </div>
@@ -435,7 +736,10 @@
           <div class="flex items-center space-x-3.5">
             <span class="text-3xl">👥</span>
             <div>
-              <h3 class="text-lg md:text-xl font-bold text-slate-900 group-open:text-teal-700 transition">3. [밴드 마케팅] 탭 - 구글 드라이브 실시간 사진 감지 모드</h3>
+              <div class="flex items-center space-x-2">
+                <h3 class="text-lg md:text-xl font-bold text-slate-900 group-open:text-teal-700 transition">3. [밴드 마케팅] 탭 - 구글 드라이브 실시간 사진·영상 감지 모드</h3>
+                <span class="bg-teal-100 text-teal-800 text-[11px] font-bold px-2 py-0.5 rounded border border-teal-200">영상+사진 동시 ⭕</span>
+              </div>
               <p class="text-xs text-slate-500 mt-0.5">스마트폰 촬영 사진이 드라이브에 들어오면 100% 무인으로 AI 글작성 & 밴드 등록</p>
             </div>
           </div>
@@ -483,13 +787,71 @@
         </div>
       </details>
 
-      <!-- 4. [설정] 탭 상세 -->
+      <!-- 3.5 [카페 마케팅] 탭 상세 -->
+      <details class="glass-card rounded-2xl shadow-sm border border-slate-200 overflow-hidden group">
+        <summary class="p-6 md:p-7 flex items-center justify-between cursor-pointer list-none select-none hover:bg-slate-50/80 transition">
+          <div class="flex items-center space-x-3.5">
+            <span class="text-3xl">☕</span>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="text-lg md:text-xl font-bold text-slate-900 group-open:text-amber-700 transition">4. [카페 마케팅] 탭 - 도장 카페 및 지역 맘카페 자동 포스팅</h3>
+                <span class="bg-rose-100 text-rose-800 text-[11px] font-bold px-2 py-0.5 rounded border border-rose-200">동영상 불가 / 이미지만 가능</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">도장 공식 카페 및 지역 맘카페 대상 워터마크 자동 합성 및 게시판별 글 등록</p>
+            </div>
+          </div>
+          <span class="bg-amber-50 group-open:bg-amber-600 group-open:text-white text-amber-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-amber-200 transition">
+            <span class="group-open:hidden">▼ 상세 가이드 펼치기</span>
+            <span class="hidden group-open:inline">▲ 상세 가이드 접기</span>
+          </span>
+        </summary>
+        
+        <div class="p-6 md:p-8 pt-0 border-t border-slate-100 bg-white/70 space-y-6 text-sm">
+          <!-- UI 모형 목업 -->
+          <div class="ui-mockup overflow-hidden">
+            <div class="ui-window-header">
+              <span class="window-dot bg-red-400"></span><span class="window-dot bg-yellow-400"></span><span class="window-dot bg-green-400"></span>
+              <span class="text-[11px] text-slate-500 font-semibold ml-2">네이버 카페 마케팅 설정 및 포스팅 화면</span>
+            </div>
+            <div class="p-4 bg-white space-y-3 text-xs">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="border border-slate-200 p-2.5 rounded bg-slate-50">
+                  <span class="font-bold text-slate-700 block mb-1">① 등록 대상 카페 및 게시판 선택</span>
+                  <div class="bg-white border border-slate-300 p-1.5 rounded text-slate-800">도장 공식 카페 &gt; [수련일지 게시판]</div>
+                </div>
+                <div class="border border-slate-200 p-2.5 rounded bg-slate-50">
+                  <span class="font-bold text-slate-700 block mb-1">② 워터마크 자동 삽입 옵션</span>
+                  <div class="bg-white border border-slate-300 p-1.5 rounded text-teal-700 font-bold">도장 로고 우측 하단 자동 투명 합성 [사용]</div>
+                </div>
+              </div>
+              <div class="bg-amber-50 border border-amber-200 p-3 rounded text-[11px] text-amber-900 leading-relaxed">
+                💡 <strong>미디어 규칙:</strong> 카페 게시판 글 작성 시에는 <strong>동영상 파일은 제외되며 오직 사진(이미지)만 등록</strong>됩니다. (사진 3~10장 권장)
+              </div>
+            </div>
+          </div>
+
+          <!-- 단계별 순서 -->
+          <div class="space-y-3">
+            <h4 class="font-bold text-slate-900 text-sm flex items-center space-x-1.5">
+              <span>📋 구체적 조작 순서:</span>
+            </h4>
+            <ol class="space-y-2.5 text-xs md:text-sm text-slate-700 list-decimal list-inside pl-1 leading-relaxed">
+              <li><strong>카페 및 게시판 지정:</strong> 포스팅할 네이버 카페 주소와 글을 등록할 카테고리(게시판)를 지정합니다.</li>
+              <li><strong>사진 준비:</strong> <code>문서/블로그자동화_데이터/블로그_카페_수동이미지</code> 폴더에 사진을 넣거나 감지 폴더를 연결합니다.</li>
+              <li><strong>포스팅 실행:</strong> 버튼을 누르면 크롬 브라우저가 카페 에디터를 열고 사진과 AI 작성 본문을 깔끔하게 업로드합니다.</li>
+            </ol>
+          </div>
+        </div>
+      </details>
+
+
+      <!-- 5. [설정] 탭 상세 -->
       <details class="glass-card rounded-2xl shadow-sm border border-slate-200 overflow-hidden group">
         <summary class="p-6 md:p-7 flex items-center justify-between cursor-pointer list-none select-none hover:bg-slate-50/80 transition">
           <div class="flex items-center space-x-3.5">
             <span class="text-3xl">⚙️</span>
             <div>
-              <h3 class="text-lg md:text-xl font-bold text-slate-900 group-open:text-indigo-700 transition">4. [설정] 탭 - 계정, API 키, AI 맞춤 지침 등록</h3>
+              <h3 class="text-lg md:text-xl font-bold text-slate-900 group-open:text-indigo-700 transition">5. [설정] 탭 - 계정, API 키, AI 맞춤 지침 등록</h3>
               <p class="text-xs text-slate-500 mt-0.5">최초 1회만 등록해두면 모든 포스팅에 영구 적용되는 기본 설정</p>
             </div>
           </div>
@@ -646,6 +1008,28 @@
       </div>
 
       <div class="space-y-4">
+                <div class="glass-card rounded-xl p-5 border border-amber-300 bg-amber-50/30">
+          <h4 class="font-bold text-slate-900 text-base mb-1">Q. 사진이나 영상은 어디 폴더에 넣어야 하나요? (Windows / Mac)</h4>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            • <strong>Windows:</strong> <code>내 PC &gt; 문서 &gt; 블로그자동화_데이터 &gt; 블로그_카페_수동이미지</code> 폴더나 <code>다운로드(Downloads)</code> 폴더에 넣으시면 됩니다. 구글 드라이브를 쓰실 경우 <code>G:\내 드라이브\수련사진</code>을 연결하세요.<br>
+            • <strong>Mac:</strong> <code>Finder &gt; 문서 &gt; 블로그자동화_데이터 &gt; 블로그_카페_수동이미지</code> 폴더나 <code>다운로드(Downloads)</code> 폴더를 사용하시면 됩니다.
+          </p>
+        </div>
+
+        <div class="glass-card rounded-xl p-5 border border-rose-300 bg-rose-50/30">
+          <h4 class="font-bold text-slate-900 text-base mb-1">Q. 블로그나 카페에는 왜 동영상이 안 올라가고 이미지만 되나요?</h4>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            네이버 블로그 및 카페 스마트에디터는 동영상 업로드 시 네이버 비디오 트랜스코딩 서버 인코딩 대기 시간이 발생하여 자동화 프로세스가 멈추거나 세션이 튕길 위험이 큽니다. 따라서 100% 안전한 고화질 사진(JPG, PNG 등)만 지원합니다. <strong>동영상과 사진을 동시에 올리시려면 [네이버 밴드] 기능을 이용하시면 완벽하게 자동 분할 등록됩니다.</strong>
+          </p>
+        </div>
+
+        <div class="glass-card rounded-xl p-5 border border-teal-300 bg-teal-50/30">
+          <h4 class="font-bold text-slate-900 text-base mb-1">Q. 감지모드(Watch Mode)는 스마트폰으로 어떻게 활용하면 제일 편한가요?</h4>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            컴퓨터에 프로그램을 켜두고 <strong>[자동 감지 시작]</strong>을 눌러둔 뒤, 스마트폰의 구글 드라이브 앱을 엽니다. 수업이 끝난 후 해당 부(예: 3시부) 폴더에 찍은 사진과 영상을 올리기만 하면 끝납니다! 60초 후 컴퓨터가 스스로 알아서 AI 글을 작성하고 밴드에 영상과 사진을 순서대로 깔끔하게 올려줍니다.
+          </p>
+        </div>
+
         <div class="glass-card rounded-xl p-5 border border-slate-200">
           <h4 class="font-bold text-slate-900 text-base mb-1">Q. 시리얼 인증 번호는 어디서 받나요?</h4>
           <p class="text-slate-600 text-sm leading-relaxed">
